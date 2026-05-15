@@ -74,7 +74,8 @@ The workbook contains **highly sensitive** customer data: DNS names, public/priv
 - Commit a real customer's intake doc (`*-customer.md`)
 - Commit screenshots of the workbook with real values visible
 - Commit BGP / AS / IP planning sheets with real customer values
-- Commit Broadcom's official workbook itself (`vcf-*-planning-and-preparation-workbook.xlsx`) — always download fresh from `support.broadcom.com`
+
+The official Broadcom workbook **is** kept in the repo (`reference/vcf-9.1-planning-and-preparation-workbook.xlsx`) as the pinned reference revision for this repo's mapping. Update it deliberately when Broadcom ships a new revision and re-validate `docs/workbook-cell-mapping.md` against the new sheet/field labels in the same commit.
 
 `.gitignore` excludes these patterns. Re-check after any session that worked with real customer values.
 

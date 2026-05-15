@@ -6,8 +6,11 @@ don't pin to spreadsheet coordinates (`P6` style) because Broadcom shifts
 rows between workbook revisions — field labels are stable, coordinates are
 not.
 
-> Workbook reference: `vcf-9.1-planning-and-preparation-workbook.xlsx`
-> v1.9.1.001 (sheet `VCF & VVF Planning`, cell P5).
+> Workbook reference: `reference/vcf-9.1-planning-and-preparation-workbook.xlsx`
+> v1.9.1.001 (revision shown in sheet `VCF & VVF Planning`, cell P5).
+> When Broadcom ships a new revision, replace the file under `reference/` and
+> re-validate this mapping against the new sheet/field labels in the same
+> commit.
 
 ## Sheet: VCF & VVF Planning
 

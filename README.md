@@ -26,6 +26,7 @@ This repo flips the order:
 | `docs/02-customer-intake.md`        | Step 2 — role-based customer intake questionnaire      |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
+| `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `samples/`                          | Example pre-filled fragments (Rainpole-style)          |
 
 ## Workflow

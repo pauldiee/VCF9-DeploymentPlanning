@@ -9,8 +9,5 @@ customers/
 *.tmp
 *.log
 
-# The official Broadcom workbook (download fresh from support.broadcom.com)
-vcf-*-planning-and-preparation-workbook.xlsx
-
 # Working dumps from the workbook
 _workbook_dump/
