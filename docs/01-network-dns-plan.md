@@ -1,0 +1,162 @@
+# Step 1 — Network / DNS / NTP / AD Plan (one page)
+
+Lock this **before** filling any other workbook page. If you only have time
+for one meeting with the customer's network + AD/PKI teams, run it on this
+page. Everything in the workbook flows from these decisions.
+
+> Convention used in the templates below: site code `sfo`, instance `m01`,
+> rack `r01`. Replace consistently when copying for a real customer. VLAN IDs
+> and CIDRs are placeholders.
+
+---
+
+## A. VLAN / Subnet plan
+
+Fill one row per traffic type. The same table covers Mgmt Domain *and* the
+first WLD — duplicate it for additional WLDs / clusters.
+
+| # | Traffic                        | VLAN ID | CIDR (IPv4)       | CIDR (IPv6, optional) | MTU  | Gateway          | Notes                                          |
+| - | ------------------------------ | ------- | ----------------- | --------------------- | ---- | ---------------- | ---------------------------------------------- |
+| 1 | ESX Management                 |         | `/24`             |                       | 1500 |                  | VCF Installer must be on / route here          |
+| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | vCenter / NSX Mgr / Ops / Auto / SDDC Mgr      |
+| 3 | VCF Management (optional)      |         | `/24`             |                       | 1500 |                  | Only if separating VCF services from VM-mgmt   |
+| 4 | vMotion                        |         | `/24`             |                       | 9000 |                  | Jumbo required                                 |
+| 5 | vSAN                           |         | `/24`             |                       | 9000 |                  | Jumbo required; skip if NFS/FC only            |
+| 6 | ESX Host Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo; DHCP scope or static pool               |
+| 7 | NSX Edge Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo                                          |
+| 8 | NSX Edge Uplink-01             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-A; BGP peer              |
+| 9 | NSX Edge Uplink-02             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-B; BGP peer              |
+| 10| NFS (optional)                 |         | `/24`             |                       | 9000 |                  | Only if principal storage = NFS                |
+
+### IP range carve-out (per subnet)
+
+Inside each `/24` reserve contiguous ranges so DHCP / static pools don't
+collide with appliance IPs:
+
+| Subnet                | Reserved for                          | Range example         |
+| --------------------- | ------------------------------------- | --------------------- |
+| ESX Mgmt              | Hosts                                 | `.11–.30`             |
+| VM Mgmt               | VCF Mgmt Services (vCenter, NSX Mgr, SDDC Mgr, Ops, …) | `.31–.45` (≥12 IPs, 30 for headroom) |
+| VM Mgmt               | VCF Automation runtime                | `.46–.50` (4 active + 1 rolling)     |
+| vMotion               | Host vMotion VMK                      | `.101–.116`           |
+| vSAN                  | Host vSAN VMK                         | `.101–.116`           |
+| ESX Overlay           | Host TEPs (×2 per host)               | DHCP scope or static  |
+| Edge Overlay          | Edge TEPs                             | `.11–.20`             |
+
+---
+
+## B. BGP plan
+
+| Item                    | Value | Notes                                              |
+| ----------------------- | ----- | -------------------------------------------------- |
+| Customer AS (NSX Edge)  |       | Private ASN, e.g. 65001                            |
+| ToR-A AS                |       | Private ASN, e.g. 65010                            |
+| ToR-B AS                |       | Same as ToR-A if iBGP within fabric, else distinct |
+| ToR-A peer IP (Uplink-01)|      |                                                    |
+| ToR-B peer IP (Uplink-02)|      |                                                    |
+| BGP MD5 password        |       | Required by NSX; per peer                          |
+| BFD enabled             | Y/N   | Recommended on point-to-points                     |
+| ECMP                    | Yes   | Required on Edge↔ToR                               |
+| Prefix-list / route-map | TBD   | Often advertise default in / Tier-0 subnets out    |
+
+---
+
+## C. DNS
+
+### Two DNS servers (resolver IPs to put into appliances)
+
+| #   | FQDN / hostname           | IPv4         |
+| --- | ------------------------- | ------------ |
+| 1   |                           |              |
+| 2   |                           |              |
+
+### Required A + PTR records (Mgmt Domain — minimum)
+
+Every FQDN below needs **both** an A and a PTR. Add WLD/cluster hosts in the
+same shape.
+
+| Role               | Sample FQDN                          | IP source            |
+| ------------------ | ------------------------------------ | -------------------- |
+| ESXi host 1..N     | `sfo01-m01-r01-esx0N.sfo.example.io` | ESX Mgmt subnet      |
+| vCenter            | `sfo-m01-vc01.sfo.example.io`        | VM Mgmt subnet       |
+| NSX Manager VIP    | `sfo-m01-nsx01.sfo.example.io`       | VM Mgmt subnet       |
+| NSX Manager node 1 | `sfo-m01-nsx01a.sfo.example.io`      | VM Mgmt subnet       |
+| NSX Manager node 2 | `sfo-m01-nsx01b.sfo.example.io`      | VM Mgmt subnet       |
+| NSX Manager node 3 | `sfo-m01-nsx01c.sfo.example.io`      | VM Mgmt subnet       |
+| SDDC Manager       | `sfo-vcf01.sfo.example.io`           | VM Mgmt subnet       |
+| VCF Operations VIP | `sfo-vcfops01.sfo.example.io`        | VM Mgmt subnet       |
+| VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
+| NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
+| NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
+
+### DNS settings checklist
+
+- [ ] Forward + reverse zones for the parent domain
+- [ ] Forward + reverse zones for any child / site domains (e.g. `sfo.example.io`)
+- [ ] Dynamic updates: **Nonsecure and secure**
+- [ ] Zone replication scope: **All DNS servers in this forest**
+- [ ] Every FQDN unique; every PTR present
+- [ ] No CNAME for any VCF appliance hostname (must be A)
+
+---
+
+## D. NTP
+
+| #   | FQDN                          | Resolves to    | Notes                                       |
+| --- | ----------------------------- | -------------- | ------------------------------------------- |
+| A1  | `ntpserver.sfo.example.io`    |                | A-record, source #1                         |
+| A2  | `ntpserver.sfo.example.io`    |                | A-record, source #2 (same name, round-robin)|
+| C1  | `ntp.sfo.example.io`          | CNAME → above  | This is what goes in every appliance        |
+| A3  | `ntp0.sfo.example.io`         |                | Optional, direct mgmt of source #1          |
+| A4  | `ntp1.sfo.example.io`         |                | Optional, direct mgmt of source #2          |
+
+- Sources must sync to **different** upstream NTP (avoid common-mode failure).
+- AD DCs configured to sync to the same external sources.
+- Two NTP entries on every appliance (use the CNAME and a backup A-record).
+
+---
+
+## E. Active Directory
+
+| Item                          | Value                                          |
+| ----------------------------- | ---------------------------------------------- |
+| AD forest root                | e.g. `example.io`                              |
+| Site/child domain             | e.g. `sfo.example.io` (or N/A)                 |
+| DC FQDNs                      |                                                |
+| LDAPS port reachable          | Y/N                                            |
+| Service account for SSO bind  | DN + password owner                            |
+| SDDC admin group              | DN                                             |
+| SDDC operator group           | DN                                             |
+| SDDC viewer group             | DN                                             |
+| Users to pre-create           | per *Active Directory Inputs* sheet            |
+
+---
+
+## F. Certificates
+
+| Item                       | Value                                            |
+| -------------------------- | ------------------------------------------------ |
+| Internal CA type           | MS Enterprise / OpenSSL / Other                  |
+| CA root + intermediate CRT | Path / how delivered                             |
+| CSR submission method      | Web Enrollment (basic auth) / DCE-RPC / Other    |
+| Template name              | e.g. `VMware`                                    |
+| Wildcard allowed?          | Y/N (workbook expects per-host SAN certs)        |
+
+---
+
+## G. SMTP / SFTP / Proxy
+
+| Service       | FQDN / IP                | Port | Notes                                        |
+| ------------- | ------------------------ | ---- | -------------------------------------------- |
+| SMTP relay    |                          |  25  | Allowlist mgmt subnet                        |
+| SFTP backup   |                          |  22  | Account + path for NSX / SDDC Mgr backups    |
+| Proxy (opt.)  |                          | 443  | Only if online depot needs proxy             |
+
+---
+
+## Sign-off
+
+Once **A–G** are filled and signed by the network/AD/PKI owners, move on to
+`02-customer-intake.md` to capture platform-side answers (hosts, sizing,
+passwords). The intake doc references this page rather than asking the same
+questions twice.

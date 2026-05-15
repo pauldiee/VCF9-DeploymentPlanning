@@ -1,0 +1,16 @@
+# Customer-specific artifacts — never commit
+customers/
+*-customer.md
+*-filled.xlsx
+*-filled.docx
+
+# Office / OS temp
+~$*
+*.tmp
+*.log
+
+# The official Broadcom workbook (download fresh from support.broadcom.com)
+vcf-*-planning-and-preparation-workbook.xlsx
+
+# Working dumps from the workbook
+_workbook_dump/
