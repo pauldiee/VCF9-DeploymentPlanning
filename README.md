@@ -36,6 +36,20 @@ Prereqs check  →  Network/DNS plan  →  Intake doc  →  Workbook fill  →  
    (gate)         (1 page, 1 mtg)     (per team)      (mechanical)       (UI/API)
 ```
 
+## Related tools
+
+- **[vcfplanning.lcoscia.fr](https://vcfplanning.lcoscia.fr/)** — Leonardo
+  Coscia's browser-based reimplementation of the official workbook. 600+ fields
+  across a five-phase form (Planning → Prerequisites → Sizing → Deploy →
+  As-Built), with live sizing, VLAN/IP/CIDR conflict detection, and
+  JSON/Markdown/CSV export. Complements this repo: run the intake here, enter
+  the answers there instead of fighting the raw `.xlsx`. Client-side only — no
+  data leaves the browser.
+- **[pauldiee/VCF9ReadinessAssessment](https://github.com/pauldiee/VCF9ReadinessAssessment)**
+  — pre-cutover readiness scoring from RVTools / HST exports.
+- **[pauldiee/VCFHealthCheck](https://github.com/pauldiee/VCFHealthCheck)** —
+  post-cutover health checks of live VCF 9 environments.
+
 ## Author
 
 Paul van Dieen — <https://hollebollevsan.nl>

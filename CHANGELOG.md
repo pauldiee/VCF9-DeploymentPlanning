@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.3 — 2026-06-16
+- README: added a "Related tools" section linking to Leonardo Coscia's
+  browser-based VCF 9.1 planner (<https://vcfplanning.lcoscia.fr/>) alongside
+  the two sister projects (VCF9ReadinessAssessment, VCFHealthCheck). Closes #2.
+
 ## v0.1.2 — 2026-05-15
 - Pinned reference copy of the Broadcom workbook at
   `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` (v1.9.1.001).
