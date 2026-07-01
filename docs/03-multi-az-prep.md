@@ -24,7 +24,7 @@ between all three, and roughly double the raw capacity.
 |M1 | Two independent data sites available (AZ1, AZ2)?                | Separate power/cooling/fire zone — not two racks in one room |
 |M2 | A **third** location for the witness?                           | Can be small; only runs the witness appliance                |
 |M3 | Inter-AZ link meets **≤5 ms RTT** and bandwidth (see C)?        | Hard vSAN requirement; confirm with network team in writing  |
-|M4 | AZ↔witness link meets **≤200 ms RTT**?                          | Witness tolerates high latency, data sites do not            |
+|M4 | AZ↔witness link within the witness RTT budget?                  | **≤200 ms** RTT up to 10 hosts/site; **≤100 ms** for 11–15; ≤500 ms for a single host/site. Witness tolerates far more latency than the data sites |
 |M5 | Which AZ is **preferred** (owns quorum if witness is lost)?     | Default `sfo01`                                              |
 |M6 | Even, matched host count per AZ?                                | Same host count + hardware both AZs                          |
 
@@ -44,7 +44,7 @@ fail under load.
 | Witness size                      | Match to component count (Tiny / Medium / Large per OVA prompt)|
 | Witness management IP             | Routed to VM-mgmt reachability from SDDC Manager / vCenter      |
 | Witness traffic (WTS)             | Separate witness VMK/subnet from vSAN data — recommended        |
-| AZ↔witness RTT                    | **≤200 ms**                                                     |
+| AZ↔witness RTT                    | **≤200 ms** RTT (up to 10 hosts/site); **≤100 ms** for 11–15 hosts/site; ≤500 ms for a single host/site (2-node) |
 | Witness bandwidth (rule of thumb) | ~2 Mbps per 1000 vSAN components; size from expected object count |
 | Witness FQDN                      | A + PTR record, e.g. `sfo-wit01.sfo.example.io`                |
 | Witness NTP/DNS                   | Reachable from the witness site (see F)                        |
@@ -58,8 +58,9 @@ does not stop I/O — the preferred AZ (M5) keeps quorum.
 
 | Item                          | Requirement                                                        |
 | ----------------------------- | ------------------------------------------------------------------ |
-| RTT AZ1↔AZ2                    | **≤5 ms** — hard limit for vSAN data                               |
-| Bandwidth AZ1↔AZ2             | Size for **resync** worst case; 10 GbE+ typical, workload-dependent |
+| RTT AZ1↔AZ2                    | **<5 ms** RTT — hard limit for vSAN data                          |
+| Bandwidth AZ1↔AZ2             | No fixed figure — driven by the write bandwidth being mirrored (VMs replicated between sites). Size against VMware's *vSAN Stretched Cluster Bandwidth Sizing* and plan for **resync** bursts |
+| L2 + HA L3 gateway             | Stretched L2 segments (see D) plus a **highly-available Layer 3 gateway** between AZs, provided by the physical fabric |
 | MTU across the inter-AZ link   | **9000** end-to-end for vSAN / vMotion / overlay                   |
 | Fault domains                  | `sfo01` = preferred, `sfo02` = secondary, `sfo-wit` = witness (3rd)|
 | Link redundancy                | No single-path between AZs (dark fibre pair / diverse DWDM)         |

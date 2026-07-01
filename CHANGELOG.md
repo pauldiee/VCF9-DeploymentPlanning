@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.10 — 2026-07-01
+- Verified the `03-multi-az-prep.md` stretched-vSAN figures against Broadcom
+  vSAN 9.x docs and corrected two:
+  - Witness RTT is **tiered by host count**, not a flat ≤200 ms: ≤200 ms up to
+    10 hosts/site, **≤100 ms** for 11–15 hosts/site, ≤500 ms for a single
+    host/site. Updated M4 and the witness table.
+  - Site-to-site bandwidth has **no fixed figure** — it's driven by the write
+    bandwidth being mirrored. Replaced the "10 GbE+ typical" wording and pointed
+    at VMware's bandwidth-sizing guidance.
+  - Added the requirement for a **highly-available Layer 3 gateway** between AZs
+    alongside the stretched L2 segments.
+  - Confirmed the witness-bandwidth rule (~2 Mbps / 1000 vSAN components) and the
+    <5 ms inter-site RTT are correct as written. Closes #9.
+
 ## v0.1.9 — 2026-07-01
 - VCF 9.1 accuracy pass on `prerequisites.md` (cross-checked vs. the pinned
   workbook Prerequisite Checklist + Management Domain Sizing sheets and Broadcom
