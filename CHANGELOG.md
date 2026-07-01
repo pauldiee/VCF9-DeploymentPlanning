@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.5 — 2026-07-01
+- Added `web/` — an ITQ-branded Astro site published to GitHub Pages
+  (<https://pauldiee.github.io/VCF9-DeploymentPlanning/>). Renders the existing
+  `docs/*.md` in place via a glob content collection (markdown stays the single
+  source of truth), themed entirely on the ITQ design tokens (Titillium, Royal
+  Blue + Orange, square bullets). Landing page presents the Prereqs → Network →
+  Intake → Multi-AZ → Mapping flow; sidebar nav + prev/next pager; `.md`
+  cross-links rewritten to site routes. Deploys via
+  `.github/workflows/deploy.yml` on pushes touching `web/` or `docs/`. Closes #4.
+
 ## v0.1.4 — 2026-07-01
 - Added `docs/03-multi-az-prep.md` — standalone extra-prep checklist for
   stretched / multi-AZ (`A13`=Yes) builds: witness/third site, AZ1↔AZ2 fabric

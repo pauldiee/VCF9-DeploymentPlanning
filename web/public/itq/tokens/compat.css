@@ -1,0 +1,142 @@
+/* ============================================================
+   ITQ: Compatibility token layer  (merged 2026-06)
+   -------------------------------------------------------------
+   Aliases the token names used by the "Slides / Vibe-Coded apps"
+   ITQ system (namespace cb8a10) onto THIS system's values, so the
+   components, slide templates and app-style kit ported from it
+   render correctly here.
+
+   RULE: this file only DEFINES names that the core token files do
+   NOT already define. It never overrides an existing token, so the
+   original components are untouched. Imported LAST in styles.css.
+   ============================================================ */
+
+:root {
+  /* ---- Mono family (JetBrains Mono, for code / app UI) ---- */
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* ---- Extra type-scale steps used by ported components/slides ---- */
+  --fs-h4: 22px;   /* PropositionCard title */
+  --fs-lg: 20px;   /* Stat caption / intro */
+  --fs-sm: 16px;   /* card body */
+  --fs-xs: 14px;
+
+  /* ---- Letter-spacing aliases ---- */
+  --tracking-tight:  -0.01em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.08em;
+
+  /* ---- Line-height alias ---- */
+  --lh-loose: 1.6; /* @kind font */
+
+  /* ---- Spacing aliases (sp-*)  → identical 4px scale ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* ---- Radii aliases (r-*) ---- */
+  --r-xs:   4px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-pill: 999px;
+
+  /* ---- Elevation aliases (shadow-1..3) ---- */
+  --shadow-1: 0 1px 2px rgba(4,5,90,0.06), 0 1px 1px rgba(4,5,90,0.04);
+  --shadow-2: 0 4px 12px rgba(4,5,90,0.08), 0 2px 4px rgba(4,5,90,0.04);
+  --shadow-3: 0 16px 40px rgba(4,5,90,0.12), 0 4px 12px rgba(4,5,90,0.06);
+  --shadow-glow-orange: 0 8px 32px rgba(255,79,65,0.25);
+
+  /* ---- Royal-Blue tint aliases (blue-100..700) ---- */
+  --itq-blue-100: #CDCDDE;
+  --itq-blue-200: #9B9CBC;
+  --itq-blue-400: #686A9B;
+  --itq-blue-600: #36377A;
+  --itq-blue-700: var(--itq-royal-blue);
+  --itq-blue:     var(--itq-royal-blue);
+
+  /* ---- Coral interaction + wash aliases ---- */
+  --itq-orange-hover: #E2402F;
+  --itq-orange-press: #B53329;
+  --itq-orange-wash:  #FFE7E3;
+  --itq-blue-wash:    #E6F0FA;
+
+  /* ---- Photo-overlay alpha aliases ---- */
+  --overlay-25: 0.25; /* @kind other */
+  --overlay-45: 0.45; /* @kind other */
+  --overlay-65: 0.65; /* @kind other */
+  --overlay-85: 0.85; /* @kind other */
+
+  /* ---- Semantic bg/fg/border aliases ---- */
+  --bg-1:      var(--itq-white);
+  --bg-2:      #F6F7FA;
+  --bg-3:      var(--itq-light-blue);
+  --bg-blue:   var(--itq-royal-blue);
+  --bg-orange: var(--itq-orange);
+
+  --fg-1:             var(--itq-royal-blue);
+  --fg-2:             var(--itq-dark-grey);
+  --fg-3:             var(--itq-light-grey);
+  --fg-on-blue:       var(--itq-white);
+  --fg-on-orange:     var(--itq-white);
+  --fg-on-light-blue: var(--itq-royal-blue);
+
+  --accent:       var(--itq-orange);
+  --accent-hover: var(--itq-orange-hover);
+  --accent-press: var(--itq-orange-press);
+  --link:         var(--itq-orange);
+  --link-hover:   var(--itq-orange-hover);
+
+  --border-1: #E8E9EE;
+  --border-2: #D6D8DF;
+
+  /* ---- Logo / brand-mark min sizes (brandbook §02) ---- */
+  --logo-min-digital:      35px;
+  --logo-min-print:        1cm; /* @kind spacing */
+  --brandmark-min-digital: 15px;
+  --brandmark-min-print:   0.4cm; /* @kind spacing */
+}
+
+/* ============================================================
+   Utility classes carried over from the merged system.
+   (Opt-in `ul.itq` square bullets, eyebrow, on-* surfaces,
+   photo-overlay helpers.) Scoped so they don't disturb the
+   existing global element defaults.
+   ============================================================ */
+
+ul.itq, ul.bullets { list-style: none; padding-left: 0; margin: 0; }
+ul.itq > li, ul.bullets > li { position: relative; padding-left: 1.4em; margin-bottom: 0.4em; }
+ul.itq > li::before, ul.bullets > li::before {
+  content: ""; position: absolute; left: 0; top: 0.55em;
+  width: 0.55em; height: 0.55em; background: var(--itq-orange);
+}
+.on-orange ul.itq > li::before, .on-orange ul.bullets > li::before { background: var(--itq-white); }
+ol.itq { list-style: decimal; padding-left: 1.5em; margin: 0; }
+ol.itq > li::marker { font-weight: var(--fw-semibold); color: var(--itq-orange); }
+
+.eyebrow {
+  font-size: var(--fs-eyebrow); font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-wide); text-transform: uppercase; color: var(--itq-orange);
+}
+.coral { color: var(--itq-orange); font-style: normal; }
+.muted { color: var(--fg-3); }
+.on-blue { color: var(--fg-on-blue); }
+.on-orange { color: var(--fg-on-orange); }
+.on-light-blue { color: var(--fg-on-light-blue); }
+
+.photo-overlay { position: absolute; inset: 0; pointer-events: none; }
+.photo-overlay--blue-25   { background: rgba(4,5,90,0.25); }
+.photo-overlay--blue-45   { background: rgba(4,5,90,0.45); }
+.photo-overlay--blue-65   { background: rgba(4,5,90,0.65); }
+.photo-overlay--blue-85   { background: rgba(4,5,90,0.85); }
+.photo-overlay--orange-25 { background: rgba(255,79,65,0.25); }
+.photo-overlay--orange-45 { background: rgba(255,79,65,0.45); }
+.photo-overlay--orange-65 { background: rgba(255,79,65,0.65); }
+.photo-overlay--orange-85 { background: rgba(255,79,65,0.85); }

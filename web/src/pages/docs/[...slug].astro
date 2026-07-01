@@ -1,0 +1,52 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { NAV, navBySlug } from '../../nav';
+import { docHref as href } from '../../lib/path';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((doc) => ({
+    params: { slug: doc.id },
+    props: { doc },
+  }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await render(doc);
+
+const meta = navBySlug(doc.id);
+const idx = NAV.findIndex((n) => n.slug === doc.id);
+const prev = idx > 0 ? NAV[idx - 1] : undefined;
+const next = idx >= 0 && idx < NAV.length - 1 ? NAV[idx + 1] : undefined;
+
+const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 Deployment Planning';
+---
+
+<BaseLayout title={title} description={meta?.blurb} active={doc.id}>
+  {meta && <p class="doc-eyebrow itq-eyebrow">{meta.step}</p>}
+  <article class="doc prose">
+    <Content />
+  </article>
+
+  <nav class="doc-pager" aria-label="Between documents">
+    {
+      prev ? (
+        <a class="doc-pager__link doc-pager__link--prev" href={href(prev.slug)}>
+          <span class="doc-pager__dir"><i class="fa-solid fa-arrow-left" aria-hidden="true" /> Previous</span>
+          <span class="doc-pager__title">{prev.label}</span>
+        </a>
+      ) : (
+        <span />
+      )
+    }
+    {
+      next && (
+        <a class="doc-pager__link doc-pager__link--next" href={href(next.slug)}>
+          <span class="doc-pager__dir">Next <i class="fa-solid fa-arrow-right" aria-hidden="true" /></span>
+          <span class="doc-pager__title">{next.label}</span>
+        </a>
+      )
+    }
+  </nav>
+</BaseLayout>

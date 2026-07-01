@@ -1,0 +1,76 @@
+---
+import '../styles/site.css';
+import Sidebar from '../components/Sidebar.astro';
+import { withBase } from '../lib/path';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Slug of the active doc, for sidebar highlighting. Omit on the landing page. */
+  active?: string;
+  /** Hide the docs sidebar (landing page uses a full-width layout). */
+  fullWidth?: boolean;
+}
+
+const { title, description, active, fullWidth = false } = Astro.props;
+const asset = withBase;
+const year = 2026;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href={asset('itq/assets/logo/itq-glasses-clean.svg')} />
+    <link rel="stylesheet" href={asset('itq/styles.css')} />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" href={asset('')} aria-label="ITQ home">
+          <img src={asset('itq/assets/logo/itq-logo-primary.png')} alt="ITQ" height="30" />
+          <span class="site-header__divider" aria-hidden="true"></span>
+          <span class="site-header__product">VCF 9.1 Deployment Planning</span>
+        </a>
+        <nav class="site-header__nav">
+          <a href={asset('docs/prerequisites/')}>Docs</a>
+          <a
+            class="site-header__cta"
+            href="https://github.com/pauldiee/VCF9-DeploymentPlanning"
+            target="_blank"
+            rel="noopener"
+          >
+            <i class="fa-brands fa-github" aria-hidden="true"></i> GitHub
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <div class:list={['layout', { 'layout--full': fullWidth }]}>
+      {!fullWidth && <Sidebar active={active} />}
+      <main id="main" class:list={['content', { 'content--full': fullWidth }]}>
+        <slot />
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <img src={asset('itq/assets/logo/itq-logo-white.png')} alt="ITQ" height="26" />
+        <p>
+          <strong>ITQ &ndash; What's Next.</strong> VCF 9.1 deployment-planning helper material.
+          Generic templates only, Rainpole-style placeholders. &copy; {year} Paul van Dieen.
+        </p>
+        <a href="https://hollebollevsan.nl" target="_blank" rel="noopener">hollebollevsan.nl</a>
+      </div>
+    </footer>
+  </body>
+</html>

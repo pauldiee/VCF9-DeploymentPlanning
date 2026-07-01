@@ -1,0 +1,82 @@
+/* ============================================================
+   ITQ: Base / reset
+   Document defaults built on the ITQ tokens. Body text defaults
+   to Royal Blue (never black), Titillium, comfortable line height.
+   Bullets render as squares per the brand book.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text-body);
+  background: var(--surface-page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 0.5em;
+  font-family: var(--font-display);
+  color: var(--text-heading);
+  line-height: var(--lh-snug);
+  text-wrap: balance;
+}
+h1 { font-size: var(--fs-h1); font-weight: var(--fw-bold); }
+h2 { font-size: var(--fs-h2); font-weight: var(--fw-semibold); }
+h3 { font-size: var(--fs-h3); font-weight: var(--fw-semibold); }
+
+p { margin: 0 0 1em; text-wrap: pretty; }
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+a:hover { color: var(--state-orange-hover); }
+
+strong, b { font-weight: var(--fw-semibold); }
+
+small { font-size: var(--fs-small); }
+
+/* Square bullets: ITQ brand rule */
+ul {
+  list-style: none;
+  padding-left: 1.25em;
+  margin: 0 0 1em;
+}
+ul > li {
+  position: relative;
+  margin-bottom: 0.4em;
+}
+ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.1em;
+  top: 0.62em;
+  width: 0.42em;
+  height: 0.42em;
+  background: var(--itq-orange);
+}
+/* Ascending numbers for ordered lists */
+ol { padding-left: 1.4em; margin: 0 0 1em; }
+ol > li { margin-bottom: 0.4em; }
+
+hr {
+  border: 0;
+  border-top: var(--border-width) solid var(--border-default);
+  margin: var(--space-6) 0;
+}
+
+::selection {
+  background: var(--itq-orange);
+  color: var(--itq-white);
+}
+
+img { max-width: 100%; display: block; }

@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { NAV } from '../nav';
+import { docHref as href } from '../lib/path';
+---
+
+<BaseLayout
+  title="VCF 9.1 Deployment Planning"
+  description="An ITQ helper for guiding customers through the VMware Cloud Foundation 9.1 Planning and Preparation Workbook: lock the network plan first, run a role-based intake, fill the workbook last."
+  fullWidth
+>
+  <section class="hero">
+    <div class="hero__inner">
+      <p class="itq-eyebrow hero__eyebrow">Hybrid Cloud &middot; VMware Cloud Foundation 9.1</p>
+      <h1 class="hero__title">
+        Plan the VCF 9 build <span class="accent">before</span> you open the workbook.
+      </h1>
+      <p class="hero__intro itq-intro">
+        The official Broadcom Planning and Preparation Workbook has hundreds of fields across
+        nine technical sheets. Handed to a customer cold, it produces gaps, wrong VLANs, and
+        weeks of back-and-forth. This helper flips the order: lock the network and DNS plan
+        first, run a role-based intake, then fill the workbook last, when it is mechanical.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href={href('prerequisites')}>
+          Start with the prerequisites <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+        <a
+          class="btn btn--ghost"
+          href="https://github.com/pauldiee/VCF9-DeploymentPlanning"
+          target="_blank"
+          rel="noopener"
+        >
+          <i class="fa-brands fa-github" aria-hidden="true"></i> View the repo
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="workflow">
+    <div class="workflow__inner">
+      <p class="itq-eyebrow">The flow</p>
+      <h2 class="workflow__heading">Five documents, in order</h2>
+      <div class="card-grid">
+        {
+          NAV.map((item, i) => (
+            <a class="planning-card" href={href(item.slug)}>
+              <div class="planning-card__top">
+                <span class="planning-card__num">{String(i + 1).padStart(2, '0')}</span>
+                <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
+              </div>
+              <span class="planning-card__step itq-eyebrow">{item.step}</span>
+              <h3 class="planning-card__title">{item.label}</h3>
+              <p class="planning-card__blurb">{item.blurb}</p>
+              <span class="planning-card__cta">
+                Open <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="related">
+    <div class="related__inner">
+      <p class="itq-eyebrow">Related tools</p>
+      <h2 class="related__heading">Part of a larger VCF 9 toolkit</h2>
+      <div class="related__grid">
+        <a class="related__item" href="https://vcfplanning.lcoscia.fr/" target="_blank" rel="noopener">
+          <h3>Coscia VCF Planner</h3>
+          <p>A browser-based reimplementation of the workbook. Run the intake here, enter answers there.</p>
+        </a>
+        <a class="related__item" href="https://github.com/pauldiee/VCF9ReadinessAssessment" target="_blank" rel="noopener">
+          <h3>VCF9 Readiness Assessment</h3>
+          <p>Pre-cutover readiness scoring from RVTools and HST exports.</p>
+        </a>
+        <a class="related__item" href="https://github.com/pauldiee/VCFHealthCheck" target="_blank" rel="noopener">
+          <h3>VCF Health Check</h3>
+          <p>Post-cutover health checks of live VCF 9 environments.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

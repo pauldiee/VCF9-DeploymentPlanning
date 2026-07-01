@@ -1,0 +1,91 @@
+/* ============================================================
+   ITQ: Color tokens
+   Source: ITQ Brand Identity Book 2026 (04 Colors) +
+   official PowerPoint theme "ITQ 2021 v02".
+   Corporate colors: Royal Blue + Orange (primary), Light Blue
+   (secondary). White contrasts; a cool grey scale + a teal accent
+   round out the deck palette. Primary text is ROYAL BLUE, never black.
+   ============================================================ */
+
+:root {
+  /* ---- Brand corporate colors ---- */
+  --itq-royal-blue: #040559;   /* Primary  · official theme dk1 · Pantone 2747 C */
+  --itq-orange:     #FF4F41;   /* Primary  · official theme dk2 · Pantone 805 C  */
+  --itq-light-blue: #CDE3F7;   /* Secondary· Pantone 2707 C */
+
+  /* ---- Official deck palette (theme "ITQ 2021 v02") ---- */
+  --itq-teal:        #335964;  /* accent4 · deep teal, sparing accent */
+  --itq-cloud:       #E6EBEB;  /* lt2 · soft grey surface wash */
+  --itq-grey-300:    #D0CECE;  /* accent1 */
+  --itq-grey-400:    #AEABAB;  /* accent2 */
+  --itq-grey-600:    #757070;  /* accent3 */
+  --itq-link-orange: #EA4F35;  /* theme hlink */
+
+  /* ---- AITQ (AI sub-brand) gradient ----
+     The ONE sanctioned gradient in the ITQ system. Use it ONLY for the
+     AITQ AI sub-brand (backgrounds, the "ai" of the wordmark). Never on
+     the core ITQ brand. Orange to Royal Blue. */
+  --aitq-gradient: linear-gradient(105deg, var(--itq-orange) 0%, var(--itq-royal-blue) 70%);
+  --aitq-gradient-radial: radial-gradient(120% 120% at 25% 30%, var(--itq-orange) 0%, #7a1f4d 45%, var(--itq-royal-blue) 100%);
+
+  /* ---- Royal Blue tints (over white) ---- */
+  /* For tables / quiet visual elements only: use sparingly. */
+  --itq-royal-100: #040559;
+  --itq-royal-80:  #363780;
+  --itq-royal-60:  #686999;
+  --itq-royal-40:  #9B9BBF;
+  --itq-royal-20:  #CDCDDF;
+
+  /* ---- Spot / neutral colors ---- */
+  --itq-white:       #FFFFFF;
+  --itq-light-grey:  #A8A8A8;
+  --itq-dark-grey:   #535353;
+  --itq-black:       #000000;  /* grayscale/print output only */
+
+  /* ---- Surface neutrals (system-derived, on-brand) ---- */
+  --itq-paper:       #FFFFFF;
+  --itq-mist:        #F4F8FD;  /* faint light-blue wash for sections */
+  --itq-hairline:    #E2E8F0;  /* light-blue-tinted divider */
+  --itq-light-blue-soft: #E6F1FB;
+
+  /* ============================================================
+     Semantic aliases: reference THESE in components
+     ============================================================ */
+
+  /* Text: Royal Blue is the default body color, never black */
+  --text-body:        var(--itq-royal-blue);
+  --text-heading:     var(--itq-royal-blue);
+  --text-emphasis:    var(--itq-orange);     /* titles / things to pop */
+  --text-muted:       var(--itq-dark-grey);  /* low-emphasis text */
+  --text-quiet:       var(--itq-light-grey);
+  --text-on-blue:     var(--itq-white);
+  --text-on-blue-emph:var(--itq-orange);
+  --text-on-blue-quiet:var(--itq-light-blue);
+  --text-on-orange:   var(--itq-white);
+  --text-on-orange-emph: var(--itq-royal-blue);
+  --text-link:        var(--itq-orange);
+
+  /* Surfaces */
+  --surface-page:     var(--itq-white);
+  --surface-card:     var(--itq-white);
+  --surface-subtle:   var(--itq-mist);
+  --surface-secondary:var(--itq-light-blue);
+  --surface-brand:    var(--itq-royal-blue);
+  --surface-accent:   var(--itq-orange);
+  --surface-inverse:  var(--itq-royal-blue);
+
+  /* Borders / dividers */
+  --border-default:   var(--itq-hairline);
+  --border-strong:    var(--itq-royal-40);
+  --border-brand:     var(--itq-royal-blue);
+  --border-accent:    var(--itq-orange);
+  --focus-ring:       var(--itq-orange);
+
+  /* Interaction state shifts (see guidelines/states) */
+  --state-orange-hover:  #E63E31;  /* orange, darkened ~8% */
+  --state-orange-active: #CC3528;
+  --state-blue-hover:    #0B0C74;  /* royal blue, lifted */
+  --state-blue-active:   #02032E;
+  --state-tint-hover:    rgba(4, 5, 90, 0.06);  /* ghost hover wash */
+  --state-tint-active:   rgba(4, 5, 90, 0.12);
+}

@@ -29,6 +29,25 @@ This repo flips the order:
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `samples/`                          | Example pre-filled fragments (Rainpole-style)          |
+| `web/`                              | ITQ-branded Astro site (GitHub Pages) rendering the `docs/` in place |
+
+## Web version
+
+The planning docs are published as an ITQ-branded site via GitHub Pages:
+**<https://pauldiee.github.io/VCF9-DeploymentPlanning/>**
+
+The site (`web/`, built with [Astro](https://astro.build)) renders the same
+`docs/*.md` in place — the markdown stays the single source of truth, so editing
+a doc updates both the GitHub view and the site. To run it locally:
+
+```
+cd web
+npm install
+npm run dev      # http://localhost:4321/VCF9-DeploymentPlanning/
+```
+
+A GitHub Actions workflow (`.github/workflows/deploy.yml`) rebuilds and deploys
+on every push to `main` that touches `web/` or `docs/`.
 
 ## Workflow
 

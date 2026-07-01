@@ -1,0 +1,17 @@
+/* ============================================================
+   ITQ Design System: global stylesheet entry point
+   Consumers link THIS one file. It is import-only by design:
+   every token, font-face and base rule is reached from here.
+   Source of truth: ITQ Brand Identity Book 2026 v2.
+   ============================================================ */
+
+@import "tokens/fonts.css";
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/base.css";
+/* Compatibility alias layer (imported LAST): maps the token names used by the
+   merged "Slides / Vibe-Coded apps" ITQ system onto our values. Only defines
+   names our core tokens don't already have, so existing components are
+   untouched. Powers the merged components, slides and Academy app kit. */
+@import "tokens/compat.css";
