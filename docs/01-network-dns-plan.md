@@ -18,15 +18,20 @@ first WLD — duplicate it for additional WLDs / clusters.
 | # | Traffic                        | VLAN ID | CIDR (IPv4)       | CIDR (IPv6, optional) | MTU  | Gateway          | Notes                                          |
 | - | ------------------------------ | ------- | ----------------- | --------------------- | ---- | ---------------- | ---------------------------------------------- |
 | 1 | ESX Management                 |         | `/24`             |                       | 1500 |                  | VCF Installer must be on / route here          |
-| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | vCenter / NSX Mgr / Ops / Auto / SDDC Mgr      |
+| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | Largest subnet — appliances + two reserved blocks; see carve-out below |
 | 3 | VCF Management (optional)      |         | `/24`             |                       | 1500 |                  | Only if separating VCF services from VM-mgmt   |
 | 4 | vMotion                        |         | `/24`             |                       | 9000 |                  | Jumbo required                                 |
 | 5 | vSAN                           |         | `/24`             |                       | 9000 |                  | Jumbo required; skip if NFS/FC only            |
-| 6 | ESX Host Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo; DHCP scope or static pool               |
+| 6 | ESX Host Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo; MTU inherited from the vDS; DHCP scope or static TEP pool |
 | 7 | NSX Edge Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo                                          |
 | 8 | NSX Edge Uplink-01             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-A; BGP peer              |
 | 9 | NSX Edge Uplink-02             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-B; BGP peer              |
 | 10| NFS (optional)                 |         | `/24`             |                       | 9000 |                  | Only if principal storage = NFS                |
+| 11| VPC Gateway external (optional)|         | `/24`             |                       | 9000 |                  | External / north-south network for the Distributed Transit Gateway. Only when VPC Gateway = **Distributed** (intake `A10`); the Centralized model is configured post-bringup |
+
+> **Overlay MTU:** host and edge TEP networks carry GENEVE and need MTU **≥ 1600**;
+> set 9000 on the distributed switch. The host-overlay VMK inherits its MTU from
+> the vDS rather than a per-network field.
 
 ### IP range carve-out (per subnet)
 
@@ -58,7 +63,7 @@ needs **two dedicated contiguous blocks**: a `/29` for VCF Automation and a
 | VCF Operations                  | 5          |             | 3 analytics nodes (primary / replica / data) + cloud proxy + license server |
 | VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
 | NSX Edge nodes (if deployed)    | 2          |             | Mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below    |
-| VCF Automation                  | 5          | `/29`       | 3 nodes + 2 buffer (node redeploy / rolling upgrade); allocate a contiguous `/29` |
+| VCF Automation                  | 5          | `/29`       | Active nodes + buffer for node redeploy / rolling upgrade; allocate a contiguous `/29` (5 IPs) |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended headroom) |
 | **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room                                  |
 

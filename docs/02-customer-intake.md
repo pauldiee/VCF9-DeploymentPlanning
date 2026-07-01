@@ -53,8 +53,8 @@ Legend:
 |B1 | ESX Mgmt: VLAN, MTU=1500, IPv4 gateway CIDR                    | `[MGMT]`   |
 |B2 | VM Mgmt: VLAN, MTU=1500, IPv4 gateway CIDR                     | `[MGMT]`   |
 |B3 | VCF Mgmt (if separate): VLAN, MTU, gateway CIDR                | `[MGMT]`   |
-|B4 | VCF Mgmt Services IP range (≥12 IPs, 30 for headroom)          | `[MGMT]`   |
-|B5 | VCF Automation IP range (5 IPs: 4 active + 1 rolling)          | `[MGMT]`   |
+|B4 | VCF Management Services IP range — `/28` (12, min) to `/27` (30); lives inside the VM Mgmt subnet | `[MGMT]`   |
+|B5 | VCF Automation IP range — 5 IPs, allocate a `/29`; inside the VM Mgmt subnet | `[MGMT]`   |
 |B6 | vMotion: VLAN, MTU=9000, gateway CIDR, host IP range           | `[MGMT]`   |
 |B7 | vSAN: VLAN, MTU=9000, gateway CIDR, host IP range              | `[MGMT]`   |
 |B8 | ESX Host Overlay: VLAN, MTU=9000, gateway CIDR; DHCP or static?| `[MGMT]`   |
@@ -69,6 +69,7 @@ Legend:
 |B17| DHCP scope details for ESX Host Overlay (if DHCP)              | `[MGMT]`   |
 |B18| SFTP host, port, account, target path                          | `[CFG-M]`  |
 |B19| Proxy (only if online depot needs it): FQDN, port, auth?       | `[MGMT]`   |
+|B20| VPC Gateway external network (only if `A10` = Distributed): VLAN, gateway CIDR | `[MGMT]`   |
 
 ---
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.8 — 2026-07-01
+- VCF 9.1 accuracy pass on the Step 1 Section A VLAN table and the Step 2 intake
+  Network questions (follow-on from #6, cross-checked vs. the pinned workbook and
+  Broadcom 9.1 TechDocs):
+  - Added the **VPC Gateway / Distributed Transit Gateway external network**
+    (VLAN row 11, intake `B20`, mapping row) — only for the Distributed
+    connectivity model (`A10`).
+  - Noted Host Overlay MTU is inherited from the vDS; overlay needs MTU ≥ 1600.
+  - Clarified `B4` (VCF Management Services range = `/28`–`/27`, inside VM Mgmt)
+    and `B5` (VCF Automation = 5 IPs / `/29`); reworded the Automation split,
+    which the workbook and TechDocs describe differently. Closes #7.
+
 ## v0.1.7 — 2026-07-01
 - `01-network-dns-plan.md`: reworked the Step 1 Section A IP range carve-out.
   The old single VM Mgmt row under-counted a VCF 9.1 management domain (~15 IPs)
