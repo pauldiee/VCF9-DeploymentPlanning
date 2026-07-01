@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.4 — 2026-07-01
+- Added `docs/03-multi-az-prep.md` — standalone extra-prep checklist for
+  stretched / multi-AZ (`A13`=Yes) builds: witness/third site, AZ1↔AZ2 fabric
+  (≤5 ms / ≤200 ms latency budgets), stretched-vs-per-AZ networking, site+local
+  storage-policy capacity, DNS/NTP additions, ownership matrix. README contents
+  table updated; intake `A13` now cross-links the checklist. Closes #3.
+
 ## v0.1.3 — 2026-06-16
 - README: added a "Related tools" section linking to Leonardo Coscia's
   browser-based VCF 9.1 planner (<https://vcfplanning.lcoscia.fr/>) alongside

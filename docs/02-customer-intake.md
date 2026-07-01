@@ -37,7 +37,7 @@ Legend:
 |A10| VPC Gateway: Distributed connectivity vs. Centralized?                              | `[MGMT]`  | **Centralized** (configured post-bringup) |
 |A11| Dual-stack (IPv4 + IPv6)?                                                           | `[MGMT]`  | IPv4 only unless requirement|
 |A12| Separate VCF mgmt network from VM mgmt network?                                     | `[MGMT]`  | Use VM mgmt network         |
-|A13| Multiple Availability Zones (stretched)?                                            | `[MGMT]`  | No (single AZ)              |
+|A13| Multiple Availability Zones (stretched)? → if **Yes**, work `03-multi-az-prep.md` | `[MGMT]`  | No (single AZ)              |
 |A14| Number of management hosts (4–16)                                                   | `[MGMT]`  | 4                           |
 |A15| Number of WLDs at GA, plus number of clusters in each                               | `[WLD]`   | 1 WLD, 1 cluster            |
 |A16| CEIP (telemetry) on?                                                                | `[MGMT]`  | On                          |
