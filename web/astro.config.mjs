@@ -29,11 +29,37 @@ function rehypeRewriteDocLinks() {
   };
 }
 
+/**
+ * Wrap each <table> in <figure class="table-scroll"> so wide, fill-in tables
+ * can scroll horizontally on narrow screens without breaking the page layout.
+ * @returns {(tree: any) => void}
+ */
+function rehypeWrapTables() {
+  return (tree) => {
+    const wrap = (node) => {
+      if (!node.children) return;
+      node.children = node.children.map((child) => {
+        if (child.type === 'element' && child.tagName === 'table') {
+          return {
+            type: 'element',
+            tagName: 'figure',
+            properties: { className: ['table-scroll'] },
+            children: [child],
+          };
+        }
+        wrap(child);
+        return child;
+      });
+    };
+    wrap(tree);
+  };
+}
+
 export default defineConfig({
   site: SITE,
   base: BASE,
   trailingSlash: 'ignore',
   markdown: {
-    rehypePlugins: [rehypeRewriteDocLinks],
+    rehypePlugins: [rehypeRewriteDocLinks, rehypeWrapTables],
   },
 });

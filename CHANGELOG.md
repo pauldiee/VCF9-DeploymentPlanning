@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.6 — 2026-07-01
+- Web: improved readability of the wide fill-in tables (e.g. Step 1 Section A).
+  Tables now use the full content width, empty cells show a faint placeholder,
+  columns have dividers, and each table sits in a bordered scroll container for
+  narrow screens. Running text keeps a comfortable reading measure. Bumped the
+  Pages CI build to Node 22. Closes #5.
+
 ## v0.1.5 — 2026-07-01
 - Added `web/` — an ITQ-branded Astro site published to GitHub Pages
   (<https://pauldiee.github.io/VCF9-DeploymentPlanning/>). Renders the existing

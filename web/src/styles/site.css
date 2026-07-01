@@ -163,8 +163,13 @@ body {
 .doc-eyebrow { margin-bottom: var(--space-2); }
 
 /* ---------- Prose (rendered markdown) ---------- */
-.prose {
-  max-width: 78ch;
+/* The article fills the content column so wide fill-in tables get room to
+   breathe; running text is held to a comfortable measure element-by-element. */
+.prose { max-width: none; }
+.prose p,
+.prose li,
+.prose blockquote {
+  max-width: 74ch;
 }
 .prose h1 {
   font-size: var(--fs-title);
@@ -215,14 +220,22 @@ body {
 }
 .prose blockquote p:last-child { margin-bottom: 0; }
 
-/* Tables: the docs are table-heavy. Royal-blue header, hairline rows. */
+/* Tables: the docs are table-heavy, many are wide fill-in grids with empty
+   cells. Scroll wrapper for narrow screens; column dividers + empty-cell
+   placeholders so the grid stays legible. */
+.table-scroll {
+  margin: var(--space-5) 0;
+  overflow-x: auto;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
 .prose table {
   width: 100%;
   border-collapse: collapse;
-  margin: var(--space-5) 0;
+  margin: 0;
   font-size: var(--fs-small);
-  display: block;
-  overflow-x: auto;
+  line-height: var(--lh-snug);
 }
 .prose thead th {
   background: var(--itq-royal-blue);
@@ -230,13 +243,24 @@ body {
   text-align: left;
   font-weight: var(--fw-semibold);
   padding: var(--space-3) var(--space-4);
-  white-space: nowrap;
+  vertical-align: bottom;
+  border-right: var(--border-width) solid rgba(255, 255, 255, 0.18);
 }
+.prose thead th:last-child { border-right: 0; }
 .prose tbody td {
   padding: var(--space-3) var(--space-4);
   border-bottom: var(--border-width) solid var(--border-default);
+  border-right: var(--border-width) solid var(--border-default);
   vertical-align: top;
 }
+.prose tbody td:last-child { border-right: 0; }
+/* Faint dash so empty fill-in cells don't collapse the grid */
+.prose tbody td:empty::after {
+  content: "–";
+  color: var(--itq-royal-40);
+}
+/* Keep the leading "#" / index column tight and centered */
+.prose tbody td:first-child { white-space: nowrap; }
 .prose tbody tr:nth-child(even) { background: var(--itq-mist); }
 .prose tbody tr:hover { background: var(--itq-light-blue-soft); }
 
