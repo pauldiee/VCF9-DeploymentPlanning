@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.9 — 2026-07-01
+- VCF 9.1 accuracy pass on `prerequisites.md` (cross-checked vs. the pinned
+  workbook Prerequisite Checklist + Management Domain Sizing sheets and Broadcom
+  9.1 TechDocs). The hardware minimums were already sound; added:
+  - CPU: vSphere 9 **16-core/CPU** licensing minimum, size on physical cores,
+    vCPU:pCPU ≤ 2:1.
+  - A note that the **9.1 management footprint is larger** (~12 appliances /
+    ~120 vCPU baseline incl. the VCF services runtime 3 control + 3 worker
+    nodes) — don't reuse a 4.x/5.x host spec.
+  - vSAN-OSA disk-group detail (600 GB cache/group, 6.25 TB capacity/group;
+    32 GB host RAM for max disk groups).
+  - A **vDS teaming** network requirement, overlay MTU ≥ 1600, and a sharper
+    stretched-networks caveat (uplinks/edge overlay stretched only under NSX
+    Centralized connectivity) cross-linked to `03-multi-az-prep.md`. Closes #8.
+
 ## v0.1.8 — 2026-07-01
 - VCF 9.1 accuracy pass on the Step 1 Section A VLAN table and the Step 2 intake
   Network questions (follow-on from #6, cross-checked vs. the pinned workbook and

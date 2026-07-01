@@ -11,13 +11,22 @@ meeting on the rest of the workbook — every later answer depends on these.
 | Item              | Minimum                                                                       | Notes                                                  |
 | ----------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
 | Host count        | 2 (NFS/FC), 3 (vSAN min), **4 recommended** for production HA                 | VCF supports 3-node vSAN WLDs; 4+ for prod             |
-| CPU               | VCG-supported                                                                 | Check <https://compatibilityguide.broadcom.com>        |
-| Memory            | ~1 TB per host (Rainpole reference, 4 hosts, single-host failure tolerance)   | Confirm via *Management Domain Sizing* sheet           |
+| CPU               | VCG-supported                                                                 | VCG: <https://compatibilityguide.broadcom.com>. vSphere 9 counts a **16-core/CPU minimum** for licensing (even if the socket has fewer); size on **physical** cores, keep vCPU:pCPU **≤ 2:1** |
+| Memory            | ~1 TB per host (Rainpole reference, 4 hosts, single-host failure tolerance)   | The 9.1 mgmt fleet is **larger** than earlier VCF (see note below) — **always** confirm via *Management Domain Sizing* sheet |
 | Boot storage      | M.2/SATADOM/SSD — **NOT SD cards** (legacy)                                   |                                                        |
-| vSAN-OSA cache    | All-flash, ~1.2 TB raw per host, two disk groups                              | Skip if vSAN-ESA / NFS / FC                            |
-| vSAN-OSA capacity | All-flash, ~12.5 TB raw per host                                              | Skip if vSAN-ESA / NFS / FC                            |
+| vSAN-OSA cache    | All-flash, ~1.2 TB raw per host, two disk groups (~600 GB cache/group)        | Skip if vSAN-ESA / NFS / FC. 32 GB host RAM needed to support the max disk groups |
+| vSAN-OSA capacity | All-flash, ~12.5 TB raw per host, two disk groups (~6.25 TB/group)            | Skip if vSAN-ESA / NFS / FC                            |
 | vSAN-ESA          | ~12.5 TB raw per host, e.g. 4× 3.2 TB NVMe SSDs                               | Recommended for new builds                             |
 | NICs              | Min 1× 10 GbE + 1× 1 GbE BMC (single-NIC is API-only); **25 GbE for vSAN-ESA**| Up to 64 pNICs/host on VI WLD                          |
+
+> **9.1 management footprint is bigger.** Even with most optional fleet
+> components excluded, the management domain runs ~12 appliances / ~120 vCPU,
+> because 9.1 deploys a baseline **VCF services runtime** (3 control + 3 worker
+> nodes) alongside vCenter, the 3-node NSX Manager cluster and SDDC Manager. It
+> grows further with VCF Operations, VCF Automation, Log Management and the
+> License Server. Don't reuse a VCF 4.x/5.x host spec — resize on the
+> *Management Domain Sizing* sheet against the components you're actually
+> deploying.
 
 ### Workload Domain
 
@@ -27,11 +36,12 @@ Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 
 | Requirement                         | Why                                                                  |
 | ----------------------------------- | -------------------------------------------------------------------- |
-| **Jumbo frames** (MTU 9000)         | Required on vSAN, vMotion, ESX Host Overlay, NSX Edge Overlay, NFS   |
+| **Jumbo frames** (MTU 9000)         | Required on vSAN, vMotion, ESX Host Overlay, NSX Edge Overlay, NFS. Overlay needs MTU **≥ 1600** (GENEVE) |
 | **BGP** adjacency + AS numbers      | Dynamic routing in the SDDC (NSX Edge ↔ ToR)                         |
 | **ECMP** on Edge↔ToR uplinks        | NSX Edge multipath                                                   |
+| **vDS teaming**                     | vSphere Distributed Switch teaming for uplink load-balancing + failover |
 | **VLANs** per traffic type          | See `01-network-dns-plan.md`                                         |
-| **Stretched networks** (MR only)    | VM-mgmt, Uplink01/02, Edge Overlay stretched across AZ1↔AZ2          |
+| **Stretched networks** (multi-AZ)   | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. See `03-multi-az-prep.md` |
 
 ## Active Directory
 
