@@ -111,6 +111,11 @@ body {
   padding: var(--space-6) 0;
 }
 .sidebar__eyebrow { margin-bottom: var(--space-4); }
+.sidebar__eyebrow--spaced {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--border-default);
+}
 .sidebar__list {
   list-style: none;
   padding: 0;

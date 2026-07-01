@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.13 — 2026-07-01
+- Added the first `samples/` worked example: `01-network-dns-plan-rainpole.md`,
+  a filled Step 1 plan using the classic Rainpole reference values (VLANs,
+  subnets, IP carve-out, BGP AS/uplinks, DNS records, NTP, AD/CA) drawn from the
+  pinned workbook. Surfaced it on the site via a `samples` content collection +
+  route and a sidebar "Worked example" link. README `samples/` row updated.
+  Closes #12.
+
 ## v0.1.12 — 2026-07-01
 - Built out the Workload Domain / Cluster intake, previously a single stub line
   (`E13`). New **section H** (sourced from the workbook Deploy Workload Domain +

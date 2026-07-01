@@ -1,0 +1,30 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/path';
+
+export async function getStaticPaths() {
+  const samples = await getCollection('samples');
+  return samples.map((doc) => ({
+    params: { slug: doc.id },
+    props: { doc },
+  }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await render(doc);
+---
+
+<BaseLayout title="Worked example — VCF 9.1 Deployment Planning" description="A filled, Rainpole-style worked example of the Step 1 network/DNS plan.">
+  <p class="doc-eyebrow itq-eyebrow">Worked example</p>
+  <article class="doc prose">
+    <Content />
+  </article>
+
+  <nav class="doc-pager" aria-label="Back to docs">
+    <a class="doc-pager__link doc-pager__link--prev" href={withBase('docs/01-network-dns-plan/')}>
+      <span class="doc-pager__dir"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Blank template</span>
+      <span class="doc-pager__title">Step 1 — Network / DNS Plan</span>
+    </a>
+  </nav>
+</BaseLayout>

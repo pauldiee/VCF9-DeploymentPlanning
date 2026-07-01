@@ -28,7 +28,7 @@ This repo flips the order:
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
-| `samples/`                          | Example pre-filled fragments (Rainpole-style)          |
+| `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
 | `web/`                              | ITQ-branded Astro site (GitHub Pages) rendering the `docs/` in place |
 
 ## Web version

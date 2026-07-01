@@ -7,4 +7,9 @@ const docs = defineCollection({
   loader: glob({ pattern: '*.md', base: '../docs' }),
 });
 
-export const collections = { docs };
+// Rainpole-style worked examples (docs/ blank templates filled in).
+const samples = defineCollection({
+  loader: glob({ pattern: '*.md', base: '../samples' }),
+});
+
+export const collections = { docs, samples };

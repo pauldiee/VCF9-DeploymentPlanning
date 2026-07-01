@@ -1,11 +1,12 @@
 ---
 import { NAV } from '../nav';
-import { docHref as href } from '../lib/path';
+import { docHref as href, withBase } from '../lib/path';
 
 interface Props {
   active?: string;
 }
 const { active } = Astro.props;
+const sampleHref = withBase('samples/01-network-dns-plan-rainpole/');
 ---
 
 <aside class="sidebar" aria-label="Planning docs">
@@ -31,4 +32,13 @@ const { active } = Astro.props;
       }
     </ol>
   </nav>
+
+  <p class="sidebar__eyebrow itq-eyebrow sidebar__eyebrow--spaced">Example</p>
+  <a class="sidebar__link" href={sampleHref}>
+    <i class="fa-solid fa-file-lines sidebar__icon" aria-hidden="true"></i>
+    <span class="sidebar__text">
+      <span class="sidebar__step">Rainpole</span>
+      <span class="sidebar__label">Worked Step 1 plan</span>
+    </span>
+  </a>
 </aside>
