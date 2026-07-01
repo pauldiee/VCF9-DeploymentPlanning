@@ -65,8 +65,9 @@ not.
 | E6     | vCenter                        | FQDN / IP                                            |
 | E7     | SDDC Manager                   | FQDN / IP                                            |
 | E8     | NSX Manager                    | VIP FQDN / VIP IP / Node 1..3 FQDN+IP                |
-| E9     | VCF Operations                 | VIP FQDN / IP                                        |
-| E10    | VCF Automation                 | VIP FQDN / IP                                        |
+| E9     | VCF Operations                 | Primary / Replica / Data node FQDN; Load Balancer FQDN (optional) |
+| E10    | VCF Automation                 | VCF Automation FQDN; VCF services runtime FQDN       |
+| E14    | VCF Management services        | Cloud Proxy / License Server / Identity Broker / VCF services runtime FQDN |
 | F1–F7  | Passwords                      | Per appliance                                        |
 
 ## Sheet: Configure Management Domain

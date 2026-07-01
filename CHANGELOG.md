@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.11 — 2026-07-01
+- `02-customer-intake.md` Platform (E) section 9.1 accuracy pass: VCF Operations
+  and VCF Automation were captured as single "VIP FQDN + IP" entries, but in 9.1
+  they are multi-node clusters. Corrected `E9` (3 analytics nodes + optional
+  load-balancer VIP) and `E10` (appliance/cluster FQDN + services-runtime FQDN;
+  nodes from the `/29`), and added `E14` for the fleet/services FQDNs new in 9.x
+  (Cloud Proxy, License Server, Identity Broker, VCF services runtime). Updated
+  `workbook-cell-mapping.md` to match (E9/E10 relabelled, E14 added). Verified
+  the Architect (A), Security (F) and Depot (G) sections against the workbook —
+  no changes needed. Closes #10.
+
 ## v0.1.10 — 2026-07-01
 - Verified the `03-multi-az-prep.md` stretched-vSAN figures against Broadcom
   vSAN 9.x docs and corrected two:

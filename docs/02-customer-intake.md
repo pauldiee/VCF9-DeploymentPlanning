@@ -122,11 +122,12 @@ Legend:
 |E6 | vCenter FQDN + IP                                              | `[MGMT]`  |
 |E7 | SDDC Manager FQDN + IP                                         | `[MGMT]`  |
 |E8 | NSX Manager VIP FQDN + IP, plus 3 node FQDNs + IPs             | `[MGMT]`  |
-|E9 | VCF Operations VIP FQDN + IP                                   | `[MGMT]`  |
-|E10| VCF Automation VIP FQDN + IP                                   | `[MGMT]`  |
+|E9 | VCF Operations — 3 analytics node FQDNs+IPs (primary/replica/data); optional load-balancer VIP FQDN+IP for HA | `[MGMT]`  |
+|E10| VCF Automation — appliance/cluster FQDN+IP + VCF services-runtime FQDN; nodes come from the `/29` range (`B5`) | `[MGMT]`  |
 |E11| NSX Edge node 1 / 2 FQDNs + IPs                                | `[CFG-M]` |
 |E12| Cluster / vDS / DPG naming conventions                         | `[MGMT]`  |
 |E13| WLD: name, hosts, networks (repeat block from `[WLD]` sheet)   | `[WLD]`   |
+|E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (each needs A+PTR+IP) | `[MGMT]`  |
 
 ---
 
