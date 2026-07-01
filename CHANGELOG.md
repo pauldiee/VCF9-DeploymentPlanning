@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.12 — 2026-07-01
+- Built out the Workload Domain / Cluster intake, previously a single stub line
+  (`E13`). New **section H** (sourced from the workbook Deploy Workload Domain +
+  Deploy Cluster sheets): per-WLD name/vCenter/NSX/connectivity/Supervisor/
+  storage and per-cluster hosts/networks/vDS/overlay/stretched/passwords, with
+  `E13` now pointing to it. Surfaced the 9.1 sizing gotcha that each WLD's
+  vCenter (1) + NSX cluster (4) consume **5 IPs on the management VM Mgmt
+  subnet** — noted in section H and the Step 1 carve-out. Mapped `H1`–`H12` in
+  `workbook-cell-mapping.md` (replacing the "same as mgmt domain" placeholder).
+  Closes #11.
+
 ## v0.1.11 — 2026-07-01
 - `02-customer-intake.md` Platform (E) section 9.1 accuracy pass: VCF Operations
   and VCF Automation were captured as single "VIP FQDN + IP" entries, but in 9.1

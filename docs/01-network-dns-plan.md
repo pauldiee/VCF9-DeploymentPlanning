@@ -53,7 +53,9 @@ hosts:
 lot onto this network: ~30–48 IPs. Size it generously (a `/24` is normal — do
 **not** try to squeeze it into a `/27`). On top of discrete appliance IPs it
 needs **two dedicated contiguous blocks**: a `/29` for VCF Automation and a
-`/28`–`/27` for the VCF management-services runtime.
+`/28`–`/27` for the VCF management-services runtime. Each additional VI Workload
+Domain also lands its **vCenter (1) + NSX Manager cluster (4)** on *this* subnet
+— **+5 IPs per WLD** — so leave headroom.
 
 | Component                       | IPs        | Block       | Notes                                                                     |
 | ------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------- |

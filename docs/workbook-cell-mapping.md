@@ -90,11 +90,30 @@ not.
 | F10    | Backups                  | Backup encryption passphrase             |
 | B18    | Backups                  | SFTP host / port / account / path        |
 
-## Sheet: Deploy Workload Domain / Deploy Cluster
+## Sheet: Deploy Workload Domain
 
-Same field labels as the Mgmt Domain equivalents — repeat per WLD / cluster
-using values from intake question **E13** and the per-cluster section of
+| Intake | Sheet section                          | Field label                                          |
+| ------ | -------------------------------------- | ---------------------------------------------------- |
+| H1     | General Information                    | Workload Domain Name / Deployment Type               |
+| H2     | vCenter                               | vCenter FQDN / SSO Domain Name                       |
+| H3     | NSX Manager Appliances                 | Appliance 1–3 FQDN + IP / Cluster FQDN + Cluster IP  |
+| H4     | Configure Network Connectivity        | Centralized / Distributed; VLAN / Gateway CIDR / Virtual Network Appliance 1–2 FQDN |
+| H5     | vSphere Supervisor                     | Supervisor Name / Service CIDR / Control Plane IP Range |
+| H6     | Storage                               | Storage Selection / Enable vSAN ESA / Storage Policy |
+| H12    | Workload Domain Passwords              | vCenter SSO + root; NSX admin / audit                |
+
+## Sheet: Deploy Cluster
+
+Repeat per additional cluster. New VLANs/subnets per cluster come from
 `01-network-dns-plan.md`.
+
+| Intake | Sheet section                          | Field label                                          |
+| ------ | -------------------------------------- | ---------------------------------------------------- |
+| H7     | General / Host Selection               | Cluster Name / Image / Host FQDNs                    |
+| H8     | Create Network Pool                    | ESX Mgmt / vMotion / vSAN / vSAN Storage Client networks (VLAN / MTU / Gateway / range) |
+| H9     | Distributed Switch                     | Primary / Secondary / Tertiary vDS name / MTU / uplinks / LAG |
+| H10    | Transport Zones / Transport Node Profile | Host Overlay TEP VLAN / Static IP Pool CIDR + range / Uplink Profile |
+| H11    | Stretched Cluster                      | Witness host + VMkernel; AZ2 host networks; fault-domain mapping (see `03-multi-az-prep.md`) |
 
 ## Sheet: Deploy Fleet Management Day-N
 

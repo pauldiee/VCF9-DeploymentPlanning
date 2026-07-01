@@ -126,7 +126,7 @@ Legend:
 |E10| VCF Automation — appliance/cluster FQDN+IP + VCF services-runtime FQDN; nodes come from the `/29` range (`B5`) | `[MGMT]`  |
 |E11| NSX Edge node 1 / 2 FQDNs + IPs                                | `[CFG-M]` |
 |E12| Cluster / vDS / DPG naming conventions                         | `[MGMT]`  |
-|E13| WLD: name, hosts, networks (repeat block from `[WLD]` sheet)   | `[WLD]`   |
+|E13| Any VI Workload Domains at GA? → capture each in **section H** below | `[WLD]`   |
 |E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (each needs A+PTR+IP) | `[MGMT]`  |
 
 ---
@@ -167,6 +167,42 @@ VMware appliances reject `<` `>` `&` `'` `"` in some fields — avoid them.
 |G3 | Activation Code (online only)                                  | `[MGMT]`  |
 |G4 | Offline depot FQDN + port (offline only)                       | `[MGMT]`  |
 |G5 | Proxy required? (FQDN, port, auth)                             | `[MGMT]`  |
+
+---
+
+## H. Workload Domain / Cluster
+
+> Owner: VMware / platform engineer. **Repeat the whole block per VI Workload
+> Domain**, and the cluster rows (H7–H11) **per additional cluster**. Skip
+> entirely if the deployment is management-domain-only at GA. New VLANs/subnets
+> per WLD come from Step 1 (`01-network-dns-plan.md`).
+
+> **Sizing gotcha:** a WLD's **vCenter (1 IP) and NSX Manager cluster (3 nodes +
+> VIP = 4 IPs)** land on the **management** VM Management subnet, not the WLD's
+> own networks. Every extra WLD therefore consumes **5 more IPs** on the mgmt
+> VM Mgmt `/24` — account for it in the Step 1 carve-out.
+
+WLD-level:
+
+| # | Question                                                                                  | Sheet   |
+|---|-------------------------------------------------------------------------------------------|---------|
+|H1 | WLD name (e.g. `sfo-w01`) + deployment type (full deployment with cluster)                 | `[WLD]` |
+|H2 | WLD vCenter FQDN + IP, SSO domain (e.g. `sfo-w01.local`). vCenter IP is on the **mgmt VM Mgmt** subnet | `[WLD]` |
+|H3 | NSX Manager: new instance or shared? If new — 3 node FQDNs+IPs + cluster VIP FQDN+IP (all on the **mgmt VM Mgmt** subnet) | `[WLD]` |
+|H4 | NSX connectivity: **Centralized** or **Distributed**? If Distributed — external VLAN + gateway CIDR + 2 Virtual Network Appliance FQDNs/IPs (on the ESX Mgmt network) | `[WLD]` |
+|H5 | Enable **vSphere Supervisor**? (requires centralized edge gateway; needs Service CIDR + control-plane IP range) | `[WLD]` |
+|H6 | Principal storage: vSAN-ESA / vSAN-OSA / VMFS-on-FC / NFS / vVols; storage-policy FTT      | `[WLD]` |
+
+Cluster-level (repeat per cluster):
+
+| # | Question                                                                                  | Sheet   |
+|---|-------------------------------------------------------------------------------------------|---------|
+|H7 | Cluster name (e.g. `sfo-w01-cl01`), image, host FQDNs (3–16)                               | `[CLU]` |
+|H8 | Per-cluster networks (own VLANs/subnets): ESX Mgmt (MTU 1500), vMotion (9000), vSAN (9000), Host Overlay TEP (9000, static pool); optional vSAN Storage Client / Storage Cluster networks | `[CLU]` |
+|H9 | vDS layout: one vDS for all traffic, or separate secondary/tertiary vDS (e.g. dedicated vSAN / overlay). MTU 9000, 2 uplinks, LACP? | `[CLU]` |
+|H10| NSX host overlay: TEP VLAN + static IP-pool CIDR/range, uplink profile, transport zones    | `[CLU]` |
+|H11| **Stretched cluster?** If multi-AZ, work `03-multi-az-prep.md` — witness, AZ2 host networks, fault-domain mapping, per-AZ overlay | `[CLU]` |
+|H12| WLD password owners: WLD vCenter SSO / root, NSX `admin` / `audit` / `root`                | `[WLD]` |
 
 ---
 
