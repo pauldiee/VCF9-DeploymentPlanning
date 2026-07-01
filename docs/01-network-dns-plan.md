@@ -31,17 +31,42 @@ first WLD — duplicate it for additional WLDs / clusters.
 ### IP range carve-out (per subnet)
 
 Inside each `/24` reserve contiguous ranges so DHCP / static pools don't
-collide with appliance IPs:
+collide with appliance IPs.
 
-| Subnet                | Reserved for                          | Range example         |
-| --------------------- | ------------------------------------- | --------------------- |
-| ESX Mgmt              | Hosts                                 | `.11–.30`             |
-| VM Mgmt               | VCF Mgmt Services (vCenter, NSX Mgr, SDDC Mgr, Ops, …) | `.31–.45` (≥12 IPs, 30 for headroom) |
-| VM Mgmt               | VCF Automation runtime                | `.46–.50` (4 active + 1 rolling)     |
-| vMotion               | Host vMotion VMK                      | `.101–.116`           |
-| vSAN                  | Host vSAN VMK                         | `.101–.116`           |
-| ESX Overlay           | Host TEPs (×2 per host)               | DHCP scope or static  |
-| Edge Overlay          | Edge TEPs                             | `.11–.20`             |
+**Host-facing subnets** — one IP per host VMK, sized here for up to 16 mgmt
+hosts:
+
+| Subnet       | Reserved for            | Range example              |
+| ------------ | ----------------------- | -------------------------- |
+| ESX Mgmt     | Host mgmt VMK           | `.11–.30`                  |
+| vMotion      | Host vMotion VMK        | `.101–.116`                |
+| vSAN         | Host vSAN VMK           | `.101–.116`                |
+| ESX Overlay  | Host TEPs (×2 per host) | DHCP scope or static pool  |
+| Edge Overlay | Edge TEPs               | `.11–.20`                  |
+
+**VM Management subnet — the crowded one.** A VCF 9.1 management domain packs a
+lot onto this network: ~30–48 IPs. Size it generously (a `/24` is normal — do
+**not** try to squeeze it into a `/27`). On top of discrete appliance IPs it
+needs **two dedicated contiguous blocks**: a `/29` for VCF Automation and a
+`/28`–`/27` for the VCF management-services runtime.
+
+| Component                       | IPs        | Block       | Notes                                                                     |
+| ------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------- |
+| vCenter                         | 1          |             | Management domain vCenter                                                 |
+| NSX Manager                     | 4          |             | 3 cluster nodes + 1 cluster VIP                                           |
+| SDDC Manager                    | 1          |             |                                                                           |
+| VCF Operations                  | 5          |             | 3 analytics nodes (primary / replica / data) + cloud proxy + license server |
+| VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
+| NSX Edge nodes (if deployed)    | 2          |             | Mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below    |
+| VCF Automation                  | 5          | `/29`       | 3 nodes + 2 buffer (node redeploy / rolling upgrade); allocate a contiguous `/29` |
+| VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended headroom) |
+| **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room                                  |
+
+> **Separate internal network — keep off the VM Mgmt subnet.** The VCF services
+> runtime also uses an *internal* container CIDR, `198.18.0.0/15` by default
+> (change to `240.0.0.0/15` or `250.0.0.0/15` if it clashes). These are internal
+> to the platform, not routed appliance IPs — just make sure the block does not
+> overlap anything you actually route.
 
 ---
 

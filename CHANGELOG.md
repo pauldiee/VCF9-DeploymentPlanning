@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.7 — 2026-07-01
+- `01-network-dns-plan.md`: reworked the Step 1 Section A IP range carve-out.
+  The old single VM Mgmt row under-counted a VCF 9.1 management domain (~15 IPs)
+  and was internally inconsistent. Split into host-facing subnets plus a proper
+  VM Management appliance breakdown (~30–48 IPs): per-component counts for
+  vCenter, NSX (3 + VIP), SDDC Manager, VCF Operations (3 analytics + cloud proxy
+  + license server, optional VIP), the VCF Automation `/29`, and the VCF
+  management-services runtime `/28`–`/27` (where the "12–30" actually belongs).
+  Added a note on the separate internal `198.18.0.0/15` services CIDR. Counts
+  cross-checked against the pinned workbook and Broadcom 9.1 TechDocs. Closes #6.
+
 ## v0.1.6 — 2026-07-01
 - Web: improved readability of the wide fill-in tables (e.g. Step 1 Section A).
   Tables now use the full content width, empty cells show a faint placeholder,
