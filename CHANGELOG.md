@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.14 — 2026-07-01
+- Site proofread: verified every doc cross-link resolves to a real route, the
+  ITQ-authored chrome is free of em-dashes and emoji, and there are no
+  doubled-word or leftover-marker issues. Fixed one stray "MR" shorthand in
+  `prerequisites.md` (now "multi-AZ", consistent with the rest). Closes #13.
+
 ## v0.1.13 — 2026-07-01
 - Added the first `samples/` worked example: `01-network-dns-plan-rainpole.md`,
   a filled Step 1 plan using the classic Rainpole reference values (VLANs,

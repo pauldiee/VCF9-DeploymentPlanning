@@ -102,7 +102,7 @@ Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 | File                                                | Source                                          |
 | --------------------------------------------------- | ----------------------------------------------- |
 | `VCF-SDDC-Manager-Appliance-9.1.x.0.xxxxxxxx.iso`   | support.broadcom.com                            |
-| `VMware-VirtualSAN-Witness-x.x.x-xxxxxxxx.ova`      | support.broadcom.com (only if MR / vSAN stretched) |
+| `VMware-VirtualSAN-Witness-x.x.x-xxxxxxxx.ova`      | support.broadcom.com (only if multi-AZ / vSAN stretched) |
 
 ## Sign-off
 
