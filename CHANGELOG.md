@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.27 — 2026-07-02
+- Sizer: constrained **Log Management** to the deployment profile, matching the
+  workbook (cells E25/E26). The size dropdown now caps at the deployment size
+  (Simple/Small → Small; HA+Medium → Small/Medium; HA+Large → all), and the
+  replica count enforces the per-size minimum (Small 1 / Medium 3 / Large 6, max
+  19) from the `sizing_log_replicas_*` ranges — clamping on change. Added engine
+  helpers `logsSizeOptions` / `logsReplicaMin` + defensive clamp in `compute()`.
+  Workbook baseline unchanged. Closes #25.
+
 ## v0.1.26 — 2026-07-02
 - Actually-actually fixed the `Duplicate id` build warning. The v0.1.23 prebuild
   targeted `.astro/data-store.json`, which **does not exist** in this Astro

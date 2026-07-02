@@ -111,6 +111,7 @@ const opt = (values: readonly string[]) => values;
           </label>
           <label id="logsReplicasLabel" hidden>Log Management replicas
             <input id="logsReplicas" type="number" min="1" step="1" />
+            <span class="sizer__hint">Size ≤ deployment size; replicas min Small 1 / Medium 3 / Large 6, max 19.</span>
           </label>
           <label class="sizer__check"><input id="vcfOps" type="checkbox" /> VCF Operations</label>
           <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy (Ops collector)</label>
@@ -169,7 +170,7 @@ const opt = (values: readonly string[]) => values;
 </BaseLayout>
 
 <script>
-  import { OPTIONS, defaultState, compute, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
+  import { OPTIONS, defaultState, compute, logsSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const state: SizingState = defaultState();
@@ -266,6 +267,28 @@ const opt = (values: readonly string[]) => values;
     }
   }
 
+  // ---- Log Management is constrained by the deployment profile ----
+  let lastLogsDepSize = '';
+  let lastLogsSize = '';
+  function syncLogsSizeOptions() {
+    const allowed = logsSizeOptions(($('deploymentSize') as HTMLSelectElement).value);
+    const sel = $('logsSize') as HTMLSelectElement;
+    // preserve current if still valid, else fall back to the largest allowed size
+    const current = allowed.includes(sel.value) ? sel.value : allowed[allowed.length - 1];
+    sel.innerHTML = selOptions(allowed, current);
+    state.logsSize = current;
+  }
+  function syncLogsReplicas() {
+    const size = ($('logsSize') as HTMLSelectElement).value;
+    const rep = $('logsReplicas') as HTMLInputElement;
+    const min = logsReplicaMin(size);
+    rep.min = String(min);
+    rep.max = String(LOGS_REPLICA_MAX);
+    const v = Math.min(LOGS_REPLICA_MAX, Math.max(min, parseFloat(rep.value) || min));
+    rep.value = String(v);
+    state.logsReplicas = v;
+  }
+
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
   const pct = (n: number) => (n === Infinity ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
@@ -280,6 +303,17 @@ const opt = (values: readonly string[]) => values;
     if (storage !== lastStorage) {
       lastStorage = storage;
       syncStorageInputs();
+    }
+    // Log Management size options track the deployment size; replicas track the logs size.
+    const depSize = ($('deploymentSize') as HTMLSelectElement).value;
+    if (depSize !== lastLogsDepSize) {
+      lastLogsDepSize = depSize;
+      syncLogsSizeOptions();
+    }
+    const logsSize = ($('logsSize') as HTMLSelectElement).value;
+    if (logsSize !== lastLogsSize) {
+      lastLogsSize = logsSize;
+      syncLogsReplicas();
     }
     readInputs();
     const r = compute(state);
