@@ -57,7 +57,7 @@ These go into every new script / doc that exposes author metadata.
 
 Before committing any doc change:
 
-1. **`CHANGELOG.md`** — new entry at the **TOP** (newest first, descending order)
+1. **`CHANGELOG.md`** — new entry at the **TOP** (newest first, descending order). **Max 10 patches per minor**: patch numbers run `.0`–`.9`; after `.9`, roll the minor (e.g. `0.3.9` → `0.4.0`, never `0.3.10`).
 2. **README.md** — if a file was added/moved/removed, the contents table is in sync
 3. **`docs/workbook-cell-mapping.md`** — if an intake question was renumbered or added in `02-customer-intake.md`, the mapping is updated in the same commit. Mapping uses sheet name + field label, **never** P-coordinates.
 4. **Sample / example values** — confirm no real customer data leaked in (use Rainpole-style placeholders only: `sfo.example.io`, `rainpole.io`, `10.11.x.x`)

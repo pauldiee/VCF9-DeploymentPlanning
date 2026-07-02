@@ -1,19 +1,26 @@
 # Changelog
 
-## v0.1.29 — 2026-07-02
+## v0.4.0 — 2026-07-02
+- Renumbered the changelog to honour **max 10 patches per minor** (the entries had
+  run to `0.1.29`). Remapped the single long `0.1.x` line into three tidy minors —
+  `0.1.0`–`0.1.9`, `0.2.0`–`0.2.9`, `0.3.0`–`0.3.9` — and updated in-body version
+  cross-references to match. Safe: no git tags or external references pointed at
+  the old numbers. Reinforced the rule in `CLAUDE.md`'s pre-commit checklist.
+
+## v0.3.9 — 2026-07-02
 - Sizer: redesigned the **workload-domain repeater** for readability. Each WLD is
   now a labeled **card** (a "WLD N" badge + name + remove control in a header row,
   then its fields — vCenter size/storage, NSX model, NSX Manager size, Global
   Manager — as a responsive auto-fit grid with visible labels) instead of six
   unlabeled dropdowns crammed into one narrow row.
 
-## v0.1.28 — 2026-07-02
+## v0.3.8 — 2026-07-02
 - Sizer: added a soft **2:1 oversubscription guardrail**. When CPU or RAM
   oversubscription exceeds 2:1, a non-blocking caution appears noting Broadcom's
   guidance caps the management domain at 2:1 (latency-sensitive control plane).
   The input still accepts higher ratios — it just no longer looks blessed.
 
-## v0.1.27 — 2026-07-02
+## v0.3.7 — 2026-07-02
 - Sizer: constrained **Log Management** to the deployment profile, matching the
   workbook (cells E25/E26). The size dropdown now caps at the deployment size
   (Simple/Small → Small; HA+Medium → Small/Medium; HA+Large → all), and the
@@ -22,15 +29,15 @@
   helpers `logsSizeOptions` / `logsReplicaMin` + defensive clamp in `compute()`.
   Workbook baseline unchanged. Closes #25.
 
-## v0.1.26 — 2026-07-02
-- Actually-actually fixed the `Duplicate id` build warning. The v0.1.23 prebuild
+## v0.3.6 — 2026-07-02
+- Actually-actually fixed the `Duplicate id` build warning. The v0.3.3 prebuild
   targeted `.astro/data-store.json`, which **does not exist** in this Astro
   version — the content store is `.astro/collections/` — so it was a no-op and
   the warning kept recurring. Pointed `prebuild` at `.astro/collections`;
   verified clean across 12 consecutive `npm run build` cycles alternating the
   three docs that had been failing.
 
-## v0.1.25 — 2026-07-02
+## v0.3.5 — 2026-07-02
 - `03-multi-az-prep.md` section D: added a note that **public peering is normally
   a workload-domain concern, not management** — the mgmt domain's Edge uplinks
   peer with the internal ToR fabric, while public / upstream / DMZ peering lives
@@ -39,16 +46,16 @@
   per-AZ under Distributed; surviving AZ advertises public prefixes, failed AZ
   withdraws) and cross-linked intake `B22`.
 
-## v0.1.24 — 2026-07-02
+## v0.3.4 — 2026-07-02
 - `01-network-dns-plan.md`: also surface **public / upstream peering** in the main
   VLAN/subnet table (row 12, optional `/29`–`/30` point-to-point uplink), mirroring
   how the Edge uplinks appear in both the subnet table and §B. The BGP-session
   detail stays in §B; this gives the peering a visible subnet slot. Cross-linked
   to intake `B22`.
 
-## v0.1.23 — 2026-07-02
+## v0.3.3 — 2026-07-02
 - Actually fixed the `Duplicate id` build warning. The absolute content `base`
-  in v0.1.19 helped but did **not** reliably stop it — the warning recurred on
+  in v0.2.9 helped but did **not** reliably stop it — the warning recurred on
   incremental builds after editing docs, because the persisted content cache
   (`.astro/data-store.json`) can re-add an edited file when `dev`/`build`
   interleave. Added a `prebuild` script that clears that store so every build
@@ -56,7 +63,7 @@
   cycles (including the previously-failing case). CI was already unaffected
   (fresh checkout, no cache).
 
-## v0.1.22 — 2026-07-02
+## v0.3.2 — 2026-07-02
 - Added intake question `B22` (Network) for optional **public / upstream peering**
   — peer AS/IP/MD5, advertised/received prefixes, and its own uplink subnet if it
   doesn't share the Edge uplinks — cross-linked to `01-network-dns-plan.md` §B.
@@ -64,7 +71,7 @@
   additional Tier-0 BGP neighbor configured in NSX post-bringup; plan it in `01`).
   Extends #24.
 
-## v0.1.21 — 2026-07-02
+## v0.3.1 — 2026-07-02
 - `01-network-dns-plan.md` section B (BGP): added an optional **Public / upstream
   peering** row (a separate BGP session for public / north-south routes — internet
   edge, DMZ, or upstream provider — distinct from the internal ToR fabric peering;
@@ -73,7 +80,7 @@
   **Distributed** (intake `A10`). Keeps `01` consistent with the `03-multi-az-prep.md`
   section D clarification. Extends #24.
 
-## v0.1.20 — 2026-07-02
+## v0.3.0 — 2026-07-02
 - `03-multi-az-prep.md` section D clarifications: (1) the per-AZ networking table
   applies to **any stretched cluster**, not just the management domain — a
   workload-domain cluster can also be stretched; added a note on the WLD case
@@ -84,7 +91,7 @@
   Edge Uplink BGP sessions **are** the north-south / public peering (captured in
   the `01` BGP plan + intake `B10`–`B16`), not a separate item.
 
-## v0.1.19 — 2026-07-02
+## v0.2.9 — 2026-07-02
 - `05-day2-deployments.md`: read all the Broadcom option pages and expanded
   section C with accurate per-placement detail — Shared VLAN (no isolation, not
   DR-suited), Dedicated VLAN (dedicated port group; Cloud Proxy stays on VM-mgmt),
@@ -99,7 +106,7 @@
   an absolute URL (`new URL('../../docs', import.meta.url)`) so every file has one
   canonical id. Verified clean under a live dev-cache + build collision.
 
-## v0.1.18 — 2026-07-02
+## v0.2.8 — 2026-07-02
 - Corrected the Day-2 network-placement options in `05-day2-deployments.md`. The
   first cut wrongly framed the choice as "Shared Management Network vs. NSX VPC"
   — the *Deploy Fleet Management Day-N* sheet (verified from the raw data-
@@ -115,7 +122,7 @@
   deploy-method options (Exclude / Deploy VCF Operations and Automation / Deploy
   VCF Automation) and fixed intake `B21`/`E15` and the Day-N mapping to match.
 
-## v0.1.17 — 2026-07-02
+## v0.2.7 — 2026-07-02
 - New **Day-2 / Day-N fleet deployment** prep: `docs/05-day2-deployments.md`,
   sourced from the workbook's *Deploy Fleet Management Day-N* sheet + TechDocs.
   Enumerates the components deployed after bring-up (VCF Operations, Cloud
@@ -128,7 +135,7 @@
   Log/Networks appliances to the *Deploy Fleet Management Day-N* sheet, and
   added a sidebar **Day-2** step + README row. Closes #23.
 
-## v0.1.16 — 2026-07-02
+## v0.2.6 — 2026-07-02
 - New **interactive Management Domain sizing tool** on the site
   (`web/src/pages/tools/mgmt-sizing.astro` + engine `web/src/lib/mgmt-sizing.ts`).
   Reproduces the workbook's *Management Domain Sizing* sheet (pinned rev
@@ -143,7 +150,7 @@
   `docs/04-sizing.md` (Step 3) linking the tool, a sidebar **Tools** entry, and
   README rows. Closes #15.
 
-## v0.1.15 — 2026-07-02
+## v0.2.5 — 2026-07-02
 - `03-multi-az-prep.md` table D: added a sourcing note confirming the
   stretched-vs-per-AZ traffic split against the Broadcom VCF 9 design library
   (*vSphere Stretched Cluster Model*). ESX Management, vMotion, vSAN, and Host
@@ -153,13 +160,13 @@
   stretched-cluster limit (<5 ms RTT, ≥10 Gbps), not the looser 10 ms
   generic-AZ number. Closes #14.
 
-## v0.1.14 — 2026-07-01
+## v0.2.4 — 2026-07-01
 - Site proofread: verified every doc cross-link resolves to a real route, the
   ITQ-authored chrome is free of em-dashes and emoji, and there are no
   doubled-word or leftover-marker issues. Fixed one stray "MR" shorthand in
   `prerequisites.md` (now "multi-AZ", consistent with the rest). Closes #13.
 
-## v0.1.13 — 2026-07-01
+## v0.2.3 — 2026-07-01
 - Added the first `samples/` worked example: `01-network-dns-plan-rainpole.md`,
   a filled Step 1 plan using the classic Rainpole reference values (VLANs,
   subnets, IP carve-out, BGP AS/uplinks, DNS records, NTP, AD/CA) drawn from the
@@ -167,7 +174,7 @@
   route and a sidebar "Worked example" link. README `samples/` row updated.
   Closes #12.
 
-## v0.1.12 — 2026-07-01
+## v0.2.2 — 2026-07-01
 - Built out the Workload Domain / Cluster intake, previously a single stub line
   (`E13`). New **section H** (sourced from the workbook Deploy Workload Domain +
   Deploy Cluster sheets): per-WLD name/vCenter/NSX/connectivity/Supervisor/
@@ -178,7 +185,7 @@
   `workbook-cell-mapping.md` (replacing the "same as mgmt domain" placeholder).
   Closes #11.
 
-## v0.1.11 — 2026-07-01
+## v0.2.1 — 2026-07-01
 - `02-customer-intake.md` Platform (E) section 9.1 accuracy pass: VCF Operations
   and VCF Automation were captured as single "VIP FQDN + IP" entries, but in 9.1
   they are multi-node clusters. Corrected `E9` (3 analytics nodes + optional
@@ -189,7 +196,7 @@
   the Architect (A), Security (F) and Depot (G) sections against the workbook —
   no changes needed. Closes #10.
 
-## v0.1.10 — 2026-07-01
+## v0.2.0 — 2026-07-01
 - Verified the `03-multi-az-prep.md` stretched-vSAN figures against Broadcom
   vSAN 9.x docs and corrected two:
   - Witness RTT is **tiered by host count**, not a flat ≤200 ms: ≤200 ms up to
