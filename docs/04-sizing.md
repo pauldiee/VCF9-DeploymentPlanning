@@ -46,12 +46,14 @@ browser — no customer data leaves the page.
 
 ## What it does not model (yet)
 
-To keep v1 focused on the management-domain fleet, some optional components the
-workbook can add are **not** included, so the tool may under-count if you use
-them. Add their footprint manually, or fall back to the workbook:
+The tool models the full management-domain component set (SDDC Manager,
+vCenter, NSX Managers/Edges, AVI, SSP, VCFMS control/worker, VCF Operations,
+Cloud Proxy, VCF Automation, VCF Operations for Networks + collector, Log
+Management, Real-time Metrics, License Server, Software Depot, and the
+protection reserve). A few edge cases are still simplified — add their
+footprint manually or fall back to the workbook:
 
-- Management-side: Log Management, Real-time Metrics, Software Depot, Identity
-  Broker (the last two only apply to additional VCF instances).
+- Identity Broker (additional-instance only; served from the VCFMS cluster).
 - Per-workload-domain: Site Protection / SRM, AVI load balancer, Security
   Services Platform. Each workload domain currently contributes only its
   vCenter and (dedicated) NSX Managers.

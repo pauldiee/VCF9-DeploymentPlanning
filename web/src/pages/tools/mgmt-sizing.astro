@@ -106,9 +106,17 @@ const opt = (values: readonly string[]) => values;
           <label>VCF Operations for Networks
             <select id="opsNetSize">{opt(OPTIONS.opsNetSize).map((v) => <option>{v}</option>)}</select>
           </label>
+          <label>Log Management size
+            <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <label id="logsReplicasLabel" hidden>Log Management replicas
+            <input id="logsReplicas" type="number" min="1" step="1" />
+          </label>
           <label class="sizer__check"><input id="vcfOps" type="checkbox" /> VCF Operations</label>
           <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy (Ops collector)</label>
           <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
+          <label class="sizer__check"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
+          <label class="sizer__check"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
         </fieldset>
 
         <fieldset>
@@ -170,9 +178,9 @@ const opt = (values: readonly string[]) => values;
     values.map((v) => `<option${v === selected ? ' selected' : ''}>${v}</option>`).join('');
 
   // ---- bind top-level inputs to state ----
-  const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct'] as const;
-  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize'] as const;
-  const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation'] as const;
+  const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
+  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize', 'logsSize'] as const;
+  const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd'] as const;
 
   function hydrate() {
     for (const id of numIds) ($(id) as HTMLInputElement).value = String((state as any)[id]);
@@ -314,6 +322,9 @@ const opt = (values: readonly string[]) => values;
     $('compTable').querySelector('tbody')!.innerHTML = r.components
       .map((c) => `<tr><td>${c.name}</td><td>${c.nodes}</td><td>${gb(c.cpu)}</td><td>${gb(c.ram)}</td><td>${gb(c.disk)}</td></tr>`)
       .join('');
+
+    // Log Management replicas only apply when a size is chosen
+    ($('logsReplicasLabel') as HTMLElement).hidden = state.logsSize === 'Exclude';
 
     // derived (profile-fixed) component sizes
     $('derivedSizes').innerHTML = `Fixed by the deployment profile: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +

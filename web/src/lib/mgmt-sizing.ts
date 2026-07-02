@@ -37,9 +37,11 @@ const nsxtManagerCpu: SizeMap = { Extra_Small: 2, Small: 4, Medium: 6, Large: 12
 const nsxtManagerRam: SizeMap = { Extra_Small: 8, Small: 16, Medium: 24, Large: 48, XLarge: 96 };
 const nsxtManagerDisk: SizeMap = { Extra_Small: 300, Small: 300, Medium: 300, Large: 300, XLarge: 400 };
 
-const nsxtEdgeCpu: SizeMap = { 'NSX Edge Small': 2, 'NSX Edge Medium': 4, 'NSX Edge Large': 8, 'NSX Edge XLarge': 16 };
-const nsxtEdgeRam: SizeMap = { 'NSX Edge Small': 4, 'NSX Edge Medium': 8, 'NSX Edge Large': 32, 'NSX Edge XLarge': 64 };
-const nsxtEdgeDisk: SizeMap = { 'NSX Edge Small': 200, 'NSX Edge Medium': 200, 'NSX Edge Large': 200, 'NSX Edge XLarge': 200 };
+// NSX Edge and Virtual Network Appliance (VNA) share identical per-node
+// footprints in the workbook — the single edge-size input selects either family.
+const nsxtEdgeCpu: SizeMap = { 'NSX Edge Small': 2, 'NSX Edge Medium': 4, 'NSX Edge Large': 8, 'NSX Edge XLarge': 16, 'VNA Small': 2, 'VNA Medium': 4, 'VNA Large': 8, 'VNA XLarge': 16 };
+const nsxtEdgeRam: SizeMap = { 'NSX Edge Small': 4, 'NSX Edge Medium': 8, 'NSX Edge Large': 32, 'NSX Edge XLarge': 64, 'VNA Small': 4, 'VNA Medium': 8, 'VNA Large': 32, 'VNA XLarge': 64 };
+const nsxtEdgeDisk: SizeMap = { 'NSX Edge Small': 200, 'NSX Edge Medium': 200, 'NSX Edge Large': 200, 'NSX Edge XLarge': 200, 'VNA Small': 200, 'VNA Medium': 200, 'VNA Large': 200, 'VNA XLarge': 200 };
 
 const aviCpu: SizeMap = { Small: 6, Large: 16, 'X-Large': 16 };
 const aviRam: SizeMap = { Small: 32, Large: 48, 'X-Large': 64 };
@@ -71,6 +73,8 @@ const vcfmsWorkerRam: SizeMap = { Small: 24, Medium: 48, Large: 48 };
 const vcfmsWorkerDisk: SizeMap = { Small: 100, Medium: 100, Large: 100 };
 // First-instance VCFMS worker data-disk uplift, per deployment size
 const vcfmsWorkerDataDiskFirst: SizeMap = { Small: 2600, Medium: 3000, Large: 3702 };
+// vRealize Log Insight (Log Management) per-appliance disk — 575 GB at every size
+const VRLI_DISK = 575;
 
 const opsNetCpu: SizeMap = { Small: 4, Medium: 8, Large: 12 };
 const opsNetRam: SizeMap = { Small: 16, Medium: 32, Large: 48 };
@@ -95,10 +99,11 @@ export const OPTIONS = {
   vcenterSize: ['Tiny', 'Small', 'Medium', 'Large', 'XLarge'] as const,
   vcenterStorage: ['Default', 'Large', 'XLarge'] as const,
   nsxManagerSize: ['Extra_Small', 'Small', 'Medium', 'Large', 'XLarge'] as const,
-  nsxEdgeSize: ['Excluded', 'NSX Edge Small', 'NSX Edge Medium', 'NSX Edge Large', 'NSX Edge XLarge'] as const,
+  nsxEdgeSize: ['Excluded', 'NSX Edge Small', 'NSX Edge Medium', 'NSX Edge Large', 'NSX Edge XLarge', 'VNA Small', 'VNA Medium', 'VNA Large', 'VNA XLarge'] as const,
   aviSize: ['Excluded', 'Small', 'Large', 'X-Large'] as const,
   sspSize: ['Excluded', 'Medium', 'Large', 'X-Large'] as const,
   opsNetSize: ['Excluded', 'Small', 'Medium', 'Large'] as const,
+  logsSize: ['Exclude', 'Small', 'Medium', 'Large'] as const,
   nsxModel: ['Shared', 'Dedicated - Single Node', 'Dedicated - HA Cluster'] as const,
   gm: ['None', 'Active GM', 'Standby GM'] as const,
   clusterType: ['Standard', 'Stretched (multi-AZ)'] as const,
@@ -144,6 +149,10 @@ export interface SizingState {
   vcfOpsCollector: boolean;
   vcfAutomation: boolean;
   opsNetSize: string;
+  logsSize: string; // Log Management: 'Exclude' or Small/Medium/Large
+  logsReplicas: number; // Log Management replica count
+  vcfRtm: boolean; // Real-time Metrics
+  vcfSd: boolean; // Software Depot (adds disk only on an additional instance)
   // workload domains
   workloadDomains: WorkloadDomain[];
 }
@@ -173,6 +182,10 @@ export function defaultState(): SizingState {
     vcfOpsCollector: false,
     vcfAutomation: false,
     opsNetSize: 'Excluded',
+    logsSize: 'Exclude',
+    logsReplicas: 3,
+    vcfRtm: false,
+    vcfSd: false,
     workloadDomains: [],
   };
 }
@@ -334,6 +347,11 @@ export function components(s: SizingState): Component[] {
     });
   }
 
+  // License Server — present on the first instance when VCF Operations is deployed
+  if (s.instanceModel === 'First Instance' && s.vcfOps) {
+    list.push({ name: 'License Server', nodes: 1, cpu: 2, ram: 4, disk: 12 });
+  }
+
   // VCF Automation
   if (s.vcfAutomation) {
     const nodes = ha ? 3 : 1;
@@ -344,6 +362,37 @@ export function components(s: SizingState): Component[] {
       ram: vcfaRam[size] * nodes,
       disk: vcfaDisk[size] * nodes,
     });
+  }
+
+  // Log Management (vRealize Log Insight). Large doubles workers per replica;
+  // worker nodes size off the Log Management size, disk is per-replica vRLI.
+  if (s.logsSize !== 'Exclude' && s.logsReplicas > 0) {
+    const nodes = (s.logsSize === 'Large' ? 2 : 1) * s.logsReplicas;
+    list.push({
+      name: 'Log Management',
+      nodes,
+      cpu: vcfmsWorkerCpu[s.logsSize] * nodes,
+      ram: vcfmsWorkerRam[s.logsSize] * nodes,
+      disk: VRLI_DISK * s.logsReplicas,
+    });
+  }
+
+  // Real-time Metrics — worker nodes size off the deployment size
+  if (s.vcfRtm) {
+    const nodes = size === 'Large' ? 3 : 2;
+    list.push({
+      name: 'Real-time Metrics',
+      nodes,
+      cpu: vcfmsWorkerCpu[size] * nodes,
+      ram: vcfmsWorkerRam[size] * nodes,
+      disk: 205,
+    });
+  }
+
+  // Software Depot — on an additional instance it adds 1500 GB of storage
+  // (on the first instance it is served from the existing VCFMS cluster)
+  if (s.instanceModel === 'Additional Instance' && s.vcfSd) {
+    list.push({ name: 'Software Depot', nodes: 0, cpu: 0, ram: 0, disk: 1500 });
   }
 
   // VCF Operations for Networks (+ collector)
