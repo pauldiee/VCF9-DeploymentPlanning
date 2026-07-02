@@ -54,6 +54,13 @@ export const NAV: NavItem[] = [
     blurb: 'Fleet components deployed after bring-up: VCF Automation, Ops, and their network placement (Shared / Dedicated / NSX Overlay / VLAN Segment).',
   },
   {
+    slug: '06-deployment-plan',
+    step: 'Delivery',
+    label: 'Deployment Plan',
+    icon: 'sitemap',
+    blurb: 'An agile work breakdown (epics, stories, tasks) for the common VCF 9 deployment types; drop it into your scrum backlog.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

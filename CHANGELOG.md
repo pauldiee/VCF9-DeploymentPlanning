@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.5 — 2026-07-02
+- New **Deployment Plan** page (`docs/06-deployment-plan.md`): a generic **agile
+  work breakdown** (epics → stories → tasks, no dates) for the common VCF 9
+  deployment types (management-only, + workload domains, stretched/multi-AZ, +
+  Day-2 fleet) so customers can drop it into a scrum/agile backlog. A "deployment
+  types" table maps each type to the epics that apply; every epic links to the
+  detailed page that fills it in, with owners and acceptance criteria. Added a
+  sidebar **Delivery** step + README row.
+
 ## v0.6.4 — 2026-07-02
 - Sizer: fixed the **Import** toolbar control looking greyed-out. It's a
   `<label>`, so the global `.sizer label` rule (muted colour, `display: block`)
