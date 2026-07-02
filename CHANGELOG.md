@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.7.6 — 2026-07-03
+- **Specificity pass over every deployment-plan acceptance criterion** (doc +
+  `web/src/lib/deployment-plan.ts`). Replaced vague/cryptic wording with concrete,
+  checkable outcomes and named specifics instead of "gate" / "resolves" /
+  "compliant":
+  - **1.4** names the access (jump/bastion + out-of-band iDRAC/iLO/BMC) and the
+    "gate" (the full `prerequisites.md` checklist). (#54)
+  - **1.3** names which DNS must resolve (shipped in v0.7.5). Plus 1.1 (host
+    count/AZ split), 1.2, 2.1–2.4 (BGP params, A+PTR), 3.x, 4.x (schema-valid),
+    5.2 (added), 5.3 (vCenter/NSX), 6.1 (added; routing moved here), 6.4, 7.1/7.3
+    (added), 7.4 (storage-policy compliant + AZ-isolation test), 8.1–8.3 (added),
+    8.4, all E9 WLD stories, and 10.1/10.2 (added). Stretch/WLD acceptances now use
+    the same "healthy + storage-policy compliant; isolating one AZ keeps VMs
+    running" wording. No acceptance asserts Day-2-deferred certs/identity/licensing. (#55)
+
 ## v0.7.5 — 2026-07-03
 - Deployment-plan E1 story **1.3 acceptance** now specifies which DNS must
   resolve: forward (A) + reverse (PTR), both ways, for every management/fleet

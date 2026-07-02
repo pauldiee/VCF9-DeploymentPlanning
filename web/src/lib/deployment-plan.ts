@@ -57,7 +57,7 @@ const CORE_PRE: Epic[] = [
         id: '1.1',
         title: 'Hardware ready',
         tasks: ['Hosts on the VCG, matched spec, BOM confirmed.', 'Confirm CPU/RAM/storage per host against the sizing output (E3).'],
-        acceptance: 'Every host model on the Broadcom compatibility guide; even, matched counts.',
+        acceptance: 'All hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).',
       },
       {
         id: '1.2',
@@ -66,7 +66,7 @@ const CORE_PRE: Epic[] = [
           'Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.',
           'Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.',
         ],
-        acceptance: 'VLAN/MTU/BGP verified against the Step 1 plan (E2).',
+        acceptance: 'Required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the Step 1 plan (E2).',
       },
       {
         id: '1.3',
@@ -77,8 +77,8 @@ const CORE_PRE: Epic[] = [
       {
         id: '1.4',
         title: 'Access ready',
-        tasks: ['Jump host / management access into the environment.'],
-        acceptance: 'The prerequisite gate is fully green before any build starts.',
+        tasks: ['A jump/bastion host reaches the management network, and out-of-band (iDRAC / iLO / BMC) access to the hosts is available.'],
+        acceptance: 'The build team can reach the management network and host consoles; and the full prerequisites checklist (prerequisites.md — hardware, network, AD, DNS, NTP, CA, depot) is green before bring-up starts.',
       },
     ],
   },
@@ -88,10 +88,10 @@ const CORE_PRE: Epic[] = [
     owner: 'Network + AD/DNS/NTP',
     ref: '01-network-dns-plan.md',
     stories: [
-      { id: '2.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; no overlapping ranges.' },
-      { id: '2.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.'], acceptance: 'BGP parameters agreed with the fabric team.' },
-      { id: '2.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Every appliance FQDN resolves both ways.' },
-      { id: '2.4', title: 'Certificates', tasks: ['CA type, template, and signing approach decided.'], acceptance: 'CA reachable and the cert template validated.' },
+      { id: '2.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
+      { id: '2.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.'], acceptance: 'Edge AS, ToR AS, peer IPs, MD5 keys, BFD, and advertised/received routes agreed and documented with the fabric team.' },
+      { id: '2.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.' },
+      { id: '2.4', title: 'Certificates', tasks: ['CA type, template, and signing approach decided.'], acceptance: 'CA reachable; signing method and certificate template chosen, with a test issuance succeeding.' },
     ],
   },
   {
@@ -100,8 +100,8 @@ const CORE_PRE: Epic[] = [
     owner: 'Architect + all role teams',
     ref: '02-customer-intake.md, 04-sizing.md',
     stories: [
-      { id: '3.1', title: 'Role-based intake complete', tasks: ['Sections A–F answered by their owners.'], acceptance: 'Every intake question has an answer or an explicit N/A.' },
-      { id: '3.2', title: 'Sizing & host fit', tasks: ['Run the sizing calculator; confirm the fleet fits the proposed hosts at N-1.'], acceptance: 'Fit check passes (or hosts adjusted); sizing signed off.' },
+      { id: '3.1', title: 'Role-based intake complete', tasks: ['Sections A–F answered by their owners.'], acceptance: 'Every intake question answered or explicitly marked N/A by its owner.' },
+      { id: '3.2', title: 'Sizing & host fit', tasks: ['Run the sizing calculator; confirm the fleet fits the proposed hosts at N-1.'], acceptance: 'Sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.' },
     ],
   },
   {
@@ -110,8 +110,8 @@ const CORE_PRE: Epic[] = [
     owner: 'Architect + Platform',
     ref: 'workbook-cell-mapping.md',
     stories: [
-      { id: '4.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: 'Workbook complete; no red validation warnings.' },
-      { id: '4.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'JSON generated and reviewed against the plan.' },
+      { id: '4.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: "Workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner)." },
+      { id: '4.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'Deployment JSON generated, schema-valid, and reviewed against the plan.' },
     ],
   },
   {
@@ -133,12 +133,13 @@ const CORE_PRE: Epic[] = [
         tasks: [
           'Deploy the Installer on a management-domain host using the IP + FQDN planned for SDDC Manager (it switches into SDDC Manager at bring-up, not a throwaway IP); verify it reaches the ESXi management network.',
         ],
+        acceptance: 'VCF Installer deployed, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.',
       },
       {
         id: '5.3',
         title: 'Deploy the management domain',
         tasks: ['Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.'],
-        acceptance: 'Bring-up completes; SDDC Manager healthy; vSAN datastore online.',
+        acceptance: 'Bring-up completes; vCenter, SDDC Manager, and NSX healthy; vSAN datastore online.',
       },
     ],
   },
@@ -147,7 +148,7 @@ const CORE_PRE: Epic[] = [
     title: 'Management domain configuration',
     owner: 'Platform + Network + Security',
     stories: [
-      { id: '6.1', title: 'NSX edges & north-south', tasks: ['Deploy edges; establish BGP peering to the ToRs; verify routes.'] },
+      { id: '6.1', title: 'NSX edges & north-south', tasks: ['Deploy edges; establish BGP peering to the ToRs; verify routes.'], acceptance: 'Edges deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.' },
       {
         id: '6.2',
         title: 'Certificates (optional / partial here)',
@@ -166,7 +167,7 @@ const CORE_PRE: Epic[] = [
         id: '6.4',
         title: 'Backup & lifecycle',
         tasks: ['Configure SFTP backups; connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).'],
-        acceptance: 'North-south routing verified; SFTP backups run; fleet-lifecycle depot connected. (Certificates, identity & licensing are finalized Day-2 — see E8 8.5.)',
+        acceptance: 'A test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.5.)',
       },
     ],
   },
@@ -182,7 +183,12 @@ const E7_MGMT_STRETCH: Epic = {
   owner: 'Network + Architect + Storage',
   ref: '03-multi-az-prep.md',
   stories: [
-    { id: '7.1', title: 'Inter-AZ fabric', tasks: ['Verify <5 ms RTT, ≥10 Gbps, MTU 9000, HA L3 gateway between AZs.'] },
+    {
+      id: '7.1',
+      title: 'Inter-AZ fabric',
+      tasks: ['Verify <5 ms RTT, ≥10 Gbps, MTU 9000, HA L3 gateway between AZs.'],
+      acceptance: 'Inter-AZ link measured under 5 ms RTT, at least 10 Gbps, MTU 9000 end-to-end; HA L3 gateway between AZs verified.',
+    },
     {
       id: '7.2',
       title: 'Install, configure & commission the second-AZ hosts',
@@ -195,12 +201,13 @@ const E7_MGMT_STRETCH: Epic = {
       id: '7.3',
       title: 'Witness site (management)',
       tasks: ['Deploy the vSAN witness appliance for the management cluster at the third site; route it to both AZ ESX-management networks.'],
+      acceptance: 'Management witness appliance deployed at the third site and reachable from both AZ ESX-management networks.',
     },
     {
       id: '7.4',
       title: 'Stretch the cluster',
       tasks: ['Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity).'],
-      acceptance: 'Stretched cluster compliant; an AZ-failure test survives on the surviving site.',
+      acceptance: 'vSAN reports the stretched cluster healthy and storage-policy compliant; isolating one AZ keeps VMs running on the surviving site.',
     },
   ],
 };
@@ -213,7 +220,7 @@ const E8_DAY2: Epic = {
   owner: 'Platform',
   ref: '05-day2-deployments.md',
   stories: [
-    { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment; build the network if non-shared.'] },
+    { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment; build the network if non-shared.'], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
     {
       id: '8.2',
       title: 'VCF Operations',
@@ -221,9 +228,10 @@ const E8_DAY2: Epic = {
         'Deploy Operations (+ Cloud Proxy, License Server).',
         'Decide the cluster address: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so if a VIP is wanted, provision the external LB and add its FQDN to the cert SAN first.',
       ],
+      acceptance: 'VCF Operations cluster up and healthy; its cluster address (floating IP, or external-LB VIP) is reachable.',
     },
-    { id: '8.3', title: 'VCF Automation', tasks: ['Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.'] },
-    { id: '8.4', title: 'Ops for Logs / Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed.'], acceptance: 'Each Day-2 component healthy; the fleet synthetic check passes.' },
+    { id: '8.3', title: 'VCF Automation', tasks: ['Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.'], acceptance: 'VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.' },
+    { id: '8.4', title: 'Ops for Logs / Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
     {
       id: '8.5',
       title: 'Certificates, identity & licensing (full fleet)',
@@ -242,9 +250,9 @@ const E10_HANDOVER: Epic = {
   title: 'Validation & handover',
   owner: 'Architect + all teams',
   stories: [
-    { id: '10.1', title: 'Health check', tasks: ['Run a post-deploy health check of the live environment.'] },
-    { id: '10.2', title: 'As-built', tasks: ['Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).'] },
-    { id: '10.3', title: 'Handover', tasks: ['Walk the customer through operations and hand over.'], acceptance: 'Health check clean; as-built delivered; customer sign-off.' },
+    { id: '10.1', title: 'Health check', tasks: ['Run a post-deploy health check of the live environment.'], acceptance: 'Post-deploy health check run; no critical findings (or all triaged).' },
+    { id: '10.2', title: 'As-built', tasks: ['Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).'], acceptance: 'As-built captured — FQDNs, IPs, VLANs recorded; passwords stored in the secret store.' },
+    { id: '10.3', title: 'Handover', tasks: ['Walk the customer through operations and hand over.'], acceptance: 'Health check clean; as-built delivered; customer sign-off received.' },
   ],
 };
 
@@ -266,26 +274,27 @@ function wldEpic(w: Wld, index: number): Epic {
       owner: 'Platform + Network + Storage',
       ref: '02-customer-intake.md section H, 03-multi-az-prep.md',
       stories: [
-        { id: '9.1', title: 'WLD network prep (per-AZ)', tasks: ['Provision the per-WLD VLANs/subnets across both AZs (per-AZ networks) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'] },
+        { id: '9.1', title: 'WLD network prep (per-AZ)', tasks: ['Provision the per-WLD VLANs/subnets across both AZs (per-AZ networks) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'], acceptance: 'Per-WLD VLANs/subnets provisioned across both AZs; the 5 mgmt-subnet IPs reserved; DNS in place.' },
         {
           id: '9.2',
           title: 'Prepare & commission the WLD hosts (both AZs)',
           tasks: [`Image the WLD hosts in both AZs with the supported ESXi ISO (${hostPrep}); configure the per-AZ management networks, DNS, NTP; then commission them into SDDC Manager.`],
           acceptance: 'WLD hosts in both AZs reachable, matched ESXi build, commissioned in SDDC Manager.',
         },
-        { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'] },
+        { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
         {
           id: '9.4',
           title: 'WLD witness',
           tasks: ['Deploy a dedicated vSAN witness appliance for THIS WLD at the third site (one witness per stretched cluster — separate from the management witness); route it to both AZ ESX-management networks.'],
+          acceptance: 'Dedicated WLD witness deployed at the third site and reachable from both AZ ESX-management networks.',
         },
         {
           id: '9.5',
           title: 'Stretch the WLD cluster',
           tasks: ['Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity). Edge stretched only under NSX Centralized connectivity.'],
-          acceptance: 'Stretched WLD compliant; an AZ-failure test survives on the surviving site.',
+          acceptance: 'vSAN reports the stretched WLD healthy and storage-policy compliant; isolating one AZ keeps VMs running on the surviving site.',
         },
-        { id: '9.6', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; workloads can be placed.' },
+        { id: '9.6', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
       ],
     };
   }
@@ -296,15 +305,15 @@ function wldEpic(w: Wld, index: number): Epic {
     owner: 'Platform + Network',
     ref: '02-customer-intake.md section H',
     stories: [
-      { id: '9.1', title: 'WLD network prep', tasks: ['Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'] },
+      { id: '9.1', title: 'WLD network prep', tasks: ['Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'], acceptance: 'Per-WLD VLANs/subnets provisioned; the 5 mgmt-subnet IPs reserved; DNS in place.' },
       {
         id: '9.2',
         title: 'Prepare & commission the WLD hosts',
         tasks: [`Image the WLD hosts with the supported ESXi ISO (${hostPrep}); configure the management network, DNS, NTP; then commission them into SDDC Manager.`],
         acceptance: 'WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.',
       },
-      { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'] },
-      { id: '9.4', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; workloads can be placed.' },
+      { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
+      { id: '9.4', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
     ],
   };
 }
@@ -334,7 +343,7 @@ export function typeLabel(sel: Selection): string {
   return parts.join(' + ');
 }
 
-/** Comma-list of included epic ids, e.g. "E1–E6, E8, E9, E7, E10". */
+/** Comma-list of included epic ids, e.g. "E1–E6, E7, E8, E9, E10". */
 export function includedEpicList(sel: Selection): string {
   return selectedEpics(sel)
     .map((e) => e.id)
