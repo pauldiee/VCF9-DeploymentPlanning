@@ -86,6 +86,33 @@ Operations *on* for a greenfield fleet, which raises these figures):
 > the tool doubles vSAN raw for the dual-site mirror, but the witness, latency
 > budgets, and per-AZ networking still need the multi-AZ prep page.
 
+## Validation against Broadcom TechDocs
+
+The footprints are transcribed from the pinned workbook; they were cross-checked
+against Broadcom TechDocs (issue #16). Results:
+
+- **vCenter** (vCPU/RAM), **NSX Manager** (Extra_Small–Large), and **NSX Edge**
+  (all sizes) **match** the current vSphere 9 / NSX docs exactly.
+- **AVI load balancer — the workbook diverges from the real NSX ALB Controller
+  sizes.** The workbook (and so this tool) uses Small 6/32/**512**, Large
+  16/48/**1400**, X-Large 16/64/**1750**. The authoritative
+  [NSX ALB Controller ladder](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/30-2/vmware-avi-load-balancer-installation-guide/preparing-for-installation/nsx-advanced-load-balancer-controller-sizing.html)
+  is **Small 6/32/128, Medium 10/32/256, Large 16/48/512** — i.e. the workbook's
+  **disk figures are high**, it has **no Medium tier**, and its **"X-Large" is
+  not a real controller size** (Large is the top). vCPU/RAM for Small/Large still
+  line up. Treat AVI sizing here as indicative; confirm against the NSX ALB
+  install guide for the real controller footprint.
+- **vSAN capacity math** — OSA **×2** (FTT=1 mirror), the **30%** rebuild/ops
+  reserve, and the stretched **×2** mirror all match the vSAN design guidance.
+  The **ESA ×1.5** multiplier reflects ESA's adaptive RAID-5 efficiency, *not* a
+  RAID-1 mirror (which is ×2) — reasonable as a default, but size for ×2 if you
+  pin FTT=1 **RAID-1** on the management cluster.
+- **vCenter disk** figures and the **NSX Manager XLarge** row reflect the pinned
+  workbook revision and may differ from later 9.1 point releases.
+- **VCF Operations / Automation / VCFMS / Cloud Proxy / Ops-for-Networks** come
+  from the workbook's own reference tables; no external per-size Broadcom table
+  was available to cross-check — validate against the workbook itself.
+
 ## Source
 
 Figures come from `reference/vcf-9.1-planning-and-preparation-workbook.xlsx`

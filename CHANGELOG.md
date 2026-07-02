@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.2 — 2026-07-02
+- `04-sizing.md`: added a **"Validation against Broadcom TechDocs"** section
+  (issue #16). vCenter (vCPU/RAM), NSX Manager, and NSX Edge match the docs
+  exactly; the vSAN math (OSA ×2, 30% reserve, stretched ×2) checks out, with a
+  note that ESA ×1.5 reflects adaptive RAID-5 not a RAID-1 mirror. **AVI is the
+  outlier** — the workbook's controller disk sizes are high, it lacks a Medium
+  tier, and its "X-Large" isn't a real NSX ALB Controller size (real ladder:
+  Small 6/32/128, Medium 10/32/256, Large 16/48/512). Documented, with sources.
+
 ## v0.6.1 — 2026-07-02
 - GitLab Pages base fix. The instance serves project Pages at a **unique-domain
   path** (`/<project>-<hash>`, e.g. `…/vcf9-deploymentplanning-9b6f07`), but the
