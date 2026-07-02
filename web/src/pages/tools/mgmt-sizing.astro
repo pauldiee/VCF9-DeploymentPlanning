@@ -538,6 +538,9 @@ const opt = (values: readonly string[]) => values;
   }
 
   for (const id of [...numIds, ...selIds, ...chkIds]) $(id).addEventListener('input', recalc);
+  // Guard the Log Management replica field: clamp to the per-size min..19 on
+  // commit (blur / enter / spinner) so an out-of-range typed value can't stick.
+  $('logsReplicas').addEventListener('change', () => { syncLogsReplicas(); recalc(); });
   if (!loadFromHash()) {
     hydrate();
     renderWlds();

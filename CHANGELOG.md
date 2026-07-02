@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.7 — 2026-07-02
+- Sizer: guard the **Log Management replica** field itself. The engine already
+  clamped for the calculation, but a typed out-of-range value (e.g. 1 replica on
+  a Medium profile, min 3) stuck in the input. Now the field clamps to the
+  per-size min..19 on commit (blur / enter / spinner).
+
 ## v0.4.6 — 2026-07-02
 - `03-multi-az-prep.md`: corrected the **witness traffic separation** networking
   to match the Broadcom VCF design (verified against *vSAN Design for VCF* +
