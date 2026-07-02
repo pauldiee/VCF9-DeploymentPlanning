@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.3 — 2026-07-03
+- Deployment-plan E6 6.4 refinements (`docs/06-deployment-plan.md` + mirrored
+  `web/src/lib/deployment-plan.ts`):
+  - **Licensing moved to Day-2.** Dropped "apply licensing" from 6.4; folded it
+    into the E9 9.5 full-fleet finalization (now *Certificates, identity &
+    licensing*), applied via VCF Operations. (#49)
+  - **Depot clarified.** 6.4's depot step is the **fleet-lifecycle** (fleet-wide
+    LCM) depot — SDDC Manager already has its own depot from bring-up (E5), so
+    this is not a re-do. (#50)
+
 ## v0.7.2 — 2026-07-02
 - Deployment-plan E4 story **4.1 (fill the P&P workbook)** now points to
   [Coscia's VCF Planner](https://vcfplanning.lcoscia.fr/) as an easier fillable

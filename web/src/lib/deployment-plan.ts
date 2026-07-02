@@ -165,8 +165,8 @@ const CORE_PRE: Epic[] = [
       {
         id: '6.4',
         title: 'Backup & lifecycle',
-        tasks: ['Configure SFTP backups; connect the depot; apply licensing.'],
-        acceptance: 'North-south routing verified; SFTP backups run; depot connected; licensing applied. (Full fleet certificates + AD SSO are finalized Day-2 — see E9 9.5.)',
+        tasks: ['Configure SFTP backups; connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).'],
+        acceptance: 'North-south routing verified; SFTP backups run; fleet-lifecycle depot connected. (Certificates, identity & licensing are finalized Day-2 — see E9 9.5.)',
       },
     ],
   },
@@ -224,11 +224,11 @@ const E9_DAY2: Epic = {
     { id: '9.4', title: 'Ops for Logs / Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed.'], acceptance: 'Each Day-2 component healthy; the fleet synthetic check passes.' },
     {
       id: '9.5',
-      title: 'Certificates & identity (full fleet)',
+      title: 'Certificates, identity & licensing (full fleet)',
       tasks: [
-        'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, and complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3).',
+        'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3), and apply licensing across the fleet (via VCF Operations).',
       ],
-      acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works.',
+      acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.',
     },
   ],
 };
