@@ -41,7 +41,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        with:
-          # GitHub Pages deploy backend can sit in `deployment_queued` under
-          # congestion; the default 10-min poll times out. Give it 20 min.
-          timeout: 1200000
