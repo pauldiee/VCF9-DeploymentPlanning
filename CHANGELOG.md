@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.9 — 2026-07-02
+- **GitLab Pages** publishing for internal visibility. Added `.gitlab-ci.yml`
+  (`pages` job: build `web/` → `public/`) mirroring the GitHub Actions deploy, and
+  made the Astro `site`/`base` env-configurable (`SITE_URL`/`SITE_BASE`) so one
+  codebase serves both — GitHub uses the defaults, GitLab sets the base to the
+  project path. Verified an override build emits GitLab paths with zero
+  GitHub-base leftovers. README documents enabling Pages + the base caveat.
+
 ## v0.5.8 — 2026-07-02
 - Landing page: dropped the numeric badge (01–07) from the workflow cards — it
   clashed with the step labels (card "04" was labelled "Step 3"). Cards now show

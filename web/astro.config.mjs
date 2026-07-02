@@ -1,9 +1,12 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-// Project page: https://pauldiee.github.io/VCF9-DeploymentPlanning/
-const SITE = 'https://pauldiee.github.io';
-const BASE = '/VCF9-DeploymentPlanning';
+// Deploy target is env-configurable so the same build serves GitHub Pages
+// (defaults below) and GitLab Pages (the `.gitlab-ci.yml` job sets SITE_URL /
+// SITE_BASE for the ITQ GitLab instance). BASE is the URL path prefix; SITE the
+// origin. Both feed the doc-link rewriter and `import.meta.env.BASE_URL`.
+const SITE = process.env.SITE_URL || 'https://pauldiee.github.io';
+const BASE = process.env.SITE_BASE || '/VCF9-DeploymentPlanning';
 
 /**
  * Rewrite in-repo markdown cross-links (e.g. `01-network-dns-plan.md`,

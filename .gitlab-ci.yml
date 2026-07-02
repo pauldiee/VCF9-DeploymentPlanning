@@ -1,0 +1,37 @@
+# GitLab CI/CD — publishes the ITQ-branded Astro site to GitLab Pages for
+# internal visibility, mirroring what .github/workflows/deploy.yml does for
+# GitHub Pages. The two are independent: GitHub Actions runs on GitHub, this
+# runs on the ITQ GitLab. Requires GitLab Pages to be enabled on the instance
+# and the project (Settings → Pages).
+#
+# The Astro `base` (URL path prefix) must match where GitLab serves the site.
+# SITE_BASE defaults to the project path (/<project>), which is the usual
+# GitLab project-Pages layout. If your instance uses unique / namespace domains
+# where the site is served at the root, set SITE_BASE to "/" (or "").
+
+stages:
+  - deploy
+
+pages:
+  stage: deploy
+  image: node:20
+  variables:
+    SITE_BASE: "/$CI_PROJECT_NAME"
+  script:
+    # Derive the Pages origin for Astro `site` (best-effort; non-fatal if unset).
+    - export SITE_URL="$(node -e "try{console.log(new URL(process.env.CI_PAGES_URL).origin)}catch(e){console.log('')}")"
+    - cd web
+    - npm ci
+    - npm run build
+    - cd ..
+    - rm -rf public
+    - mv web/dist public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - web/**/*
+        - docs/**/*
+        - .gitlab-ci.yml

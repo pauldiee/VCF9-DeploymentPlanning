@@ -33,7 +33,7 @@ This repo flips the order:
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
-| `web/`                              | ITQ-branded Astro site (GitHub Pages) rendering the `docs/` in place |
+| `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 
 ## Web version
 
@@ -52,6 +52,14 @@ npm run dev      # http://localhost:4321/VCF9-DeploymentPlanning/
 
 A GitHub Actions workflow (`.github/workflows/deploy.yml`) rebuilds and deploys
 on every push to `main` that touches `web/` or `docs/`.
+
+For **internal visibility**, the same site also publishes to **GitLab Pages** on
+the ITQ GitLab mirror via `.gitlab-ci.yml`. The Astro `site` / `base` are
+env-configurable (`SITE_URL` / `SITE_BASE`), so one codebase serves both: GitHub
+uses the defaults, and the GitLab job sets the base to the project path. GitLab
+Pages must be enabled on the project (Settings → Pages); if the instance serves
+at a path other than `/<project>` (e.g. a unique/namespace domain at the root),
+set `SITE_BASE` accordingly in `.gitlab-ci.yml`.
 
 ## Workflow
 
