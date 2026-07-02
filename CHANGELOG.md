@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.19 — 2026-07-02
+- `05-day2-deployments.md`: read all the Broadcom option pages and expanded
+  section C with accurate per-placement detail — Shared VLAN (no isolation, not
+  DR-suited), Dedicated VLAN (dedicated port group; Cloud Proxy stays on VM-mgmt),
+  NSX Overlay (Ops/Automation/Ops-for-Networks/License Server on the overlay via
+  Edge cluster + Tier-0 BGP + Tier-1; Cloud Proxy on VLAN), NSX VLAN Segment, and
+  the stretched-overlay DR model (NSX Federation + Global Manager primary/
+  secondary for IP mobility). Added common prerequisites (unique FQDN→IP,
+  dual-stack A/AAAA, binaries to VCF Installer).
+- Fixed the spurious `Duplicate id` build warning: the docs/samples content
+  collections used a relative `base` outside the project root, which the `dev`
+  and `build` content syncs tracked under two normalized paths. Anchored both to
+  an absolute URL (`new URL('../../docs', import.meta.url)`) so every file has one
+  canonical id. Verified clean under a live dev-cache + build collision.
+
 ## v0.1.18 — 2026-07-02
 - Corrected the Day-2 network-placement options in `05-day2-deployments.md`. The
   first cut wrongly framed the choice as "Shared Management Network vs. NSX VPC"

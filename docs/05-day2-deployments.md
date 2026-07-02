@@ -60,28 +60,28 @@ with the Broadcom design library's four *fleet-level components* network models
 ([Fleet-Level Components Networking Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html))
 and the [custom-networking deployment guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html):
 
-| Placement (Day-N sheet)          | Design-library model                              | What it is                                                                                       |
-| -------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Shared Management Network**    | Shared VLAN                                       | Fleet components on the **same** vDS port group as vCenter / NSX / SDDC Manager; VCF Automation from the `/29` (intake `B5`). Simplest — no new network. |
-| **Dedicated Management Network** | Dedicated VLAN                                    | Fleet components on a **separate, dedicated** vDS port group (VLAN-backed).                        |
-| **NSX Overlay Segment**          | Dedicated VLAN **+** NSX Overlay Segment (hybrid) | Ops + Automation on an NSX **overlay** (Geneve) segment; **Cloud Proxy / collectors stay on the VLAN**. Needs an NSX Edge cluster with a centralized transit gateway and a Tier-1 (Active/Standby HA). |
-| **NSX VLAN Segment**             | (VLAN-backed NSX segment)                          | Fleet components on an NSX **VLAN-backed** segment.                                               |
+| Placement (Day-N sheet)          | Design-library model                              | Where components land + key requirements                                                          |
+| -------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Shared Management Network**    | Shared VLAN                                       | All fleet components on the **same** vDS port group as vCenter / NSX / SDDC Manager; VCF Automation from the `/29` (intake `B5`). Simplest, no new network. **No logical isolation** (NSX DFW can help); **not suited for DR** — failover testing unsupported. Multi-AZ: stretch the VLAN. |
+| **Dedicated Management Network** | Dedicated VLAN                                    | Fleet components on a **separate, dedicated** vDS port group / VLAN — create it first. **Cloud Proxy stays on the VM-mgmt network.** Physical firewall can secure it; for DR/stretched the VLAN must be routable across AZs/regions (IP mobility). |
+| **NSX Overlay Segment**          | Dedicated VLAN **+** NSX Overlay Segment (hybrid) | VCF management **services** on a VLAN; **VCF Operations, Automation, Ops-for-Networks, License Server** on an NSX **overlay** (Geneve) segment; **Cloud Proxy stays on VM-mgmt**. Needs an **NSX Edge cluster + Tier-0** (BGP to physical, advertise segments), a **Tier-1** linked to it, and the segment on the management overlay transport zone. |
+| **NSX VLAN Segment**             | (VLAN-backed NSX segment)                          | Fleet components on an NSX **VLAN-backed** segment (NSX-managed, no overlay/Edge routing).          |
 
 There is no NSX VPC option — placement is one of the four above. The design
 library adds a fifth, DR-oriented model — *Dedicated VLAN + NSX **Stretched**
-Overlay Segment* — for multi-region / stretched deployments; see
-`03-multi-az-prep.md`.
+Overlay Segment* — which stretches the overlay via **NSX Federation** with a
+**Global Manager** (primary/secondary) so VCF Operations keeps its IP on
+region failover (no DNS repoint); see `03-multi-az-prep.md`.
 
 The point of the non-shared options is to **separate user-facing networks from
 management networks** for regulatory / security requirements.
 
-**NSX Overlay Segment prerequisites** (per the deployment guidance), before deployment:
-
-- The initial VCF fleet / instance deployment completed
-- An **NSX Edge cluster with a centralized transit gateway**
-- An **NSX Tier-1 gateway** (Active/Standby HA)
-- The overlay segment created on the management-domain transport zone
-- Cloud Proxy appliances remain on the VM-management network
+**Common prerequisites** (all placements): the initial VCF fleet / instance
+deployment is complete; component binaries downloaded to VCF Installer; load
+balancer deployed if used; every appliance FQDN resolves to a **unique** IP
+(dual-stack: both A and AAAA). The **NSX Overlay** path additionally needs the
+Edge cluster, Tier-0 (BGP), Tier-1, and overlay segment above; the **Dedicated**
+path needs the dedicated port group + VLAN created first.
 
 For any non-shared placement, the sheet splits the network into `localRegion`
 (the VLAN side — Ops collectors / Cloud Proxy) and `xRegion` (Ops + Automation),
