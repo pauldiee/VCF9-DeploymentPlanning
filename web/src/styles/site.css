@@ -416,14 +416,7 @@ body {
 .planning-card__top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: var(--space-4);
-}
-.planning-card__num {
-  font-size: var(--fs-h1);
-  font-weight: var(--fw-bold);
-  color: var(--itq-royal-20);
-  line-height: 1;
 }
 .planning-card__icon { font-size: 1.5rem; color: var(--itq-orange); }
 .planning-card__step { color: var(--text-muted); }

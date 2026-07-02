@@ -43,10 +43,9 @@ import { docHref as href } from '../lib/path';
       <h2 class="workflow__heading">The planning flow, in order</h2>
       <div class="card-grid">
         {
-          NAV.map((item, i) => (
+          NAV.map((item) => (
             <a class="planning-card" href={href(item.slug)}>
               <div class="planning-card__top">
-                <span class="planning-card__num">{String(i + 1).padStart(2, '0')}</span>
                 <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
               </div>
               <span class="planning-card__step itq-eyebrow">{item.step}</span>

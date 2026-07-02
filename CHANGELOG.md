@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.8 — 2026-07-02
+- Landing page: dropped the numeric badge (01–07) from the workflow cards — it
+  clashed with the step labels (card "04" was labelled "Step 3"). Cards now show
+  the icon + step label (Gate, Step 1…Reference) only. Removed the now-unused
+  `.planning-card__num` style.
+
 ## v0.5.7 — 2026-07-02
 - Sizer: removed all **visible em-dashes** from the tool (title, lede, hints,
   guardrail text, toolbar toasts, per-host/headroom placeholders → `n/a`, and the
