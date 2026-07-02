@@ -140,20 +140,23 @@ export const EPICS: Epic[] = [
     stories: [
       {
         id: '5.1',
+        title: 'Install & configure the management hosts',
+        tasks: [
+          'Image each host with the supported ESXi ISO; set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.',
+        ],
+        acceptance: 'Every host reachable on the management network with the matched ESXi build; DNS + NTP correct.',
+      },
+      {
+        id: '5.2',
         title: 'Stage the VCF Installer',
         tasks: [
           'Deploy the Installer on a management-domain host using the IP + FQDN planned for SDDC Manager (it switches into SDDC Manager at bring-up, not a throwaway IP); verify it reaches the ESXi management network.',
         ],
       },
       {
-        id: '5.2',
-        title: 'Commission hosts',
-        tasks: ['Prep/validate the ESXi hosts for the management domain.'],
-      },
-      {
         id: '5.3',
         title: 'Deploy the management domain',
-        tasks: ['Run bring-up (vCenter, SDDC Manager, NSX, vSAN); submit the JSON.'],
+        tasks: ['Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.'],
         acceptance: 'Bring-up completes; SDDC Manager healthy; vSAN datastore online.',
       },
     ],
@@ -175,8 +178,10 @@ export const EPICS: Epic[] = [
       },
       {
         id: '6.3',
-        title: 'Identity & roles',
-        tasks: ['Add the AD identity source; map admin/operator/viewer groups.'],
+        title: 'Identity & roles (optional, not recommended here)',
+        tasks: [
+          'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker (a Day-2 component; see E9 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
+        ],
       },
       {
         id: '6.4',
@@ -230,6 +235,14 @@ export const EPICS: Epic[] = [
       },
       {
         id: '8.3',
+        title: 'Install, configure & commission the second-AZ hosts',
+        tasks: [
+          'Image the AZ2 hosts with the supported ESXi ISO; configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then commission them into SDDC Manager, ready for the stretch.',
+        ],
+        acceptance: 'AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned and available in SDDC Manager.',
+      },
+      {
+        id: '8.4',
         title: 'Stretch the cluster',
         tasks: ['Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity).'],
         acceptance: 'Stretched cluster compliant; an AZ-failure test survives on the surviving site.',

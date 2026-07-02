@@ -79,15 +79,16 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
   - *Acceptance:* JSON generated and reviewed against the plan.
 
 ### E5 — Management domain bring-up  ·  Owner: Plat
-- **Story 5.1 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network.
-- **Story 5.2 — Commission hosts.** Prep/validate the ESXi hosts for the management domain.
-- **Story 5.3 — Deploy the management domain.** Run bring-up (vCenter, SDDC Manager, NSX, vSAN); submit the JSON.
+- **Story 5.1 — Install & configure the management hosts.** Image each host with the supported **ESXi ISO**; set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.
+  - *Acceptance:* every host reachable on the management network with the matched ESXi build; DNS + NTP correct.
+- **Story 5.2 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network.
+- **Story 5.3 — Deploy the management domain.** Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.
   - *Acceptance:* bring-up completes; SDDC Manager healthy; vSAN datastore online.
 
 ### E6 — Management domain configuration  ·  Owner: Plat + Net + Sec
 - **Story 6.1 — NSX edges & north-south.** Deploy edges; establish BGP peering to the ToRs; verify routes.
 - **Story 6.2 — Certificates.** Replace with CA-signed certificates across the fleet.
-- **Story 6.3 — Identity & roles.** Add the AD identity source; map admin/operator/viewer groups.
+- **Story 6.3 — Identity & roles (optional, *not recommended* at this stage).** You *can* bind **vCenter SSO** directly to AD/LDAP now for early management access, but the **recommended** path is fleet-wide SSO via the **VCF Identity Broker**, a Day-2 component (see E9 / [`05-day2-deployments.md`](05-day2-deployments.md)). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, and map admin/operator/viewer groups if you do.
 - **Story 6.4 — Backup & lifecycle.** Configure SFTP backups; connect the depot; apply licensing.
   - *Acceptance:* north-south routing verified; certs trusted; SSO login works; backups run.
 
@@ -114,7 +115,9 @@ Ref: [`03-multi-az-prep.md`](03-multi-az-prep.md)
 
 - **Story 8.1 — Witness site.** Deploy the vSAN witness appliance at the third site; route it to both AZ ESX-management networks.
 - **Story 8.2 — Inter-AZ fabric.** Verify <5 ms RTT, ≥10 Gbps, MTU 9000, HA L3 gateway between AZs.
-- **Story 8.3 — Stretch the cluster.** Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity).
+- **Story 8.3 — Install, configure & commission the second-AZ hosts.** Image the AZ2 hosts with the supported **ESXi ISO**; configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then **commission** them into SDDC Manager, ready for the stretch.
+  - *Acceptance:* AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned and available in SDDC Manager.
+- **Story 8.4 — Stretch the cluster.** Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity).
   - *Acceptance:* stretched cluster compliant; an AZ-failure test survives on the surviving site.
 
 ### E9 — Day-2 fleet deployment  ·  Type D  ·  Owner: Plat

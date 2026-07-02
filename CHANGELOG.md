@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.6.9 — 2026-07-02
+Deployment-plan sequencing / dependency fixes (`docs/06-deployment-plan.md` +
+the mirrored structured data in `web/src/lib/deployment-plan.ts`):
+- **E5 (management domain bring-up) story order** was backward. ESXi host
+  install/config now comes first: **5.1 Install & configure the management
+  hosts** (image with the ESXi ISO; set mgmt VMkernel IP/VLAN, DNS, NTP, root;
+  match the BOM build), then **5.2 Stage the VCF Installer**, then **5.3 Deploy
+  the management domain** (Installer validates the prepared hosts, then builds
+  vCenter/SDDC Manager/NSX/vSAN). Replaces the vague "Commission hosts" step. (#42)
+- **E6 story 6.3 (identity)** assumed the **VCF Identity Broker**, which is a
+  Day-2 component not yet installed at bring-up. Reworked as **optional and not
+  recommended** at this stage: the recommended path is fleet-wide SSO via the
+  Identity Broker Day-2 (E9); bind vCenter SSO to AD directly here only if AD
+  admin access is needed before the fleet is up. (#43)
+- **E8 (stretched / multi-AZ)** was missing host prep. Added **8.3 Install,
+  configure & commission the second-AZ hosts** (ESXi ISO, per-AZ management
+  network, commission into SDDC Manager) before **8.4 Stretch the cluster**. (#44)
+
 ## v0.6.8 — 2026-07-02
 - Added an **interactive Deployment Plan export tool**
   (`web/src/pages/tools/deployment-plan.astro`, `web/src/lib/deployment-plan.ts`).
