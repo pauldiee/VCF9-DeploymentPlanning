@@ -18,7 +18,7 @@ first WLD — duplicate it for additional WLDs / clusters.
 | # | Traffic                        | VLAN ID | CIDR (IPv4)       | CIDR (IPv6, optional) | MTU  | Gateway          | Notes                                          |
 | - | ------------------------------ | ------- | ----------------- | --------------------- | ---- | ---------------- | ---------------------------------------------- |
 | 1 | ESX Management                 |         | `/24`             |                       | 1500 |                  | ESXi host mgmt VMKs. The VCF Installer must be able to **reach / route to** this network to commission the hosts (it does not live here) |
-| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | Largest subnet — appliances + two reserved blocks; see carve-out below. The **VCF Installer lives here** (temporary IP during bring-up) |
+| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | Largest subnet — appliances + two reserved blocks; see carve-out below. The **VCF Installer** deploys here using the **SDDC Manager IP + FQDN** — see note below |
 | 3 | VCF Management (optional)      |         | `/24`             |                       | 1500 |                  | Only if separating VCF services from VM-mgmt   |
 | 4 | vMotion                        |         | `/24`             |                       | 9000 |                  | Jumbo required                                 |
 | 5 | vSAN                           |         | `/24`             |                       | 9000 |                  | Jumbo required; skip if NFS/FC only            |
@@ -33,6 +33,16 @@ first WLD — duplicate it for additional WLDs / clusters.
 > **Overlay MTU:** host and edge TEP networks carry GENEVE and need MTU **≥ 1600**;
 > set 9000 on the distributed switch. The host-overlay VMK inherits its MTU from
 > the vDS rather than a per-network field.
+
+> **VCF Installer = SDDC Manager identity.** When you deploy the VCF Installer on
+> one of the management-domain ESX hosts (the usual greenfield case), you give it
+> the **IP and FQDN you plan for SDDC Manager** — the appliance *switches into
+> SDDC Manager mode* after bring-up, so there is **no throwaway / temporary IP**.
+> Reserve that single IP + FQDN as SDDC Manager (intake `E7`); the Installer just
+> needs routed reachability to the **ESX Management** network to commission the
+> hosts. (Only an Installer deployed *outside* the management infrastructure uses
+> a separate temporary address.) Per
+> [Broadcom TechDocs](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/deploy-the-vmware-cloud-foundation-installer-appliance.html).
 
 ### IP range carve-out (per subnet)
 

@@ -75,7 +75,7 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
   - *Acceptance:* JSON generated and reviewed against the plan.
 
 ### E5 — Management domain bring-up  ·  Owner: Plat
-- **Story 5.1 — Stage the VCF Installer.** Deploy the Installer on the VM-management network; verify it reaches the ESXi management network.
+- **Story 5.1 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network.
 - **Story 5.2 — Commission hosts.** Prep/validate the ESXi hosts for the management domain.
 - **Story 5.3 — Deploy the management domain.** Run bring-up (vCenter, SDDC Manager, NSX, vSAN); submit the JSON.
   - *Acceptance:* bring-up completes; SDDC Manager healthy; vSAN datastore online.

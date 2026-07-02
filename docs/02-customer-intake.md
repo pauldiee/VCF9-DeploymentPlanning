@@ -124,7 +124,7 @@ Legend:
 |E4 | ESXi root password (single password, all hosts)                | `[MGMT]`  |
 |E5 | ESXi host iLO/iDRAC inventory (out-of-band, separate doc)      | Prereq    |
 |E6 | vCenter FQDN + IP                                              | `[MGMT]`  |
-|E7 | SDDC Manager FQDN + IP                                         | `[MGMT]`  |
+|E7 | SDDC Manager FQDN + IP — the **VCF Installer** is deployed with this IP+FQDN (on a mgmt host) and becomes SDDC Manager | `[MGMT]`  |
 |E8 | NSX Manager VIP FQDN + IP, plus 3 node FQDNs + IPs             | `[MGMT]`  |
 |E9 | VCF Operations — 3 analytics node FQDNs+IPs (primary/replica/data); optional load-balancer VIP FQDN+IP for HA | `[MGMT]`  |
 |E10| VCF Automation — appliance/cluster FQDN+IP + VCF services-runtime FQDN; nodes come from the `/29` range (`B5`), or the non-shared placement network (`B21`) | `[MGMT]`  |

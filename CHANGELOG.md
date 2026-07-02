@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.6 — 2026-07-02
+- Corrected the VCF Installer IP guidance. It does **not** use a throwaway
+  temporary IP: when deployed on a management-domain ESX host (the usual
+  greenfield case) you give it the **IP + FQDN you plan for SDDC Manager**, and
+  it switches into SDDC Manager after bring-up (per Broadcom TechDocs). Fixed the
+  `01-network-dns-plan.md` subnet-table note + added a cited callout, updated
+  intake `E7`, and the deployment-plan Story 5.1. (A temporary IP applies only if
+  the Installer is deployed *outside* the management infrastructure.)
+
 ## v0.6.5 — 2026-07-02
 - New **Deployment Plan** page (`docs/06-deployment-plan.md`): a generic **agile
   work breakdown** (epics → stories → tasks, no dates) for the common VCF 9
