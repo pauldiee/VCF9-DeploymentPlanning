@@ -376,17 +376,21 @@ export function components(s: SizingState): Component[] {
       ram: vcenterRam[w.vcenterSize],
       disk: vcenterDisk[w.vcenterSize + w.vcenterStorage],
     });
-    // WLD NSX Managers (shared instances add nothing to the mgmt domain)
-    if (w.nsxModel !== 'Shared') {
-      const localNodes = w.nsxModel === 'Dedicated - HA Cluster' ? 3 : 1;
-      const gm = w.gm !== 'None';
-      const nodes = localNodes + (gm ? 3 : 0);
+    // WLD NSX Managers. Local-manager nodes only when the model is dedicated
+    // (Shared reuses an existing instance, adding nothing). Global-manager
+    // nodes (Active/Standby) are counted independently of the local model, per
+    // the sheet. GM is sized the same as the LM here (simplification: the
+    // workbook has a separate GM size cell).
+    const localNodes = w.nsxModel === 'Shared' ? 0 : w.nsxModel === 'Dedicated - HA Cluster' ? 3 : 1;
+    const gmNodes = w.gm === 'Active GM' || w.gm === 'Standby GM' ? 3 : 0;
+    const nodes = localNodes + gmNodes;
+    if (nodes > 0) {
       list.push({
         name: `${label} — NSX Managers`,
         nodes,
-        cpu: nsxtManagerCpu[w.nsxSize] * localNodes + (gm ? nsxtManagerCpu[w.nsxSize] * 3 : 0),
-        ram: nsxtManagerRam[w.nsxSize] * localNodes + (gm ? nsxtManagerRam[w.nsxSize] * 3 : 0),
-        disk: nsxtManagerDisk[w.nsxSize] * localNodes + (gm ? nsxtManagerDisk[w.nsxSize] * 3 : 0),
+        cpu: nsxtManagerCpu[w.nsxSize] * nodes,
+        ram: nsxtManagerRam[w.nsxSize] * nodes,
+        disk: nsxtManagerDisk[w.nsxSize] * nodes,
       });
     }
   });

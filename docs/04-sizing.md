@@ -44,6 +44,20 @@ browser — no customer data leaves the page.
 - Fleet requirement: total nodes / vCPU / RAM / disk, minimum hosts, per-host load at N-1
 - vSAN raw-capacity breakdown (VM capacity → swap → FTT redundancy → reserve → growth)
 
+## What it does not model (yet)
+
+To keep v1 focused on the management-domain fleet, some optional components the
+workbook can add are **not** included, so the tool may under-count if you use
+them. Add their footprint manually, or fall back to the workbook:
+
+- Management-side: Log Management, Real-time Metrics, Software Depot, Identity
+  Broker (the last two only apply to additional VCF instances).
+- Per-workload-domain: Site Protection / SRM, AVI load balancer, Security
+  Services Platform. Each workload domain currently contributes only its
+  vCenter and (dedicated) NSX Managers.
+- A workload domain's Global Manager is sized the same as its local NSX Manager
+  (the workbook allows a separate Global Manager size).
+
 ## How the numbers are derived
 
 Appliance footprints are transcribed from the workbook's `table_*` reference
