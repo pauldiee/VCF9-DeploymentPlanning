@@ -88,15 +88,7 @@ const opt = (values: readonly string[]) => values;
 
         <fieldset>
           <legend>Management components</legend>
-          <label>Management vCenter size
-            <select id="mgmtVcenterSize">{opt(OPTIONS.vcenterSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label>Management vCenter storage
-            <select id="mgmtVcenterStorage">{opt(OPTIONS.vcenterStorage).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label>NSX Manager size
-            <select id="nsxManagerSize">{opt(OPTIONS.nsxManagerSize).map((v) => <option>{v}</option>)}</select>
-          </label>
+          <p class="sizer__hint" id="derivedSizes"></p>
           <label>NSX Global Manager
             <select id="nsxGmSize">
               <option>Excluded</option>{opt(OPTIONS.nsxManagerSize).map((v) => <option>{v}</option>)}
@@ -178,7 +170,7 @@ const opt = (values: readonly string[]) => values;
 
   // ---- bind top-level inputs to state ----
   const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct'] as const;
-  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'mgmtVcenterSize', 'mgmtVcenterStorage', 'nsxManagerSize', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize'] as const;
+  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize'] as const;
   const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation'] as const;
 
   function hydrate() {
@@ -320,6 +312,11 @@ const opt = (values: readonly string[]) => values;
     $('compTable').querySelector('tbody')!.innerHTML = r.components
       .map((c) => `<tr><td>${c.name}</td><td>${c.nodes}</td><td>${gb(c.cpu)}</td><td>${gb(c.ram)}</td><td>${gb(c.disk)}</td></tr>`)
       .join('');
+
+    // derived (profile-fixed) component sizes
+    $('derivedSizes').innerHTML = `Fixed by the deployment profile: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +
+      `(<strong>${r.derived.vcenterStorage}</strong> storage), NSX Local Manager <strong>${r.derived.nsxManagerSize}</strong>. ` +
+      `The options below are your genuine choices.`;
 
     // derived per-host raw readout
     const rawOut = $('perHostRawOut');

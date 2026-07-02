@@ -134,10 +134,8 @@ export interface SizingState {
   // proposed cluster
   clusterType: string;
   proposedHosts: number;
-  // management components
-  mgmtVcenterSize: string;
-  mgmtVcenterStorage: string;
-  nsxManagerSize: string;
+  // management components (vCenter + NSX Local Manager sizes are derived from
+  // the deployment profile — see deriveMgmtSizes — not chosen here)
   nsxGmSize: string; // 'Excluded' or a manager size
   nsxEdgeSize: string;
   aviSize: string;
@@ -167,9 +165,6 @@ export function defaultState(): SizingState {
     growthPct: 10,
     clusterType: 'Standard',
     proposedHosts: 4,
-    mgmtVcenterSize: 'Medium',
-    mgmtVcenterStorage: 'Large',
-    nsxManagerSize: 'Medium',
     nsxGmSize: 'Excluded',
     nsxEdgeSize: 'Excluded',
     aviSize: 'Excluded',
@@ -196,6 +191,23 @@ export interface Component {
 
 const isVsan = (t: string) => t === 'vSAN-ESA' || t === 'vSAN-OSA';
 
+// Management vCenter and NSX Local Manager sizes are fixed by the deployment
+// profile in the workbook (cells D39 / F39 / I39), not chosen by the user.
+export interface DerivedSizes {
+  vcenterSize: string;
+  vcenterStorage: string;
+  nsxManagerSize: string;
+}
+export function deriveMgmtSizes(model: string, size: string): DerivedSizes {
+  // vCenter appliance (D39): Simple -> Small; HA -> matches deployment size
+  const vcenterSize = model === 'Simple' ? 'Small' : size;
+  // vCenter storage (F39): Large, except HA + Large -> XLarge
+  const vcenterStorage = model === 'High Availability' && size === 'Large' ? 'XLarge' : 'Large';
+  // NSX Local Manager (I39): Medium, except HA + Large -> Large
+  const nsxManagerSize = model === 'High Availability' && size === 'Large' ? 'Large' : 'Medium';
+  return { vcenterSize, vcenterStorage, nsxManagerSize };
+}
+
 // VCF Operations bumps the appliance size one tier when HA is chosen.
 function vcfOpsSize(model: string, size: string): string | null {
   if (model === 'High Availability') {
@@ -212,27 +224,28 @@ export function components(s: SizingState): Component[] {
   const list: Component[] = [];
   const ha = s.deploymentModel === 'High Availability';
   const size = s.deploymentSize;
+  const d = deriveMgmtSizes(s.deploymentModel, size);
 
   // SDDC Manager — fixed
   list.push({ name: 'SDDC Manager', ...SDDC_MANAGER });
 
-  // Management vCenter
+  // Management vCenter (size + storage derived from deployment profile)
   list.push({
     name: 'Management vCenter',
     nodes: 1,
-    cpu: vcenterCpu[s.mgmtVcenterSize],
-    ram: vcenterRam[s.mgmtVcenterSize],
-    disk: vcenterDisk[s.mgmtVcenterSize + s.mgmtVcenterStorage],
+    cpu: vcenterCpu[d.vcenterSize],
+    ram: vcenterRam[d.vcenterSize],
+    disk: vcenterDisk[d.vcenterSize + d.vcenterStorage],
   });
 
-  // Management NSX Managers (+ optional Global Manager)
+  // Management NSX Managers (+ optional Global Manager; local size derived)
   {
     const localNodes = ha ? 3 : 1;
     const gm = s.nsxGmSize !== 'Excluded';
     const nodes = localNodes + (gm ? 3 : 0);
-    const cpu = nsxtManagerCpu[s.nsxManagerSize] * localNodes + (gm ? nsxtManagerCpu[s.nsxGmSize] * 3 : 0);
-    const ram = nsxtManagerRam[s.nsxManagerSize] * localNodes + (gm ? nsxtManagerRam[s.nsxGmSize] * 3 : 0);
-    const disk = nsxtManagerDisk[s.nsxManagerSize] * localNodes + (gm ? nsxtManagerDisk[s.nsxGmSize] * 3 : 0);
+    const cpu = nsxtManagerCpu[d.nsxManagerSize] * localNodes + (gm ? nsxtManagerCpu[s.nsxGmSize] * 3 : 0);
+    const ram = nsxtManagerRam[d.nsxManagerSize] * localNodes + (gm ? nsxtManagerRam[s.nsxGmSize] * 3 : 0);
+    const disk = nsxtManagerDisk[d.nsxManagerSize] * localNodes + (gm ? nsxtManagerDisk[s.nsxGmSize] * 3 : 0);
     list.push({ name: 'Management NSX Managers (Local / Global)', nodes, cpu, ram, disk });
   }
 
@@ -400,6 +413,7 @@ export interface SizingResult {
   totals: { nodes: number; cpu: number; ram: number; disk: number };
   vsan: { vmCapacity: number; swap: number; interim: number; redundancy: number; reserve: number; growth: number; raw: number };
   requiredHosts: number;
+  derived: DerivedSizes; // mgmt vCenter + NSX Local Manager sizes fixed by the profile
   perHostRaw: number; // raw GB each host contributes to vSAN (0 for NFS/FC)
   storageAvailable: number; // total capacity the proposed cluster offers
   perHostN1: { cpu: number; ram: number; storage: number } | null;
@@ -483,6 +497,7 @@ export function compute(s: SizingState): SizingResult {
     totals,
     vsan: { vmCapacity, swap, interim, redundancy, reserve, growth, raw },
     requiredHosts,
+    derived: deriveMgmtSizes(s.deploymentModel, s.deploymentSize),
     perHostRaw,
     storageAvailable,
     perHostN1,
