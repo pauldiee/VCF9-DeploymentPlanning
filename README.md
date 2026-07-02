@@ -74,10 +74,6 @@ deployment JSON for the VCF Installer — see *Related tools* below.
   JSON/Markdown/CSV export. Complements this repo: run the intake here, enter
   the answers there instead of fighting the raw `.xlsx`. Client-side only — no
   data leaves the browser.
-- **[pauldiee/VCF9ReadinessAssessment](https://github.com/pauldiee/VCF9ReadinessAssessment)**
-  — pre-cutover readiness scoring from RVTools / HST exports.
-- **[pauldiee/VCFHealthCheck](https://github.com/pauldiee/VCFHealthCheck)** —
-  post-cutover health checks of live VCF 9 environments.
 - **VCF.JSONGenerator** — Ken Gould's cross-platform PowerShell module, a
   **companion to the P&P workbook**: it **reads a populated workbook** (the same
   one this repo targets) and generates the JSON payloads for the VCF management
@@ -86,6 +82,12 @@ deployment JSON for the VCF Installer — see *Related tools* below.
   prerequisites or submit the JSON; you do that.
   [GitHub](https://github.com/vmware/powershell-module-for-vmware-cloud-foundation-jsongenerator)
   · [PowerShell Gallery](https://www.powershellgallery.com/packages/VCF.JSONGenerator/)
+
+**ITQ Consulting Services** (delivered as engagements, not public tools):
+
+- **VCF9 Readiness Assessment** — pre-cutover readiness scoring from RVTools /
+  HST exports.
+- **VCF Health Check** — post-cutover health checks of live VCF 9 environments.
 
 ## Author
 

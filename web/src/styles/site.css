@@ -456,6 +456,20 @@ body {
 .related__item:hover { box-shadow: var(--shadow-md); color: var(--text-body); }
 .related__item h3 { font-size: var(--fs-h3); color: var(--itq-orange); }
 .related__item p { font-size: var(--fs-small); margin-bottom: 0; }
+.related__item--service { cursor: default; }
+.related__item--service:hover { box-shadow: none; }
+.related__tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--itq-royal-blue);
+  background: var(--itq-light-blue-soft);
+  border-radius: var(--radius-sm);
+  padding: 0.12rem 0.45rem;
+  margin-bottom: var(--space-2);
+}
 
 /* ---------- Footer ---------- */
 .site-footer {

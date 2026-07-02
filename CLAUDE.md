@@ -15,9 +15,9 @@ This repo flips the order:
 
 Generic / reusable — no customer names pre-filled. Real engagements live outside the repo (see "Customer data hygiene" below).
 
-Sister projects:
-- [pauldiee/VCFHealthCheck](https://github.com/pauldiee/VCFHealthCheck) — post-cutover health checks of live VCF 9 environments.
-- [pauldiee/VCF9ReadinessAssessment](https://github.com/pauldiee/VCF9ReadinessAssessment) — pre-cutover readiness scoring from RVTools / HST exports.
+Sister projects (**ITQ Consulting Services — internal / private, not public tools**; do **not** present them as public `github.com/pauldiee/…` links on public-facing pages like `README.md` or the site):
+- pauldiee/VCFHealthCheck — post-cutover health checks of live VCF 9 environments.
+- pauldiee/VCF9ReadinessAssessment — pre-cutover readiness scoring from RVTools / HST exports.
 
 GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (private)
 

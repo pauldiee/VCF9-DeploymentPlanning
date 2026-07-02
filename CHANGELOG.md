@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.3 — 2026-07-02
+- Related tools: **VCF9 Readiness Assessment** and **VCF Health Check** are **ITQ
+  Consulting Services** (internal, not public repos) — removed their public
+  `github.com/pauldiee/…` links from the README and the site landing page and
+  relabelled them as ITQ Consulting Services offerings. Added **VCF.JSONGenerator**
+  to the site's Related-tools grid (it was only in the README). Noted the
+  distinction in `CLAUDE.md`.
+
 ## v0.5.2 — 2026-07-02
 - `workbook-cell-mapping.md`: added a first-cut **intake → named range**
   table for the **management domain** — each intake ID (A/B/C/D/E/F) mapped to the
