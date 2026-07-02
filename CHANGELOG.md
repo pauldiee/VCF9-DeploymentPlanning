@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.3 — 2026-07-02
+- Sizer: added **export / import / share**. A toolbar offers **Copy share link**
+  (encodes the full input state into the URL hash — open the link to restore it),
+  **Export** (downloads `mgmt-domain-sizing.json`), **Import** (loads a saved
+  JSON), and **Reset**. Imports are sanitised against the known fields/options.
+  All client-side; nothing leaves the browser.
+
 ## v0.4.2 — 2026-07-02
 - `01-network-dns-plan.md`: fixed the VCF Installer placement note. It read as if
   the Installer sits **on** the ESX Management network; corrected to reflect that

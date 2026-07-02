@@ -23,6 +23,13 @@ const opt = (values: readonly string[]) => values;
         fleet <strong>fits at N-1</strong> &mdash; and where the headroom is. Everything runs in your
         browser; nothing is sent anywhere.
       </p>
+      <div class="sizer__toolbar">
+        <button type="button" id="btnShare"><i class="fa-solid fa-link" aria-hidden="true"></i> Copy share link</button>
+        <button type="button" id="btnExport"><i class="fa-solid fa-download" aria-hidden="true"></i> Export</button>
+        <label class="sizer__filebtn"><i class="fa-solid fa-upload" aria-hidden="true"></i> Import<input type="file" id="fileImport" accept="application/json,.json" hidden /></label>
+        <button type="button" id="btnReset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset</button>
+        <span id="toolbarMsg" class="sizer__toolbar-msg" role="status"></span>
+      </div>
     </header>
 
     <div class="sizer__grid">
@@ -400,16 +407,107 @@ const opt = (values: readonly string[]) => values;
     ].map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
   }
 
+  // ---- export / import / share ----
+  function sanitize(obj: any): SizingState {
+    const out = defaultState();
+    if (!obj || typeof obj !== 'object') return out;
+    for (const k of Object.keys(out) as (keyof SizingState)[]) {
+      if (k === 'workloadDomains') continue;
+      const v = (obj as any)[k];
+      if (v !== undefined && typeof v === typeof (out as any)[k]) (out as any)[k] = v;
+    }
+    const inList = (arr: readonly string[], v: any, d: string) => (arr.includes(v) ? v : d);
+    if (Array.isArray(obj.workloadDomains)) {
+      out.workloadDomains = obj.workloadDomains.slice(0, 24).map((w: any) => ({
+        name: typeof w?.name === 'string' ? w.name.slice(0, 60) : '',
+        vcenterSize: inList(OPTIONS.vcenterSize, w?.vcenterSize, 'Small'),
+        vcenterStorage: inList(OPTIONS.vcenterStorage, w?.vcenterStorage, 'Default'),
+        nsxModel: inList(OPTIONS.nsxModel, w?.nsxModel, 'Dedicated - HA Cluster'),
+        nsxSize: inList(OPTIONS.nsxManagerSize, w?.nsxSize, 'Medium'),
+        gm: inList(OPTIONS.gm, w?.gm, 'None'),
+      }));
+    }
+    return out;
+  }
+
+  function loadState(obj: any) {
+    Object.assign(state, sanitize(obj));
+    // reset dependent-dropdown guards so recalc re-runs every sync for the new state
+    lastModel = lastStorage = lastLogsDepSize = lastLogsSize = '';
+    // expand the constrained dropdowns to their full option lists so hydrate's
+    // values stick; recalc's syncs then re-constrain them for the loaded profile
+    ($('deploymentSize') as HTMLSelectElement).innerHTML = selOptions([...OPTIONS.deploymentSize], state.deploymentSize);
+    ($('logsSize') as HTMLSelectElement).innerHTML = selOptions([...OPTIONS.logsSize], state.logsSize);
+    hydrate();
+    renderWlds();
+    recalc();
+  }
+
+  const b64enc = (s: string) => btoa(unescape(encodeURIComponent(s)));
+  const b64dec = (s: string) => decodeURIComponent(escape(atob(s)));
+  function toolbarMsg(msg: string) {
+    const el = $('toolbarMsg');
+    el.textContent = msg;
+    setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+  }
+
+  $('btnShare').addEventListener('click', async () => {
+    const hash = '#s=' + b64enc(JSON.stringify(state));
+    history.replaceState(null, '', hash);
+    const url = location.origin + location.pathname + hash;
+    try { await navigator.clipboard.writeText(url); toolbarMsg('Share link copied'); }
+    catch { toolbarMsg('Link is in the address bar (copy blocked)'); }
+  });
+  $('btnExport').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mgmt-domain-sizing.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toolbarMsg('Exported mgmt-domain-sizing.json');
+  });
+  $('fileImport').addEventListener('change', (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { loadState(JSON.parse(String(reader.result))); toolbarMsg(`Imported ${file.name}`); }
+      catch { toolbarMsg('Import failed — not valid sizer JSON'); }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  });
+  $('btnReset').addEventListener('click', () => { loadState(defaultState()); toolbarMsg('Reset to defaults'); });
+
+  function loadFromHash(): boolean {
+    const m = location.hash.match(/[#&]s=([^&]+)/);
+    if (!m) return false;
+    try { loadState(JSON.parse(b64dec(m[1]))); return true; } catch { return false; }
+  }
+
   for (const id of [...numIds, ...selIds, ...chkIds]) $(id).addEventListener('input', recalc);
-  hydrate();
-  renderWlds();
-  recalc();
+  if (!loadFromHash()) {
+    hydrate();
+    renderWlds();
+    recalc();
+  }
 </script>
 
 <style is:global>
   .sizer { max-width: 1100px; }
   .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
   .sizer__lede { color: var(--itq-royal-40); max-width: 70ch; }
+  .sizer__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
+  .sizer__toolbar button, .sizer__filebtn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white); color: var(--itq-royal-blue); cursor: pointer;
+  }
+  .sizer__toolbar button:hover, .sizer__filebtn:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .sizer__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
   .sizer__grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
