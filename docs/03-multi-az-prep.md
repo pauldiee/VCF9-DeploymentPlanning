@@ -110,10 +110,21 @@ the Edge Overlay / Uplink rows.
 North-south / public peering: the **NSX Edge Uplink BGP sessions** (the two rows
 above, captured in the `01` BGP plan and intake `B10`–`B16`) **are** the
 north-south / public peering — there is no separate "public peering" item unless
-you run a distinct public / DMZ transit. Decide which AZ owns **ingress** in
-steady state and how routes withdraw on an AZ failure (BGP local-pref / AS-path
-prepend toward the non-preferred AZ). Capture this alongside section B of the
-BGP plan.
+you run a distinct public / DMZ transit (intake `B22`). Decide which AZ owns
+**ingress** in steady state and how routes withdraw on an AZ failure (BGP
+local-pref / AS-path prepend toward the non-preferred AZ). Capture this alongside
+section B of the BGP plan.
+
+> **Public peering is normally a workload-domain concern, not management.** The
+> management domain's Edge uplinks peer with the **internal ToR fabric** for
+> management routing — not a public network. **Public / upstream / DMZ peering**
+> (internet-facing or published routes) normally lives on the **workload-domain**
+> edges, where tenant workloads need external reachability. It applies to the
+> management domain only if your design deliberately routes a published service
+> through the mgmt edges. In multi-AZ, whichever domain hosts the public peering
+> must survive an AZ loss the same way: **stretched** under Centralized or
+> **per-AZ** under Distributed, with the surviving AZ advertising the public
+> prefixes and the failed AZ withdrawing them.
 
 ---
 

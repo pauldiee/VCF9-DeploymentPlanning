@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.25 — 2026-07-02
+- `03-multi-az-prep.md` section D: added a note that **public peering is normally
+  a workload-domain concern, not management** — the mgmt domain's Edge uplinks
+  peer with the internal ToR fabric, while public / upstream / DMZ peering lives
+  on the WLD edges (unless a published service is deliberately routed through the
+  mgmt edges). Spelled out the multi-AZ requirement (stretched under Centralized /
+  per-AZ under Distributed; surviving AZ advertises public prefixes, failed AZ
+  withdraws) and cross-linked intake `B22`.
+
 ## v0.1.24 — 2026-07-02
 - `01-network-dns-plan.md`: also surface **public / upstream peering** in the main
   VLAN/subnet table (row 12, optional `/29`–`/30` point-to-point uplink), mirroring
