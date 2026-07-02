@@ -124,9 +124,9 @@ roadmap (intake **A15**), captured in a follow-up session.
 
 | ID     | Sheet field / table                    | Field label                                          |
 | ------ | -------------------------------------- | ---------------------------------------------------- |
-| A17    | Fleet Components Deployment — Select Option | Which components deployed (Shared Management Network / Exclude per component) |
-| E15    | Deploy VCF Operations and Automation / Deploy VCF Automation | Deployment Type / Installation Type (SDDC Manager API vs. VCF Operations) |
-| B21    | localRegionNetwork / xRegionNetwork    | networkName / subnetMask / gateway; ipPool #1–5; Cluster Cidr |
+| A17    | Fleet Components Deployment — Select Option | Deploy scope (Exclude / Deploy VCF Operations and Automation / Deploy VCF Automation) + Identity Broker + per-component Include/Exclude |
+| E15    | Fleet Components Deployment — Select Option | Network placement (Shared / Dedicated Management Network / NSX Overlay Segment / NSX VLAN Segment) + deploy method; Installation Type (New / Import 8.x appliance) |
+| B21    | localRegionNetwork / xRegionNetwork    | networkName / subnetMask / gateway; ipPool #1–5; Cluster Cidr (default 198.18.0.0/15) |
 | E10    | VCF Automation Deployment              | VCF Automation FQDN; VCF services runtime FQDN; Node Prefix; IP addresses |
 | E9     | VCF Operations Deployment              | Primary / Replica / Data node FQDN + IP; Load Balancer FQDN + IP; appliance size |
 | E14    | Cloud Proxy / License Server / Identity Broker | FQDN + IP per appliance; Identity Broker provider + user/group provisioning |

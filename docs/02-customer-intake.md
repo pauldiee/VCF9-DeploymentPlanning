@@ -56,7 +56,7 @@ Legend:
 |B2 | VM Mgmt: VLAN, MTU=1500, IPv4 gateway CIDR                     | `[MGMT]`   |
 |B3 | VCF Mgmt (if separate): VLAN, MTU, gateway CIDR                | `[MGMT]`   |
 |B4 | VCF Management Services IP range — `/28` (12, min) to `/27` (30); lives inside the VM Mgmt subnet | `[MGMT]`   |
-|B5 | VCF Automation IP range — 5 IPs, allocate a `/29`; inside the VM Mgmt subnet (Shared-Network path; if VPC-backed see `B21`) | `[MGMT]`   |
+|B5 | VCF Automation IP range — 5 IPs, allocate a `/29`; inside the VM Mgmt subnet (Shared-Network placement; other placements see `B21`) | `[MGMT]`   |
 |B6 | vMotion: VLAN, MTU=9000, gateway CIDR, host IP range           | `[MGMT]`   |
 |B7 | vSAN: VLAN, MTU=9000, gateway CIDR, host IP range              | `[MGMT]`   |
 |B8 | ESX Host Overlay: VLAN, MTU=9000, gateway CIDR; DHCP or static?| `[MGMT]`   |
@@ -72,7 +72,7 @@ Legend:
 |B18| SFTP host, port, account, target path                          | `[CFG-M]`  |
 |B19| Proxy (only if online depot needs it): FQDN, port, auth?       | `[MGMT]`   |
 |B20| VPC Gateway external network (only if `A10` = Distributed): VLAN, gateway CIDR | `[MGMT]`   |
-|B21| Day-2 dedicated / **NSX VPC** network (only if fleet components are VPC-backed): networkName, subnet CIDR, gateway, IP pools, VCF services-runtime cluster CIDR → `05-day2-deployments.md` | `[DAYN]`  |
+|B21| Day-2 fleet network (if not Shared Mgmt): placement (Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) + networkName, subnet, gateway, IP pool, VCF Automation cluster CIDR → `05-day2-deployments.md` | `[DAYN]`  |
 
 ---
 
@@ -126,12 +126,12 @@ Legend:
 |E7 | SDDC Manager FQDN + IP                                         | `[MGMT]`  |
 |E8 | NSX Manager VIP FQDN + IP, plus 3 node FQDNs + IPs             | `[MGMT]`  |
 |E9 | VCF Operations — 3 analytics node FQDNs+IPs (primary/replica/data); optional load-balancer VIP FQDN+IP for HA | `[MGMT]`  |
-|E10| VCF Automation — appliance/cluster FQDN+IP + VCF services-runtime FQDN; nodes come from the `/29` range (`B5`), or the VPC network (`B21`) if VPC-backed | `[MGMT]`  |
+|E10| VCF Automation — appliance/cluster FQDN+IP + VCF services-runtime FQDN; nodes come from the `/29` range (`B5`), or the non-shared placement network (`B21`) | `[MGMT]`  |
 |E11| NSX Edge node 1 / 2 FQDNs + IPs                                | `[CFG-M]` |
 |E12| Cluster / vDS / DPG naming conventions                         | `[MGMT]`  |
 |E13| Any VI Workload Domains at GA? → capture each in **section H** below | `[WLD]`   |
 |E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (each needs A+PTR+IP); several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
-|E15| VCF Automation Day-2 deployment: **method** (SDDC Manager API vs. via VCF Operations) + **network placement** (Shared Mgmt vs. NSX VPC) → `05-day2-deployments.md` | `[DAYN]`  |
+|E15| VCF Automation Day-2 deployment: **method** (SDDC Manager API vs. via VCF Operations) + **network placement** (Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) → `05-day2-deployments.md` | `[DAYN]`  |
 
 ---
 

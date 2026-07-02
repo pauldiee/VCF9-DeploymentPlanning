@@ -24,7 +24,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D1 | Which fleet components are deployed at bring-up vs. Day-2?           | VCF Automation, VCF Operations for Logs/Networks are often Day-2       |
 |D2 | Is VCF Operations deployed at bring-up, or Day-2?                    | If reused/existing, "useExistingDeployment" — no new appliances        |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
-|D4 | Network placement: **Shared Management Network** or a dedicated one? | Dedicated network can be an **NSX VPC** — see C                        |
+|D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment? | Four options — see C; NSX Overlay needs an Edge cluster + transit gateway |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
 
 Size the footprint of whatever you choose here on the
@@ -43,7 +43,7 @@ network placement from section C.
 | Component                     | Appliances / nodes                                             | Notes                                                        |
 | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
 | **VCF Operations**            | Primary, Replica, Data nodes + Load Balancer (VIP)             | Skip if reusing an existing instance (`useExistingDeployment`)|
-| **Cloud Proxy** (Ops collector)| One or more collector appliances                              | Lives on the `localRegion` network (see C)                    |
+| **Cloud Proxy** (Ops collector)| One or more collector appliances                              | Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement |
 | **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | One appliance                                                  | Plus identity provider (AD/LDAP), user/group provisioning     |
@@ -52,56 +52,70 @@ network placement from section C.
 
 ---
 
-## C. Network placement — Shared Management vs. NSX VPC
+## C. Network placement — the four options
 
-This is the decision behind the "VCF Automation on a VPC network" question. Each
-Day-2 deployment lands on **one of**:
+This is the decision behind the "VCF Automation on a VPC network" question — but
+the sheet does **not** offer a VPC. It offers four placements, and they line up
+with the Broadcom design library's four *fleet-level components* network models
+([Fleet-Level Components Networking Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html))
+and the [custom-networking deployment guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html):
 
-- **Shared Management Network** — the existing VLAN-backed VM-Mgmt subnet. VCF
-  Automation's nodes come from the `/29` reserved on VM-Mgmt (intake `B5`). No
-  new network to build; simplest path.
-- **A dedicated network** — a separate routed network the fleet components use
-  instead of the shared subnet. The Day-N sheet models two:
-  - **`localRegion`** — VCF Operations **collectors** (Cloud Proxy).
-  - **`xRegion`** — VCF **Operations + Automation** (cross-region mobility, e.g.
-    for failover). This is the network that is commonly an **NSX VPC**.
+| Placement (Day-N sheet)          | Design-library model                              | What it is                                                                                       |
+| -------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Shared Management Network**    | Shared VLAN                                       | Fleet components on the **same** vDS port group as vCenter / NSX / SDDC Manager; VCF Automation from the `/29` (intake `B5`). Simplest — no new network. |
+| **Dedicated Management Network** | Dedicated VLAN                                    | Fleet components on a **separate, dedicated** vDS port group (VLAN-backed).                        |
+| **NSX Overlay Segment**          | Dedicated VLAN **+** NSX Overlay Segment (hybrid) | Ops + Automation on an NSX **overlay** (Geneve) segment; **Cloud Proxy / collectors stay on the VLAN**. Needs an NSX Edge cluster with a centralized transit gateway and a Tier-1 (Active/Standby HA). |
+| **NSX VLAN Segment**             | (VLAN-backed NSX segment)                          | Fleet components on an NSX **VLAN-backed** segment.                                               |
 
-An **NSX VPC** is a self-service private network within an NSX Project, reached
-through the Transit Gateway. Choosing a VPC-backed dedicated network ties to the
-existing VPC Gateway decision (intake `A10`, Distributed vs Centralized) and the
-VPC Gateway external network (`B20`).
+There is no NSX VPC option — placement is one of the four above. The design
+library adds a fifth, DR-oriented model — *Dedicated VLAN + NSX **Stretched**
+Overlay Segment* — for multi-region / stretched deployments; see
+`03-multi-az-prep.md`.
 
-Per dedicated network, capture:
+The point of the non-shared options is to **separate user-facing networks from
+management networks** for regulatory / security requirements.
 
-| Field            | Example                          | Notes                                     |
-| ---------------- | -------------------------------- | ----------------------------------------- |
-| networkName      | `xregion-vcfa-net`               | Segment / VPC subnet name                 |
-| subnet / CIDR    | `10.11.40.0/24`                  | Private CIDR for the VPC subnet           |
-| gateway (CIDR)   | `10.11.40.1/24`                  | Subnet gateway                            |
-| IP pools         | `10.11.40.11 – .20`              | The Day-N sheet asks up to 5 pools        |
-| cluster CIDR     | `100.64.0.0/24` (non-overlapping)| VCF services-runtime node cluster CIDR    |
-| Transit / routing| via VPC Gateway (`A10`)          | How the VPC reaches mgmt + north-south     |
-| DNS (A + PTR)    | `sfo-vcfa01.sfo.example.io`      | Forward + reverse for every appliance     |
+**NSX Overlay Segment prerequisites** (per the deployment guidance), before deployment:
 
-> Keep the **cluster CIDR** (the VCF services-runtime internal node network)
-> distinct from every routed subnet in the Step 1 plan — an overlap here is a
-> common Day-2 failure.
+- The initial VCF fleet / instance deployment completed
+- An **NSX Edge cluster with a centralized transit gateway**
+- An **NSX Tier-1 gateway** (Active/Standby HA)
+- The overlay segment created on the management-domain transport zone
+- Cloud Proxy appliances remain on the VM-management network
+
+For any non-shared placement, the sheet splits the network into `localRegion`
+(the VLAN side — Ops collectors / Cloud Proxy) and `xRegion` (Ops + Automation),
+and asks for:
+
+| Field         | Example / value                                    | Notes                                             |
+| ------------- | -------------------------------------------------- | ------------------------------------------------- |
+| networkName   | `xregion-vcfa-net`                                 | Overlay-segment / network name                    |
+| subnet mask   | `255.255.255.0`                                    | Segment subnet                                    |
+| gateway       | `10.11.40.1`                                       | Segment gateway                                   |
+| IP pool       | `10.11.40.11 – .20` (5+)                           | Node IP pool (5+ addresses)                       |
+| cluster CIDR  | `198.18.0.0/15` (default; or `240.0.0.0/15` / `250.0.0.0/15`) | VCF Automation **internal** services-runtime node network |
+| DNS (A + PTR) | `sfo-vcfa01.sfo.example.io`                        | Forward + reverse for every appliance             |
+
+> The **cluster CIDR** is the VCF Automation services-runtime *internal* node
+> network — pick one of the sheet's reserved ranges (`198.18.0.0/15` default)
+> and keep it distinct from every routed subnet in the Step 1 plan.
 
 ---
 
 ## D. VCF Automation — deployment method
 
-VCF Automation can be deployed two ways; capture which one, as they ask for
-different inputs:
+The Day-N sheet's method dropdown ("Select Option") offers three choices;
+capture which one, as they ask for different inputs:
 
-| Method                          | Where it's driven          | Key inputs                                                   |
-| ------------------------------- | -------------------------- | ------------------------------------------------------------ |
-| **Using SDDC Manager API**      | SDDC Manager               | Deployment type, `localRegion` + `xRegion` networks, IP pools, cluster CIDR |
-| **Using VCF Operations**        | VCF Operations             | Installation type, VCF instance, VCF services-runtime nodes CIDR, FQDNs |
+| Option (verbatim from the sheet)         | Deploys                         | Key inputs                                                   |
+| ---------------------------------------- | ------------------------------- | ------------------------------------------------------------ |
+| **Exclude**                              | Nothing (not deployed Day-2)    | —                                                            |
+| **Deploy VCF Operations and Automation** | Both, via **SDDC Manager API**  | `localRegion` + `xRegion` networks, IP pools, cluster CIDR   |
+| **Deploy VCF Automation**                | Just Automation, via **VCF Operations** | Installation type (**New** or **Import 8.x appliance**), VCF instance, VCF services-runtime nodes CIDR, FQDNs |
 
-Both need: VCF Automation FQDN, VCF services runtime FQDN, node prefix, the node
-IP pools, and the admin password. Decide the method and the network placement
-(section C) together.
+Both deploy paths need: VCF Automation FQDN, VCF services-runtime FQDN, node
+prefix, the node IP pool, and the admin password. Decide the method and the
+network placement (section C) together.
 
 ---
 
@@ -111,7 +125,7 @@ On top of `01-network-dns-plan.md`, for every Day-2 appliance you deploy:
 
 - [ ] Forward (A) + reverse (PTR) DNS for each node / VIP FQDN
 - [ ] Reserved IP outside any DHCP scope
-- [ ] If VPC-backed: the dedicated network exists and is routable (Transit Gateway)
+- [ ] If NSX Overlay: Edge cluster + centralized transit gateway + Tier-1 (Active/Standby) and the segment exist
 - [ ] VCF services-runtime **cluster CIDR** does not overlap any Step 1 subnet
 - [ ] Passwords captured with the other fleet credentials (intake section F)
 - [ ] The synthetic check prerequisites (DNS/NTP/reachability) are in place
@@ -123,8 +137,8 @@ On top of `01-network-dns-plan.md`, for every Day-2 appliance you deploy:
 | Area                                             | Owner               | Sign-off |
 | ------------------------------------------------ | ------------------- | -------- |
 | Which components Day-2 vs bring-up (A)            | Architect           |          |
-| Network placement: Shared vs NSX VPC (C)         | Network + Architect |          |
-| Dedicated / VPC network CIDR, gateway, pools (C) | Network             |          |
+| Network placement (Shared / Dedicated / NSX Overlay / NSX VLAN) (C) | Network + Architect |          |
+| Non-shared network CIDR, gateway, pools (C)      | Network             |          |
 | VCF Automation method (D)                        | Platform + Architect|          |
 | Day-2 FQDNs + PTR records (E)                    | AD/DNS/NTP          |          |
 | Appliance passwords (E)                          | Platform / Security |          |
@@ -137,7 +151,7 @@ Once A–F are filled and signed, feed the results back into the single-AZ
 artifacts and the workbook:
 
 - Day-2 FQDNs + IPs → the DNS section of `01-network-dns-plan.md`
-- Dedicated / VPC network → the VLAN/subnet table in `01-network-dns-plan.md`
+- Non-shared placement network → the VLAN/subnet table in `01-network-dns-plan.md`
 - Decisions + method → intake `A17` / `E15` / `B21` in `02-customer-intake.md`
 - All values → the *Deploy Fleet Management Day-N* sheet (see
   `workbook-cell-mapping.md`)

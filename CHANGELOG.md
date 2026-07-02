@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.18 — 2026-07-02
+- Corrected the Day-2 network-placement options in `05-day2-deployments.md`. The
+  first cut wrongly framed the choice as "Shared Management Network vs. NSX VPC"
+  — the *Deploy Fleet Management Day-N* sheet (verified from the raw data-
+  validation lists) actually offers four placements: **Shared Management
+  Network / Dedicated Management Network / NSX Overlay Segment / NSX VLAN
+  Segment**, and there is no VPC option. Reconciled with the Broadcom design
+  library (*Fleet-Level Components Networking Detailed Design* — four models incl.
+  the DR-oriented stretched-overlay) and the custom-networking deployment
+  guidance: the NSX Overlay path is a **hybrid** (Ops + Automation on the overlay
+  segment, Cloud Proxy / collectors stay on the VLAN), needs an NSX Edge cluster
+  with a centralized transit gateway + Tier-1 (Active/Standby), and the VCF
+  Automation internal **cluster CIDR** defaults to `198.18.0.0/15`. Updated the
+  deploy-method options (Exclude / Deploy VCF Operations and Automation / Deploy
+  VCF Automation) and fixed intake `B21`/`E15` and the Day-N mapping to match.
+
 ## v0.1.17 — 2026-07-02
 - New **Day-2 / Day-N fleet deployment** prep: `docs/05-day2-deployments.md`,
   sourced from the workbook's *Deploy Fleet Management Day-N* sheet + TechDocs.
