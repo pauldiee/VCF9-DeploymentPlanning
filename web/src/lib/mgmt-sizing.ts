@@ -113,9 +113,11 @@ export const OPTIONS = {
 // size must not exceed the deployment size, and replica count has a per-size
 // minimum (Small 1 / Medium 3 / Large 6), capped at 19.
 export const LOGS_REPLICA_MAX = 19;
+// Log Management size must MATCH the deployment profile size — the workbook warns
+// "The Log Management size should be the same size as the selected VCF Profile
+// size" (cell O24). So the only choices are Exclude or the profile size itself.
 export function logsSizeOptions(deploymentSize: string): string[] {
-  const order = ['Small', 'Medium', 'Large'];
-  return ['Exclude', ...order.slice(0, order.indexOf(deploymentSize) + 1)];
+  return ['Exclude', deploymentSize];
 }
 export function logsReplicaMin(logsSize: string): number {
   return logsSize === 'Large' ? 6 : logsSize === 'Medium' ? 3 : 1;

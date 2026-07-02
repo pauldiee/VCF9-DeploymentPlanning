@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.4.4 — 2026-07-02
+- Sizer: corrected the Log Management size rule from "≤ deployment size" to
+  **must match the deployment profile size**. The workbook's warning cell (O24)
+  states *"The Log Management size should be the same size as the selected VCF
+  Profile size"* — so a Medium profile now offers only Exclude/Medium (Small is
+  no longer selectable, which is what triggered the red warning in Excel). The
+  size dropdown clamps to the profile size; replica minimums (1/3/6) unchanged.
+
 ## v0.4.3 — 2026-07-02
 - Sizer: added **export / import / share**. A toolbar offers **Copy share link**
   (encodes the full input state into the URL hash — open the link to restore it),

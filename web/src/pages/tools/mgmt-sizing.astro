@@ -119,7 +119,7 @@ const opt = (values: readonly string[]) => values;
           </label>
           <label id="logsReplicasLabel" hidden>Log Management replicas
             <input id="logsReplicas" type="number" min="1" step="1" />
-            <span class="sizer__hint">Size ≤ deployment size; replicas min Small 1 / Medium 3 / Large 6, max 19.</span>
+            <span class="sizer__hint">Size must match the deployment profile; replicas min Small 1 / Medium 3 / Large 6, max 19.</span>
           </label>
           <label class="sizer__check"><input id="vcfOps" type="checkbox" /> VCF Operations</label>
           <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy (Ops collector)</label>
