@@ -25,7 +25,10 @@ This repo flips the order:
 | `docs/01-network-dns-plan.md`       | Step 1 — one-page network / DNS / NTP / AD plan        |
 | `docs/02-customer-intake.md`        | Step 2 — role-based customer intake questionnaire      |
 | `docs/03-multi-az-prep.md`          | Extra prep for stretched / multi-AZ builds (if `A13`=Yes) |
+| `docs/04-sizing.md`                 | Step 3 — management-domain sizing + link to the fit-check calculator |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
+| `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
+| `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |

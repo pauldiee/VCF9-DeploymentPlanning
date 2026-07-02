@@ -33,6 +33,13 @@ export const NAV: NavItem[] = [
     blurb: 'Role-based questionnaire, grouped by who owns each answer.',
   },
   {
+    slug: '04-sizing',
+    step: 'Step 3',
+    label: 'Sizing & Fit Check',
+    icon: 'server',
+    blurb: 'Size the management-domain fleet and check whether your proposed cluster fits at N-1.',
+  },
+  {
     slug: '03-multi-az-prep',
     step: 'If stretched',
     label: 'Multi-AZ Prep',

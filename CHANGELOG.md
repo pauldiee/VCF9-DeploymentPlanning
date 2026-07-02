@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.1.16 — 2026-07-02
+- New **interactive Management Domain sizing tool** on the site
+  (`web/src/pages/tools/mgmt-sizing.astro` + engine `web/src/lib/mgmt-sizing.ts`).
+  Reproduces the workbook's *Management Domain Sizing* sheet (pinned rev
+  `v1.9.1.001`) — appliance footprints from the `table_*` ranges, host-count and
+  vSAN raw-capacity formulas from the summary cells — and **adds a cluster fit
+  check the spreadsheet lacks**: enter your proposed host count + per-host spec
+  and it reports fits / doesn't-fit at N-1, per-dimension headroom, and the
+  binding constraint. Includes a workload-domain repeater (each WLD's vCenter +
+  dedicated NSX Managers add to the mgmt footprint). Engine verified against the
+  sheet's own values at defaults (122 vCPU / 316 GB / 7872 GB / 4 hosts /
+  41 CPU + 106 GB + 5855 GB per host at N-1 / 17564 GB vSAN raw). Added
+  `docs/04-sizing.md` (Step 3) linking the tool, a sidebar **Tools** entry, and
+  README rows. Closes #15.
+
+## v0.1.15 — 2026-07-02
+- `03-multi-az-prep.md` table D: added a sourcing note confirming the
+  stretched-vs-per-AZ traffic split against the Broadcom VCF 9 design library
+  (*vSphere Stretched Cluster Model*). ESX Management, vMotion, vSAN, and Host
+  TEP are "unique per availability zone" (per-AZ); only VM Management is
+  "shared across availability zones" (stretched) — there is no option to
+  stretch ESX Management. Also pins the AZ1↔AZ2 figure at the vSAN
+  stretched-cluster limit (<5 ms RTT, ≥10 Gbps), not the looser 10 ms
+  generic-AZ number. Closes #14.
+
 ## v0.1.14 — 2026-07-01
 - Site proofread: verified every doc cross-link resolves to a real route, the
   ITQ-authored chrome is free of em-dashes and emoji, and there are no
