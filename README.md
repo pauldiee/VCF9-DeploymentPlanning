@@ -56,9 +56,14 @@ on every push to `main` that touches `web/` or `docs/`.
 ## Workflow
 
 ```
-Prereqs check  →  Network/DNS plan  →  Intake doc  →  Workbook fill  →  VCF Installer
-   (gate)         (1 page, 1 mtg)     (per team)      (mechanical)       (UI/API)
+Prereqs → Network/DNS plan → Intake → Fill the workbook → Generate JSON → VCF Installer
+ (gate)    (1 page, 1 mtg)   (per team)  (raw .xlsx, or      (VCF.JSON-      (submit the
+                                          Coscia's tool)      Generator)      JSON, UI/API)
 ```
+
+The **filled P&P workbook is the machine-readable handoff**: Coscia's tool (or
+the raw `.xlsx`) fills it, then **VCF.JSONGenerator** reads it to produce the
+deployment JSON for the VCF Installer — see *Related tools* below.
 
 ## Related tools
 
@@ -73,10 +78,14 @@ Prereqs check  →  Network/DNS plan  →  Intake doc  →  Workbook fill  →  
   — pre-cutover readiness scoring from RVTools / HST exports.
 - **[pauldiee/VCFHealthCheck](https://github.com/pauldiee/VCFHealthCheck)** —
   post-cutover health checks of live VCF 9 environments.
-- **[VCF.JSONGenerator](https://www.powershellgallery.com/packages/VCF.JSONGenerator/)**
-  — Ken Gould's PowerShell module that generates the VCF **deployment/bring-up
-  JSON** for the VCF Installer / SDDC Manager. The "last mile" after this repo's
-  flow: plan → fill the workbook → generate the deployment JSON → VCF Installer.
+- **VCF.JSONGenerator** — Ken Gould's cross-platform PowerShell module, a
+  **companion to the P&P workbook**: it **reads a populated workbook** (the same
+  one this repo targets) and generates the JSON payloads for the VCF management
+  components (VCF Installer / SDDC Manager). The "last mile" — plan → fill the
+  workbook → generate the JSON → submit to the Installer. It does *not* configure
+  prerequisites or submit the JSON; you do that.
+  [GitHub](https://github.com/vmware/powershell-module-for-vmware-cloud-foundation-jsongenerator)
+  · [PowerShell Gallery](https://www.powershellgallery.com/packages/VCF.JSONGenerator/)
 
 ## Author
 

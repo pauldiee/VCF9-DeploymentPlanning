@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.9 — 2026-07-02
+- README: extended the **workflow** to show the full pipeline — Fill the workbook
+  (raw `.xlsx` or **Coscia's tool**) → **Generate JSON** (VCF.JSONGenerator) →
+  VCF Installer — with a note that the filled P&P workbook is the machine-readable
+  handoff. Corrected the VCF.JSONGenerator entry: it **reads a populated P&P
+  workbook** (the same one this repo targets) to produce the JSON payloads;
+  linked its GitHub + PS Gallery. Confirms the tool chain: this repo plans and
+  fills the workbook, VCF.JSONGenerator turns it into deployment JSON.
+
 ## v0.4.8 — 2026-07-02
 - README: added **VCF.JSONGenerator** (Ken Gould's PowerShell module) to *Related
   tools* — it generates the VCF deployment/bring-up JSON for the VCF Installer /
