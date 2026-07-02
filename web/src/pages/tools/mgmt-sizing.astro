@@ -36,6 +36,7 @@ const opt = (values: readonly string[]) => values;
           <label>Deployment size
             <select id="deploymentSize">{opt(OPTIONS.deploymentSize).map((v) => <option>{v}</option>)}</select>
           </label>
+          <p class="sizer__hint">Simple deploys at Small only; High Availability at Medium or Large.</p>
           <label>Instance model
             <select id="instanceModel">{opt(OPTIONS.instanceModel).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -222,11 +223,33 @@ const opt = (values: readonly string[]) => values;
     recalc();
   });
 
+  // ---- deployment size is constrained by the model (workbook cell O23):
+  //   Simple -> Small only; High Availability -> Medium or Large.
+  const sizeByModel: Record<string, string[]> = {
+    Simple: ['Small'],
+    'High Availability': ['Medium', 'Large'],
+  };
+  let lastModel = '';
+  function syncSizeOptions() {
+    const model = ($('deploymentModel') as HTMLSelectElement).value;
+    const allowed = sizeByModel[model] ?? [...OPTIONS.deploymentSize];
+    const sel = $('deploymentSize') as HTMLSelectElement;
+    const current = allowed.includes(sel.value) ? sel.value : allowed[0];
+    sel.innerHTML = selOptions(allowed, current);
+    sel.disabled = allowed.length < 2;
+    state.deploymentSize = current;
+  }
+
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
   const pct = (n: number) => (n === Infinity ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
 
   function recalc() {
+    const model = ($('deploymentModel') as HTMLSelectElement).value;
+    if (model !== lastModel) {
+      lastModel = model;
+      syncSizeOptions();
+    }
     readInputs();
     const r = compute(state);
 
