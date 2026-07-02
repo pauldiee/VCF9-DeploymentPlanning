@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.26 — 2026-07-02
+- Actually-actually fixed the `Duplicate id` build warning. The v0.1.23 prebuild
+  targeted `.astro/data-store.json`, which **does not exist** in this Astro
+  version — the content store is `.astro/collections/` — so it was a no-op and
+  the warning kept recurring. Pointed `prebuild` at `.astro/collections`;
+  verified clean across 12 consecutive `npm run build` cycles alternating the
+  three docs that had been failing.
+
 ## v0.1.25 — 2026-07-02
 - `03-multi-az-prep.md` section D: added a note that **public peering is normally
   a workload-domain concern, not management** — the mgmt domain's Edge uplinks

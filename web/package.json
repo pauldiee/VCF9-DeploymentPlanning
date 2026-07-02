@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node -e \"require('fs').rmSync('.astro/data-store.json',{force:true})\"",
+    "prebuild": "node -e \"require('fs').rmSync('.astro/collections',{recursive:true,force:true})\"",
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check"

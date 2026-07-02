@@ -5,7 +5,7 @@ import { glob } from 'astro/loaders';
 // These live outside the Astro project root (repo `docs/` and `samples/`); an
 // absolute base gives every file one canonical id (a relative base can be tracked
 // under two normalized paths). This alone does NOT fully stop the spurious
-// "Duplicate id" warning — the incremental content cache (`.astro/data-store.json`)
+// "Duplicate id" warning — the incremental content cache (`.astro/collections/`)
 // can still re-add an edited file after `dev`/`build` interleave. The reliable
 // fix is the `prebuild` script (package.json) clearing that store so every build
 // starts from a clean cache. CI (fresh checkout, no cache) is unaffected either way.
