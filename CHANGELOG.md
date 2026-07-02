@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 — 2026-07-02
+- `workbook-cell-mapping.md`: documented **how VCF.JSONGenerator reads the
+  workbook** — via **named ranges**, not cells/labels. It collects every
+  `input*`-prefixed value field (~2,338 in the pinned 9.1 workbook) and every
+  `*chosen`-suffixed dropdown (~465), structured by area (`input_mgmt_*`,
+  `input_wld_*`, `input_cluster_*`, `input_flt_*`, …). Named ranges survive
+  Broadcom's row shifts, so a future intake→workbook writer (issue #1) should
+  target them. (Inspected the module source on GitHub.)
+
 ## v0.4.9 — 2026-07-02
 - README: extended the **workflow** to show the full pipeline — Fill the workbook
   (raw `.xlsx` or **Coscia's tool**) → **Generate JSON** (VCF.JSONGenerator) →

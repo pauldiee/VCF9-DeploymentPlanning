@@ -12,6 +12,25 @@ not.
 > re-validate this mapping against the new sheet/field labels in the same
 > commit.
 
+## How the downstream tooling reads the workbook (named ranges)
+
+**[VCF.JSONGenerator](https://github.com/vmware/powershell-module-for-vmware-cloud-foundation-jsongenerator)**
+(see README *Related tools*) turns a filled workbook into VCF deployment JSON by
+reading the workbook's **defined names (named ranges)** — not cells or labels.
+Concretely it collects:
+
+- every named range prefixed **`input*`** — the value fields (FQDN, IP, VLAN,
+  CIDR, password, name, …). The pinned 9.1 workbook has **~2,338** of these.
+- every named range suffixed **`*chosen`** — the dropdown selections
+  (deployment model, sizes, include/exclude, …). **~465** in 9.1.
+
+Names are structured by area — `input_mgmt_*`, `input_wld_*`, `input_cluster_*`,
+`input_flt_*`, `input_xreg_*`, etc. (biggest sets: WLD ~1188, mgmt ~428, cluster
+~218, fleet ~190). **Named ranges move with their cell, so they survive
+Broadcom's row shifts** — which is why they're the stable target for a writer
+tool. A future intake→workbook writer (issue #1) should populate these
+`input_*` / `*_chosen` named ranges so VCF.JSONGenerator consumes them directly.
+
 ## Sheet: VCF & VVF Planning
 
 | Intake | Sheet section            | Field label                              |
