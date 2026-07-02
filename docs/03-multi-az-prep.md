@@ -64,6 +64,21 @@ does not stop I/O — the preferred AZ (M5) keeps quorum.
 > guide describes an optional dedicated per-site witness VLAN; VCF's design does
 > not use it.)
 
+**Routing for witness traffic.** Because witness traffic rides the **ESX
+Management** VMkernel — which is on the default TCP/IP stack and uses the
+**management default gateway** — it follows normal routed paths, so you do **not
+add per-host static routes** (the classic dedicated-witness-VMK design does; the
+VCF management-network design doesn't). What you need instead:
+
+- **Bidirectional L3 routing** between **each AZ's ESX-Management subnet** and the
+  **witness appliance's network** (3rd site): AZ1 *and* AZ2 hosts must reach the
+  witness, and the witness must route back to **both** AZ management subnets.
+- Each AZ's **management default gateway** needs a route to the witness subnet,
+  and the witness site's gateway routes back to both AZ management subnets — all
+  within the **witness RTT budget** (≤200 ms; see the table above).
+- vSAN witness traffic is **unicast** on modern vSAN — no multicast on the routed
+  path. Ensure the required vSAN ports are permitted end-to-end.
+
 ---
 
 ## C. AZ1 ↔ AZ2 fabric

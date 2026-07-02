@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.1 — 2026-07-02
+- `03-multi-az-prep.md`: added a **witness-traffic routing** note. Since witness
+  traffic rides the ESX Management VMkernel (default TCP/IP stack → management
+  default gateway), it follows routed paths and needs **no per-host static
+  routes** (unlike a dedicated-witness-VMK design). Requirement: **bidirectional
+  L3 routing** between each AZ's ESX-Management subnet and the witness appliance's
+  network, both AZs ↔ witness, within the RTT budget; unicast, ports permitted
+  end-to-end.
+
 ## v0.5.0 — 2026-07-02
 - `workbook-cell-mapping.md`: documented **how VCF.JSONGenerator reads the
   workbook** — via **named ranges**, not cells/labels. It collects every
