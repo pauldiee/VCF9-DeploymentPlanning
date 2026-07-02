@@ -31,6 +31,86 @@ Broadcom's row shifts** — which is why they're the stable target for a writer
 tool. A future intake→workbook writer (issue #1) should populate these
 `input_*` / `*_chosen` named ranges so VCF.JSONGenerator consumes them directly.
 
+### Intake → named range (management domain) — first cut
+
+Maps each management-domain intake ID to the workbook **named range(s)** it
+populates. `{a,b}` = brace expansion of a name family; per-AZ names show `az1`
+and gain an `az2` twin (on *Configure Management Domain*) when `A13` = stretched.
+**First cut — validate before wiring a generator.** Sources: the module's
+`input*` / `*chosen` read logic + a full defined-names export of the pinned 9.1
+workbook.
+
+| Intake | Named range(s) |
+| ------ | -------------- |
+| A1 | `vcf_version_chosen` |
+| A2 | `mgmt_domain_deployment_type_chosen` |
+| A3 | `mgmt_domain_chosen` |
+| A4 | `sizing_vcf_deployment_model_chosen` |
+| A5 | `sizing_vcf_deployment_size_chosen` (drives `mgmt_{set,vcenter,nsxt,vcfops}_appliance_size_chosen`) |
+| A6 | `mgmt_domain_existing_{vcenter,nsx_manager,vcf_operations}_chosen` |
+| A7 | `mgmt_principal_storage_chosen` |
+| A8 | `mgmt_cl01_vsan_data_in_transit_chosen` |
+| A9 | `mgmt_cl01_vsan_ftt_chosen` |
+| A10 | `mgmt_nsx_overlay_transit_gateway_chosen` |
+| A11 | `mgmt_dual_stack_networking_chosen` |
+| A12 | `mgmt_vcf_management_network_chosen` |
+| A13 | `mgmt_stretched_cluster_chosen` |
+| A14 | — implicit (which `input_mgmt_az1_host{1..16}_*` are filled) |
+| A16 | `mgmt_ceip_status_chosen` |
+| A17 | `mgmt_domain_ops_automation_later_chosen`, `mgmt_domain_vcf_automation_later_chosen` |
+| B1 | `input_mgmt_az1_mgmt_{vlan,mtu,gateway_cidr}` |
+| B2 | `input_mgmt_az1_mgmt_vm_{vlan,mtu,gateway_cidr}` |
+| B3 | `input_mgmt_az1_vcf_mgmt_{vlan,mtu,gateway_cidr}` |
+| B4 | `input_flt_vcfms_node_pool_{start,end}_ip` |
+| B5 | `input_flt_auto_node_pool_{start,end}_ip` |
+| B6 | `input_mgmt_az1_vmotion_{vlan,mtu,gateway_cidr,pool_start_ip,pool_end_ip}` |
+| B7 | `input_mgmt_az1_vsan_{vlan,mtu,gateway_cidr,pool_start_ip,pool_end_ip}` |
+| B8 | `input_mgmt_az1_host_overlay_{vlan,mtu,gateway_cidr,pool_start_ip,pool_end_ip}`; `mgmt_host_overlay_addressing_chosen` |
+| B9 | `input_mgmt_az1_edge_overlay_{vlan,mtu,cidr,gateway_ip,mask,pool_start_ip,pool_end_ip}` |
+| B10 | `input_mgmt_az1_uplink01_{vlan,mtu,cidr,gateway_ip}`, `input_mgmt_az1_en{1,2}_uplink01_interface_cidr`, `input_mgmt_az1_tor1_peer_{ip,asn}` |
+| B11 | `input_mgmt_az1_uplink02_{vlan,mtu,cidr,gateway_ip}`, `input_mgmt_az1_en{1,2}_uplink02_interface_cidr`, `input_mgmt_az1_tor2_peer_{ip,asn}` |
+| B12 | `input_mgmt_en_asn` |
+| B13 | `input_mgmt_az1_tor{1,2}_peer_asn` |
+| B14 | `input_mgmt_az1_tor{1,2}_peer_bgp_password` |
+| B15 | `mgmt_en0{1,2}_bfd_chosen` |
+| B16 | — (no named range; route policy is out of the JSON) |
+| B17 | — (no named range; only the addressing-mode `*chosen`) |
+| B18 | `input_sftp_server{,_port,_protocol,_backup_dir,_passphrase,_sshfingerprint}` |
+| B19 | `mgmt_internet_proxy{,_type,_auth}_chosen`, `input_mgmt_internet_proxy_{address,port,email,password}` |
+| B20 | `input_mgmt_az1_dtgw_{vlan,gateway_cidr}` |
+| B22 | — (no named range; extra Tier-0 BGP neighbor) |
+| C1/C2 | `input_region_ad_parent_{fqdn,netbios}`, `input_region_ad_child_{fqdn,netbios}` |
+| C5 | `input_child_svc_vsphere_ad_{user,password}`, `input_child_svc_nsx_ad_{user,password}` |
+| C6 | `input_gg_vcf_{admins,operators,viewers}_group` (+ `input_gg_{vc,nsx}_*_group`) |
+| C7 | `input_region_dns{1,2}_ip` |
+| C10 | `input_region_ntp{1,2}_server` |
+| E1 | `input_vcf_instance_name` |
+| E2 | `input_mgmt_sddc_domain` |
+| E3 | `input_mgmt_az1_host{1..16}_{fqdn,mgmt_ip}` |
+| E4 | `input_esxi_root_password` |
+| E6 | `input_mgmt_vc_{fqdn,ip}` |
+| E7 | `input_flt_def_sddc_mgr_fqdn`; `sddc_mgr_{fqdn,ip}` |
+| E8 | `input_mgmt_nsxt_vip_{fqdn,ip}`, `input_mgmt_nsxt_mgr{a,b,c}_{fqdn,ip}` |
+| E9 | `input_xreg_vrops_node{a,b,c}_{fqdn,ip}`, `input_xreg_vrops_virtual_{fqdn,ip}` |
+| E10 | `input_xreg_vra_virtual_{fqdn,ip}`, `input_flt_auto_sr_fqdn` |
+| E11 | `input_mgmt_az1_en{1,2}_{fqdn,mgmt_cidr}` |
+| E12 | `input_mgmt_datacenter`, `input_mgmt_cl01_cluster`, `input_mgmt_cl01_vds0{1,2,3}_name`, `input_mgmt_cl01_az1_{mgmt,mgmt_vm,vcf_mgmt,vmotion,vsan}_pg` |
+| E14 | `input_flt_lc_{fqdn,ip}` (License), `input_flt_vidb_vip_{fqdn,ip}` + `input_flt_ic_{fqdn,ip}` (Identity Broker / Cloud Proxy), `input_flt_sr_{fqdn,ip}` |
+| F2 | `input_flt_def_administrator_vsphere_local_password` |
+| F3 | `input_vcenter_root_password` |
+| F4 | `sddc_mgr_{vcf,root,admin_local}_password` |
+| F6 | `input_xreg_vrops_{admin,root}_password` |
+| F7 | `input_xreg_vra_admin_password` |
+| F8 | `input_mgmt_nsxt_en_{admin,root}_password` |
+| F10 | `input_sftp_server_passphrase` |
+
+**Validate / open questions:** `C3` (DC FQDN list), `C8` (default DNS suffix),
+`D2`–`D6` (CA cert / CSR / template / SAN / validity), `F5` (mgmt NSX Manager
+admin/audit/root — only Edge passwords were found), and the Day-2 items
+`B21`/`E15` (on the *Deploy Fleet Management Day-N* sheet, not the mgmt named
+ranges) still need a named range confirmed or confirmed absent. Some passwords
+live on *Value Reference Tables* (`sddc_mgr_*`) rather than an `input_*` name.
+
 ## Sheet: VCF & VVF Planning
 
 | Intake | Sheet section            | Field label                              |

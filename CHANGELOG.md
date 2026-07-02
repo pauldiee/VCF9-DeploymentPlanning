@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.2 — 2026-07-02
+- `workbook-cell-mapping.md`: added a first-cut **intake → named range**
+  table for the **management domain** — each intake ID (A/B/C/D/E/F) mapped to the
+  `input_*` / `*_chosen` named range(s) VCF.JSONGenerator reads, so a future
+  writer (issue #1) can target them directly. Built from a full defined-names
+  export + a background cross-reference pass; per-AZ families use `az1`/brace
+  notation. Open items (C3/C8/D2–D6/F5, Day-2 B21/E15) are flagged for
+  validation.
+
 ## v0.5.1 — 2026-07-02
 - `03-multi-az-prep.md`: added a **witness-traffic routing** note. Since witness
   traffic rides the ESX Management VMkernel (default TCP/IP stack → management
