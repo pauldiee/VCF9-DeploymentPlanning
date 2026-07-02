@@ -7,25 +7,28 @@ what order** and **who owns it** — deliberately **no dates or estimates**; add
 those in your own tool.
 
 > **[▶ Open the Deployment Plan export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)** —
-> pick your deployment type and export this plan as **Markdown** or a **CSV** that
+> build your deployment scope and export this plan as **Markdown** or a **CSV** that
 > imports into Jira, Azure DevOps, or GitLab.
 
-Pick your deployment type below: the **core epics apply to every deployment**,
-and the **variant epics** switch on as noted. Most real builds are **B + D**
-(management + a workload domain, with Day-2 fleet), some add **C** (stretched).
+Build your **scope** from the blocks below: the **core epics apply to every
+deployment**, and the variants switch on **independently**. The management domain
+can be **stretched** or not; the **Day-2 fleet** is optional; and you add **one or
+more workload domains**, each independently **non-stretched or stretched**.
 
-## Deployment types (most used)
+## Scope building blocks
 
-| Type | What it is | Epics that apply |
-| ---- | ---------- | ---------------- |
-| **A — Management domain only** (single-AZ) | Just the VCF management fleet; no tenant workloads yet | Core: E1–E6, E10 |
-| **B — Management + workload domain(s)** | Typical: management fleet + one or more VI workload domains | Core **+ E7** |
-| **C — Stretched / multi-AZ** | Management (and/or workload) cluster stretched across two AZs + witness | Core **+ E8** |
-| **D — + Day-2 fleet** | VCF Operations / Automation / Logs deployed after bring-up | Core **+ E9** |
+| Block | What it is | Epics |
+| ----- | ---------- | ----- |
+| **Core** (always) | The management fleet: prereqs → plan → intake → workbook → bring-up → config → handover | E1–E6, E10 |
+| **Stretch the management domain** | Management cluster stretched across two AZs + its own witness | + E8 |
+| **Day-2 fleet** | VCF Operations / Automation / Logs deployed after bring-up | + E9 |
+| **Workload domain** (repeat per WLD) | A VI workload domain — **non-stretched** or **stretched** (its own hosts, and if stretched its own witness) | + E7 (one per WLD) |
 
-Combine freely — e.g. **B + C + D** = a stretched deployment with a workload
-domain and the full Day-2 fleet. Each epic links to the detailed page in this
-repo that fills it in.
+Mix freely — e.g. a stretched management domain + the Day-2 fleet + two workload
+domains (one stretched) = Core **+ E8 + E9 + two E7**. Execution order runs **core
+config → management stretch → Day-2 → workload domains → handover**. The
+[export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)
+assembles the exact epic/story set per scope.
 
 Owner key: **Arch** = solution architect · **Net** = network · **AD** =
 AD/DNS/NTP · **PKI** = certificate team · **Plat** = platform/VMware · **Sec** =
@@ -79,7 +82,7 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
   - *Acceptance:* JSON generated and reviewed against the plan.
 
 ### E5 — Management domain bring-up  ·  Owner: Plat
-- **Story 5.1 — Install & configure the management hosts.** Image each host with the supported **ESXi ISO**; set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.
+- **Story 5.1 — Install & configure the management hosts.** Image each host with the supported **ESXi ISO** (see the [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) repo to prep + commission hosts quickly); set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.
   - *Acceptance:* every host reachable on the management network with the matched ESXi build; DNS + NTP correct.
 - **Story 5.2 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network.
 - **Story 5.3 — Deploy the management domain.** Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.
@@ -100,22 +103,42 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
 
 ---
 
-## Variant epics (switch on per deployment type)
+## Variant epics (add per scope)
 
-### E7 — Workload domain(s)  ·  Type B  ·  Owner: Plat + Net
-Ref: [`02-customer-intake.md`](02-customer-intake.md) section H
+Order runs **core config → management stretch (E8) → Day-2 (E9) → workload
+domains (E7, one per WLD) → handover (E10)**.
 
-- **Story 7.1 — WLD network prep.** Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs each WLD consumes on the mgmt VM-mgmt subnet.
-- **Story 7.2 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster.
-- **Story 7.3 — WLD connectivity.** Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.
-  - *Acceptance:* WLD healthy in SDDC Manager; workloads can be placed. Repeat per WLD.
+### E7 — Workload domain  ·  Owner: Plat + Net (+ Storage if stretched)
+Ref: [`02-customer-intake.md`](02-customer-intake.md) section H (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) if stretched)
 
-### E8 — Stretched / multi-AZ  ·  Type C  ·  Owner: Net + Arch + Storage
+**Repeat this epic per workload domain.** Each WLD is independently
+**non-stretched** or **stretched** — a stretched WLD gets its **own** second-AZ
+hosts and its **own** vSAN witness (one witness per stretched cluster, separate
+from the management witness).
+
+**Non-stretched WLD:**
+- **Story 7.1 — WLD network prep.** Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.
+- **Story 7.2 — Prepare & commission the WLD hosts.** Image the WLD hosts with the supported **ESXi ISO** (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)); configure the management network, DNS, NTP; then **commission** them into SDDC Manager.
+- **Story 7.3 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster.
+- **Story 7.4 — WLD connectivity.** Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.
+  - *Acceptance:* WLD healthy in SDDC Manager; workloads can be placed.
+
+**Stretched WLD** (multi-AZ set):
+- **Story 7.1 — WLD network prep (per-AZ).** Provision the per-WLD VLANs/subnets across **both AZs** (per-AZ networks) and the 5 mgmt-subnet IPs.
+- **Story 7.2 — Prepare & commission the WLD hosts (both AZs).** Image the WLD hosts in both AZs (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)); configure the per-AZ management networks, DNS, NTP; then **commission** them into SDDC Manager.
+- **Story 7.3 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster.
+- **Story 7.4 — WLD witness.** Deploy a **dedicated** vSAN witness for **this** WLD at the third site (one per stretched cluster, separate from the management witness); route it to both AZ ESX-management networks.
+- **Story 7.5 — Stretch the WLD cluster.** Fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity). Edge stretched only under NSX **Centralized** connectivity.
+  - *Acceptance:* stretched WLD compliant; an AZ-failure test survives on the surviving site.
+- **Story 7.6 — WLD connectivity.** Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.
+  - *Acceptance:* WLD healthy in SDDC Manager; workloads can be placed.
+
+### E8 — Stretch the management domain  ·  Owner: Net + Arch + Storage
 Ref: [`03-multi-az-prep.md`](03-multi-az-prep.md)
 
-- **Story 8.1 — Witness site.** Deploy the vSAN witness appliance at the third site; route it to both AZ ESX-management networks.
+- **Story 8.1 — Witness site (management).** Deploy the vSAN witness appliance for the **management** cluster at the third site; route it to both AZ ESX-management networks.
 - **Story 8.2 — Inter-AZ fabric.** Verify <5 ms RTT, ≥10 Gbps, MTU 9000, HA L3 gateway between AZs.
-- **Story 8.3 — Install, configure & commission the second-AZ hosts.** Image the AZ2 hosts with the supported **ESXi ISO**; configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then **commission** them into SDDC Manager, ready for the stretch.
+- **Story 8.3 — Install, configure & commission the second-AZ hosts.** Image the AZ2 hosts with the supported **ESXi ISO** (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) to prep + commission hosts quickly); configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then **commission** them into SDDC Manager, ready for the stretch.
   - *Acceptance:* AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned and available in SDDC Manager.
 - **Story 8.4 — Stretch the cluster.** Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity).
   - *Acceptance:* stretched cluster compliant; an AZ-failure test survives on the surviving site.
@@ -138,7 +161,9 @@ Ref: [`05-day2-deployments.md`](05-day2-deployments.md)
 - Treat **E1–E10** as epics, the **Story** lines as stories, and the bullets
   under them as tasks; carry the *Acceptance* line into the story's acceptance
   criteria.
-- Add only the **variant epics** for your deployment type (see the table up top).
+- Add the **stretch** / **Day-2** blocks and **one E7 per workload domain** you
+  need (see the scope table up top); order runs core → management stretch → Day-2
+  → workload domains → handover.
 - Sequence is roughly top-to-bottom; E1–E4 are planning (parallelisable across
   role teams), E5 onward is the build.
 - This page is generic — replace the linked detail pages' placeholder values with

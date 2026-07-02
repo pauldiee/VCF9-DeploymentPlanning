@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.1 — 2026-07-02
+- **Deployment-plan stretch is now modelled per-domain.** The export tool and doc
+  drop the single global "stretched" variant for: a **Stretch the management
+  domain** toggle (E8, renamed) **+** a **per-workload-domain repeater** where each
+  WLD is independently **non-stretched or stretched**. A stretched WLD gets its own
+  second-AZ host prep + commission, its **own** dedicated vSAN witness (one per
+  stretched cluster), and the stretch stories. Execution order: core → mgmt stretch
+  → Day-2 → workload domains → handover. Tool page gains an add/remove WLD list;
+  `web/src/lib/deployment-plan.ts` generates one E7 epic per WLD. (#46)
+- **Referenced [VCFHostPreparation](https://github.com/pauldiee/VCFHostPreparation)**
+  (public) for imaging + commissioning ESXi hosts, in every host-prep story
+  (E5.1 / E7 / E8.3) and in Related tools (README + site landing page). (#47)
+
 ## v0.7.0 — 2026-07-02
 - More deployment-plan sequencing fixes (`docs/06-deployment-plan.md` + mirrored
   `web/src/lib/deployment-plan.ts`): certificates and identity are really

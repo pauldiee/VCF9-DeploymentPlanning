@@ -9,7 +9,7 @@ const epics = selectedEpics(sel);
 
 <BaseLayout
   title="Deployment Plan Export | VCF 9.1 Planning"
-  description="Pick your VCF 9.1 deployment type and export the agile work breakdown (epics, stories, tasks) as Markdown or a CSV that imports into Jira, Azure DevOps, or GitLab."
+  description="Pick your VCF 9.1 deployment scope — management (stretched or not), Day-2 fleet, and one or more workload domains each stretched or not — and export the agile work breakdown as Markdown or a CSV that imports into Jira, Azure DevOps, or GitLab."
   active="06-deployment-plan"
 >
   <article class="planx">
@@ -17,25 +17,33 @@ const epics = selectedEpics(sel);
       <p class="itq-eyebrow">Export tool</p>
       <h1>Deployment Plan Export</h1>
       <p class="planx__lede">
-        Pick your deployment type below; the plan filters to the epics that apply, then
-        export it for your scrum/agile system. <strong>Copy as Markdown</strong> for a wiki or PR,
-        or <strong>download a CSV</strong> that imports into Jira, Azure DevOps, or GitLab. This mirrors the
+        Build your deployment scope below — stretch the management domain or not, add the Day-2 fleet,
+        and add one or more <strong>workload domains</strong>, each independently <strong>non-stretched or stretched</strong>
+        (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
+        epics and stories, then export it: <strong>Copy as Markdown</strong> for a wiki or PR, or
+        <strong>download a CSV</strong> that imports into Jira, Azure DevOps, or GitLab. Mirrors the
         <a href={docHref('06-deployment-plan')}>Deployment Plan</a> page; everything runs in your browser.
       </p>
     </header>
 
     <section class="planx__controls">
       <fieldset>
-        <legend>Deployment type</legend>
-        <p class="planx__hint">Core epics (E1–E6, E10) always apply. Switch on the variants you need.</p>
-        <label class="planx__check"><input type="checkbox" id="optWld" checked /> Workload domain(s) <span class="planx__tag">Type B · E7</span></label>
-        <label class="planx__check"><input type="checkbox" id="optStretched" /> Stretched / multi-AZ <span class="planx__tag">Type C · E8</span></label>
-        <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Operations / Automation / Logs) <span class="planx__tag">Type D · E9</span></label>
-        <p class="planx__summary" id="typeSummary">
-          <strong>Type {typeLabel(sel)}</strong><br />
-          Epics included: {includedEpicList(sel)}
-        </p>
+        <legend>Scope</legend>
+        <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.</p>
+        <label class="planx__check"><input type="checkbox" id="optMgmtStretched" /> Stretch the management domain <span class="planx__tag">E8</span></label>
+        <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Operations / Automation / Logs) <span class="planx__tag">E9</span></label>
       </fieldset>
+
+      <fieldset>
+        <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
+        <p class="planx__hint">Each workload domain is its own epic (E7…). Tick <em>Stretched</em> to add per-AZ host prep, a dedicated witness, and the stretch stories.</p>
+        <div id="wldList"></div>
+      </fieldset>
+
+      <p class="planx__summary" id="typeSummary">
+        <strong>Scope: {typeLabel(sel)}</strong><br />
+        Epics included: {includedEpicList(sel)}
+      </p>
 
       <div class="planx__toolbar">
         <button type="button" id="btnCopyMd"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy Markdown</button>
@@ -83,6 +91,7 @@ const epics = selectedEpics(sel);
 
     <p class="planx__source">
       Source of truth: <a href={docHref('06-deployment-plan')}>docs/06-deployment-plan.md</a>.
+      Host imaging + commissioning helper: <a href="https://github.com/pauldiee/VCFHostPreparation">VCFHostPreparation</a>.
       The CSV is a generic hierarchical import; map the columns to your tool's fields on import.
     </p>
   </article>
@@ -97,31 +106,52 @@ const epics = selectedEpics(sel);
     buildMarkdown,
     buildCsv,
     type Selection,
+    type Wld,
   } from '../../lib/deployment-plan';
 
   const $ = (id: string) => document.getElementById(id)!;
 
+  // WLD list is client-managed state (the checkboxes are read directly).
+  let wlds: Wld[] = defaultSelection().wlds.map((w) => ({ ...w }));
+
   function readSel(): Selection {
     return {
-      wld: (<HTMLInputElement>$('optWld')).checked,
-      stretched: (<HTMLInputElement>$('optStretched')).checked,
+      mgmtStretched: (<HTMLInputElement>$('optMgmtStretched')).checked,
       day2: (<HTMLInputElement>$('optDay2')).checked,
+      wlds: wlds.map((w) => ({ ...w })),
     };
   }
 
   function esc(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+  function linkify(s: string): string {
+    return esc(s).replace(/(https?:\/\/[^\s)]+)/g, '<a href="$1">$1</a>');
+  }
 
-  function renderPreview(sel: Selection) {
+  function renderWlds() {
+    $('wldList').innerHTML = wlds
+      .map(
+        (w, i) => `
+        <div class="planx__wld" data-i="${i}">
+          <input class="planx__wldname" type="text" value="${esc(w.name)}" placeholder="wld${i + 1}" aria-label="Workload domain name" />
+          <label class="planx__check"><input type="checkbox" class="planx__wldstretch" ${w.stretched ? 'checked' : ''} /> Stretched</label>
+          <button type="button" class="planx__wlddel" aria-label="Remove workload domain" ${wlds.length <= 1 ? 'disabled' : ''}>×</button>
+        </div>`
+      )
+      .join('');
+  }
+
+  function render() {
+    const sel = readSel();
     $('typeSummary').innerHTML =
-      `<strong>Type ${esc(typeLabel(sel))}</strong><br />Epics included: ${esc(includedEpicList(sel))}`;
+      `<strong>Scope: ${esc(typeLabel(sel))}</strong><br />Epics included: ${esc(includedEpicList(sel))}`;
 
     const html = selectedEpics(sel)
       .map((e) => {
         const stories = e.stories
           .map((s) => {
-            const tasks = s.tasks.map((t) => `<li>${esc(t)}</li>`).join('');
+            const tasks = s.tasks.map((t) => `<li>${linkify(t)}</li>`).join('');
             const accept = s.acceptance
               ? `<li class="planx__accept"><em>Acceptance:</em> ${esc(s.acceptance)}</li>`
               : '';
@@ -155,9 +185,33 @@ const epics = selectedEpics(sel);
     catch { toolbarMsg('Copy failed (clipboard blocked)'); }
   }
 
-  for (const id of ['optWld', 'optStretched', 'optDay2']) {
-    $(id).addEventListener('change', () => renderPreview(readSel()));
-  }
+  // WLD list events (delegated).
+  $('btnAddWld').addEventListener('click', () => {
+    wlds.push({ name: `wld0${wlds.length + 1}`, stretched: false });
+    renderWlds();
+    render();
+  });
+  $('wldList').addEventListener('input', (e) => {
+    const t = e.target as HTMLElement;
+    const row = t.closest('.planx__wld') as HTMLElement | null;
+    if (!row) return;
+    const i = Number(row.dataset.i);
+    if (t.classList.contains('planx__wldname')) wlds[i].name = (<HTMLInputElement>t).value;
+    else if (t.classList.contains('planx__wldstretch')) wlds[i].stretched = (<HTMLInputElement>t).checked;
+    render();
+  });
+  $('wldList').addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.classList.contains('planx__wlddel')) return;
+    const row = t.closest('.planx__wld') as HTMLElement | null;
+    if (!row || wlds.length <= 1) return;
+    wlds.splice(Number(row.dataset.i), 1);
+    renderWlds();
+    render();
+  });
+
+  $('optMgmtStretched').addEventListener('change', render);
+  $('optDay2').addEventListener('change', render);
 
   $('btnCopyMd').addEventListener('click', () => copy(buildMarkdown(readSel()), 'Plan copied (Markdown)'));
   $('btnCopyCsv').addEventListener('click', () => copy(buildCsv(readSel()), 'CSV copied'));
@@ -170,8 +224,8 @@ const epics = selectedEpics(sel);
     toolbarMsg('Downloaded vcf9-deployment-plan.csv');
   });
 
-  // Re-render from the live control state on load (defaults already server-rendered).
-  renderPreview(readSel());
+  renderWlds();
+  render();
 </script>
 
 <style is:global>
@@ -185,7 +239,10 @@ const epics = selectedEpics(sel);
     padding: 0.9rem 1rem 1rem;
     margin: 0 0 1rem;
   }
-  .planx legend { font-weight: var(--fw-semibold); color: var(--itq-royal-blue); padding: 0 0.4rem; }
+  .planx legend {
+    font-weight: var(--fw-semibold); color: var(--itq-royal-blue); padding: 0 0.4rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
   .planx__hint { font-size: 0.8rem; color: var(--itq-royal-40); margin: 0 0 0.6rem; }
   .planx__check {
     display: flex; align-items: center; gap: 0.5rem;
@@ -197,12 +254,37 @@ const epics = selectedEpics(sel);
     border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
     padding: 0.05rem 0.4rem; margin-left: 0.2rem;
   }
+  .planx__add {
+    margin-left: auto; font-size: 0.75rem; padding: 0.2rem 0.55rem;
+    border: var(--border-width) solid var(--itq-orange); color: var(--itq-orange);
+    background: transparent; border-radius: var(--radius-sm); cursor: pointer;
+  }
+  .planx__add:hover { background: var(--itq-orange); color: var(--itq-white); }
+
+  .planx__wld {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: var(--itq-mist); border: var(--border-width) solid var(--border-default);
+    border-radius: var(--radius-sm); padding: 0.45rem 0.55rem; margin-bottom: 0.45rem;
+  }
+  .planx__wldname {
+    flex: 1; font: inherit; font-size: 0.85rem; padding: 0.35rem 0.5rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white);
+  }
+  .planx__wld .planx__check { margin: 0; flex: none; }
+  .planx__wlddel {
+    flex: none; width: 1.7rem; height: 1.7rem; line-height: 1; font-size: 1rem; cursor: pointer;
+    border: var(--border-width) solid var(--border-default); background: var(--itq-white);
+    color: var(--itq-royal-blue); border-radius: var(--radius-sm);
+  }
+  .planx__wlddel:hover:not([disabled]) { background: var(--itq-orange); color: var(--itq-white); border-color: var(--itq-orange); }
+  .planx__wlddel[disabled] { opacity: 0.4; cursor: not-allowed; }
+
   .planx__summary {
-    margin: 0.8rem 0 0; padding: 0.55rem 0.7rem;
+    margin: 0 0 0.8rem; padding: 0.55rem 0.7rem;
     background: var(--itq-mist); border-radius: var(--radius-sm);
     font-size: 0.85rem; color: var(--itq-royal-blue); line-height: 1.5;
   }
-
   .planx__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.3rem 0 0.5rem; }
   .planx__toolbar button {
     display: inline-flex; align-items: center; gap: 0.4rem;

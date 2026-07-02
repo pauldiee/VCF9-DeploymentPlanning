@@ -94,6 +94,10 @@ deployment JSON for the VCF Installer — see *Related tools* below.
   prerequisites or submit the JSON; you do that.
   [GitHub](https://github.com/vmware/powershell-module-for-vmware-cloud-foundation-jsongenerator)
   · [PowerShell Gallery](https://www.powershellgallery.com/packages/VCF.JSONGenerator/)
+- **[VCFHostPreparation](https://github.com/pauldiee/VCFHostPreparation)** —
+  helper for quickly **imaging and commissioning ESXi hosts** before bring-up
+  (management, workload-domain, and second-AZ hosts). Referenced from the
+  deployment plan's host-prep stories (E5 / E7 / E8).
 
 **ITQ Consulting Services** (delivered as engagements, not public tools):
 
