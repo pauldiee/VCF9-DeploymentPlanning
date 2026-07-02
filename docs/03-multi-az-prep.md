@@ -74,6 +74,14 @@ build each traffic type is **either** stretched L2 (same subnet visible in both
 AZs, for anything that must fail over) **or** per-AZ (a distinct subnet in AZ2,
 routed).
 
+The table below is written for the **management domain**, but the per-AZ rows
+apply to **any stretched cluster** — a **workload-domain cluster can also be
+stretched** (once the management domain is). For each stretched WLD, repeat the
+per-AZ analysis for its own vMotion / vSAN / host-TEP networks. The **VM
+Management (stretched)** row is management-domain-specific: a WLD's tenant
+workloads ride NSX overlay segments, and a WLD that runs its own edges repeats
+the Edge Overlay / Uplink rows.
+
 | Traffic                  | Stretched L2? | AZ1 subnet | AZ2 subnet | Notes                                             |
 | ------------------------ | ------------- | ---------- | ---------- | ------------------------------------------------- |
 | ESX Management           | Per-AZ        | `/24`      | `/24`      | Own gateway per AZ                                |
@@ -81,10 +89,15 @@ routed).
 | vMotion                  | Per-AZ        | `/24`      | `/24`      | Jumbo; routed between AZs                          |
 | vSAN                     | Per-AZ        | `/24`      | `/24`      | Jumbo; routed AZ1↔AZ2 and to witness              |
 | ESX Host Overlay (TEP)   | Per-AZ        | `/24`      | `/24`      | Jumbo; **per-AZ TEP subnets** — common gotcha     |
-| NSX Edge Overlay (TEP)   | **Stretched** | `/24`      | (same)     | Edges fail over → stretched                        |
-| NSX Edge Uplink-01       | **Stretched** | `/29–/30`  | (same)     | BGP peer; stretched                                |
-| NSX Edge Uplink-02       | **Stretched** | `/29–/30`  | (same)     | BGP peer; stretched                                |
+| NSX Edge Overlay (TEP)   | Stretched\*   | `/24`      | (same)     | Edges fail over → stretched **(Centralized only)** |
+| NSX Edge Uplink-01       | Stretched\*   | `/29–/30`  | (same)     | BGP peer; stretched **(Centralized only)**         |
+| NSX Edge Uplink-02       | Stretched\*   | `/29–/30`  | (same)     | BGP peer; stretched **(Centralized only)**         |
 | Witness traffic          | Routed to 3rd | —          | —          | AZ data nodes → witness site (≤200 ms)            |
+
+> **\*** Edge Overlay + Uplinks are stretched **only with NSX Centralized
+> connectivity** (intake `A10`). With **Distributed** connectivity each AZ has
+> its own local transit gateway / edges, so Edge Overlay + Uplinks are **per-AZ**.
+> Consistent with `prerequisites.md`.
 
 > Confirmed against the Broadcom VCF 9 design library — *vSphere Stretched
 > Cluster Model* ([techdocs.broadcom.com](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/design/design-library/cluster-models/single-instance-multiple-availability-zones.html)):
@@ -94,9 +107,13 @@ routed).
 > The AZ1↔AZ2 link is specified as **<5 ms RTT and ≥10 Gbps** — the vSAN
 > stretched-cluster limit, not the looser 10 ms generic-AZ figure.
 
-North-south egress: decide which AZ owns **ingress** in steady state and how
-routes withdraw on an AZ failure (BGP local-pref / AS-path prepend toward the
-non-preferred AZ). Capture this alongside section B of the BGP plan.
+North-south / public peering: the **NSX Edge Uplink BGP sessions** (the two rows
+above, captured in the `01` BGP plan and intake `B10`–`B16`) **are** the
+north-south / public peering — there is no separate "public peering" item unless
+you run a distinct public / DMZ transit. Decide which AZ owns **ingress** in
+steady state and how routes withdraw on an AZ failure (BGP local-pref / AS-path
+prepend toward the non-preferred AZ). Capture this alongside section B of the
+BGP plan.
 
 ---
 

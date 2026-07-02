@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.20 — 2026-07-02
+- `03-multi-az-prep.md` section D clarifications: (1) the per-AZ networking table
+  applies to **any stretched cluster**, not just the management domain — a
+  workload-domain cluster can also be stretched; added a note on the WLD case
+  (repeat per-AZ rows per WLD; VM Management stretched is mgmt-specific). (2)
+  Fixed an inconsistency with `prerequisites.md`: Edge Overlay + Uplinks are
+  stretched **only with NSX Centralized connectivity** (intake `A10`) — per-AZ
+  under Distributed; the rows now carry that caveat. (3) Clarified that the NSX
+  Edge Uplink BGP sessions **are** the north-south / public peering (captured in
+  the `01` BGP plan + intake `B10`–`B16`), not a separate item.
+
 ## v0.1.19 — 2026-07-02
 - `05-day2-deployments.md`: read all the Broadcom option pages and expanded
   section C with accurate per-placement detail — Shared VLAN (no isolation, not
