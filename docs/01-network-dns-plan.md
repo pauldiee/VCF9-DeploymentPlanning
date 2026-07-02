@@ -90,6 +90,12 @@ Domain also lands its **vCenter (1) + NSX Manager cluster (4)** on *this* subnet
 | BFD enabled             | Y/N   | Recommended on point-to-points                     |
 | ECMP                    | Yes   | Required on Edge↔ToR                               |
 | Prefix-list / route-map | TBD   | Often advertise default in / Tier-0 subnets out    |
+| Public / upstream peering (optional) | | Separate BGP session for **public / north-south** routes (internet edge, DMZ, or upstream provider), distinct from the internal ToR fabric peering above. If used, capture its peer AS, peer IP, MD5, and advertised/received prefixes — plus a dedicated uplink subnet if it does not share the Edge uplinks. Most fleets don't need this; the ToR uplinks already carry north-south. |
+
+> **Multi-AZ:** whether the Edge uplinks and this peering are **stretched** across
+> AZs or **per-AZ** depends on the NSX connectivity model — **stretched** under
+> **Centralized**, **per-AZ** under **Distributed** (intake `A10`). See
+> `03-multi-az-prep.md` section D.
 
 ---
 

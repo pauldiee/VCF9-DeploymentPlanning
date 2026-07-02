@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.21 — 2026-07-02
+- `01-network-dns-plan.md` section B (BGP): added an optional **Public / upstream
+  peering** row (a separate BGP session for public / north-south routes — internet
+  edge, DMZ, or upstream provider — distinct from the internal ToR fabric peering;
+  most fleets don't need it) and a **multi-AZ** note that the Edge uplinks /
+  peering are stretched under NSX **Centralized** connectivity and per-AZ under
+  **Distributed** (intake `A10`). Keeps `01` consistent with the `03-multi-az-prep.md`
+  section D clarification. Extends #24.
+
 ## v0.1.20 — 2026-07-02
 - `03-multi-az-prep.md` section D clarifications: (1) the per-AZ networking table
   applies to **any stretched cluster**, not just the management domain — a
