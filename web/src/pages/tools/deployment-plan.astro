@@ -1,0 +1,231 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { docHref } from '../../lib/path';
+import { defaultSelection, selectedEpics, typeLabel, includedEpicList } from '../../lib/deployment-plan';
+
+const sel = defaultSelection();
+const epics = selectedEpics(sel);
+---
+
+<BaseLayout
+  title="Deployment Plan Export | VCF 9.1 Planning"
+  description="Pick your VCF 9.1 deployment type and export the agile work breakdown (epics, stories, tasks) as Markdown or a CSV that imports into Jira, Azure DevOps, or GitLab."
+  active="06-deployment-plan"
+>
+  <article class="planx">
+    <header class="planx__head">
+      <p class="itq-eyebrow">Export tool</p>
+      <h1>Deployment Plan Export</h1>
+      <p class="planx__lede">
+        Pick your deployment type below; the plan filters to the epics that apply, then
+        export it for your scrum/agile system. <strong>Copy as Markdown</strong> for a wiki or PR,
+        or <strong>download a CSV</strong> that imports into Jira, Azure DevOps, or GitLab. This mirrors the
+        <a href={docHref('06-deployment-plan')}>Deployment Plan</a> page; everything runs in your browser.
+      </p>
+    </header>
+
+    <section class="planx__controls">
+      <fieldset>
+        <legend>Deployment type</legend>
+        <p class="planx__hint">Core epics (E1–E6, E10) always apply. Switch on the variants you need.</p>
+        <label class="planx__check"><input type="checkbox" id="optWld" checked /> Workload domain(s) <span class="planx__tag">Type B · E7</span></label>
+        <label class="planx__check"><input type="checkbox" id="optStretched" /> Stretched / multi-AZ <span class="planx__tag">Type C · E8</span></label>
+        <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Operations / Automation / Logs) <span class="planx__tag">Type D · E9</span></label>
+        <p class="planx__summary" id="typeSummary">
+          <strong>Type {typeLabel(sel)}</strong><br />
+          Epics included: {includedEpicList(sel)}
+        </p>
+      </fieldset>
+
+      <div class="planx__toolbar">
+        <button type="button" id="btnCopyMd"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy Markdown</button>
+        <button type="button" id="btnDlMd"><i class="fa-solid fa-download" aria-hidden="true"></i> Download .md</button>
+        <button type="button" id="btnDlCsv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Download CSV</button>
+        <button type="button" id="btnCopyCsv"><i class="fa-solid fa-clipboard" aria-hidden="true"></i> Copy CSV</button>
+        <span id="toolbarMsg" class="planx__toolbar-msg" role="status"></span>
+      </div>
+      <p class="planx__csvnote">
+        CSV columns: <code>Issue Type, Summary, Parent, Owner, Acceptance Criteria, Reference</code> —
+        one row per epic, story, and task; <code>Parent</code> references the parent's Summary so the
+        importer can rebuild the hierarchy.
+      </p>
+    </section>
+
+    <section class="planx__preview" id="preview">
+      {
+        epics.map((e) => (
+          <div class="planx__epic">
+            <h2>
+              {e.id} — {e.title} <span class="planx__owner">Owner: {e.owner}</span>
+            </h2>
+            {e.ref && <p class="planx__ref">Ref: {e.ref}</p>}
+            <ul>
+              {e.stories.map((s) => (
+                <li>
+                  <strong>Story {s.id} — {s.title}.</strong>
+                  <ul>
+                    {s.tasks.map((t) => (
+                      <li>{t}</li>
+                    ))}
+                    {s.acceptance && (
+                      <li class="planx__accept">
+                        <em>Acceptance:</em> {s.acceptance}
+                      </li>
+                    )}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </section>
+
+    <p class="planx__source">
+      Source of truth: <a href={docHref('06-deployment-plan')}>docs/06-deployment-plan.md</a>.
+      The CSV is a generic hierarchical import; map the columns to your tool's fields on import.
+    </p>
+  </article>
+</BaseLayout>
+
+<script>
+  import {
+    defaultSelection,
+    selectedEpics,
+    typeLabel,
+    includedEpicList,
+    buildMarkdown,
+    buildCsv,
+    type Selection,
+  } from '../../lib/deployment-plan';
+
+  const $ = (id: string) => document.getElementById(id)!;
+
+  function readSel(): Selection {
+    return {
+      wld: (<HTMLInputElement>$('optWld')).checked,
+      stretched: (<HTMLInputElement>$('optStretched')).checked,
+      day2: (<HTMLInputElement>$('optDay2')).checked,
+    };
+  }
+
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderPreview(sel: Selection) {
+    $('typeSummary').innerHTML =
+      `<strong>Type ${esc(typeLabel(sel))}</strong><br />Epics included: ${esc(includedEpicList(sel))}`;
+
+    const html = selectedEpics(sel)
+      .map((e) => {
+        const stories = e.stories
+          .map((s) => {
+            const tasks = s.tasks.map((t) => `<li>${esc(t)}</li>`).join('');
+            const accept = s.acceptance
+              ? `<li class="planx__accept"><em>Acceptance:</em> ${esc(s.acceptance)}</li>`
+              : '';
+            return `<li><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></li>`;
+          })
+          .join('');
+        const ref = e.ref ? `<p class="planx__ref">Ref: ${esc(e.ref)}</p>` : '';
+        return `<div class="planx__epic"><h2>${esc(e.id)} — ${esc(e.title)} <span class="planx__owner">Owner: ${esc(e.owner)}</span></h2>${ref}<ul>${stories}</ul></div>`;
+      })
+      .join('');
+    $('preview').innerHTML = html;
+  }
+
+  function toolbarMsg(msg: string) {
+    const el = $('toolbarMsg');
+    el.textContent = msg;
+    setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+  }
+
+  function download(name: string, text: string, mime: string) {
+    const blob = new Blob([text], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function copy(text: string, ok: string) {
+    try { await navigator.clipboard.writeText(text); toolbarMsg(ok); }
+    catch { toolbarMsg('Copy failed (clipboard blocked)'); }
+  }
+
+  for (const id of ['optWld', 'optStretched', 'optDay2']) {
+    $(id).addEventListener('change', () => renderPreview(readSel()));
+  }
+
+  $('btnCopyMd').addEventListener('click', () => copy(buildMarkdown(readSel()), 'Plan copied (Markdown)'));
+  $('btnCopyCsv').addEventListener('click', () => copy(buildCsv(readSel()), 'CSV copied'));
+  $('btnDlMd').addEventListener('click', () => {
+    download('vcf9-deployment-plan.md', buildMarkdown(readSel()), 'text/markdown');
+    toolbarMsg('Downloaded vcf9-deployment-plan.md');
+  });
+  $('btnDlCsv').addEventListener('click', () => {
+    download('vcf9-deployment-plan.csv', buildCsv(readSel()), 'text/csv');
+    toolbarMsg('Downloaded vcf9-deployment-plan.csv');
+  });
+
+  // Re-render from the live control state on load (defaults already server-rendered).
+  renderPreview(readSel());
+</script>
+
+<style is:global>
+  .planx { max-width: 900px; }
+  .planx__head h1 { margin: 0.2rem 0 0.6rem; }
+  .planx__lede { color: var(--itq-royal-40); max-width: 72ch; }
+
+  .planx fieldset {
+    border: var(--border-width) solid var(--border-default);
+    border-radius: var(--radius-sm);
+    padding: 0.9rem 1rem 1rem;
+    margin: 0 0 1rem;
+  }
+  .planx legend { font-weight: var(--fw-semibold); color: var(--itq-royal-blue); padding: 0 0.4rem; }
+  .planx__hint { font-size: 0.8rem; color: var(--itq-royal-40); margin: 0 0 0.6rem; }
+  .planx__check {
+    display: flex; align-items: center; gap: 0.5rem;
+    color: var(--itq-royal-blue); font-size: 0.9rem; margin: 0.4rem 0;
+  }
+  .planx__check input[type='checkbox'] { width: auto; accent-color: var(--itq-orange); }
+  .planx__tag {
+    font-size: 0.7rem; color: var(--itq-royal-40); font-weight: var(--fw-semibold);
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    padding: 0.05rem 0.4rem; margin-left: 0.2rem;
+  }
+  .planx__summary {
+    margin: 0.8rem 0 0; padding: 0.55rem 0.7rem;
+    background: var(--itq-mist); border-radius: var(--radius-sm);
+    font-size: 0.85rem; color: var(--itq-royal-blue); line-height: 1.5;
+  }
+
+  .planx__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.3rem 0 0.5rem; }
+  .planx__toolbar button {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white); color: var(--itq-royal-blue); cursor: pointer;
+  }
+  .planx__toolbar button:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .planx__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
+  .planx__csvnote { font-size: 0.78rem; color: var(--itq-royal-40); margin: 0 0 1rem; max-width: 72ch; }
+  .planx__csvnote code { font-size: 0.72rem; }
+
+  .planx__preview { border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+  .planx__epic { margin-bottom: 1.3rem; }
+  .planx__epic h2 {
+    font-size: 1.05rem; margin: 0.6rem 0 0.3rem; color: var(--itq-royal-blue);
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem;
+  }
+  .planx__owner { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-orange); }
+  .planx__ref { font-size: 0.78rem; color: var(--itq-royal-40); margin: 0 0 0.4rem; }
+  .planx__epic ul { margin: 0.2rem 0 0; }
+  .planx__epic > ul > li { margin-bottom: 0.35rem; }
+  .planx__epic ul ul { margin: 0.15rem 0 0.4rem; }
+  .planx__accept { color: var(--itq-royal-40); font-size: 0.85rem; }
+  .planx__source { font-size: 0.78rem; color: var(--itq-royal-40); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+</style>

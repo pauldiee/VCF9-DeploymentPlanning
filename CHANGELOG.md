@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.8 — 2026-07-02
+- Added an **interactive Deployment Plan export tool**
+  (`web/src/pages/tools/deployment-plan.astro`, `web/src/lib/deployment-plan.ts`).
+  Pick the deployment type — core epics always on, with toggles for Workload
+  domain (E7), Stretched/multi-AZ (E8), and Day-2 fleet (E9) — see a live filtered
+  preview, then **Copy/Download Markdown** or **Download/Copy CSV** for backlog
+  import (Jira / Azure DevOps / GitLab; columns Issue Type / Summary / Parent /
+  Owner / Acceptance / Reference). Mirrors `docs/06-deployment-plan.md`, which
+  stays the source of truth and now links to the tool. (#41)
+
 ## v0.6.7 — 2026-07-02
 - Documented that the **VCF Operations load balancer is external and never served
   by VCF**. The analytics cluster uses a **floating IP** by default; a

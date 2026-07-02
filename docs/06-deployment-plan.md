@@ -6,6 +6,10 @@ agile backlog (Jira, Azure DevOps, GitLab, …). It captures **what** and **in
 what order** and **who owns it** — deliberately **no dates or estimates**; add
 those in your own tool.
 
+> **[▶ Open the Deployment Plan export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)** —
+> pick your deployment type and export this plan as **Markdown** or a **CSV** that
+> imports into Jira, Azure DevOps, or GitLab.
+
 Pick your deployment type below: the **core epics apply to every deployment**,
 and the **variant epics** switch on as noted. Most real builds are **B + D**
 (management + a workload domain, with Day-2 fleet), some add **C** (stretched).

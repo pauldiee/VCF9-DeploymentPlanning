@@ -30,6 +30,7 @@ This repo flips the order:
 | `docs/06-deployment-plan.md`        | Agile work breakdown (epics/stories/tasks) for the common deployment types |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
+| `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — type selector + Markdown/CSV backlog export |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
