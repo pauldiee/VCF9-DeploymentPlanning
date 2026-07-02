@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.4 — 2026-07-02
+- Sizer: fixed the **Import** toolbar control looking greyed-out. It's a
+  `<label>`, so the global `.sizer label` rule (muted colour, `display: block`)
+  out-specified the toolbar-button styling. Raised the selector specificity
+  (`.sizer__toolbar .sizer__filebtn`) so Import matches the other toolbar
+  buttons (royal-blue, inline). Import already worked; it just looked disabled.
+
 ## v0.6.3 — 2026-07-02
 - `workbook-cell-mapping.md`: added the **workload-domain** intake→named-range
   table (section H, issue #36). The `input_wld_*` set is a single WLD (fill per

@@ -553,13 +553,13 @@ const opt = (values: readonly string[]) => values;
   .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
   .sizer__lede { color: var(--itq-royal-40); max-width: 70ch; }
   .sizer__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
-  .sizer__toolbar button, .sizer__filebtn {
+  .sizer__toolbar button, .sizer__toolbar .sizer__filebtn {
     display: inline-flex; align-items: center; gap: 0.4rem;
     font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
     border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
     background: var(--itq-white); color: var(--itq-royal-blue); cursor: pointer;
   }
-  .sizer__toolbar button:hover, .sizer__filebtn:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .sizer__toolbar button:hover, .sizer__toolbar .sizer__filebtn:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
   .sizer__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
   .sizer__grid {
     display: grid;
