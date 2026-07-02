@@ -314,7 +314,7 @@ export function components(s: SizingState): Component[] {
   {
     const nodes = ha ? 3 : 1;
     list.push({
-      name: 'VCF services runtime — control nodes',
+      name: 'VCF services runtime (control nodes)',
       nodes,
       cpu: vcfmsControlCpu[size] * nodes,
       ram: vcfmsControlRam[size] * nodes,
@@ -327,7 +327,7 @@ export function components(s: SizingState): Component[] {
     const nodes = s.deploymentModel === 'Simple' ? 3 : vcfmsWorkerNodes[size];
     const uplift = s.instanceModel === 'First Instance' ? vcfmsWorkerDataDiskFirst[size] : 0;
     list.push({
-      name: 'VCF services runtime — worker nodes',
+      name: 'VCF services runtime (worker nodes)',
       nodes,
       cpu: vcfmsWorkerCpu[size] * nodes,
       ram: vcfmsWorkerRam[size] * nodes,
@@ -423,7 +423,7 @@ export function components(s: SizingState): Component[] {
       disk: opsNetDisk[s.opsNetSize] * nodes,
     });
     list.push({
-      name: 'VCF Operations for Networks — collector',
+      name: 'VCF Operations for Networks (collector)',
       nodes: 1,
       cpu: opsNetCollectorCpu[s.opsNetSize],
       ram: opsNetCollectorRam[s.opsNetSize],
@@ -436,7 +436,7 @@ export function components(s: SizingState): Component[] {
     const label = w.name?.trim() || `Workload Domain ${i + 1}`;
     // WLD vCenter
     list.push({
-      name: `${label} — vCenter`,
+      name: `${label} vCenter`,
       nodes: 1,
       cpu: vcenterCpu[w.vcenterSize],
       ram: vcenterRam[w.vcenterSize],
@@ -452,7 +452,7 @@ export function components(s: SizingState): Component[] {
     const nodes = localNodes + gmNodes;
     if (nodes > 0) {
       list.push({
-        name: `${label} — NSX Managers`,
+        name: `${label} NSX Managers`,
         nodes,
         cpu: nsxtManagerCpu[w.nsxSize] * nodes,
         ram: nsxtManagerRam[w.nsxSize] * nodes,

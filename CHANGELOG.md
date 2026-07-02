@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.7 — 2026-07-02
+- Sizer: removed all **visible em-dashes** from the tool (title, lede, hints,
+  guardrail text, toolbar toasts, per-host/headroom placeholders → `n/a`, and the
+  component names like "VCF services runtime (control nodes)") to match the ITQ
+  no-em-dash web-chrome convention. Code comments unchanged; engine output and
+  the workbook baseline unchanged.
+
 ## v0.5.6 — 2026-07-02
 - Up-to-date sweep fixes: README contents row for `05-day2` still said "NSX VPC
   placement" → "network placement"; refreshed `CLAUDE.md`'s file-layout table

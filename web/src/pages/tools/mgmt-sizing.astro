@@ -8,7 +8,7 @@ const opt = (values: readonly string[]) => values;
 ---
 
 <BaseLayout
-  title="Management Domain Sizing & Fit Check — VCF 9.1 Planning"
+  title="Management Domain Sizing & Fit Check | VCF 9.1 Planning"
   description="Interactive VCF 9.1 management-domain sizing calculator with a cluster fit check: does your proposed host count and spec fit the fleet at N-1?"
   active="04-sizing"
 >
@@ -20,7 +20,7 @@ const opt = (values: readonly string[]) => values;
         Reproduces the Broadcom <em>Planning &amp; Preparation Workbook</em>
         (<strong>{WORKBOOK_REVISION}</strong>) <em>Management Domain Sizing</em> sheet, and adds the
         check the spreadsheet lacks: enter the cluster you intend to build and see whether the
-        fleet <strong>fits at N-1</strong> &mdash; and where the headroom is. Everything runs in your
+        fleet <strong>fits at N-1</strong>, and where the headroom is. Everything runs in your
         browser; nothing is sent anywhere.
       </p>
       <div class="sizer__toolbar">
@@ -173,7 +173,7 @@ const opt = (values: readonly string[]) => values;
 
     <p class="sizer__source">
       Figures transcribed from <code>reference/vcf-9.1-planning-and-preparation-workbook.xlsx</code>
-      ({WORKBOOK_REVISION}), sheet <em>Management Domain Sizing</em>. This is a planning aid &mdash;
+      ({WORKBOOK_REVISION}), sheet <em>Management Domain Sizing</em>. This is a planning aid;
       always confirm the final numbers against the official workbook for the customer's revision.
     </p>
   </article>
@@ -280,7 +280,7 @@ const opt = (values: readonly string[]) => values;
       $('capacityDisksText').textContent = t === 'vSAN-ESA' ? 'Storage devices per host' : 'Capacity disks per host';
       $('capacityHint').textContent = t === 'vSAN-ESA'
         ? 'ESA: every NVMe device in the storage pool counts toward capacity.'
-        : 'OSA: capacity-tier disks only — the cache device per disk group does not add usable capacity.';
+        : 'OSA: capacity-tier disks only; the cache device per disk group does not add usable capacity.';
     }
   }
 
@@ -313,7 +313,7 @@ const opt = (values: readonly string[]) => values;
 
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
-  const pct = (n: number) => (n === Infinity ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
+  const pct = (n: number) => (n === Infinity ? 'n/a' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
 
   function recalc() {
     const model = ($('deploymentModel') as HTMLSelectElement).value;
@@ -368,9 +368,9 @@ const opt = (values: readonly string[]) => values;
       ['Total RAM', `${gb(r.totals.ram)} GB`],
       ['Total VM disk', `${gb(r.totals.disk)} GB`],
       ['Minimum hosts', `${r.requiredHosts}`],
-      ['vCPU / host (N-1)', r.perHostN1 ? gb(r.perHostN1.cpu) : '—'],
-      ['RAM / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.ram)} GB` : '—'],
-      ['Storage / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.storage)} GB` : '—'],
+      ['vCPU / host (N-1)', r.perHostN1 ? gb(r.perHostN1.cpu) : 'n/a'],
+      ['RAM / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.ram)} GB` : 'n/a'],
+      ['Storage / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.storage)} GB` : 'n/a'],
     ].map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
 
     // component table
@@ -388,7 +388,7 @@ const opt = (values: readonly string[]) => values;
     warn.hidden = over <= 2;
     if (!warn.hidden) {
       const which = state.cpuOver > 2 && state.ramOver > 2 ? 'CPU and RAM' : state.cpuOver > 2 ? 'CPU' : 'RAM';
-      warn.innerHTML = `⚠ ${which} oversubscription is above <strong>2:1</strong>. Broadcom's guidance caps the management domain at <strong>2:1</strong> to keep the latency-sensitive control plane performant — higher ratios shrink the host count here but are not a recommended posture. Monitor closely and add hardware if you see contention.`;
+      warn.innerHTML = `⚠ ${which} oversubscription is above <strong>2:1</strong>. Broadcom's guidance caps the management domain at <strong>2:1</strong> to keep the latency-sensitive control plane performant; higher ratios shrink the host count here but are not a recommended posture. Monitor closely and add hardware if you see contention.`;
     }
 
     // derived (profile-fixed) component sizes
@@ -482,7 +482,7 @@ const opt = (values: readonly string[]) => values;
       `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, reserve ${s.reservePct}%, growth ${s.growthPct}%`,
       `**Profile-fixed:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}`,
       '',
-      `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} — tightest: ${r.fit.binding} (basis: ${r.survivorBasis})`,
+      `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} (tightest: ${r.fit.binding}, basis: ${r.survivorBasis})`,
       '',
       '| Dimension | Fleet needs | Cluster offers | Headroom | Fits |',
       '| --- | ---: | ---: | ---: | :-: |',
@@ -506,7 +506,7 @@ const opt = (values: readonly string[]) => values;
   }
   $('btnSummary').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(buildSummary()); toolbarMsg('Summary copied (Markdown)'); }
-    catch { toolbarMsg('Copy failed — clipboard blocked'); }
+    catch { toolbarMsg('Copy failed (clipboard blocked)'); }
   });
   $('btnExport').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -524,7 +524,7 @@ const opt = (values: readonly string[]) => values;
     const reader = new FileReader();
     reader.onload = () => {
       try { loadState(JSON.parse(String(reader.result))); toolbarMsg(`Imported ${file.name}`); }
-      catch { toolbarMsg('Import failed — not valid sizer JSON'); }
+      catch { toolbarMsg('Import failed: not valid sizer JSON'); }
     };
     reader.readAsText(file);
     input.value = '';
