@@ -72,7 +72,7 @@ const CORE_PRE: Epic[] = [
         id: '1.3',
         title: 'Core services ready',
         tasks: ['AD, DNS, NTP, CA, depot reachable.'],
-        acceptance: 'Forward+reverse DNS resolves; NTP in sync; CA reachable; depot/binaries staged.',
+        acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.',
       },
       {
         id: '1.4',

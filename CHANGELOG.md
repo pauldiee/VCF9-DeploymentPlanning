@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.5 — 2026-07-03
+- Deployment-plan E1 story **1.3 acceptance** now specifies which DNS must
+  resolve: forward (A) + reverse (PTR), both ways, for every management/fleet
+  FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + 3 nodes, NSX Edge
+  nodes (and any Day-2 fleet appliances). Doc + `web/src/lib/deployment-plan.ts`. (#53)
+
 ## v0.7.4 — 2026-07-03
 - **Renumbered the deployment-plan variant epics to follow execution order:**
   **E7 = Stretch the management domain, E8 = Day-2 fleet, E9 = Workload

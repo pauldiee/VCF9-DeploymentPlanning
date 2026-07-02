@@ -46,7 +46,7 @@ Ref: [`prerequisites.md`](prerequisites.md)
   - Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.
   - *Acceptance:* VLAN/MTU/BGP verified against the Step 1 plan (E2).
 - **Story 1.3 — Core services ready.** AD, DNS, NTP, CA, depot reachable.
-  - *Acceptance:* forward+reverse DNS resolves; NTP in sync; CA reachable; depot/binaries staged.
+  - *Acceptance:* forward (A) **and** reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.
 - **Story 1.4 — Access ready.** Jump host / management access into the environment.
   - *Acceptance:* the prerequisite gate is fully green before any build starts.
 
