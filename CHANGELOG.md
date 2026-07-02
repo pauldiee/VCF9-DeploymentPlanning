@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.22 — 2026-07-02
+- Added intake question `B22` (Network) for optional **public / upstream peering**
+  — peer AS/IP/MD5, advertised/received prefixes, and its own uplink subnet if it
+  doesn't share the Edge uplinks — cross-linked to `01-network-dns-plan.md` §B.
+  Mapped it in `workbook-cell-mapping.md`: no dedicated workbook cell (it's an
+  additional Tier-0 BGP neighbor configured in NSX post-bringup; plan it in `01`).
+  Extends #24.
+
 ## v0.1.21 — 2026-07-02
 - `01-network-dns-plan.md` section B (BGP): added an optional **Public / upstream
   peering** row (a separate BGP session for public / north-south routes — internet

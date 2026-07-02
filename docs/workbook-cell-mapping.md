@@ -84,6 +84,7 @@ not.
 | B12–B14| NSX — BGP                | Edge AS / Peer AS / MD5 password         |
 | B15    | NSX — BGP                | BFD                                      |
 | B16    | NSX — BGP                | Advertised / received routes             |
+| B22    | NSX — BGP (optional)     | No dedicated cell — additional Tier-0 uplink / BGP neighbor for public peering, configured in NSX post-bringup; plan in `01-network-dns-plan.md` §B |
 | E11    | NSX — Edges              | Edge node 1 / 2 FQDN + IP                |
 | F8     | NSX — Edges              | admin / audit / root passwords           |
 | F9     | Identity Sources         | SSO bind password                        |

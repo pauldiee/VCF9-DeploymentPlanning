@@ -73,6 +73,7 @@ Legend:
 |B19| Proxy (only if online depot needs it): FQDN, port, auth?       | `[MGMT]`   |
 |B20| VPC Gateway external network (only if `A10` = Distributed): VLAN, gateway CIDR | `[MGMT]`   |
 |B21| Day-2 fleet network (if not Shared Mgmt): placement (Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) + networkName, subnet, gateway, IP pool, VCF Automation cluster CIDR → `05-day2-deployments.md` | `[DAYN]`  |
+|B22| Public / upstream peering (optional) — needed? If so: peer AS, peer IP, MD5, advertised/received prefixes; own uplink subnet if not sharing the Edge uplinks → `01-network-dns-plan.md` §B | `[CFG-M]`  |
 
 ---
 
