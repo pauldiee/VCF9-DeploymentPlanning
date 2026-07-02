@@ -122,7 +122,11 @@ export interface SizingState {
   // proposed host spec (doubles as the sheet's "host parameters")
   coresPerHost: number;
   ramPerHost: number;
-  capacityPerHost: number; // raw GB contributed to vSAN per host
+  // vSAN capacity is derived from the physical drives per host: for ESA every
+  // device counts; for OSA only the capacity-tier disks (cache is excluded).
+  capacityDisksPerHost: number;
+  capacityDiskSizeGb: number; // raw GB per capacity device
+  externalStorageGb: number; // total datastore capacity for NFS / FC
   cpuOver: number;
   ramOver: number;
   reservePct: number;
@@ -154,7 +158,9 @@ export function defaultState(): SizingState {
     storageType: 'vSAN-ESA',
     coresPerHost: 128,
     ramPerHost: 1024,
-    capacityPerHost: 8000,
+    capacityDisksPerHost: 8,
+    capacityDiskSizeGb: 1920,
+    externalStorageGb: 40000,
     cpuOver: 1,
     ramOver: 1,
     reservePct: 30,
@@ -394,6 +400,8 @@ export interface SizingResult {
   totals: { nodes: number; cpu: number; ram: number; disk: number };
   vsan: { vmCapacity: number; swap: number; interim: number; redundancy: number; reserve: number; growth: number; raw: number };
   requiredHosts: number;
+  perHostRaw: number; // raw GB each host contributes to vSAN (0 for NFS/FC)
+  storageAvailable: number; // total capacity the proposed cluster offers
   perHostN1: { cpu: number; ram: number; storage: number } | null;
   fit: { cpu: Dimension; ram: Dimension; storage: Dimension; hosts: Dimension; overall: boolean; binding: string };
 }
@@ -425,17 +433,23 @@ export function compute(s: SizingState): SizingResult {
   // Stretched vSAN mirrors the full dataset into each AZ.
   const raw = stretched && isVsan(s.storageType) ? growth * 2 : growth;
 
+  const n = s.proposedHosts;
+
+  // vSAN raw contributed per host = capacity devices x device size (ESA counts
+  // every device; OSA counts capacity-tier disks only — the caller supplies the
+  // right count). NFS / FC use the external datastore figure instead.
+  const perHostRaw = s.capacityDisksPerHost * s.capacityDiskSizeGb;
+  const storageAvailable = isVsan(s.storageType) ? perHostRaw * n : s.externalStorageGb;
+
   // Required host count (sheet cell R8)
   const floor = s.deploymentModel === 'High Availability' ? 4 : isVsan(s.storageType) ? 3 : 2;
   const hostsForCpu = ceil(totals.cpu / s.cpuOver / s.coresPerHost);
   const hostsForRam = ceil(totals.ram / s.ramOver / s.ramPerHost) + 1;
   let requiredHosts = Math.max(floor, hostsForCpu, hostsForRam);
-  // Storage-driven hosts, if a per-host capacity is given
-  const hostsForStorage = s.capacityPerHost > 0 ? ceil(raw / s.capacityPerHost) : 0;
+  // Storage-driven hosts, if per-host vSAN capacity is given
+  const hostsForStorage = isVsan(s.storageType) && perHostRaw > 0 ? ceil(raw / perHostRaw) : 0;
   requiredHosts = Math.max(requiredHosts, hostsForStorage);
   if (stretched) requiredHosts = Math.max(8, requiredHosts + (requiredHosts % 2)); // even, min 8
-
-  const n = s.proposedHosts;
   const perHostN1 = n > 1
     ? {
         cpu: ceil(totals.cpu / (n - 1) / s.cpuOver),
@@ -455,7 +469,7 @@ export function compute(s: SizingState): SizingResult {
   });
   const cpu = dim(totals.cpu, usableHosts * s.coresPerHost * s.cpuOver);
   const ram = dim(totals.ram, usableHosts * s.ramPerHost * s.ramOver);
-  const storage = dim(raw, n * s.capacityPerHost);
+  const storage = dim(raw, storageAvailable);
   const hosts = dim(requiredHosts, n);
 
   const named: Array<[string, Dimension]> = [
@@ -469,6 +483,8 @@ export function compute(s: SizingState): SizingResult {
     totals,
     vsan: { vmCapacity, swap, interim, redundancy, reserve, growth, raw },
     requiredHosts,
+    perHostRaw,
+    storageAvailable,
     perHostN1,
     fit: { cpu, ram, storage, hosts, overall, binding },
   };

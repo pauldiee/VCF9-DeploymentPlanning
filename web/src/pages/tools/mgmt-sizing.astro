@@ -59,8 +59,18 @@ const opt = (values: readonly string[]) => values;
           <label>RAM per host (GB)
             <input id="ramPerHost" type="number" min="1" step="1" />
           </label>
-          <label>Usable vSAN capacity per host (GB)
-            <input id="capacityPerHost" type="number" min="0" step="10" />
+          <div id="vsanCapacity">
+            <label><span id="capacityDisksText">Capacity disks per host</span>
+              <input id="capacityDisksPerHost" type="number" min="0" step="1" />
+            </label>
+            <label>Capacity disk size (GB)
+              <input id="capacityDiskSizeGb" type="number" min="0" step="10" />
+            </label>
+            <p class="sizer__hint" id="capacityHint"></p>
+            <p class="sizer__hint" id="perHostRawOut"></p>
+          </div>
+          <label id="externalCapacity" hidden>Available datastore capacity (GB)
+            <input id="externalStorageGb" type="number" min="0" step="100" />
           </label>
           <label>CPU oversubscription (X:1)
             <input id="cpuOver" type="number" min="1" step="0.5" />
@@ -167,7 +177,7 @@ const opt = (values: readonly string[]) => values;
     values.map((v) => `<option${v === selected ? ' selected' : ''}>${v}</option>`).join('');
 
   // ---- bind top-level inputs to state ----
-  const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityPerHost', 'cpuOver', 'ramOver', 'reservePct', 'growthPct'] as const;
+  const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct'] as const;
   const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'mgmtVcenterSize', 'mgmtVcenterStorage', 'nsxManagerSize', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize'] as const;
   const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation'] as const;
 
@@ -240,6 +250,21 @@ const opt = (values: readonly string[]) => values;
     state.deploymentSize = current;
   }
 
+  // ---- storage capacity input depends on the storage type ----
+  let lastStorage = '';
+  function syncStorageInputs() {
+    const t = ($('storageType') as HTMLSelectElement).value;
+    const vsan = t === 'vSAN-ESA' || t === 'vSAN-OSA';
+    ($('vsanCapacity') as HTMLElement).hidden = !vsan;
+    ($('externalCapacity') as HTMLElement).hidden = vsan;
+    if (vsan) {
+      $('capacityDisksText').textContent = t === 'vSAN-ESA' ? 'Storage devices per host' : 'Capacity disks per host';
+      $('capacityHint').textContent = t === 'vSAN-ESA'
+        ? 'ESA: every NVMe device in the storage pool counts toward capacity.'
+        : 'OSA: capacity-tier disks only — the cache device per disk group does not add usable capacity.';
+    }
+  }
+
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
   const pct = (n: number) => (n === Infinity ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
@@ -249,6 +274,11 @@ const opt = (values: readonly string[]) => values;
     if (model !== lastModel) {
       lastModel = model;
       syncSizeOptions();
+    }
+    const storage = ($('storageType') as HTMLSelectElement).value;
+    if (storage !== lastStorage) {
+      lastStorage = storage;
+      syncStorageInputs();
     }
     readInputs();
     const r = compute(state);
@@ -290,6 +320,12 @@ const opt = (values: readonly string[]) => values;
     $('compTable').querySelector('tbody')!.innerHTML = r.components
       .map((c) => `<tr><td>${c.name}</td><td>${c.nodes}</td><td>${gb(c.cpu)}</td><td>${gb(c.ram)}</td><td>${gb(c.disk)}</td></tr>`)
       .join('');
+
+    // derived per-host raw readout
+    const rawOut = $('perHostRawOut');
+    rawOut.textContent = r.perHostRaw > 0
+      ? `= ${gb(r.perHostRaw)} GB raw per host → ${gb(r.storageAvailable)} GB across ${state.proposedHosts} hosts.`
+      : '';
 
     // vSAN breakdown
     $('vsanTable').innerHTML = [
