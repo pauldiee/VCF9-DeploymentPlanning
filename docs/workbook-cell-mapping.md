@@ -80,10 +80,17 @@ workbook.
 | B20 | `input_mgmt_az1_dtgw_{vlan,gateway_cidr}` |
 | B22 | — (no named range; extra Tier-0 BGP neighbor) |
 | C1/C2 | `input_region_ad_parent_{fqdn,netbios}`, `input_region_ad_child_{fqdn,netbios}` |
+| C3 | — no mgmt range; DC FQDNs only for the Identity Broker Day-N component: `input_flt_vidb_{primary,secondary}_domain_controller{,_port}` |
 | C5 | `input_child_svc_vsphere_ad_{user,password}`, `input_child_svc_nsx_ad_{user,password}` |
 | C6 | `input_gg_vcf_{admins,operators,viewers}_group` (+ `input_gg_{vc,nsx}_*_group`) |
 | C7 | `input_region_dns{1,2}_ip` |
+| C8 | `input_parent_dns_zone` |
 | C10 | `input_region_ntp{1,2}_server` |
+| D1 | `mgmt_signed_certs_chosen` |
+| D2 | `input_certificate_authority_{fqdn,name}`, `input_ca_administrator_{username,password}` |
+| D3 | `input_ca_{country,state,locality,organization,organization_unit,email_address,algorithm,key_size}` |
+| D4 | `input_ca_template_name` |
+| D5/D6 | — no named range (SAN auto-derived from FQDNs; validity not captured) |
 | E1 | `input_vcf_instance_name` |
 | E2 | `input_mgmt_sddc_domain` |
 | E3 | `input_mgmt_az1_host{1..16}_{fqdn,mgmt_ip}` |
@@ -99,17 +106,23 @@ workbook.
 | F2 | `input_flt_def_administrator_vsphere_local_password` |
 | F3 | `input_vcenter_root_password` |
 | F4 | `sddc_mgr_{vcf,root,admin_local}_password` |
+| F5 | — no named range (only NSX **Edge** passwords exist, F8; mgmt NSX Manager appliance passwords not captured) |
 | F6 | `input_xreg_vrops_{admin,root}_password` |
 | F7 | `input_xreg_vra_admin_password` |
 | F8 | `input_mgmt_nsxt_en_{admin,root}_password` |
 | F10 | `input_sftp_server_passphrase` |
 
-**Validate / open questions:** `C3` (DC FQDN list), `C8` (default DNS suffix),
-`D2`–`D6` (CA cert / CSR / template / SAN / validity), `F5` (mgmt NSX Manager
-admin/audit/root — only Edge passwords were found), and the Day-2 items
-`B21`/`E15` (on the *Deploy Fleet Management Day-N* sheet, not the mgmt named
-ranges) still need a named range confirmed or confirmed absent. Some passwords
-live on *Value Reference Tables* (`sddc_mgr_*`) rather than an `input_*` name.
+**Validated.** Resolved: `C8` → `input_parent_dns_zone`; `D1`–`D4` → the
+`input_ca_*` / `input_certificate_authority_*` block on *Configure Management
+Domain*. **Confirmed absent (no named range):** `C3` DC FQDNs (only the Identity
+Broker Day-N `input_flt_vidb_*` fields exist), `D5`/`D6` (cert SAN auto-derives
+from the FQDNs; validity not captured), `F5` mgmt NSX Manager appliance passwords
+(only Edge `input_mgmt_nsxt_en_*`), `B16` (route policy), `B17` (DHCP scope),
+`B22` (extra BGP neighbor). **Day-2 (`B21`/`E15`)** live on the *Deploy Fleet
+Management Day-N* sheet — the network fields there are `input_xreg_*` /
+`input_flt_auto_*`; the placement/method *Select Option* cells are not named
+ranges. Some passwords live on *Value Reference Tables* (`sddc_mgr_*`), not an
+`input_*` name.
 
 ## Sheet: VCF & VVF Planning
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.4 — 2026-07-02
+- `workbook-cell-mapping.md`: validated the open items in the mgmt-domain
+  intake→named-range map. Resolved `C8` (`input_parent_dns_zone`) and `D1`–`D4`
+  (the `input_ca_*` / `input_certificate_authority_*` block). Confirmed absent
+  (no named range): `C3` DC FQDNs (only the Identity Broker Day-N `input_flt_vidb_*`),
+  `D5`/`D6` (cert SAN/validity), `F5` mgmt NSX Manager passwords (only Edge), and
+  `B16`/`B17`/`B22`. Documented where the Day-2 `B21`/`E15` fields live.
+
 ## v0.5.3 — 2026-07-02
 - Related tools: **VCF9 Readiness Assessment** and **VCF Health Check** are **ITQ
   Consulting Services** (internal, not public repos) — removed their public
