@@ -37,7 +37,7 @@ export const NAV: NavItem[] = [
     step: 'Step 3',
     label: 'Sizing & Fit Check',
     icon: 'server',
-    blurb: 'Size the management-domain fleet and check whether your proposed cluster fits at N-1.',
+    blurb: 'Interactive calculator — size the management fleet, check whether your hosts fit at N-1, and export or share the result.',
   },
   {
     slug: '03-multi-az-prep',
@@ -51,7 +51,7 @@ export const NAV: NavItem[] = [
     step: 'Day-2',
     label: 'Day-2 Deployments',
     icon: 'layer-group',
-    blurb: 'Fleet components deployed after bring-up: VCF Automation, Ops, and the Shared-Network-vs-NSX-VPC placement.',
+    blurb: 'Fleet components deployed after bring-up: VCF Automation, Ops, and their network placement (Shared / Dedicated / NSX Overlay / VLAN Segment).',
   },
   {
     slug: 'workbook-cell-mapping',

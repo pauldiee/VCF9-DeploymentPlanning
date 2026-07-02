@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.5 — 2026-07-02
+- Landing page / nav refresh: the workflow heading said "Five documents" (there
+  are now seven items incl. an interactive tool) → "The planning flow, in order".
+  Updated the **Step 3 (Sizing & Fit Check)** blurb to reflect it's now an
+  interactive calculator with export/share, and fixed the **Day-2** blurb which
+  still referenced the (since-corrected) "NSX VPC" placement — now Shared /
+  Dedicated / NSX Overlay / VLAN Segment.
+
 ## v0.5.4 — 2026-07-02
 - `workbook-cell-mapping.md`: validated the open items in the mgmt-domain
   intake→named-range map. Resolved `C8` (`input_parent_dns_zone`) and `D1`–`D4`
