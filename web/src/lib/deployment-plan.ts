@@ -173,8 +173,10 @@ export const EPICS: Epic[] = [
       },
       {
         id: '6.2',
-        title: 'Certificates',
-        tasks: ['Replace with CA-signed certificates across the fleet.'],
+        title: 'Certificates (optional / partial here)',
+        tasks: [
+          'Optional here: you can replace certificates for the components deployed so far, but the full CA-signed replacement is usually done once all components exist — after the Day-2 fleet — so the whole fleet is certified in one pass (see E9 story 9.5).',
+        ],
       },
       {
         id: '6.3',
@@ -187,7 +189,7 @@ export const EPICS: Epic[] = [
         id: '6.4',
         title: 'Backup & lifecycle',
         tasks: ['Configure SFTP backups; connect the depot; apply licensing.'],
-        acceptance: 'North-south routing verified; certs trusted; SSO login works; backups run.',
+        acceptance: 'North-south routing verified; SFTP backups run; depot connected; licensing applied. (Full fleet certificates + AD SSO are finalized Day-2 — see E9 9.5.)',
       },
     ],
   },
@@ -279,6 +281,14 @@ export const EPICS: Epic[] = [
         title: 'Ops for Logs / Networks & Identity Broker',
         tasks: ['Deploy the remaining fleet components as needed.'],
         acceptance: 'Each Day-2 component healthy; the fleet synthetic check passes.',
+      },
+      {
+        id: '9.5',
+        title: 'Certificates & identity (full fleet)',
+        tasks: [
+          'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, and complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3).',
+        ],
+        acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works.',
       },
     ],
   },

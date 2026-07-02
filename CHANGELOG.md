@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.0 — 2026-07-02
+- More deployment-plan sequencing fixes (`docs/06-deployment-plan.md` + mirrored
+  `web/src/lib/deployment-plan.ts`): certificates and identity are really
+  *once-everything-exists* activities.
+  - **E6 6.2 (certificates)** reworked as **optional / partial**: cert only the
+    components deployed so far at bring-up; the full CA-signed pass waits until
+    all components exist.
+  - **E6 combined acceptance (6.4)** no longer asserts trusted certs / AD SSO
+    (those are deferred to Day-2); it now covers routing, backups, depot, licensing.
+  - **New E9 9.5 — Certificates & identity (full fleet):** after the Day-2 fleet
+    is up, do the full CA-signed certificate replacement in one pass and complete
+    fleet SSO via the VCF Identity Broker (the identity path deferred from 6.3). (#45)
+
 ## v0.6.9 — 2026-07-02
 Deployment-plan sequencing / dependency fixes (`docs/06-deployment-plan.md` +
 the mirrored structured data in `web/src/lib/deployment-plan.ts`):

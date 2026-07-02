@@ -87,10 +87,10 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
 
 ### E6 — Management domain configuration  ·  Owner: Plat + Net + Sec
 - **Story 6.1 — NSX edges & north-south.** Deploy edges; establish BGP peering to the ToRs; verify routes.
-- **Story 6.2 — Certificates.** Replace with CA-signed certificates across the fleet.
+- **Story 6.2 — Certificates (optional / partial here).** You *can* replace certificates for the components deployed **so far** now, but the **full** CA-signed replacement is usually done **once all components exist** — after the Day-2 fleet — so the whole fleet is certified in one pass (see E9 story 9.5).
 - **Story 6.3 — Identity & roles (optional, *not recommended* at this stage).** You *can* bind **vCenter SSO** directly to AD/LDAP now for early management access, but the **recommended** path is fleet-wide SSO via the **VCF Identity Broker**, a Day-2 component (see E9 / [`05-day2-deployments.md`](05-day2-deployments.md)). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, and map admin/operator/viewer groups if you do.
 - **Story 6.4 — Backup & lifecycle.** Configure SFTP backups; connect the depot; apply licensing.
-  - *Acceptance:* north-south routing verified; certs trusted; SSO login works; backups run.
+  - *Acceptance:* north-south routing verified; SFTP backups run; depot connected; licensing applied. (Full fleet certificates + AD SSO are finalized Day-2 — see E9 9.5.)
 
 ### E10 — Validation & handover  ·  Owner: Arch + all
 - **Story 10.1 — Health check.** Run a post-deploy health check of the live environment.
@@ -128,6 +128,8 @@ Ref: [`05-day2-deployments.md`](05-day2-deployments.md)
 - **Story 9.3 — VCF Automation.** Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
 - **Story 9.4 — Ops for Logs / Networks & Identity Broker.** Deploy the remaining fleet components as needed.
   - *Acceptance:* each Day-2 component healthy; the fleet synthetic check passes.
+- **Story 9.5 — Certificates & identity (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, and complete **fleet SSO via the VCF Identity Broker** (the recommended identity path, deferred from E6 6.3).
+  - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works.
 
 ---
 
