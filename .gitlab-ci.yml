@@ -9,9 +9,9 @@
 # itself (cached between runs). If a Docker-executor runner picks the job up
 # instead, `image:` provides Node and the download is skipped.
 #
-# The Astro `base` (URL path prefix) must match where GitLab serves the site.
-# SITE_BASE defaults to the project path (/<project>). If the instance uses
-# unique / namespace domains where the site is served at the root, set it to "/".
+# The Astro `base` (URL path prefix) and `site` origin are derived at run time
+# from CI_PAGES_URL, so they always match where GitLab actually serves the site —
+# including a unique-domain path suffix like /<project>-<hash>.
 
 stages:
   - deploy
@@ -20,7 +20,6 @@ pages:
   stage: deploy
   image: node:20
   variables:
-    SITE_BASE: "/$CI_PROJECT_NAME"
     NODE_VERSION: "20.17.0"
   cache:
     key: "node-$NODE_VERSION"
@@ -39,8 +38,11 @@ pages:
         export PATH="$PWD/.cache-node/bin:$PATH"
       fi
     - node --version && npm --version
-    # Best-effort origin for Astro `site` (non-fatal if CI_PAGES_URL is unset).
+    # Derive Astro base + origin from the ACTUAL Pages URL so paths match where
+    # GitLab serves the site (incl. its unique-domain suffix, /<project>-<hash>).
     - export SITE_URL="$(node -e "try{console.log(new URL(process.env.CI_PAGES_URL).origin)}catch(e){console.log('')}")"
+    - export SITE_BASE="$(node -e 'try{var p=new URL(process.env.CI_PAGES_URL).pathname.replace(/\/+$/,"");console.log(p||"/")}catch(e){console.log("/")}')"
+    - echo "Building with SITE_URL=$SITE_URL SITE_BASE=$SITE_BASE"
     - cd web
     - npm ci
     - npm run build

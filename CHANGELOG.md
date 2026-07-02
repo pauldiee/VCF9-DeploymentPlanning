@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.1 — 2026-07-02
+- GitLab Pages base fix. The instance serves project Pages at a **unique-domain
+  path** (`/<project>-<hash>`, e.g. `…/vcf9-deploymentplanning-9b6f07`), but the
+  job had hardcoded the base to `/<project>` — so assets/links 404'd. The job now
+  **derives `SITE_BASE`/`SITE_URL` from `CI_PAGES_URL`** at build time, so the
+  base always matches where GitLab actually serves the site. Verified locally.
+
 ## v0.6.0 — 2026-07-02
 - Fixed the GitLab Pages job for the ITQ runner. The runner is a **shell
   executor** (no container), so `image: node:20` was ignored and the host has no
