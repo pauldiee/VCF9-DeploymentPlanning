@@ -78,6 +78,7 @@ const opt = (values: readonly string[]) => values;
           <label>RAM oversubscription (X:1)
             <input id="ramOver" type="number" min="1" step="0.5" />
           </label>
+          <p class="sizer__warn" id="oversubWarn" hidden></p>
           <label>Host + operations reserve (%)
             <input id="reservePct" type="number" min="0" step="1" />
           </label>
@@ -360,6 +361,15 @@ const opt = (values: readonly string[]) => values;
     // Log Management replicas only apply when a size is chosen
     ($('logsReplicasLabel') as HTMLElement).hidden = state.logsSize === 'Exclude';
 
+    // Oversubscription guardrail — the workbook caps the recommendation at 2:1
+    const over = Math.max(state.cpuOver, state.ramOver);
+    const warn = $('oversubWarn') as HTMLElement;
+    warn.hidden = over <= 2;
+    if (!warn.hidden) {
+      const which = state.cpuOver > 2 && state.ramOver > 2 ? 'CPU and RAM' : state.cpuOver > 2 ? 'CPU' : 'RAM';
+      warn.innerHTML = `⚠ ${which} oversubscription is above <strong>2:1</strong>. Broadcom's guidance caps the management domain at <strong>2:1</strong> to keep the latency-sensitive control plane performant — higher ratios shrink the host count here but are not a recommended posture. Monitor closely and add hardware if you see contention.`;
+    }
+
     // derived (profile-fixed) component sizes
     $('derivedSizes').innerHTML = `Fixed by the deployment profile: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +
       `(<strong>${r.derived.vcenterStorage}</strong> storage), NSX Local Manager <strong>${r.derived.nsxManagerSize}</strong>. ` +
@@ -440,6 +450,15 @@ const opt = (values: readonly string[]) => values;
   }
   .sizer__add:hover { background: var(--itq-orange); color: var(--itq-white); }
   .sizer__hint { font-size: 0.78rem; color: var(--itq-royal-40); margin: 0.3rem 0 0.6rem; }
+  .sizer__warn {
+    font-size: 0.8rem;
+    margin: 0.2rem 0 0.6rem;
+    padding: 0.5rem 0.7rem;
+    background: #fff4e5;
+    border-left: 3px solid var(--itq-orange);
+    border-radius: var(--radius-sm);
+    color: #8a5200;
+  }
 
   .wld {
     display: grid;

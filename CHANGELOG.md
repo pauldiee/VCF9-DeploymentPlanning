@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.28 — 2026-07-02
+- Sizer: added a soft **2:1 oversubscription guardrail**. When CPU or RAM
+  oversubscription exceeds 2:1, a non-blocking caution appears noting Broadcom's
+  guidance caps the management domain at 2:1 (latency-sensitive control plane).
+  The input still accepts higher ratios — it just no longer looks blessed.
+
 ## v0.1.27 — 2026-07-02
 - Sizer: constrained **Log Management** to the deployment profile, matching the
   workbook (cells E25/E26). The size dropdown now caps at the deployment size
