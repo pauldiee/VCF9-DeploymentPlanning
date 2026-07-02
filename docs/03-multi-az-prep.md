@@ -86,6 +86,14 @@ routed).
 | NSX Edge Uplink-02       | **Stretched** | `/29–/30`  | (same)     | BGP peer; stretched                                |
 | Witness traffic          | Routed to 3rd | —          | —          | AZ data nodes → witness site (≤200 ms)            |
 
+> Confirmed against the Broadcom VCF 9 design library — *vSphere Stretched
+> Cluster Model* ([techdocs.broadcom.com](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/design/design-library/cluster-models/single-instance-multiple-availability-zones.html)):
+> VM Management is *"shared across availability zones"* (stretched); ESX
+> Management, vMotion, vSAN, and Host TEP are each *"unique per availability
+> zone"* (per-AZ, own gateway). There is no option to stretch ESX Management.
+> The AZ1↔AZ2 link is specified as **<5 ms RTT and ≥10 Gbps** — the vSAN
+> stretched-cluster limit, not the looser 10 ms generic-AZ figure.
+
 North-south egress: decide which AZ owns **ingress** in steady state and how
 routes withdraw on an AZ failure (BGP local-pref / AS-path prepend toward the
 non-preferred AZ). Capture this alongside section B of the BGP plan.
