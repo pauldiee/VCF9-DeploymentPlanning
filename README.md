@@ -56,10 +56,11 @@ on every push to `main` that touches `web/` or `docs/`.
 For **internal visibility**, the same site also publishes to **GitLab Pages** on
 the ITQ GitLab mirror via `.gitlab-ci.yml`. The Astro `site` / `base` are
 env-configurable (`SITE_URL` / `SITE_BASE`), so one codebase serves both: GitHub
-uses the defaults, and the GitLab job sets the base to the project path. GitLab
-Pages must be enabled on the project (Settings → Pages); if the instance serves
-at a path other than `/<project>` (e.g. a unique/namespace domain at the root),
-set `SITE_BASE` accordingly in `.gitlab-ci.yml`.
+uses the defaults, and the GitLab job sets the base to the project path. Once the
+`pages` job runs, the site + its URL appear under **Deploy → Pages** (newer
+GitLab; older versions had it under Settings → Pages). If the instance serves at
+a path other than `/<project>` (e.g. a unique/namespace domain at the root), set
+`SITE_BASE` accordingly in `.gitlab-ci.yml`.
 
 ## Workflow
 

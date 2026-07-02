@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.0 — 2026-07-02
+- Fixed the GitLab Pages job for the ITQ runner. The runner is a **shell
+  executor** (no container), so `image: node:20` was ignored and the host has no
+  Node — the job failed on `node: command not found`. The `pages` job now fetches
+  a local Node build itself (cached between runs) when Node isn't on `PATH`, then
+  builds as before. Also corrected the docs: Pages settings live under **Deploy →
+  Pages** in current GitLab, not Settings → Pages.
+
 ## v0.5.9 — 2026-07-02
 - **GitLab Pages** publishing for internal visibility. Added `.gitlab-ci.yml`
   (`pages` job: build `web/` → `public/`) mirroring the GitHub Actions deploy, and

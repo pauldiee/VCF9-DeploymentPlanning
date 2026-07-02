@@ -1,13 +1,17 @@
 # GitLab CI/CD — publishes the ITQ-branded Astro site to GitLab Pages for
 # internal visibility, mirroring what .github/workflows/deploy.yml does for
 # GitHub Pages. The two are independent: GitHub Actions runs on GitHub, this
-# runs on the ITQ GitLab. Requires GitLab Pages to be enabled on the instance
-# and the project (Settings → Pages).
+# runs on the ITQ GitLab. The project's Pages URL appears under Deploy → Pages
+# after the job runs (newer GitLab; older versions had it under Settings → Pages).
+#
+# The ITQ runner is a *shell* executor (no container), so `image:` is ignored and
+# Node is not present on the host. The job therefore fetches a local Node build
+# itself (cached between runs). If a Docker-executor runner picks the job up
+# instead, `image:` provides Node and the download is skipped.
 #
 # The Astro `base` (URL path prefix) must match where GitLab serves the site.
-# SITE_BASE defaults to the project path (/<project>), which is the usual
-# GitLab project-Pages layout. If your instance uses unique / namespace domains
-# where the site is served at the root, set SITE_BASE to "/" (or "").
+# SITE_BASE defaults to the project path (/<project>). If the instance uses
+# unique / namespace domains where the site is served at the root, set it to "/".
 
 stages:
   - deploy
@@ -17,8 +21,25 @@ pages:
   image: node:20
   variables:
     SITE_BASE: "/$CI_PROJECT_NAME"
+    NODE_VERSION: "20.17.0"
+  cache:
+    key: "node-$NODE_VERSION"
+    paths:
+      - .cache-node/
   script:
-    # Derive the Pages origin for Astro `site` (best-effort; non-fatal if unset).
+    # Shell-executor runners have no Node; fetch a local copy once (cached).
+    - |
+      if ! command -v node >/dev/null 2>&1; then
+        if [ ! -x ".cache-node/bin/node" ]; then
+          url="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz"
+          mkdir -p .cache-node
+          (command -v curl >/dev/null 2>&1 && curl -fsSL "$url" -o /tmp/node.tgz) || wget -qO /tmp/node.tgz "$url"
+          tar -xzf /tmp/node.tgz -C .cache-node --strip-components=1
+        fi
+        export PATH="$PWD/.cache-node/bin:$PATH"
+      fi
+    - node --version && npm --version
+    # Best-effort origin for Astro `site` (non-fatal if CI_PAGES_URL is unset).
     - export SITE_URL="$(node -e "try{console.log(new URL(process.env.CI_PAGES_URL).origin)}catch(e){console.log('')}")"
     - cd web
     - npm ci
