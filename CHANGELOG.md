@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.2 — 2026-07-02
+- `01-network-dns-plan.md`: fixed the VCF Installer placement note. It read as if
+  the Installer sits **on** the ESX Management network; corrected to reflect that
+  the Installer **lives on VM Management** (temporary IP during bring-up) and only
+  needs to **reach / route to** the ESX Management network to commission the hosts.
+
 ## v0.4.1 — 2026-07-02
 - Site chrome: the footer is now a **compact, always-visible** bar (`position:
   sticky; bottom: 0`, smaller padding + logo) so it stays in view while scrolling,

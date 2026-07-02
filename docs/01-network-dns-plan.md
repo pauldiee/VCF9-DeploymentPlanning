@@ -17,8 +17,8 @@ first WLD — duplicate it for additional WLDs / clusters.
 
 | # | Traffic                        | VLAN ID | CIDR (IPv4)       | CIDR (IPv6, optional) | MTU  | Gateway          | Notes                                          |
 | - | ------------------------------ | ------- | ----------------- | --------------------- | ---- | ---------------- | ---------------------------------------------- |
-| 1 | ESX Management                 |         | `/24`             |                       | 1500 |                  | VCF Installer must be on / route here          |
-| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | Largest subnet — appliances + two reserved blocks; see carve-out below |
+| 1 | ESX Management                 |         | `/24`             |                       | 1500 |                  | ESXi host mgmt VMKs. The VCF Installer must be able to **reach / route to** this network to commission the hosts (it does not live here) |
+| 2 | VM Management                  |         | `/24`             |                       | 1500 |                  | Largest subnet — appliances + two reserved blocks; see carve-out below. The **VCF Installer lives here** (temporary IP during bring-up) |
 | 3 | VCF Management (optional)      |         | `/24`             |                       | 1500 |                  | Only if separating VCF services from VM-mgmt   |
 | 4 | vMotion                        |         | `/24`             |                       | 9000 |                  | Jumbo required                                 |
 | 5 | vSAN                           |         | `/24`             |                       | 9000 |                  | Jumbo required; skip if NFS/FC only            |
