@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.1 — 2026-07-02
+- Site chrome: the footer is now a **compact, always-visible** bar (`position:
+  sticky; bottom: 0`, smaller padding + logo) so it stays in view while scrolling,
+  and added a **Blog** button to the header (outlined orange, linking
+  hollebollevsan.nl) alongside the GitHub CTA.
+
 ## v0.4.0 — 2026-07-02
 - Renumbered the changelog to honour **max 10 patches per minor** (the entries had
   run to `0.1.29`). Remapped the single long `0.1.x` line into three tidy minors —
