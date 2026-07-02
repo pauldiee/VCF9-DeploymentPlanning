@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.2 — 2026-07-02
+- Deployment-plan E4 story **4.1 (fill the P&P workbook)** now points to
+  [Coscia's VCF Planner](https://vcfplanning.lcoscia.fr/) as an easier fillable
+  alternative (live VLAN/IP/CIDR validation) that also doubles as an **as-built**
+  record with JSON/Markdown/CSV export. Doc + `web/src/lib/deployment-plan.ts`. (#48)
+
 ## v0.7.1 — 2026-07-02
 - **Deployment-plan stretch is now modelled per-domain.** The export tool and doc
   drop the single global "stretched" variant for: a **Stretch the management

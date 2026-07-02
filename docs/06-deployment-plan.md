@@ -76,7 +76,7 @@ Ref: [`02-customer-intake.md`](02-customer-intake.md) · [`04-sizing.md`](04-siz
 ### E4 — Workbook & deployment-JSON prep  ·  Owner: Arch + Plat
 Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
 
-- **Story 4.1 — Fill the P&P workbook.** Transfer intake answers into the official workbook.
+- **Story 4.1 — Fill the P&P workbook.** Transfer intake answers into the official workbook — or use [**Coscia's VCF Planner**](https://vcfplanning.lcoscia.fr/) for an easier fillable form (live VLAN/IP/CIDR validation) that also doubles as an **as-built** record, with JSON/Markdown/CSV export.
   - *Acceptance:* workbook complete; no red validation warnings.
 - **Story 4.2 — Generate the deployment JSON.** Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.
   - *Acceptance:* JSON generated and reviewed against the plan.

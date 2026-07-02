@@ -110,7 +110,7 @@ const CORE_PRE: Epic[] = [
     owner: 'Arch + Plat',
     ref: 'workbook-cell-mapping.md',
     stories: [
-      { id: '4.1', title: 'Fill the P&P workbook', tasks: ['Transfer intake answers into the official workbook.'], acceptance: 'Workbook complete; no red validation warnings.' },
+      { id: '4.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: 'Workbook complete; no red validation warnings.' },
       { id: '4.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'JSON generated and reviewed against the plan.' },
     ],
   },
