@@ -26,6 +26,7 @@ This repo flips the order:
 | `docs/02-customer-intake.md`        | Step 2 — role-based customer intake questionnaire      |
 | `docs/03-multi-az-prep.md`          | Extra prep for stretched / multi-AZ builds (if `A13`=Yes) |
 | `docs/04-sizing.md`                 | Step 3 — management-domain sizing + link to the fit-check calculator |
+| `docs/05-day2-deployments.md`       | Day-2 — fleet components deployed after bring-up (VCF Automation, Ops, NSX VPC placement) |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |

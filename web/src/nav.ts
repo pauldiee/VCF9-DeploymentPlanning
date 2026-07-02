@@ -47,6 +47,13 @@ export const NAV: NavItem[] = [
     blurb: 'Extra prep for stretched vSAN: witness, latency budgets, capacity.',
   },
   {
+    slug: '05-day2-deployments',
+    step: 'Day-2',
+    label: 'Day-2 Deployments',
+    icon: 'layer-group',
+    blurb: 'Fleet components deployed after bring-up: VCF Automation, Ops, and the Shared-Network-vs-NSX-VPC placement.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

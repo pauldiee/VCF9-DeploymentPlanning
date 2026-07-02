@@ -117,5 +117,18 @@ Repeat per additional cluster. New VLANs/subnets per cluster come from
 
 ## Sheet: Deploy Fleet Management Day-N
 
-Day-N additions (extra Ops / Automation nodes, federation, etc.) — driven by
-intake question **A15** and customer roadmap, captured in a follow-up session.
+Fleet components deployed after bring-up (Day-2 / Day-N). Planned in
+`05-day2-deployments.md`; the table below maps its decisions to this sheet. Also
+covers extra Ops / Automation nodes and federation driven by the customer
+roadmap (intake **A15**), captured in a follow-up session.
+
+| ID     | Sheet field / table                    | Field label                                          |
+| ------ | -------------------------------------- | ---------------------------------------------------- |
+| A17    | Fleet Components Deployment — Select Option | Which components deployed (Shared Management Network / Exclude per component) |
+| E15    | Deploy VCF Operations and Automation / Deploy VCF Automation | Deployment Type / Installation Type (SDDC Manager API vs. VCF Operations) |
+| B21    | localRegionNetwork / xRegionNetwork    | networkName / subnetMask / gateway; ipPool #1–5; Cluster Cidr |
+| E10    | VCF Automation Deployment              | VCF Automation FQDN; VCF services runtime FQDN; Node Prefix; IP addresses |
+| E9     | VCF Operations Deployment              | Primary / Replica / Data node FQDN + IP; Load Balancer FQDN + IP; appliance size |
+| E14    | Cloud Proxy / License Server / Identity Broker | FQDN + IP per appliance; Identity Broker provider + user/group provisioning |
+| —      | Deploy VCF Operations for Logs         | Log Management FQDN; node size; replica count; cluster VIP |
+| —      | Deploy VCF Operations for Networks     | Platform + Collector node VM name / IP; deployment size; dual-stack |

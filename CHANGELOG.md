@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.17 — 2026-07-02
+- New **Day-2 / Day-N fleet deployment** prep: `docs/05-day2-deployments.md`,
+  sourced from the workbook's *Deploy Fleet Management Day-N* sheet + TechDocs.
+  Enumerates the components deployed after bring-up (VCF Operations, Cloud
+  Proxy, License Server, VCF Automation, Identity Broker, Operations for Logs /
+  Networks) and captures the key decisions: bring-up vs Day-2, the two VCF
+  Automation deployment methods (SDDC Manager API vs via VCF Operations), and
+  the **network placement** — Shared Management Network vs a dedicated network
+  that can be an **NSX VPC** (ties to `A10`/`B20`). Added intake questions
+  `A17` / `B21` / `E15` (with `[DAYN]` sheet legend), mapped them plus the
+  Log/Networks appliances to the *Deploy Fleet Management Day-N* sheet, and
+  added a sidebar **Day-2** step + README row. Closes #23.
+
 ## v0.1.16 — 2026-07-02
 - New **interactive Management Domain sizing tool** on the site
   (`web/src/pages/tools/mgmt-sizing.astro` + engine `web/src/lib/mgmt-sizing.ts`).
