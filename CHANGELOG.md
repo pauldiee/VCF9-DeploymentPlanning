@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.4.6 — 2026-07-02
+- `03-multi-az-prep.md`: corrected the **witness traffic separation** networking
+  to match the Broadcom VCF design (verified against *vSAN Design for VCF* +
+  *Deploying a Witness Appliance*). Prior text implied a dedicated witness
+  VLAN/subnet; VCF actually puts witness traffic on the **management network** at
+  both ends — data hosts tag their **ESX Management** VMkernel (WTS), and the
+  witness appliance uses **one** VMkernel for management + witness. So no
+  dedicated witness VLAN is needed: route the witness appliance's management
+  subnet to the ESX-management networks in both AZs. Updated section B (+ a
+  cited note) and the section D witness row.
+
 ## v0.4.5 — 2026-07-02
 - Sizer: **Log Management is now first-instance only** (workbook O25: "Log
   management can only be installed on the first instance"). On an Additional

@@ -42,8 +42,8 @@ fail under load.
 | Witness site                      | Third location, routable from **both** AZ1 and AZ2             |
 | Witness runs on                   | Any supported host at the third site (nested ESXi appliance)   |
 | Witness size                      | Match to component count (Tiny / Medium / Large per OVA prompt)|
-| Witness management IP             | Routed to VM-mgmt reachability from SDDC Manager / vCenter      |
-| Witness traffic (WTS)             | Separate witness VMK/subnet from vSAN data — recommended        |
+| Witness network (VCF)             | **One** VMkernel/subnet on the witness appliance carries **both** management **and** witness traffic — the 2nd adapter is unused. Route it to the **management networks in both AZs** |
+| Data-host witness traffic (WTS)   | On ESXi hosts in both AZs, witness traffic rides the **ESX Management** VMkernel (WTS-tagged) — **no dedicated witness VLAN needed**. Only witness traffic is routed to the 3rd site; vSAN data stays stretched L2 between AZs |
 | AZ↔witness RTT                    | **≤200 ms** RTT (up to 10 hosts/site); **≤100 ms** for 11–15 hosts/site; ≤500 ms for a single host/site (2-node) |
 | Witness bandwidth (rule of thumb) | ~2 Mbps per 1000 vSAN components; size from expected object count |
 | Witness FQDN                      | A + PTR record, e.g. `sfo-wit01.sfo.example.io`                |
@@ -51,6 +51,18 @@ fail under load.
 
 The witness holds **only metadata (witness components)**, never data. Losing it
 does not stop I/O — the preferred AZ (M5) keeps quorum.
+
+> **Witness VLANs/subnets — what you actually need (VCF design).** Per the
+> Broadcom [vSAN Design for VCF](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vcf-design-5-2/vcf-vsan-design.html)
+> and [Deploying a Witness Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsan-deployment-administration-and-monitoring/vsan-planning-and-deployment/working-with-virtual-san-stretched-cluster/deploying-a-witness-appliance.html),
+> VCF puts witness traffic on the **management network** at both ends: the data
+> hosts tag their **ESX Management** VMkernel for witness traffic, and the
+> witness appliance uses **one** VMkernel for management + witness. So you do
+> **not** provision a dedicated witness VLAN/subnet — you need the witness
+> appliance's management subnet (3rd site) **routed to the ESX-management
+> networks in both AZs**, within the witness RTT budget above. (The generic vSAN
+> guide describes an optional dedicated per-site witness VLAN; VCF's design does
+> not use it.)
 
 ---
 
@@ -92,7 +104,7 @@ the Edge Overlay / Uplink rows.
 | NSX Edge Overlay (TEP)   | Stretched\*   | `/24`      | (same)     | Edges fail over → stretched **(Centralized only)** |
 | NSX Edge Uplink-01       | Stretched\*   | `/29–/30`  | (same)     | BGP peer; stretched **(Centralized only)**         |
 | NSX Edge Uplink-02       | Stretched\*   | `/29–/30`  | (same)     | BGP peer; stretched **(Centralized only)**         |
-| Witness traffic          | Routed to 3rd | —          | —          | AZ data nodes → witness site (≤200 ms)            |
+| Witness traffic          | Routed to 3rd | —          | —          | Rides the **ESX Management** VMK (WTS) → witness site (≤200 ms); no dedicated witness VLAN |
 
 > **\*** Edge Overlay + Uplinks are stretched **only with NSX Centralized
 > connectivity** (intake `A10`). With **Distributed** connectivity each AZ has
