@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.29 — 2026-07-02
+- Sizer: redesigned the **workload-domain repeater** for readability. Each WLD is
+  now a labeled **card** (a "WLD N" badge + name + remove control in a header row,
+  then its fields — vCenter size/storage, NSX model, NSX Manager size, Global
+  Manager — as a responsive auto-fit grid with visible labels) instead of six
+  unlabeled dropdowns crammed into one narrow row.
+
 ## v0.1.28 — 2026-07-02
 - Sizer: added a soft **2:1 oversubscription guardrail**. When CPU or RAM
   oversubscription exceeds 2:1, a non-blocking caution appears noting Broadcom's

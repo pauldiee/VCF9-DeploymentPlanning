@@ -203,14 +203,21 @@ const opt = (values: readonly string[]) => values;
     state.workloadDomains.forEach((w, i) => {
       const row = document.createElement('div');
       row.className = 'wld';
+      const field = (label: string, key: string, opts: readonly string[], val: string) =>
+        `<label class="wld__field">${label}<select data-i="${i}" data-k="${key}">${selOptions(opts, val)}</select></label>`;
       row.innerHTML = `
-        <input class="wld__name" data-i="${i}" data-k="name" placeholder="WLD ${i + 1} name" value="${w.name}" />
-        <select data-i="${i}" data-k="vcenterSize" title="vCenter size">${selOptions(OPTIONS.vcenterSize, w.vcenterSize)}</select>
-        <select data-i="${i}" data-k="vcenterStorage" title="vCenter storage">${selOptions(OPTIONS.vcenterStorage, w.vcenterStorage)}</select>
-        <select data-i="${i}" data-k="nsxModel" title="NSX model">${selOptions(OPTIONS.nsxModel, w.nsxModel)}</select>
-        <select data-i="${i}" data-k="nsxSize" title="NSX Manager size">${selOptions(OPTIONS.nsxManagerSize, w.nsxSize)}</select>
-        <select data-i="${i}" data-k="gm" title="Global Manager">${selOptions(OPTIONS.gm, w.gm)}</select>
-        <button type="button" class="wld__del" data-i="${i}" aria-label="Remove">&times;</button>`;
+        <div class="wld__head">
+          <span class="wld__badge">WLD ${i + 1}</span>
+          <input class="wld__name" data-i="${i}" data-k="name" placeholder="Workload domain name (optional)" value="${w.name}" />
+          <button type="button" class="wld__del" data-i="${i}" aria-label="Remove workload domain">&times;</button>
+        </div>
+        <div class="wld__fields">
+          ${field('vCenter size', 'vcenterSize', OPTIONS.vcenterSize, w.vcenterSize)}
+          ${field('vCenter storage', 'vcenterStorage', OPTIONS.vcenterStorage, w.vcenterStorage)}
+          ${field('NSX model', 'nsxModel', OPTIONS.nsxModel, w.nsxModel)}
+          ${field('NSX Manager size', 'nsxSize', OPTIONS.nsxManagerSize, w.nsxSize)}
+          ${field('Global Manager', 'gm', OPTIONS.gm, w.gm)}
+        </div>`;
       host.appendChild(row);
     });
     host.querySelectorAll<HTMLElement>('input,select').forEach((el) =>
@@ -461,18 +468,39 @@ const opt = (values: readonly string[]) => values;
   }
 
   .wld {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1.6fr 1fr 1fr auto;
-    gap: 0.35rem;
-    margin-bottom: 0.4rem;
-    align-items: center;
+    border: var(--border-width) solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: var(--itq-mist);
+    padding: 0.6rem 0.7rem;
+    margin-bottom: 0.6rem;
   }
-  .wld select, .wld input { margin-top: 0; font-size: 0.8rem; padding: 0.3rem; }
+  .wld__head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.55rem; }
+  .wld__badge {
+    flex: none;
+    font-size: 0.68rem;
+    font-weight: var(--fw-semibold);
+    color: var(--itq-white);
+    background: var(--itq-royal-blue);
+    border-radius: var(--radius-sm);
+    padding: 0.15rem 0.45rem;
+    letter-spacing: 0.02em;
+  }
+  .wld .wld__name { flex: 1; margin-top: 0; font-size: 0.82rem; }
   .wld__del {
-    border: none; background: var(--itq-mist); color: var(--itq-royal-blue);
-    border-radius: var(--radius-sm); width: 1.7rem; height: 1.7rem; cursor: pointer; font-size: 1rem;
+    flex: none;
+    border: var(--border-width) solid var(--border-default);
+    background: var(--itq-white); color: var(--itq-royal-blue);
+    border-radius: var(--radius-sm); width: 1.7rem; height: 1.7rem;
+    cursor: pointer; font-size: 1rem; line-height: 1;
   }
-  .wld__del:hover { background: var(--itq-orange); color: var(--itq-white); }
+  .wld__del:hover { background: var(--itq-orange); color: var(--itq-white); border-color: var(--itq-orange); }
+  .wld__fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.4rem 0.6rem;
+  }
+  .wld .wld__field { display: block; margin: 0; font-size: 0.72rem; color: var(--itq-royal-40); }
+  .wld .wld__field select { margin-top: 0.15rem; font-size: 0.8rem; padding: 0.32rem; }
 
   .sizer__results { position: sticky; top: calc(var(--header-h) + 1rem); }
   .verdict {
