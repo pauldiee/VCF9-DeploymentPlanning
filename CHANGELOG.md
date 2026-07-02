@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.3 — 2026-07-02
+- `workbook-cell-mapping.md`: added the **workload-domain** intake→named-range
+  table (section H, issue #36). The `input_wld_*` set is a single WLD (fill per
+  WLD) mirroring the mgmt layout, so H1–H12 map to `input_wld_*` families —
+  vCenter/NSX/Supervisor/storage, per-cluster networks, vDS, host overlay,
+  stretched (az2 twins + witness), and passwords — verified against a full
+  defined-names export. Optional-solution prefixes (SRM/DR, CCM, CBR, k8s) noted
+  as out of scope unless used.
+
 ## v0.6.2 — 2026-07-02
 - `04-sizing.md`: added a **"Validation against Broadcom TechDocs"** section
   (issue #16). vCenter (vCPU/RAM), NSX Manager, and NSX Edge match the docs

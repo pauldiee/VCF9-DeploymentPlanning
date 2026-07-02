@@ -124,6 +124,34 @@ Management Day-N* sheet — the network fields there are `input_xreg_*` /
 ranges. Some passwords live on *Value Reference Tables* (`sddc_mgr_*`), not an
 `input_*` name.
 
+### Intake → named range (workload domain, section H) — first cut
+
+The `input_wld_*` set is a **single** workload domain (not per-WLD-numbered) and
+mirrors the mgmt-domain layout (`input_wld_az1_*`, `az2`, `cl01`, `nsxt`,
+`supvr`, …). Fill it **per WLD** — repeat the block for each. Same conventions as
+above (`az1`/brace notation; `az2` twins when stretched). First cut — validate
+before wiring a generator.
+
+| Intake | Named range(s) |
+| ------ | -------------- |
+| H1 | `input_wld_sddc_domain` (name); deployment type — no distinct `*chosen` found (see the *Deploy Workload Domain* sheet) |
+| H2 | `input_wld_vc_{fqdn,ip}`, `input_wld_sso_domain_name` |
+| H3 | shared vs new `wld_bf_nsx_existing_chosen`; size `wld_nsxt_appliance_size_chosen`; nodes `input_wld_nsxt_mgr{a,b,c}_{fqdn,ip}`; VIP `input_wld_nsxt_vip_{fqdn,ip}` |
+| H4 | connectivity `wld_cl01_nsxt_deployent_type_chosen`; Distributed: `input_wld_az1_dtgw_{vlan,gateway_cidr}`, VNAs `input_wld_vna{a,b}_{fqdn,ip,cidr}` |
+| H5 | enable `wld_supervisor_chosen`; `input_wld_supvr_{name,api_server_fqdn,ip_address_range,nsx_project,vpc_connectivity_profile,cp_storage_policy,mgmt_dns_server,mgmt_ntp_server}` |
+| H6 | `wld_principal_storage_chosen`, `wld_cl01_vsan_ftt_chosen`, `wld_cl01_vsan_dedupe_compression_chosen`, `input_wld_cl01_vsan_datastore` |
+| H7 | `input_wld_cl01_cluster`, `input_wld_cl01_image_name`, `input_wld_az1_host{1..16}_{fqdn,mgmt_ip}` |
+| H8 | `input_wld_az1_{mgmt,vmotion,vsan}_{vlan,mtu,gateway_cidr,pool_start_ip,pool_end_ip}` |
+| H9 | `input_wld_cl01_vds0{1,2,3}_name`; `wld_cl01_vds_profile_chosen` |
+| H10 | `input_wld_az1_host_overlay_{vlan,mtu,cidr,gateway_ip,pool_start_ip,pool_end_ip,uplink_profile_name}` |
+| H11 | `wld_stretched_cluster_chosen`; per-AZ twins `input_wld_az2_*`; witness `input_wld_witness_{fqdn,ip,cluster,dns1_ip,dns2_ip}` |
+| H12 | `input_wld_bf_vc_root_password`, `input_wld_administrator_vsphere_local_password`, `input_wld_esx_root_password`, `input_wld_bf_nsxt_{admin,audit,root}_password`, `input_wld_nsxt_en_{admin,root}_password` |
+
+**Not mapped (out of scope for a core WLD):** optional-solution prefixes —
+`input_srm_*` / `input_wld_vrms_*` (Site Recovery / DR), `input_ccm_*`
+(Cross-Cloud Mobility), `input_cbr_*` (Cloud-Based Ransomware), `input_k8s_*` /
+`input_vvs_*` — populate only if the customer uses those solutions.
+
 ## Sheet: VCF & VVF Planning
 
 | Intake | Sheet section            | Field label                              |
