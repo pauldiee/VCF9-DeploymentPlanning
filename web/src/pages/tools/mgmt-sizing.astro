@@ -130,8 +130,9 @@ const opt = (values: readonly string[]) => values;
           <thead><tr><th>Dimension</th><th>Fleet needs</th><th>Cluster offers</th><th>Headroom</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
-        <p class="sizer__hint">CPU and RAM are checked at <strong>N-1</strong> (survive one host failure);
-          storage rebuild is covered by the reserve %, so it uses all hosts.</p>
+        <p class="sizer__hint">CPU and RAM are checked against the tolerated failure: <strong>N-1</strong> (one host)
+          for a standard cluster, or <strong>N/2</strong> (the surviving AZ must run everything) for a stretched
+          cluster. Storage rebuild is covered by the reserve %, and stretched mirrors a full copy per AZ.</p>
 
         <h2>Fleet requirement</h2>
         <dl class="sizer__stats" id="stats"></dl>
@@ -278,14 +279,15 @@ const opt = (values: readonly string[]) => values;
     // verdict banner
     const v = $('verdict');
     v.className = `verdict ${r.fit.overall ? 'verdict--ok' : 'verdict--bad'}`;
+    const survives = state.clusterType === 'Standard' ? 'one host failure' : 'a full AZ (site) failure';
     v.innerHTML = r.fit.overall
-      ? `<strong>Fits.</strong> ${state.proposedHosts} × host survives one failure with room to spare. Tightest dimension: ${r.fit.binding}.`
-      : `<strong>Does not fit.</strong> Shortfall on <strong>${r.fit.binding}</strong>. Minimum hosts for this fleet &amp; spec: <strong>${r.requiredHosts}</strong>.`;
+      ? `<strong>Fits.</strong> ${state.proposedHosts} × host survives ${survives} with room to spare. Tightest dimension: ${r.fit.binding}.`
+      : `<strong>Does not fit.</strong> Shortfall on <strong>${r.fit.binding}</strong> (survivability basis: ${r.survivorBasis}). Minimum hosts for this fleet &amp; spec: <strong>${r.requiredHosts}</strong>.`;
 
     // fit table
     const rows: Array<[string, string, string, ReturnType<typeof compute>['fit']['cpu']]> = [
-      ['CPU (vCPU, N-1)', `${gb(r.fit.cpu.required)}`, `${gb(r.fit.cpu.available)}`, r.fit.cpu],
-      ['RAM (GB, N-1)', `${gb(r.fit.ram.required)}`, `${gb(r.fit.ram.available)}`, r.fit.ram],
+      [`CPU (vCPU, ${r.survivorBasis})`, `${gb(r.fit.cpu.required)}`, `${gb(r.fit.cpu.available)}`, r.fit.cpu],
+      [`RAM (GB, ${r.survivorBasis})`, `${gb(r.fit.ram.required)}`, `${gb(r.fit.ram.available)}`, r.fit.ram],
       ['vSAN raw (GB)', `${gb(r.fit.storage.required)}`, `${gb(r.fit.storage.available)}`, r.fit.storage],
       ['Host count', `${r.fit.hosts.required}`, `${r.fit.hosts.available}`, r.fit.hosts],
     ];

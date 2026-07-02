@@ -169,7 +169,7 @@ export function defaultState(): SizingState {
     nsxEdgeSize: 'Excluded',
     aviSize: 'Excluded',
     sspSize: 'Excluded',
-    vcfOps: false,
+    vcfOps: true, // normally deployed in a greenfield fleet; exclude only if reusing an instance
     vcfOpsCollector: false,
     vcfAutomation: false,
     opsNetSize: 'Excluded',
@@ -420,6 +420,8 @@ export interface SizingResult {
   derived: DerivedSizes; // mgmt vCenter + NSX Local Manager sizes fixed by the profile
   perHostRaw: number; // raw GB each host contributes to vSAN (0 for NFS/FC)
   storageAvailable: number; // total capacity the proposed cluster offers
+  survivorHosts: number; // hosts left after the tolerated failure (N-1, or N/2 for stretched)
+  survivorBasis: string; // human label for that basis
   perHostN1: { cpu: number; ram: number; storage: number } | null;
   fit: { cpu: Dimension; ram: Dimension; storage: Dimension; hosts: Dimension; overall: boolean; binding: string };
 }
@@ -476,17 +478,21 @@ export function compute(s: SizingState): SizingResult {
       }
     : null;
 
-  // Fit check — CPU/RAM tolerate one host failure (N-1); storage rebuild is in
-  // the reserve %, so it uses full N.
-  const usableHosts = Math.max(0, n - 1);
+  // Fit check — CPU/RAM must survive the tolerated failure: one host (N-1) for a
+  // standard cluster, or a whole AZ for a stretched cluster, where the surviving
+  // site (N/2 hosts) has to run the entire fleet. Storage rebuild is in the
+  // reserve %, and stretched already mirrors the full dataset per site (raw is
+  // doubled above), so storage uses full N.
+  const survivorHosts = stretched ? Math.floor(n / 2) : Math.max(0, n - 1);
+  const survivorBasis = stretched ? 'one AZ down, N/2' : 'N-1';
   const dim = (required: number, available: number): Dimension => ({
     required,
     available,
     fits: available >= required && required >= 0,
     headroomPct: required > 0 ? (available / required - 1) * 100 : Infinity,
   });
-  const cpu = dim(totals.cpu, usableHosts * s.coresPerHost * s.cpuOver);
-  const ram = dim(totals.ram, usableHosts * s.ramPerHost * s.ramOver);
+  const cpu = dim(totals.cpu, survivorHosts * s.coresPerHost * s.cpuOver);
+  const ram = dim(totals.ram, survivorHosts * s.ramPerHost * s.ramOver);
   const storage = dim(raw, storageAvailable);
   const hosts = dim(requiredHosts, n);
 
@@ -504,6 +510,8 @@ export function compute(s: SizingState): SizingResult {
     derived: deriveMgmtSizes(s.deploymentModel, s.deploymentSize),
     perHostRaw,
     storageAvailable,
+    survivorHosts,
+    survivorBasis,
     perHostN1,
     fit: { cpu, ram, storage, hosts, overall, binding },
   };

@@ -63,7 +63,9 @@ them. Add their footprint manually, or fall back to the workbook:
 Appliance footprints are transcribed from the workbook's `table_*` reference
 tables; the host-count and vSAN-capacity formulas are transcribed from the
 *Management Domain Sizing* summary cells. The engine is verified against the
-sheet's own computed values at defaults:
+sheet's own computed values for the workbook's saved baseline (High
+Availability / Medium, VCF Operations excluded — the tool defaults VCF
+Operations *on* for a greenfield fleet, which raises these figures):
 
 | Output | Tool | Workbook |
 | ------ | ---- | -------- |
