@@ -73,6 +73,10 @@ Prereqs check  →  Network/DNS plan  →  Intake doc  →  Workbook fill  →  
   — pre-cutover readiness scoring from RVTools / HST exports.
 - **[pauldiee/VCFHealthCheck](https://github.com/pauldiee/VCFHealthCheck)** —
   post-cutover health checks of live VCF 9 environments.
+- **[VCF.JSONGenerator](https://www.powershellgallery.com/packages/VCF.JSONGenerator/)**
+  — Ken Gould's PowerShell module that generates the VCF **deployment/bring-up
+  JSON** for the VCF Installer / SDDC Manager. The "last mile" after this repo's
+  flow: plan → fill the workbook → generate the deployment JSON → VCF Installer.
 
 ## Author
 

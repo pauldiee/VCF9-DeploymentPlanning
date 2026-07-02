@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.8 — 2026-07-02
+- README: added **VCF.JSONGenerator** (Ken Gould's PowerShell module) to *Related
+  tools* — it generates the VCF deployment/bring-up JSON for the VCF Installer /
+  SDDC Manager, i.e. the "last mile" after this repo's plan → workbook flow.
+
 ## v0.4.7 — 2026-07-02
 - Sizer: guard the **Log Management replica** field itself. The engine already
   clamped for the calculation, but a typed out-of-range value (e.g. 1 replica on
