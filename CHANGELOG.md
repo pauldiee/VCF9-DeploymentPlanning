@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.7.4 — 2026-07-03
+- **Renumbered the deployment-plan variant epics to follow execution order:**
+  **E7 = Stretch the management domain, E8 = Day-2 fleet, E9 = Workload
+  domain(s)** (was E7=WLD / E8=stretch / E9=Day-2, which read out of order since
+  WLDs execute last). Story ids and all cross-references (6.2 / 6.4 → E8 8.5)
+  updated. Also **harmonized the stretch sequence** so the management stretch and
+  a stretched WLD follow the same order — *fabric/networks → commission second-AZ
+  hosts → witness → stretch* (the mgmt stretch previously put the witness first). (#51)
+- **Spelled out owner roles** (Architect, Network, Platform, Security, Storage,
+  Customer, AD/DNS/NTP) and **dropped the abbreviation legend** — doc, tool data,
+  and Markdown export. (#52)
+
 ## v0.7.3 — 2026-07-03
 - Deployment-plan E6 6.4 refinements (`docs/06-deployment-plan.md` + mirrored
   `web/src/lib/deployment-plan.ts`):
