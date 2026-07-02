@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.24 — 2026-07-02
+- `01-network-dns-plan.md`: also surface **public / upstream peering** in the main
+  VLAN/subnet table (row 12, optional `/29`–`/30` point-to-point uplink), mirroring
+  how the Edge uplinks appear in both the subnet table and §B. The BGP-session
+  detail stays in §B; this gives the peering a visible subnet slot. Cross-linked
+  to intake `B22`.
+
 ## v0.1.23 — 2026-07-02
 - Actually fixed the `Duplicate id` build warning. The absolute content `base`
   in v0.1.19 helped but did **not** reliably stop it — the warning recurred on

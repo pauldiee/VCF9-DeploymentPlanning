@@ -28,6 +28,7 @@ first WLD — duplicate it for additional WLDs / clusters.
 | 9 | NSX Edge Uplink-02             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-B; BGP peer              |
 | 10| NFS (optional)                 |         | `/24`             |                       | 9000 |                  | Only if principal storage = NFS                |
 | 11| VPC Gateway external (optional)|         | `/24`             |                       | 9000 |                  | External / north-south network for the Distributed Transit Gateway. Only when VPC Gateway = **Distributed** (intake `A10`); the Centralized model is configured post-bringup |
+| 12| Public / upstream peering uplink (optional)| | `/29` or `/30`  |                       | 9000 |                  | Point-to-point to a public / upstream / DMZ router, **separate** from the ToR fabric. Only if you run a distinct public peering (intake `B22`); BGP session details in §B. Most fleets don't need this |
 
 > **Overlay MTU:** host and edge TEP networks carry GENEVE and need MTU **≥ 1600**;
 > set 9000 on the distributed switch. The host-overlay VMK inherits its MTU from
