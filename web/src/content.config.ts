@@ -2,10 +2,13 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 // Resolve the content folders to absolute URLs anchored on this config file.
-// These live outside the Astro project root (repo `docs/` and `samples/`), and a
-// relative `base` gets tracked under two different normalized paths by the `dev`
-// and `build` content syncs — which surfaces as spurious "Duplicate id" warnings.
-// An absolute base gives every file one canonical id, so the warning can't occur.
+// These live outside the Astro project root (repo `docs/` and `samples/`); an
+// absolute base gives every file one canonical id (a relative base can be tracked
+// under two normalized paths). This alone does NOT fully stop the spurious
+// "Duplicate id" warning — the incremental content cache (`.astro/data-store.json`)
+// can still re-add an edited file after `dev`/`build` interleave. The reliable
+// fix is the `prebuild` script (package.json) clearing that store so every build
+// starts from a clean cache. CI (fresh checkout, no cache) is unaffected either way.
 const docsBase = new URL('../../docs', import.meta.url);
 const samplesBase = new URL('../../samples', import.meta.url);
 

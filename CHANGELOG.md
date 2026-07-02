@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.23 — 2026-07-02
+- Actually fixed the `Duplicate id` build warning. The absolute content `base`
+  in v0.1.19 helped but did **not** reliably stop it — the warning recurred on
+  incremental builds after editing docs, because the persisted content cache
+  (`.astro/data-store.json`) can re-add an edited file when `dev`/`build`
+  interleave. Added a `prebuild` script that clears that store so every build
+  starts from a clean cache; verified clean across 11 consecutive edit+build
+  cycles (including the previously-failing case). CI was already unaffected
+  (fresh checkout, no cache).
+
 ## v0.1.22 — 2026-07-02
 - Added intake question `B22` (Network) for optional **public / upstream peering**
   — peer AS/IP/MD5, advertised/received prefixes, and its own uplink subnet if it
