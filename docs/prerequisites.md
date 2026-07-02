@@ -41,6 +41,7 @@ Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 | **ECMP** on Edge↔ToR uplinks        | NSX Edge multipath                                                   |
 | **vDS teaming**                     | vSphere Distributed Switch teaming for uplink load-balancing + failover |
 | **VLANs** per traffic type          | See `01-network-dns-plan.md`                                         |
+| **External load balancer** (only if fronting VCF Operations with a VIP) | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and Operations uses a floating IP. See `05-day2-deployments.md` B.1 |
 | **Stretched networks** (multi-AZ)   | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. See `03-multi-az-prep.md` |
 
 ## Active Directory

@@ -42,13 +42,49 @@ network placement from section C.
 
 | Component                     | Appliances / nodes                                             | Notes                                                        |
 | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| **VCF Operations**            | Primary, Replica, Data nodes + Load Balancer (VIP)             | Skip if reusing an existing instance (`useExistingDeployment`)|
+| **VCF Operations**            | Primary, Replica, Data nodes (cluster **floating IP**, or a **VIP** if an external LB is used — see B.1) | Skip if reusing an existing instance (`useExistingDeployment`)|
 | **Cloud Proxy** (Ops collector)| One or more collector appliances                              | Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement |
 | **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | One appliance                                                  | Plus identity provider (AD/LDAP), user/group provisioning     |
-| **VCF Operations for Logs**   | Log Management nodes + cluster VIP                             | Node size + replica count (size it in `04-sizing.md`)         |
+| **VCF Operations for Logs**   | Log Management nodes + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`)         |
 | **VCF Operations for Networks**| Platform node + Collector node                                | Optional dual-stack (IPv4 / IPv6)                             |
+
+### B.1 — VCF Operations load balancer is **external, never served by VCF**
+
+This trips people up, so plan it up front. The VCF Operations analytics cluster
+(Primary / Replica / Data) is reached two ways, and **only one of them involves a
+load balancer**:
+
+- **Floating IP (default, no LB).** With no load balancer the cluster answers on
+  a **floating IP** that fails over between the Primary and Replica nodes. This is
+  built in — nothing extra to provision. Most deployments use this.
+- **Load-balancer VIP (optional).** If you want a real load balancer in front of
+  the analytics nodes, **VCF does not deploy or manage one for VCF Operations** —
+  you must bring your own **external load balancer** (e.g. F5, or a *standalone*
+  Avi/NSX ALB instance you run yourself). The load balancer is **never served
+  from VCF**; VCF only records the VIP it points at. Per
+  [Broadcom TechDocs](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/design/vmware-cloud-foundation-concepts/vcf-operations.html)
+  both the HA and Continuous Availability models *"support an optional external
+  load balancer."*
+
+When you do use an external LB, plan for:
+
+- an **extra IP + FQDN** for the VIP (on top of the per-node FQDNs/IPs), and
+- **certificate SAN coverage** — every cluster node FQDN **and** the load-balancer
+  FQDN must be in the certificate's Subject Alternative Names.
+
+Where the setting lives: the *Deploy Fleet Management Day-N* sheet carries the
+VCF Operations cluster address as a **floating IP** when no LB is used and as a
+**VIP** when one is; that is the switch that tells the deployment whether an
+external LB fronts the cluster. Decide it before you request certificates (the
+SAN list depends on it).
+
+> **Don't confuse this with VCF Operations *for Logs*.** The Logs cluster has an
+> **integrated** load balancer (its VIP is handled internally) — that one is not
+> external. Nor is it the platform's own **Avi/NSX ALB**, which VCF *can* deploy
+> and lifecycle-manage for **tenant / workload** load balancing — that is a
+> different service from the LB that fronts VCF Operations itself.
 
 ---
 

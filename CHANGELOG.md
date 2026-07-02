@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.7 — 2026-07-02
+- Documented that the **VCF Operations load balancer is external and never served
+  by VCF**. The analytics cluster uses a **floating IP** by default; a
+  load-balancer **VIP** is optional and, when used, must be a **customer-provided
+  external LB** (F5, standalone Avi/NSX ALB) — VCF does not deploy or lifecycle it
+  for Operations (unlike the *integrated* LB in Operations *for Logs*, or the
+  platform Avi/NSX ALB used for tenant workloads). Added `05-day2-deployments.md`
+  §B.1 (with the floating-IP-vs-VIP switch + cert-SAN requirement, TechDocs
+  cited), plus notes on intake `E9`, prerequisites (Network), and deployment-plan
+  Story 9.2.
+
 ## v0.6.6 — 2026-07-02
 - Corrected the VCF Installer IP guidance. It does **not** use a throwaway
   temporary IP: when deployed on a management-domain ESX host (the usual

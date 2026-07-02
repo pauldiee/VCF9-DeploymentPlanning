@@ -117,7 +117,7 @@ Ref: [`03-multi-az-prep.md`](03-multi-az-prep.md)
 Ref: [`05-day2-deployments.md`](05-day2-deployments.md)
 
 - **Story 9.1 — Network placement.** Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment; build the network if non-shared.
-- **Story 9.2 — VCF Operations.** Deploy Operations (+ Cloud Proxy, License Server).
+- **Story 9.2 — VCF Operations.** Deploy Operations (+ Cloud Proxy, License Server). Decide the cluster address: **floating IP** (default) or an **external load-balancer VIP** — VCF never provides the LB for Operations, so if a VIP is wanted, provision the external LB and add its FQDN to the cert SAN *first* (see `05-day2-deployments.md` B.1).
 - **Story 9.3 — VCF Automation.** Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
 - **Story 9.4 — Ops for Logs / Networks & Identity Broker.** Deploy the remaining fleet components as needed.
   - *Acceptance:* each Day-2 component healthy; the fleet synthetic check passes.

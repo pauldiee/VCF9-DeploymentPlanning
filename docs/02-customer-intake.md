@@ -126,7 +126,7 @@ Legend:
 |E6 | vCenter FQDN + IP                                              | `[MGMT]`  |
 |E7 | SDDC Manager FQDN + IP — the **VCF Installer** is deployed with this IP+FQDN (on a mgmt host) and becomes SDDC Manager | `[MGMT]`  |
 |E8 | NSX Manager VIP FQDN + IP, plus 3 node FQDNs + IPs             | `[MGMT]`  |
-|E9 | VCF Operations — 3 analytics node FQDNs+IPs (primary/replica/data); optional load-balancer VIP FQDN+IP for HA | `[MGMT]`  |
+|E9 | VCF Operations — 3 analytics node FQDNs+IPs (primary/replica/data). Default cluster address is a **floating IP** (no LB). A **load-balancer VIP** is optional and, if used, must be an **external LB (never provided by VCF)** — capture the VIP FQDN+IP and put every node FQDN **+ the LB FQDN** in the cert SAN → `05-day2-deployments.md` B.1 | `[MGMT]`  |
 |E10| VCF Automation — appliance/cluster FQDN+IP + VCF services-runtime FQDN; nodes come from the `/29` range (`B5`), or the non-shared placement network (`B21`) | `[MGMT]`  |
 |E11| NSX Edge node 1 / 2 FQDNs + IPs                                | `[CFG-M]` |
 |E12| Cluster / vDS / DPG naming conventions                         | `[MGMT]`  |
