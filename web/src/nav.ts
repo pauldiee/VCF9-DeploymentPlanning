@@ -37,7 +37,7 @@ export const NAV: NavItem[] = [
     step: 'Step 3',
     label: 'Sizing & Fit Check',
     icon: 'server',
-    blurb: 'Interactive calculator — size the management fleet, check whether your hosts fit at N-1, and export or share the result.',
+    blurb: 'Interactive calculator: size the management fleet, check whether your hosts fit at N-1, and export or share the result.',
   },
   {
     slug: '03-multi-az-prep',

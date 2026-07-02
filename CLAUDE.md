@@ -34,11 +34,16 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (private)
 | `docs/prerequisites.md`          | Customer-side prereq gate (HW, network, AD, DNS, NTP, CA, …)  |
 | `docs/01-network-dns-plan.md`    | Step 1 — one-page network / DNS / NTP / AD / BGP / CA plan    |
 | `docs/02-customer-intake.md`     | Step 2 — role-based intake questionnaire                      |
-| `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label                      |
-| `samples/`                       | (future) example pre-filled fragments — Rainpole-style only   |
+| `docs/03-multi-az-prep.md`       | Multi-AZ (stretched) extra prep — witness, latency, capacity |
+| `docs/04-sizing.md`              | Step 3 — mgmt-domain sizing; links the interactive sizing tool|
+| `docs/05-day2-deployments.md`    | Day-2 fleet deployments (VCF Automation/Ops, network placement)|
+| `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
+| `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
+| `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
+| `web/`                           | ITQ-branded Astro site (GitHub Pages) + the interactive sizing tool |
 | `tools/`                         | (future) helper scripts — see issue #1 for the workbook writer|
 
-Doc-only repo today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 patches per minor version.
+Docs **plus** an Astro site (`web/`, incl. the interactive sizing tool) today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 patches per minor version.
 
 ---
 

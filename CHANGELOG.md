@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.6 — 2026-07-02
+- Up-to-date sweep fixes: README contents row for `05-day2` still said "NSX VPC
+  placement" → "network placement"; refreshed `CLAUDE.md`'s file-layout table
+  (added `03`/`04`/`05` docs, `web/`, `reference/`; `samples/` no longer
+  "(future)"; "doc-only" → docs + Astro site); and removed two stray em-dashes
+  from web chrome (Step-3 nav blurb, VCF.JSONGenerator card) to match the ITQ
+  no-em-dash convention. Cross-refs, doc links, workbook revision, and the build
+  otherwise check out.
+
 ## v0.5.5 — 2026-07-02
 - Landing page / nav refresh: the workflow heading said "Five documents" (there
   are now seven items incl. an interactive tool) → "The planning flow, in order".
