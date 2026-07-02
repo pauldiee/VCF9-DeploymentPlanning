@@ -25,6 +25,7 @@ const opt = (values: readonly string[]) => values;
       </p>
       <div class="sizer__toolbar">
         <button type="button" id="btnShare"><i class="fa-solid fa-link" aria-hidden="true"></i> Copy share link</button>
+        <button type="button" id="btnSummary"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy summary</button>
         <button type="button" id="btnExport"><i class="fa-solid fa-download" aria-hidden="true"></i> Export</button>
         <label class="sizer__filebtn"><i class="fa-solid fa-upload" aria-hidden="true"></i> Import<input type="file" id="fileImport" accept="application/json,.json" hidden /></label>
         <button type="button" id="btnReset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset</button>
@@ -117,6 +118,7 @@ const opt = (values: readonly string[]) => values;
           <label>Log Management size
             <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
           </label>
+          <p class="sizer__hint" id="logsHint" hidden></p>
           <label id="logsReplicasLabel" hidden>Log Management replicas
             <input id="logsReplicas" type="number" min="1" step="1" />
             <span class="sizer__hint">Size must match the deployment profile; replicas min Small 1 / Medium 3 / Large 6, max 19.</span>
@@ -178,7 +180,7 @@ const opt = (values: readonly string[]) => values;
 </BaseLayout>
 
 <script>
-  import { OPTIONS, defaultState, compute, logsSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
+  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, logsSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const state: SizingState = defaultState();
@@ -283,15 +285,20 @@ const opt = (values: readonly string[]) => values;
   }
 
   // ---- Log Management is constrained by the deployment profile ----
-  let lastLogsDepSize = '';
+  // Size must match the profile, and it is first-instance only (workbook O25).
+  let lastLogsKey = '';
   let lastLogsSize = '';
   function syncLogsSizeOptions() {
-    const allowed = logsSizeOptions(($('deploymentSize') as HTMLSelectElement).value);
+    const firstInstance = ($('instanceModel') as HTMLSelectElement).value === 'First Instance';
+    const allowed = firstInstance ? logsSizeOptions(($('deploymentSize') as HTMLSelectElement).value) : ['Exclude'];
     const sel = $('logsSize') as HTMLSelectElement;
-    // preserve current if still valid, else fall back to the largest allowed size
     const current = allowed.includes(sel.value) ? sel.value : allowed[allowed.length - 1];
     sel.innerHTML = selOptions(allowed, current);
+    sel.disabled = !firstInstance;
     state.logsSize = current;
+    const hint = $('logsHint') as HTMLElement;
+    hint.hidden = firstInstance;
+    if (!firstInstance) hint.textContent = 'Log Management can only be deployed on the first VCF instance.';
   }
   function syncLogsReplicas() {
     const size = ($('logsSize') as HTMLSelectElement).value;
@@ -319,10 +326,10 @@ const opt = (values: readonly string[]) => values;
       lastStorage = storage;
       syncStorageInputs();
     }
-    // Log Management size options track the deployment size; replicas track the logs size.
-    const depSize = ($('deploymentSize') as HTMLSelectElement).value;
-    if (depSize !== lastLogsDepSize) {
-      lastLogsDepSize = depSize;
+    // Log Management size tracks the deployment size + instance model; replicas track the logs size.
+    const logsKey = ($('deploymentSize') as HTMLSelectElement).value + '|' + ($('instanceModel') as HTMLSelectElement).value;
+    if (logsKey !== lastLogsKey) {
+      lastLogsKey = logsKey;
       syncLogsSizeOptions();
     }
     const logsSize = ($('logsSize') as HTMLSelectElement).value;
@@ -433,7 +440,7 @@ const opt = (values: readonly string[]) => values;
   function loadState(obj: any) {
     Object.assign(state, sanitize(obj));
     // reset dependent-dropdown guards so recalc re-runs every sync for the new state
-    lastModel = lastStorage = lastLogsDepSize = lastLogsSize = '';
+    lastModel = lastStorage = lastLogsKey = lastLogsSize = '';
     // expand the constrained dropdowns to their full option lists so hydrate's
     // values stick; recalc's syncs then re-constrain them for the loaded profile
     ($('deploymentSize') as HTMLSelectElement).innerHTML = selOptions([...OPTIONS.deploymentSize], state.deploymentSize);
@@ -457,6 +464,49 @@ const opt = (values: readonly string[]) => values;
     const url = location.origin + location.pathname + hash;
     try { await navigator.clipboard.writeText(url); toolbarMsg('Share link copied'); }
     catch { toolbarMsg('Link is in the address bar (copy blocked)'); }
+  });
+  function buildSummary(): string {
+    readInputs();
+    const r = compute(state);
+    const s = state;
+    const store = (s.storageType === 'vSAN-ESA' || s.storageType === 'vSAN-OSA')
+      ? `${s.capacityDisksPerHost}×${gb(s.capacityDiskSizeGb)} GB/host`
+      : `${gb(s.externalStorageGb)} GB datastore`;
+    const dim = (label: string, d: ReturnType<typeof compute>['fit']['cpu']) =>
+      `| ${label} | ${gb(d.required)} | ${gb(d.available)} | ${pct(d.headroomPct)} | ${d.fits ? '✓' : '✗'} |`;
+    const L = [
+      '# VCF 9.1 Management Domain Sizing',
+      '',
+      `**Profile:** ${s.deploymentModel} / ${s.deploymentSize}, ${s.instanceModel}, ${s.storageType}`,
+      `**Cluster:** ${s.clusterType}, ${s.proposedHosts} hosts × ${s.coresPerHost} cores / ${gb(s.ramPerHost)} GB RAM / ${store}`,
+      `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, reserve ${s.reservePct}%, growth ${s.growthPct}%`,
+      `**Profile-fixed:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}`,
+      '',
+      `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} — tightest: ${r.fit.binding} (basis: ${r.survivorBasis})`,
+      '',
+      '| Dimension | Fleet needs | Cluster offers | Headroom | Fits |',
+      '| --- | ---: | ---: | ---: | :-: |',
+      dim(`CPU (vCPU, ${r.survivorBasis})`, r.fit.cpu),
+      dim(`RAM (GB, ${r.survivorBasis})`, r.fit.ram),
+      dim('vSAN raw (GB)', r.fit.storage),
+      dim('Host count', r.fit.hosts),
+      '',
+      '## Fleet requirement',
+      `- Totals: ${gb(r.totals.nodes)} nodes, ${gb(r.totals.cpu)} vCPU, ${gb(r.totals.ram)} GB RAM, ${gb(r.totals.disk)} GB disk`,
+      `- Minimum hosts: ${r.requiredHosts}`,
+      ...(r.perHostN1 ? [`- Per host (N-1): ${gb(r.perHostN1.cpu)} vCPU, ${gb(r.perHostN1.ram)} GB RAM, ${gb(r.perHostN1.storage)} GB`] : []),
+      `- vSAN raw required: ${gb(r.vsan.raw)} GB`,
+      '',
+      '## Components',
+      ...r.components.map((c) => `- ${c.name}: ${c.nodes} node${c.nodes === 1 ? '' : 's'}, ${gb(c.cpu)} vCPU, ${gb(c.ram)} GB, ${gb(c.disk)} GB`),
+      '',
+      `_Generated with the ITQ VCF 9.1 Management Domain sizing tool (workbook ${WORKBOOK_REVISION})._`,
+    ];
+    return L.join('\n');
+  }
+  $('btnSummary').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(buildSummary()); toolbarMsg('Summary copied (Markdown)'); }
+    catch { toolbarMsg('Copy failed — clipboard blocked'); }
   });
   $('btnExport').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });

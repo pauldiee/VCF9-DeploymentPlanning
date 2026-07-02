@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.4.5 — 2026-07-02
+- Sizer: **Log Management is now first-instance only** (workbook O25: "Log
+  management can only be installed on the first instance"). On an Additional
+  Instance the size dropdown locks to Exclude with a note, and the engine drops
+  the component.
+- Sizer: added **Copy summary** — copies a readable **Markdown** report of the
+  sizing (profile, cluster, fit verdict + table, fleet requirement, component
+  list) to the clipboard for pasting into an email, doc, or ticket.
+
 ## v0.4.4 — 2026-07-02
 - Sizer: corrected the Log Management size rule from "≤ deployment size" to
   **must match the deployment profile size**. The workbook's warning cell (O24)

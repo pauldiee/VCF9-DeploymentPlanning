@@ -378,10 +378,11 @@ export function components(s: SizingState): Component[] {
     });
   }
 
-  // Log Management (vRealize Log Insight). Size is capped at the deployment size
-  // and replicas clamp to the per-size minimum..19 (see logsSizeOptions /
-  // logsReplicaMin). Large uses 2 worker nodes per replica, else 1.
-  if (s.logsSize !== 'Exclude' && logsSizeOptions(size).includes(s.logsSize)) {
+  // Log Management (vRealize Log Insight). First instance only (workbook O25:
+  // "Log management can only be installed on the first instance"). Size must
+  // match the deployment profile; replicas clamp to the per-size minimum..19.
+  // Large uses 2 worker nodes per replica, else 1.
+  if (s.instanceModel === 'First Instance' && s.logsSize !== 'Exclude' && logsSizeOptions(size).includes(s.logsSize)) {
     const replicas = Math.min(LOGS_REPLICA_MAX, Math.max(logsReplicaMin(s.logsSize), s.logsReplicas));
     const nodes = (s.logsSize === 'Large' ? 2 : 1) * replicas;
     list.push({
