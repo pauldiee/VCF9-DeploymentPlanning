@@ -163,9 +163,12 @@ order as the management stretch (E7). A stretched WLD also requires the
 [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)
 to add an *Enable vSphere Supervisor* story to that WLD. It needs the WLD's
 north-south connectivity in place (**Centralized:** Edge cluster + Tier-0;
-**Distributed:** the NSX VPC workflow + VNA) **and** the **Avi Load Balancer**
-controller cluster deployed **before activation**, plus a control-plane size
-(Small / Medium / Large). Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html).
+**Distributed:** the NSX VPC workflow + VNA) **and a load balancer before
+activation** — **Avi is one option** (then deploy the controller cluster
+first; see `prerequisites.md`); the NSX / VPC networking paths' **built-in
+load balancer** and the **Foundation Load Balancer** work **without Avi**.
+Plus a control-plane size (Small / Medium / Large).
+Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html).
 
 **Non-stretched WLD:**
 - **Story 9.1 — WLD network prep.** Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.

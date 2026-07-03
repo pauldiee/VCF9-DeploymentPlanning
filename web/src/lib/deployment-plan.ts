@@ -536,7 +536,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       id: `9.${stories.length + 1}`,
       title: 'Enable vSphere Supervisor',
       tasks: [
-        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and the Avi Load Balancer controller cluster is deployed — Supervisor activation requires the load balancer.`,
+        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Avi is one option (deploy its controller cluster first — see prerequisites.md, Avi Load Balancer); the NSX / VPC networking paths' built-in load balancer and the Foundation Load Balancer work without Avi.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',

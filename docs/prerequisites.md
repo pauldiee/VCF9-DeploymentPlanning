@@ -72,11 +72,14 @@ Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 
 ## Avi Load Balancer (only if in scope)
 
-Needed when any of these is planned: **vSphere Supervisor** on a workload
-domain (the controller cluster must exist **before activation**), a **VCF
-Automation HA cluster** (VIP), or tenant/workload load balancing. Deployed
-**Day-2 from VCF Operations** into the management domain — vCenter and NSX
-must already be configured. Prepare up front:
+Needed when **Avi is the chosen load balancer** for any of these: **vSphere
+Supervisor** on a workload domain (then the controller cluster must exist
+**before activation** — but Supervisor also runs **without Avi**, via the
+NSX / VPC networking paths' built-in load balancer or the **Foundation Load
+Balancer**), a **VCF Automation HA cluster** VIP (an external LB also works),
+or tenant/workload load balancing. Deployed **Day-2 from VCF Operations** into
+the management domain — vCenter and NSX must already be configured. Prepare up
+front:
 
 - **4 IPs + FQDNs on the VM Management network**: 3 controller nodes + the
   **cluster VIP**. The VIP FQDN must be **registered in DNS and resolve to the

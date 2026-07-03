@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1.3 — 2026-07-03
+- **Supervisor does not require Avi — corrected** (#86, revising the #70-era
+  wording; lab-verified). vSphere Supervisor needs **a load balancer** before
+  activation, and **Avi is one option** — the NSX / VPC networking paths'
+  built-in load balancer and the **Foundation Load Balancer** work without
+  Avi. Reworded the hard "Avi required" claim in `06` (E9 Supervisor
+  paragraph), the export tool (Supervisor story + WLD hint), the
+  `prerequisites.md` Avi section ("needed when **Avi is the chosen LB**"),
+  intake `E16`, and the `01` carve-out row.
+
 ## v1.1.2 — 2026-07-03
 - **Avi Load Balancer prerequisite layer, end-to-end** (#85). The plan
   required the Avi controller cluster (Supervisor activation, Automation HA)

@@ -67,7 +67,7 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
+        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs connectivity + a load balancer first; Avi is one LB option).</p>
         <div id="wldList"></div>
         <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
           <select id="selSuperSize">
