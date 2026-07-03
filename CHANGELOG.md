@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.10.3 — 2026-07-03
+- **Export tool: VCF Automation deployment model (Stage 4 — completes #72).** A
+  **Deployment model** dropdown in the VCF Automation sub-block — **single-node**
+  (no LB) or **HA cluster** (nodes behind a VIP). Choosing HA without the Avi LB
+  adds a nudge task ("an HA cluster needs a load balancer for its VIP"), and the
+  8.2 title/acceptance reflect the model (e.g. "VCF Automation (NSX Overlay
+  Segment, HA + Avi LB)"). All four staged deployment choices (connectivity,
+  Supervisor, storage, deployment model) are now in the tool. (#72)
+
 ## v0.10.2 — 2026-07-03
 - **Export tool: principal storage choice (Stage 3).** A **Principal storage**
   dropdown (**vSAN ESA / vSAN OSA / NFS / VMFS-on-FC**) adapts the E4 hardware

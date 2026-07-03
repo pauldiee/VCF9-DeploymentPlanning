@@ -37,12 +37,14 @@ export interface Wld {
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
+export type AutomationModel = 'single' | 'ha';
 export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
 
 export interface AutomationChoice {
   deploy: boolean;
+  model: AutomationModel;
   placement: AutomationPlacement;
   aviLb: boolean;
 }
@@ -66,7 +68,7 @@ export function defaultSelection(): Selection {
     supervisorSize: 'Small',
     mgmtStretched: false,
     day2: true,
-    automation: { deploy: true, placement: 'shared', aviLb: false },
+    automation: { deploy: true, model: 'single', placement: 'shared', aviLb: false },
     wlds: [{ name: 'wld01', stretched: false, supervisor: false }],
   };
 }
@@ -94,6 +96,12 @@ export const AUTOMATION_PLACEMENTS: { value: AutomationPlacement; label: string;
   { value: 'dedicated', label: 'Dedicated Management Network', text: 'build the dedicated vDS port group / VLAN first; Cloud Proxy stays on the VM-Management network' },
   { value: 'overlay', label: 'NSX Overlay Segment', text: 'needs an NSX Edge cluster + Tier-0 (BGP) + Tier-1 and the overlay segment first; Cloud Proxy stays on VM-Management' },
   { value: 'vlan', label: 'NSX VLAN Segment', text: 'deploy on an NSX VLAN-backed segment (no overlay / Edge routing)' },
+];
+
+/** VCF Automation deployment models — an HA cluster needs a load balancer. */
+export const AUTOMATION_MODELS: { value: AutomationModel; label: string }[] = [
+  { value: 'single', label: 'Single-node' },
+  { value: 'ha', label: 'HA cluster' },
 ];
 
 const AVI_LB_URL =
@@ -304,9 +312,14 @@ function day2Epic(sel: Selection): Epic {
     };
   } else {
     const p = AUTOMATION_PLACEMENTS.find((x) => x.value === a.placement) ?? AUTOMATION_PLACEMENTS[0];
+    const ha = a.model === 'ha';
+    const modelText = ha ? 'HA cluster (nodes behind a load-balancer VIP)' : 'single-node (no load balancer needed)';
     const tasks = [
-      `Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C).`,
+      `Deploy via SDDC Manager API or via VCF Operations as a ${modelText}. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C). Set the services-runtime cluster CIDR.`,
     ];
+    if (ha && !a.aviLb) {
+      tasks.push('An HA-cluster VCF Automation needs a load balancer for its cluster VIP — enable the Avi LB option (or provide an external LB).');
+    }
     if (a.aviLb) {
       tasks.push(
         `Load-balance VCF Automation with an Avi Load Balancer deployed in the management domain (lifecycle-managed via VCF Operations); deploy the Avi controller cluster first. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`
@@ -314,9 +327,9 @@ function day2Epic(sel: Selection): Epic {
     }
     automationStory = {
       id: '8.2',
-      title: `VCF Automation (${p.label}${a.aviLb ? ' + Avi LB' : ''})`,
+      title: `VCF Automation (${p.label}${ha ? ', HA' : ''}${a.aviLb ? ' + Avi LB' : ''})`,
       tasks,
-      acceptance: `VCF Automation deployed and healthy on the ${p.label}; services-runtime cluster CIDR set and non-overlapping${a.aviLb ? '; Avi LB fronting the cluster' : ''}.`,
+      acceptance: `VCF Automation deployed and healthy (${ha ? 'HA cluster' : 'single-node'}) on the ${p.label}; services-runtime cluster CIDR set and non-overlapping${a.aviLb ? '; Avi LB fronting the cluster' : ''}.`,
     };
   }
   return {
