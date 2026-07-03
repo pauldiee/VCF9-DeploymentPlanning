@@ -137,11 +137,17 @@ identity source up front; it has specific inputs and well-known gotchas.
 
 ## Certificate Authority
 
+- **For VCF management components, only a Microsoft Certificate Authority is
+  supported** for integrated (automated) certificate management. **OpenSSL is
+  *not* supported for management components** in VCF 9 — it remains an option only
+  for VCF Instance components. You can also use an **external / third-party CA**
+  via manual CSR + import for any component.
 - Internal CA that can ingest CSRs from SDDC components and issue signed
   certificates.
 - Microsoft Enterprise CA must support **Basic authentication**.
 - Recommended: Windows Server 2019/2022 with `Certificate Authority` +
-  `Certificate Authority Web Enrollment` roles.
+  `Certificate Authority Web Enrollment` roles (Web Enrollment on the same host
+  as the CA role).
 
 ## SFTP
 

@@ -103,7 +103,7 @@ Legend:
 
 | # | Question                                                       | Sheet     |
 |---|----------------------------------------------------------------|-----------|
-|D1 | Internal CA type (MS Enterprise / OpenSSL / Other)             | `[CFG-M]` |
+|D1 | Internal CA type — **Microsoft CA** (only integrated option for mgmt components) or external via CSR; **OpenSSL not supported for management components** | `[CFG-M]` |
 |D2 | CA root + intermediate certificate (PEM)                       | `[CFG-M]` |
 |D3 | CSR submission method (Web Enrollment / other)                 | `[CFG-M]` |
 |D4 | Template name to issue VMware certs                            | `[CFG-M]` |

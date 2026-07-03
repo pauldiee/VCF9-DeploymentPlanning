@@ -195,7 +195,7 @@ same shape.
 
 | Item                       | Value                                            |
 | -------------------------- | ------------------------------------------------ |
-| Internal CA type           | MS Enterprise / OpenSSL / Other                  |
+| Internal CA type           | Microsoft CA (only integrated option for mgmt components) / external via CSR — **not OpenSSL** for mgmt |
 | CA root + intermediate CRT | Path / how delivered                             |
 | CSR submission method      | Web Enrollment (basic auth) / DCE-RPC / Other    |
 | Template name              | e.g. `VMware`                                    |

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.9.3 — 2026-07-03
+- Corrected the **certificate-authority guidance**: for VCF 9 **management
+  components only a Microsoft CA is supported** (OpenSSL is limited to VCF Instance
+  components; an external/third-party CA via CSR always works). Docs previously
+  listed "MS Enterprise / OpenSSL / Other" generically. Fixed the prerequisites CA
+  section, `01-network-dns-plan.md` CA-type row, intake `D1`, the `ntp-ad-ca-plan.csv`
+  template, and deployment-plan E1 1.4. Verified against Broadcom's *Configure a
+  Certificate Authority for VMware Cloud Foundation* (9.x). (#68)
+
 ## v0.9.2 — 2026-07-03
 - Added **VCF Identity Broker identity-source prep + common gotchas** to the AD
   prerequisites (`prerequisites.md`). What to prepare (bind account incl. TGGAU
