@@ -40,8 +40,8 @@ Ref: [`01-network-dns-plan.md`](01-network-dns-plan.md)
 
 - **Story 1.1 — VLAN / subnet plan.** Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.
   - *Acceptance:* one-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.
-- **Story 1.2 — BGP plan.** Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.
-  - *Acceptance:* Edge AS, ToR AS, peer IPs, MD5 keys, BFD, and advertised/received routes agreed and documented with the fabric team.
+- **Story 1.2 — BGP plan.** Edge AS, ToR AS, peer IPs, BFD, advertised/received routes — plus an **optional** MD5 password only if you enable BGP authentication.
+  - *Acceptance:* Edge AS, ToR AS, peer IPs, BFD, and advertised/received routes agreed and documented with the fabric team. (BGP MD5 is optional — capture a password only if authentication is enabled; VCF/NSX requires just the neighbor IP + remote AS.)
 - **Story 1.3 — DNS & NTP records.** All A + PTR records created; NTP sources confirmed.
   - *Acceptance:* forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.
 - **Story 1.4 — Certificates.** CA type, template, and signing approach decided.

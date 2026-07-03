@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.7.8 — 2026-07-03
+- Corrected **BGP MD5/password to optional** (it was labelled "Required by NSX").
+  Per Broadcom's *Configure BGP* (VCF 9.x), the only required BGP-neighbor
+  settings are the neighbor IP + remote AS; MD5 authentication (and its password)
+  is optional. Fixed the `01-network-dns-plan.md` row, the deployment-plan BGP
+  story (E1 1.2) + mirrored `deployment-plan.ts`, and marked intake `B14` optional. (#57)
+
 ## v0.7.7 — 2026-07-03
 - **Moved Prerequisites & readiness gate to just before bring-up.** It's the
   go/no-go verify against the plan's outputs, so the planning epics now lead and

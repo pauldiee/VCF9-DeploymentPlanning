@@ -65,7 +65,7 @@ Legend:
 |B11| NSX Edge Uplink-02: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |
 |B12| Customer NSX Edge AS number                                    | `[CFG-M]`  |
 |B13| ToR-A / ToR-B AS numbers                                       | `[CFG-M]`  |
-|B14| BGP MD5 password (per peer)                                    | `[CFG-M]`  |
+|B14| BGP MD5 password (per peer) — **optional**, only if BGP authentication is enabled | `[CFG-M]`  |
 |B15| BFD on edge uplinks? (recommended)                             | `[CFG-M]`  |
 |B16| Routes to advertise / receive?                                 | `[CFG-M]`  |
 |B17| DHCP scope details for ESX Host Overlay (if DHCP)              | `[MGMT]`   |

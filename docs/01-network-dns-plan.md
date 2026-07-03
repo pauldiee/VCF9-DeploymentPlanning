@@ -97,7 +97,7 @@ Domain also lands its **vCenter (1) + NSX Manager cluster (4)** on *this* subnet
 | ToR-B AS                |       | Same as ToR-A if iBGP within fabric, else distinct |
 | ToR-A peer IP (Uplink-01)|      |                                                    |
 | ToR-B peer IP (Uplink-02)|      |                                                    |
-| BGP MD5 password        |       | Required by NSX; per peer                          |
+| BGP MD5 password (optional) |   | **Optional** — only if you enable BGP MD5 authentication; per peer. Not required by NSX (neighbor IP + remote AS are the only required settings) |
 | BFD enabled             | Y/N   | Recommended on point-to-points                     |
 | ECMP                    | Yes   | Required on Edge↔ToR                               |
 | Prefix-list / route-map | TBD   | Often advertise default in / Tier-0 subnets out    |
