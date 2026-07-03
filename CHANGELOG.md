@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.10.8 — 2026-07-03
+- **Export tool: workload domains are now truly optional** (#77). The remove
+  button no longer locks at one WLD — deleting the last one yields a
+  management-only scope (no E9 epic; label "management + Day-2 fleet"), with
+  an empty-state hint in the list. Lede + hints updated to say zero WLDs is a
+  valid scope.
+
 ## v0.10.7 — 2026-07-03
 - **TechDocs references in the deployment plan** (#76). The export tool's
   generated stories (preview / Markdown / CSV) now carry authoritative

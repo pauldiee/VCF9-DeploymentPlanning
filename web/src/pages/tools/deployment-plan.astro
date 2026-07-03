@@ -20,8 +20,8 @@ const epics = selectedEpics(sel);
         Build your deployment scope below — pick <strong>NSX connectivity</strong> (Centralized/Distributed)
         and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
         (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer),
-        and add one or more <strong>workload domains</strong>, each independently <strong>non-stretched or stretched</strong>
-        (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
+        and optionally add <strong>workload domains</strong> (zero for a management-only scope), each independently
+        <strong>non-stretched or stretched</strong> (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
         epics and stories, then export it: <strong>Copy as Markdown</strong> for a wiki or PR, or
         <strong>download a CSV</strong> that imports into Jira, Azure DevOps, or GitLab. Mirrors the
         <a href={docHref('06-deployment-plan')}>Deployment Plan</a> page; everything runs in your browser.
@@ -63,7 +63,7 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Each workload domain is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness — it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
+        <p class="planx__hint">Workload domains are <em>optional</em> — remove them all for a management-only scope. Each one is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness — it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
         <div id="wldList"></div>
         <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
           <select id="selSuperSize">
@@ -211,6 +211,10 @@ const epics = selectedEpics(sel);
 
   function renderWlds() {
     const vsan = vsanSelected();
+    if (!wlds.length) {
+      $('wldList').innerHTML = '<p class="planx__hint planx__wldempty">No workload domains — management-only scope. Use <em>+ Add</em> to include one.</p>';
+      return;
+    }
     $('wldList').innerHTML = wlds
       .map(
         (w, i) => `
@@ -218,7 +222,7 @@ const epics = selectedEpics(sel);
           <input class="planx__wldname" type="text" value="${esc(w.name)}" placeholder="wld${i + 1}" aria-label="Workload domain name" />
           <label class="planx__check"${vsan ? '' : ' title="Stretching requires vSAN principal storage"'}><input type="checkbox" class="planx__wldstretch" ${w.stretched ? 'checked' : ''}${vsan ? '' : ' disabled'} /> Stretched</label>
           <label class="planx__check"><input type="checkbox" class="planx__wldsuper" ${w.supervisor ? 'checked' : ''} /> Supervisor</label>
-          <button type="button" class="planx__wlddel" aria-label="Remove workload domain" ${wlds.length <= 1 ? 'disabled' : ''}>×</button>
+          <button type="button" class="planx__wlddel" aria-label="Remove workload domain">×</button>
         </div>`
       )
       .join('');
@@ -293,7 +297,7 @@ const epics = selectedEpics(sel);
     const t = e.target as HTMLElement;
     if (!t.classList.contains('planx__wlddel')) return;
     const row = t.closest('.planx__wld') as HTMLElement | null;
-    if (!row || wlds.length <= 1) return;
+    if (!row) return;
     wlds.splice(Number(row.dataset.i), 1);
     renderWlds();
     render();
