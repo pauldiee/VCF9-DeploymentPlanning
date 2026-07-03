@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.7 — 2026-07-03
+- Reworked **`bgp-peering-plan.csv`** to be customer-readable (was a bare technical
+  matrix). New columns — *Setting · What it is (plain language) · Example · Your
+  value · Provided by · Notes* — and it now covers the full picture: Edge/ToR AS
+  numbers, per-node uplink IPs, ToR neighbor IPs, BFD/ECMP, optional MD5, timers,
+  advertised/received routes, and the per-AZ stretched peerings. (#65)
+
 ## v0.8.6 — 2026-07-03
 - Added blank, downloadable **prereq planning templates** (`web/public/templates/`):
   `ip-dns-plan.csv` (per-appliance FQDN/IP/PTR), `vlan-subnet-plan.csv`,

@@ -1,4 +1,20 @@
-Peer,Local (Edge) AS,Peer (ToR) AS,Peer IP,BFD (Y/N),MD5 password (optional),Advertised routes,Received routes,Intake ID,Notes
-ToR-A (Uplink 01),,,,Y,,,,B12-B14,MD5 is optional (only if BGP authentication is enabled)
-ToR-B (Uplink 02),,,,Y,,,,B12-B14,MD5 is optional (only if BGP authentication is enabled)
-Public / upstream peer,,,,,,,,B22,Optional; only if a separate public / north-south peering is used
+Setting,What it is (plain language),Example,Your value,Provided by,Notes
+NSX Edge (Tier-0) AS number,"The private BGP AS number the NSX Edges use; announced to the top-of-rack switches",65001,,Architect / Platform,intake B12-B14
+ToR-A AS number,"AS number of the first top-of-rack switch the Edges peer with",65011,,Network / fabric team,
+ToR-B AS number,"AS number of the second ToR (same as ToR-A if the fabric is one iBGP domain, else distinct)",65011,,Network / fabric team,
+Uplink 01 VLAN,"VLAN carrying the Edge-to-ToR-A uplink network",1317,,Network,
+Uplink 02 VLAN,"VLAN carrying the Edge-to-ToR-B uplink network",1318,,Network,
+Edge node 1 - Uplink 01 IP,"Edge node 1 interface IP on uplink 1 (peers with ToR-A)",10.13.17.2/24,,Architect,
+Edge node 1 - Uplink 02 IP,"Edge node 1 interface IP on uplink 2 (peers with ToR-B)",10.13.18.2/24,,Architect,
+Edge node 2 - Uplink 01 IP,"Edge node 2 interface IP on uplink 1 (peers with ToR-A)",10.13.17.3/24,,Architect,
+Edge node 2 - Uplink 02 IP,"Edge node 2 interface IP on uplink 2 (peers with ToR-B)",10.13.18.3/24,,Architect,
+ToR-A peer (neighbor) IP,"The BGP neighbor address on ToR-A that the Edges connect to (usually the uplink-01 gateway)",10.13.17.1,,Network,
+ToR-B peer (neighbor) IP,"The BGP neighbor address on ToR-B (usually the uplink-02 gateway)",10.13.18.1,,Network,
+BFD,"Fast (sub-second) failure detection on the peerings - recommended",Yes,,Network,
+ECMP,"Equal-cost multipath across the Edge-to-ToR uplinks - required",Yes,,Network,
+BGP MD5 password,"OPTIONAL peer authentication - only fill in if BGP authentication is being used",(leave blank if not used),,Network,Not required by NSX (neighbor IP + AS are the only required settings)
+Keepalive / Hold timers,"BGP timers - use the fabric standard, else the defaults",60 / 180 sec,,Network,
+Routes advertised by NSX,"What the Edges announce to the fabric",Tier-0 connected + overlay/segment subnets,,Architect,
+Routes received from ToR,"What the fabric announces to NSX (typically just a default route)",0.0.0.0/0 (default route),,Network,
+(stretched) AZ2 ToR-A AS + peer IP,"Per-AZ ToR-A peering for the second availability zone",65021 / 10.23.17.1,,Network,Stretched clusters only
+(stretched) AZ2 ToR-B AS + peer IP,"Per-AZ ToR-B peering for the second availability zone",65021 / 10.23.18.1,,Network,Stretched clusters only
