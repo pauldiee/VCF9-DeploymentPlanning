@@ -103,7 +103,7 @@ Legend:
 
 | # | Question                                                       | Sheet     |
 |---|----------------------------------------------------------------|-----------|
-|D1 | Internal CA type — **Microsoft CA** (only integrated option for mgmt components) or external via CSR; **OpenSSL not supported for management components** | `[CFG-M]` |
+|D1 | Internal CA type — **Microsoft CA** or **OpenSSL** (fleet cert management); external CA is CSR-based only (VCF won't import an externally-created cert+key) | `[CFG-M]` |
 |D2 | CA root + intermediate certificate (PEM)                       | `[CFG-M]` |
 |D3 | CSR submission method (Web Enrollment / other)                 | `[CFG-M]` |
 |D4 | Template name to issue VMware certs                            | `[CFG-M]` |

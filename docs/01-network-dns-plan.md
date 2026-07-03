@@ -195,7 +195,7 @@ same shape.
 
 | Item                       | Value                                            |
 | -------------------------- | ------------------------------------------------ |
-| Internal CA type           | Microsoft CA (only integrated option for mgmt components) / external via CSR — **not OpenSSL** for mgmt |
+| Internal CA type           | **Microsoft CA** or **OpenSSL** (fleet cert management). External CA is **CSR-based only** — VCF won't import an externally-created cert+key |
 | CA root + intermediate CRT | Path / how delivered                             |
 | CSR submission method      | Web Enrollment (basic auth) / DCE-RPC / Other    |
 | Template name              | e.g. `VMware`                                    |

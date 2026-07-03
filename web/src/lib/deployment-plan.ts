@@ -58,7 +58,7 @@ const CORE_PRE: Epic[] = [
       { id: '1.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
       { id: '1.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, BFD, advertised/received routes — plus an optional MD5 password only if you enable BGP authentication.'], acceptance: 'Edge AS, ToR AS, peer IPs, BFD, and advertised/received routes agreed and documented with the fabric team. (BGP MD5 is optional — capture a password only if authentication is enabled; VCF/NSX requires just the neighbor IP + remote AS.)' },
       { id: '1.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.' },
-      { id: '1.4', title: 'Certificates', tasks: ['CA type (management components use Microsoft CA only, not OpenSSL, or an external CA via CSR), template, and signing approach decided.'], acceptance: 'CA reachable; signing method and certificate template chosen, with a test issuance succeeding.' },
+      { id: '1.4', title: 'Certificates', tasks: ['CA type (Microsoft CA or OpenSSL; external CA is CSR-based only — VCF will not import an externally-created cert+key), template, and signing approach decided.'], acceptance: 'CA reachable; signing method and certificate template chosen, with a test issuance succeeding.' },
     ],
   },
   {

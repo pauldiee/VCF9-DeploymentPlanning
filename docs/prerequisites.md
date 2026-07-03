@@ -137,17 +137,19 @@ identity source up front; it has specific inputs and well-known gotchas.
 
 ## Certificate Authority
 
-- **For VCF management components, only a Microsoft Certificate Authority is
-  supported** for integrated (automated) certificate management. **OpenSSL is
-  *not* supported for management components** in VCF 9 — it remains an option only
-  for VCF Instance components. You can also use an **external / third-party CA**
-  via manual CSR + import for any component.
-- Internal CA that can ingest CSRs from SDDC components and issue signed
-  certificates.
-- Microsoft Enterprise CA must support **Basic authentication**.
-- Recommended: Windows Server 2019/2022 with `Certificate Authority` +
-  `Certificate Authority Web Enrollment` roles (Web Enrollment on the same host
-  as the CA role).
+- VCF 9.1 fleet certificate management (**VCF Operations → Fleet Management →
+  Certificates → Configure CA for Fleet**) offers two CA types: **Microsoft CA**
+  or **OpenSSL**. It's a single fleet-level setting — there is **no separate
+  Microsoft-only restriction for "management" vs "instance"** components.
+- **External / third-party CA is CSR-based only:** VCF generates the **CSR**, you
+  sign it on your CA, and import the **signed certificate**. The **private key
+  never leaves VCF** — you **cannot import a certificate that was created entirely
+  outside VCF** (VCF does not accept an externally-generated private key).
+- **Microsoft CA:** must support **Basic authentication**; recommended Windows
+  Server 2019/2022 with the `Certificate Authority` + `Certificate Authority Web
+  Enrollment` roles (Web Enrollment on the same host as the CA role).
+- **OpenSSL:** configured on the appliance with the org details (Common Name,
+  Country, Locality, Organization, OU, State) — no external prerequisites.
 
 ## SFTP
 

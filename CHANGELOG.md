@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.9.4 — 2026-07-03
+- **Reverted the v0.9.3 CA correction — it was wrong.** Verified in a live lab that
+  VCF 9.1 fleet certificate management (VCF Operations → Fleet Management →
+  Certificates → Configure CA for Fleet) offers **both Microsoft CA and OpenSSL**
+  for the VCF Management fleet; there is **no** separate Microsoft-only restriction
+  for management vs instance components (the TechDocs summary that implied it does
+  not match the product). Restored OpenSSL as a valid CA type across prerequisites,
+  `01-network-dns-plan.md`, intake `D1`, the `ntp-ad-ca` template, and E1 1.4.
+- Added the real CA gotcha: the **external-CA path is CSR-based only** — VCF
+  generates the CSR and keeps the private key; you **cannot import a certificate
+  created entirely outside VCF** (no externally-generated private keys). (#69)
+
 ## v0.9.3 — 2026-07-03
 - Corrected the **certificate-authority guidance**: for VCF 9 **management
   components only a Microsoft CA is supported** (OpenSSL is limited to VCF Instance

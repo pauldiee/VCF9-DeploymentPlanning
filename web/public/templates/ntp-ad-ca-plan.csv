@@ -13,7 +13,7 @@ Identity Broker,Base Group DN,Where the groups to sync live,"OU=Groups,DC=exampl
 Identity Broker,LDAPS root CA (PEM),Root CA cert for encrypted LDAP,ca-root.pem,,Customer / PKI,PEM with BEGIN/END CERTIFICATE lines
 Identity Broker,Login UPN suffix,Users sign in as user@suffix (not email),@example.io,,Customer / AD,KB 393150 - domain UPN not email address
 Identity Broker,Admin group DN,AD group mapped to the admin role,"CN=vcf-admins,OU=Groups,DC=example,DC=io",,Customer / AD,Must be a UNIVERSAL group if using Global Catalog
-CA,CA type,Which certificate authority signs the certs,Microsoft Enterprise CA,,Customer / PKI,Microsoft CA only for mgmt components (or external via CSR); OpenSSL not supported for mgmt
+CA,CA type,Which certificate authority signs the certs,Microsoft Enterprise CA,,Customer / PKI,Microsoft CA or OpenSSL (fleet cert management); external CA is CSR-based only - VCF won't import a private key
 CA,CA server or URL,Where the CA is reached,ca01.example.io,,Customer / PKI,Reachable from the management components
 CA,Certificate template,The template used to issue SDDC certs,VMware,,Customer / PKI,Validate with a test issuance
 CA,Signing approach,When/how CA-signed certs are applied,CA-signed (whole fleet Day-2),,Architect,Full replacement is a Day-2 step

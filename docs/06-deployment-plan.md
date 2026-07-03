@@ -44,7 +44,7 @@ Ref: [`01-network-dns-plan.md`](01-network-dns-plan.md)
   - *Acceptance:* Edge AS, ToR AS, peer IPs, BFD, and advertised/received routes agreed and documented with the fabric team. (BGP MD5 is optional — capture a password only if authentication is enabled; VCF/NSX requires just the neighbor IP + remote AS.)
 - **Story 1.3 — DNS & NTP records.** All A + PTR records created; NTP sources confirmed.
   - *Acceptance:* forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.
-- **Story 1.4 — Certificates.** CA type (management components use **Microsoft CA** only — not OpenSSL — or an external CA via CSR), template, and signing approach decided.
+- **Story 1.4 — Certificates.** CA type (**Microsoft CA** or **OpenSSL**; external CA is CSR-based only — VCF won't import an externally-created cert+key), template, and signing approach decided.
   - *Acceptance:* CA reachable; signing method and certificate template chosen, with a test issuance succeeding.
 
 ### E2 — Intake & sizing  ·  Owner: Architect + all role teams
