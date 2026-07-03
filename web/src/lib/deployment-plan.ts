@@ -296,7 +296,7 @@ function coreEpics(sel: Selection): Epic[] {
     stories: [
       distributed
         ? { id: '6.1', title: 'NSX north-south (Distributed connectivity)', tasks: [`Configure Distributed connectivity: the Distributed Transit Gateway distributes routing to the hypervisors (no centralized Edge cluster). Deploy the Virtual Network Appliance (VNA) cluster for stateful services (NAT etc.) and the external network for the Distributed Transit Gateway. TechDocs: ${TECHDOCS.distributed}`], acceptance: 'Distributed Transit Gateway up; VNA cluster healthy; north-south (incl. stateful services) reachable.' }
-        : { id: '6.1', title: 'NSX north-south (Centralized connectivity)', tasks: [`Deploy the NSX Edge cluster + Tier-0 gateway; establish BGP peering to the ToRs; verify north-south routes. TechDocs: ${TECHDOCS.centralized}`], acceptance: 'Edge cluster + Tier-0 deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.' },
+        : { id: '6.1', title: 'NSX north-south (Centralized connectivity)', tasks: [`Deploy the NSX Edge cluster + Tier-0 gateway; establish BGP peering to the ToRs; verify north-south routes. (A stretched Edge is only possible under Centralized connectivity — see 03-multi-az-prep.md section D.) TechDocs: ${TECHDOCS.centralized}`], acceptance: 'Edge cluster + Tier-0 deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.' },
       {
         id: '6.2',
         title: 'Certificates (optional / partial here)',
@@ -509,7 +509,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
           id: '9.5',
           title: 'Stretch the WLD cluster',
           tasks: [
-            "SDDC Manager stretches it for you, same as the management stretch — a JSON spec via the SDDC Manager API builds the fault domains, balances the per-AZ hosts, and sets the site-mirroring storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. The management domain must already be stretched (E7) before any workload-domain cluster can be stretched. Edge stretched only under NSX Centralized connectivity. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html.",
+            "SDDC Manager stretches it for you, same as the management stretch — a JSON spec via the SDDC Manager API builds the fault domains, balances the per-AZ hosts, and sets the site-mirroring storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. The management domain must already be stretched (E7) before any workload-domain cluster can be stretched. Edge stretched only under NSX Centralized connectivity. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html",
           ],
           acceptance: 'SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
         },
@@ -612,6 +612,9 @@ export function buildMarkdown(sel: Selection): string {
 }
 
 function csvCell(v: string): string {
+  // Neutralize formula-leading characters so a cell never executes as a
+  // formula when the CSV is opened in Excel / Sheets.
+  if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 

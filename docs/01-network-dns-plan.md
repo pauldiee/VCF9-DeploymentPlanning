@@ -174,13 +174,13 @@ same shape.
 
 ## D. NTP
 
-| #   | FQDN                          | Resolves to    | Notes                                       |
-| --- | ----------------------------- | -------------- | ------------------------------------------- |
-| A1  | `ntpserver.sfo.example.io`    |                | A-record, source #1                         |
-| A2  | `ntpserver.sfo.example.io`    |                | A-record, source #2 (same name, round-robin)|
-| C1  | `ntp.sfo.example.io`          | CNAME → above  | This is what goes in every appliance        |
-| A3  | `ntp0.sfo.example.io`         |                | Optional, direct mgmt of source #1          |
-| A4  | `ntp1.sfo.example.io`         |                | Optional, direct mgmt of source #2          |
+| #    | FQDN                          | Resolves to    | Notes                                       |
+| ---- | ----------------------------- | -------------- | ------------------------------------------- |
+| A-1  | `ntpserver.sfo.example.io`    |                | A-record, source #1                         |
+| A-2  | `ntpserver.sfo.example.io`    |                | A-record, source #2 (same name, round-robin)|
+| CN-1 | `ntp.sfo.example.io`          | CNAME → above  | This is what goes in every appliance        |
+| A-3  | `ntp0.sfo.example.io`         |                | Optional, direct mgmt of source #1          |
+| A-4  | `ntp1.sfo.example.io`         |                | Optional, direct mgmt of source #2          |
 
 - Sources must sync to **different** upstream NTP (avoid common-mode failure).
 - AD DCs configured to sync to the same external sources.

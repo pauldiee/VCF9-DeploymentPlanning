@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.11.0 — 2026-07-03
+- **Full repo sweep — fixes from the three-reviewer audit** (#79–#83; minor
+  rolled because 0.10.x reached `.9`):
+  - **Changelog repair (#80):** reinserted the `v0.10.3` heading that the
+    v0.10.4 edit had consumed (the Stage-4 bullets were merged into v0.10.4).
+  - **Docs corrections (#79):** `06` — dangling "E8 8.5" → **8.4**, and the
+    stretched-Edge note now points at `03` §D (E7 never covered it); `05` —
+    ambiguous "(E5)" now says *deployment-plan epic E5*, the §B VCF Operations
+    row is qualified as **reuse/additional-instance only**, and the fifth
+    (Federation) network model links the design-library page instead of a
+    non-existent `03` section; `03` — inter-AZ bandwidth now leads with the
+    design library's **≥10 Gbps** figure and M3 uses the **<5 ms** form;
+    mapping — added the missing **A15** and **C4** rows; README — refreshed
+    the export-tool description; `prerequisites` — templates Intake-ID claim
+    scoped to the IP/DNS CSV, and the mgmt **host count now follows the
+    workbook** (4–16 slots, sizing sheet computes the minimum, baseline 4);
+    `01` — NTP table row IDs renamed (`A-1`/`CN-1`…) so they can't be misread
+    as intake IDs.
+  - **Rainpole sample rework (#81):** links now use `../docs/` (and the site's
+    link rewriter accepts that form); the ESX-Management row no longer claims
+    the VCF Installer lives there; the reserved blocks are **CIDR-aligned**
+    (runtime `.32–.47` = /28, Automation `.56–.63` = /29, avoiding the
+    analytics IPs); added the missing row 12, the License Server IP + FQDN,
+    and demoted the duplicate "## A." carve-out heading.
+  - **Export-tool fixes (#82):** `esc()` escapes double quotes (WLD names with
+    `"` no longer break the row markup); `linkify` keeps trailing punctuation
+    outside the anchor (the 9.5 stretch ref rendered a broken URL); the lib's
+    Centralized 6.1 carries the stretched-Edge note; WLD default names use a
+    counter (no more duplicate `wld02` after remove+add); `csvCell`
+    neutralizes formula-leading characters; em-dash sweep over the tool's
+    chrome + the VCFHostPreparation index card (ITQ web convention).
+  - **Sizing tool + CI (#83):** `sanitize()` now allow-list-validates the
+    top-level enum fields (crafted imports/share hashes can't produce NaN
+    totals); GitLab CI aligned to **Node 22** to match GitHub Actions.
+
 ## v0.10.9 — 2026-07-03
 - **Export tool: optional Day-2 fleet components are individually selectable**
   (#78). Three new checkboxes under the Day-2 block — **Log Management**,
@@ -81,6 +116,8 @@
   and Preparation) linked from the DNS prereqs and the VM-Management sizing
   note, identity-provider configuration (per-IdP sub-pages + AD over LDAP), and
   certificate-management walk-throughs. (#74)
+
+## v0.10.3 — 2026-07-03
 - **Export tool: VCF Automation deployment model (Stage 4 — completes #72).** A
   **Deployment model** dropdown in the VCF Automation sub-block — **single-node**
   (no LB) or **HA cluster** (nodes behind a VIP). Choosing HA without the Avi LB

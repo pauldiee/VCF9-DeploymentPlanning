@@ -31,7 +31,7 @@ This repo flips the order:
 | `docs/07-firewall-ports.md`         | Reference — deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
-| `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — type selector + Markdown/CSV backlog export |
+| `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |

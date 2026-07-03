@@ -415,13 +415,32 @@ const opt = (values: readonly string[]) => values;
   }
 
   // ---- export / import / share ----
+  // Enum-valued top-level fields get the same allow-list validation as the
+  // per-WLD fields — a crafted import / share hash must not produce undefined
+  // table lookups (NaN totals) or select values that don't exist.
+  const TOP_ENUMS: Partial<Record<keyof SizingState, readonly string[]>> = {
+    deploymentModel: OPTIONS.deploymentModel,
+    deploymentSize: OPTIONS.deploymentSize,
+    instanceModel: OPTIONS.instanceModel,
+    storageType: OPTIONS.storageType,
+    clusterType: OPTIONS.clusterType,
+    nsxGmSize: ['Excluded', ...OPTIONS.nsxManagerSize],
+    nsxEdgeSize: OPTIONS.nsxEdgeSize,
+    aviSize: OPTIONS.aviSize,
+    sspSize: OPTIONS.sspSize,
+    opsNetSize: OPTIONS.opsNetSize,
+    logsSize: OPTIONS.logsSize,
+  };
   function sanitize(obj: any): SizingState {
     const out = defaultState();
     if (!obj || typeof obj !== 'object') return out;
     for (const k of Object.keys(out) as (keyof SizingState)[]) {
       if (k === 'workloadDomains') continue;
       const v = (obj as any)[k];
-      if (v !== undefined && typeof v === typeof (out as any)[k]) (out as any)[k] = v;
+      if (v === undefined || typeof v !== typeof (out as any)[k]) continue;
+      const allowed = TOP_ENUMS[k];
+      if (allowed && !allowed.includes(v)) continue;
+      (out as any)[k] = v;
     }
     const inList = (arr: readonly string[], v: any, d: string) => (arr.includes(v) ? v : d);
     if (Array.isArray(obj.workloadDomains)) {

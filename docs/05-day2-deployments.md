@@ -22,7 +22,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 | # | Question                                                            | Notes                                                                 |
 | - | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
 |D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations is bring-up.** VCF Automation can be deferred; Log Management, Operations for Networks & Identity Broker are often Day-N |
-|D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (E5). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
+|D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (deployment-plan epic E5, `06-deployment-plan.md`). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment? | Four options — see C; NSX Overlay needs an Edge cluster + transit gateway |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
@@ -42,7 +42,7 @@ network placement from section C.
 
 | Component                     | Appliances / nodes                                             | Notes                                                        |
 | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| **VCF Operations**            | Primary, Replica, Data nodes (cluster **floating IP**, or a **VIP** if an external LB is used — see B.1) | Skip if reusing an existing instance (`useExistingDeployment`)|
+| **VCF Operations**            | Primary, Replica, Data nodes (cluster **floating IP**, or a **VIP** if an external LB is used — see B.1) | **Reuse / additional-instance case only** — a fleet's first VCF Operations is deployed **at bring-up** (see D2); `useExistingDeployment` connects an additional instance to it |
 | **Cloud Proxy** (Ops collector)| One or more collector appliances                              | Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement |
 | **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
@@ -107,7 +107,8 @@ There is no NSX VPC option — placement is one of the four above. The design
 library adds a fifth, DR-oriented model — *Dedicated VLAN + NSX **Stretched**
 Overlay Segment* — which stretches the overlay via **NSX Federation** with a
 **Global Manager** (primary/secondary) so VCF Operations keeps its IP on
-region failover (no DNS repoint); see `03-multi-az-prep.md`.
+region failover (no DNS repoint); see the design library's
+[stretched NSX overlay segment model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design/fleet-level-components-on-stretched-nsx-overlay-segment-model.html).
 
 The point of the non-shared options is to **separate user-facing networks from
 management networks** for regulatory / security requirements.

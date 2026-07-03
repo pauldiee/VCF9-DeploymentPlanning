@@ -9,7 +9,7 @@ const epics = selectedEpics(sel);
 
 <BaseLayout
   title="Deployment Plan Export | VCF 9.1 Planning"
-  description="Pick your VCF 9.1 deployment scope — management (stretched or not), Day-2 fleet, and one or more workload domains each stretched or not — and export the agile work breakdown as Markdown or a CSV that imports into Jira, Azure DevOps, or GitLab."
+  description="Pick your VCF 9.1 deployment scope: management (stretched or not), Day-2 fleet, and workload domains (or none), then export the agile work breakdown as Markdown or a CSV that imports into Jira, Azure DevOps, or GitLab."
   active="06-deployment-plan"
 >
   <article class="planx">
@@ -17,10 +17,10 @@ const epics = selectedEpics(sel);
       <p class="itq-eyebrow">Export tool</p>
       <h1>Deployment Plan Export</h1>
       <p class="planx__lede">
-        Build your deployment scope below — pick <strong>NSX connectivity</strong> (Centralized/Distributed)
+        Build your deployment scope below: pick <strong>NSX connectivity</strong> (Centralized/Distributed)
         and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
         (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer, and the optional
-        components — <strong>Log Management</strong>, <strong>Operations for Networks</strong>, <strong>Identity Broker</strong> — each in or out),
+        components <strong>Log Management</strong>, <strong>Operations for Networks</strong>, and <strong>Identity Broker</strong> each in or out),
         and optionally add <strong>workload domains</strong> (zero for a management-only scope), each independently
         <strong>non-stretched or stretched</strong> (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
         epics and stories, then export it: <strong>Copy as Markdown</strong> for a wiki or PR, or
@@ -67,7 +67,7 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Workload domains are <em>optional</em> — remove them all for a management-only scope. Each one is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness — it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
+        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
         <div id="wldList"></div>
         <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
           <select id="selSuperSize">
@@ -89,7 +89,7 @@ const epics = selectedEpics(sel);
         <span id="toolbarMsg" class="planx__toolbar-msg" role="status"></span>
       </div>
       <p class="planx__csvnote">
-        CSV columns: <code>Issue Type, Summary, Parent, Owner, Acceptance Criteria, Reference</code> —
+        CSV columns: <code>Issue Type, Summary, Parent, Owner, Acceptance Criteria, Reference</code>:
         one row per epic, story, and task; <code>Parent</code> references the parent's Summary so the
         importer can rebuild the hierarchy.
       </p>
@@ -195,7 +195,7 @@ const epics = selectedEpics(sel);
       const hadStretch = mgmtEl.checked || wlds.some((w) => w.stretched);
       mgmtEl.checked = false;
       wlds.forEach((w) => (w.stretched = false));
-      if (hadStretch) toolbarMsg('Stretch removed — stretching requires vSAN principal storage');
+      if (hadStretch) toolbarMsg('Stretch removed: stretching requires vSAN principal storage');
     }
   }
 
@@ -215,16 +215,22 @@ const epics = selectedEpics(sel);
   }
 
   function esc(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function linkify(s: string): string {
-    return esc(s).replace(/(https?:\/\/[^\s)]+)/g, '<a href="$1">$1</a>');
+    // Trailing sentence punctuation stays outside the anchor so the href works.
+    return esc(s).replace(/https?:\/\/[^\s)]+/g, (url) => {
+      const m = url.match(/^(.*?)([.,;:]+)$/);
+      const clean = m ? m[1] : url;
+      const tail = m ? m[2] : '';
+      return `<a href="${clean}">${clean}</a>${tail}`;
+    });
   }
 
   function renderWlds() {
     const vsan = vsanSelected();
     if (!wlds.length) {
-      $('wldList').innerHTML = '<p class="planx__hint planx__wldempty">No workload domains — management-only scope. Use <em>+ Add</em> to include one.</p>';
+      $('wldList').innerHTML = '<p class="planx__hint planx__wldempty">No workload domains: management-only scope. Use <em>+ Add</em> to include one.</p>';
       return;
     }
     $('wldList').innerHTML = wlds
@@ -284,8 +290,10 @@ const epics = selectedEpics(sel);
   }
 
   // WLD list events (delegated).
+  let wldSeq = wlds.length;
   $('btnAddWld').addEventListener('click', () => {
-    wlds.push({ name: `wld0${wlds.length + 1}`, stretched: false, supervisor: false });
+    wldSeq += 1;
+    wlds.push({ name: `wld${String(wldSeq).padStart(2, '0')}`, stretched: false, supervisor: false });
     renderWlds();
     render();
   });
@@ -300,7 +308,7 @@ const epics = selectedEpics(sel);
       const mgmtEl = <HTMLInputElement>$('optMgmtStretched');
       if (wlds[i].stretched && !mgmtEl.checked) {
         mgmtEl.checked = true;
-        toolbarMsg('Management-domain stretch (E7) added — a stretched workload domain requires it');
+        toolbarMsg('Management-domain stretch (E7) added: a stretched workload domain requires it');
       }
     } else if (t.classList.contains('planx__wldsuper')) wlds[i].supervisor = (<HTMLInputElement>t).checked;
     render();
@@ -323,7 +331,7 @@ const epics = selectedEpics(sel);
     if (!mgmtEl.checked && wlds.some((w) => w.stretched)) {
       wlds.forEach((w) => (w.stretched = false));
       renderWlds();
-      toolbarMsg('Stretched workload domains reset — they require the management domain stretched');
+      toolbarMsg('Stretched workload domains reset: they require the management domain stretched');
     }
     render();
   });

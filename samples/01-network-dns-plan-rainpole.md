@@ -1,6 +1,6 @@
 # Worked example — Step 1 plan (Rainpole)
 
-A **filled** version of [`01-network-dns-plan.md`](01-network-dns-plan.md) for a
+A **filled** version of [`01-network-dns-plan.md`](../docs/01-network-dns-plan.md) for a
 single-AZ management domain, using the classic **Rainpole** reference values
 (`sfo` / `rainpole.io`, `10.11.x.x`) that ship in the Broadcom workbook. Use it
 to see what "done" looks like before you fill the blank template for a real
@@ -18,7 +18,7 @@ Site code `sfo`, instance `m01`, rack `r01`.
 
 | #  | Traffic                          | VLAN | CIDR (IPv4)      | MTU  | Gateway       | Notes                                   |
 | -- | -------------------------------- | ---- | ---------------- | ---- | ------------- | --------------------------------------- |
-| 1  | ESX Management                   | 1111 | `10.11.11.0/24`  | 1500 | `10.11.11.1`  | Hosts + VCF Installer                   |
+| 1  | ESX Management                   | 1111 | `10.11.11.0/24`  | 1500 | `10.11.11.1`  | Host mgmt VMKs; the VCF Installer must reach this network (it lives on VM Management) |
 | 2  | VM Management                    | 1110 | `10.11.10.0/24`  | 1500 | `10.11.10.1`  | The crowded one (see carve-out)         |
 | 3  | VCF Management (optional)        | 1199 | `10.11.99.0/24`  | 1500 | `10.11.99.1`  | Not used in this example                |
 | 4  | vMotion                          | 1112 | `10.11.12.0/24`  | 9000 | `10.11.12.1`  | Jumbo                                   |
@@ -29,20 +29,20 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | 9  | NSX Edge Uplink-02               | 1118 | `10.11.18.0/24`  | 9000 | `10.11.18.1`  | To ToR-B; BGP peer                      |
 | 10 | NFS (optional)                   | 1115 | `10.11.15.0/24`  | 9000 | `10.11.15.1`  | Not used (principal storage = vSAN)     |
 | 11 | VPC Gateway external (Distributed) | 1198 | `10.11.98.0/24` | 9000 | `10.11.98.1`  | Only if VPC Gateway = Distributed       |
+| 12 | Public / upstream peering uplink | —    | —                | —    | —             | Not used (no distinct public peering)   |
 
----
-
-## A. IP range carve-out — VM Management `10.11.10.0/24`
+### IP range carve-out — VM Management `10.11.10.0/24`
 
 | Component                       | IP(s)                | Notes                                    |
 | ------------------------------- | -------------------- | ---------------------------------------- |
 | DNS servers                     | `.4`, `.5`           | Resolvers                                |
 | VCF Operations cloud proxy      | `.12`                |                                          |
 | SDDC Manager                    | `.13`                | Also the VCF Installer FQDN              |
+| License Server                  | `.14`                | Tied to VCF Operations; outside the services-runtime block |
 | VCF Operations VIP              | `.21`                | Load balancer (HA)                       |
 | VCF Automation services runtime | `.24`                |                                          |
-| VCF Management Services runtime | `.31–.45`            | `/28`–`/27` reserved block               |
-| VCF Automation nodes            | `.46–.50`            | `/29` reserved block                     |
+| VCF Management Services runtime | `.32–.47`            | CIDR-aligned `/28` block (`10.11.10.32/28`) |
+| VCF Automation nodes            | `.56–.63`            | CIDR-aligned `/29` block (`10.11.10.56/29`); 5 IPs used + buffer |
 | VCF Operations analytics        | `.52`, `.53`, `.54`  | Primary / replica / data                 |
 | vCenter                         | `.70`                |                                          |
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |
@@ -81,6 +81,7 @@ TEP `10.11.19.2–.5`.
 | VCF Operations VIP | `flt-ops01.rainpole.io`              | `10.11.10.21` |
 | VCF Ops nodes      | `flt-ops01{a,b,c}.rainpole.io`       | `10.11.10.52–.54` |
 | VCF Ops cloud proxy| `sfo-cp01.sfo.rainpole.io`           | `10.11.10.12` |
+| License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |
 | VCF Automation     | `flt-auto01.rainpole.io`             | (from `/29`)  |
 | Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
 | NSX Edge 1 / 2     | `sfo-m01-en0{1,2}.sfo.rainpole.io`   | `10.11.10.75` / `.76` |
@@ -117,6 +118,6 @@ Individual sources kept on different networks / fault domains.
 
 ---
 
-Ready to build the real thing? Copy [`01-network-dns-plan.md`](01-network-dns-plan.md)
+Ready to build the real thing? Copy [`01-network-dns-plan.md`](../docs/01-network-dns-plan.md)
 and replace every Rainpole value with the customer's. Then run the role-based
-[`02-customer-intake.md`](02-customer-intake.md).
+[`02-customer-intake.md`](../docs/02-customer-intake.md).

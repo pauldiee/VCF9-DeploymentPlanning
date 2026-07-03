@@ -25,7 +25,7 @@ itself is driven by SDDC Manager — TechDocs:
 | - | --------------------------------------------------------------- | ------------------------------------------------------------ |
 |M1 | Two independent data sites available (AZ1, AZ2)?                | Separate power/cooling/fire zone — not two racks in one room |
 |M2 | A **third** location for the witness?                           | Can be small; only runs the witness appliance                |
-|M3 | Inter-AZ link meets **≤5 ms RTT** and bandwidth (see C)?        | Hard vSAN requirement; confirm with network team in writing  |
+|M3 | Inter-AZ link meets **<5 ms RTT** and bandwidth (see C)?        | Hard vSAN requirement; confirm with network team in writing  |
 |M4 | AZ↔witness link within the witness RTT budget?                  | **≤200 ms** RTT up to 10 hosts/site; **≤100 ms** for 11–15; ≤500 ms for a single host/site. Witness tolerates far more latency than the data sites |
 |M5 | Which AZ is **preferred** (owns quorum if witness is lost)?     | Default `sfo01`                                              |
 |M6 | Even, matched host count per AZ?                                | Same host count + hardware both AZs                          |
@@ -88,7 +88,7 @@ VCF management-network design doesn't). What you need instead:
 | Item                          | Requirement                                                        |
 | ----------------------------- | ------------------------------------------------------------------ |
 | RTT AZ1↔AZ2                    | **<5 ms** RTT — hard limit for vSAN data                          |
-| Bandwidth AZ1↔AZ2             | No fixed figure — driven by the write bandwidth being mirrored (VMs replicated between sites). Size against the [vSAN Stretched Cluster Bandwidth Sizing guide](https://www.vmware.com/docs/vmw-vsan-stretched-cluster-bandwidth-sizing) (witness leg: ~2 Mbps per 1000 components; see also TechDocs [Bandwidth and Latency Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/vsan/vsan/8-0/vsan-network-design/understanding-vsan-networking/network-requirements-for-vsan/bandwidth-and-latency-requirements.html)) and plan for **resync** bursts |
+| Bandwidth AZ1↔AZ2             | **≥10 Gbps** (the VCF design-library figure — see the note under D); the actual need is driven by the write bandwidth being mirrored (VMs replicated between sites). Size against the [vSAN Stretched Cluster Bandwidth Sizing guide](https://www.vmware.com/docs/vmw-vsan-stretched-cluster-bandwidth-sizing) (witness leg: ~2 Mbps per 1000 components; see also TechDocs [Bandwidth and Latency Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/vsan/vsan/8-0/vsan-network-design/understanding-vsan-networking/network-requirements-for-vsan/bandwidth-and-latency-requirements.html)) and plan for **resync** bursts |
 | L2 + HA L3 gateway             | Stretched L2 segments (see D) plus a **highly-available Layer 3 gateway** between AZs, provided by the physical fabric |
 | MTU across the inter-AZ link   | **9000** end-to-end for vSAN / vMotion / overlay                   |
 | Fault domains                  | `sfo01` = preferred, `sfo02` = secondary, `sfo-wit` = witness (3rd)|

@@ -10,13 +10,15 @@ const BASE = process.env.SITE_BASE || '/VCF9-DeploymentPlanning';
 
 /**
  * Rewrite in-repo markdown cross-links (e.g. `01-network-dns-plan.md`,
- * `./prerequisites.md#dns`) to site routes under <base>/docs/<slug>.
+ * `./prerequisites.md#dns`, and `../docs/01-network-dns-plan.md` from
+ * samples/) to site routes under <base>/docs/<slug>.
  * The docs are authored as plain .md that also render on GitHub, so their
- * links point at sibling files. On the site those files become doc pages.
+ * links point at sibling files (or ../docs/ from samples/). On the site
+ * those files become doc pages.
  * @returns {(tree: any) => void}
  */
 function rehypeRewriteDocLinks() {
-  const DOC_LINK = /^(?:\.\/)?([\w-]+)\.md(#.*)?$/;
+  const DOC_LINK = /^(?:\.\/|\.\.\/docs\/)?([\w-]+)\.md(#.*)?$/;
   return (tree) => {
     const visit = (node) => {
       if (node.type === 'element' && node.tagName === 'a' && node.properties) {

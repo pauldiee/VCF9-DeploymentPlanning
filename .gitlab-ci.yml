@@ -18,9 +18,9 @@ stages:
 
 pages:
   stage: deploy
-  image: node:20
+  image: node:22
   variables:
-    NODE_VERSION: "20.17.0"
+    NODE_VERSION: "22.14.0"
   cache:
     key: "node-$NODE_VERSION"
     paths:

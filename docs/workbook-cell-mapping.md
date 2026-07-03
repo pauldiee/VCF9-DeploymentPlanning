@@ -56,6 +56,7 @@ workbook.
 | A12 | `mgmt_vcf_management_network_chosen` |
 | A13 | `mgmt_stretched_cluster_chosen` |
 | A14 | — implicit (which `input_mgmt_az1_host{1..16}_*` are filled) |
+| A15 | — implicit (which `input_wld*` / cluster blocks are filled; see the Deploy Workload Domain / Deploy Cluster sheets) |
 | A16 | `mgmt_ceip_status_chosen` |
 | A17 | `mgmt_domain_ops_automation_later_chosen`, `mgmt_domain_vcf_automation_later_chosen` |
 | B1 | `input_mgmt_az1_mgmt_{vlan,mtu,gateway_cidr}` |
@@ -216,6 +217,7 @@ before wiring a generator.
 | ------ | ------------------------ | ---------------------------------------- |
 | C1–C2  | Identity Sources         | Domain name / type                       |
 | C3     | Identity Sources         | Domain controller FQDN(s)                |
+| C4     | Identity Sources         | — (no workbook field — LDAPS reachability is a prerequisite check; see `prerequisites.md`) |
 | C5     | Identity Sources         | Bind user / password                     |
 | C6     | Identity Sources         | Admin / operator / viewer groups         |
 | D1–D6  | Certificate Authority    | CA settings, template, CSR method        |

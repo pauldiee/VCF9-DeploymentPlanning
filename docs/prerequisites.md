@@ -12,7 +12,9 @@ meeting on the rest of the workbook — every later answer depends on these.
 
 Blank CSV sheets to capture the prereq plan, then transfer into the P&P workbook
 or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
-**Intake ID** column maps back to [`workbook-cell-mapping.md`](workbook-cell-mapping.md).
+IP/DNS template's **Intake ID** column maps back to
+[`workbook-cell-mapping.md`](workbook-cell-mapping.md) (the other templates
+reference intake IDs in their notes where relevant).
 
 - [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
 - [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU per traffic type
@@ -30,7 +32,7 @@ or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
 
 | Item              | Minimum                                                                       | Notes                                                  |
 | ----------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Host count        | 2 (NFS/FC), 3 (vSAN min), **4 recommended** for production HA                 | VCF supports 3-node vSAN WLDs; 4+ for prod             |
+| Host count        | **4–16** (workbook host slots; Rainpole baseline **4**)                       | The *Management Domain Sizing* sheet computes the exact minimum for your component set — the 9.1 baseline needs **4** (see `04-sizing.md`) |
 | CPU               | VCG-supported                                                                 | VCG: <https://compatibilityguide.broadcom.com>. vSphere 9 counts a **16-core/CPU minimum** for licensing (even if the socket has fewer); size on **physical** cores, keep vCPU:pCPU **≤ 2:1** |
 | Memory            | ~1 TB per host (Rainpole reference, 4 hosts, single-host failure tolerance)   | The 9.1 mgmt fleet is **larger** than earlier VCF (see note below) — **always** confirm via *Management Domain Sizing* sheet |
 | Boot storage      | M.2/SATADOM/SSD — **NOT SD cards** (legacy)                                   |                                                        |
