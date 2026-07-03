@@ -1,0 +1,22 @@
+Component,Role,FQDN,IP,PTR (reverse) record,Network / VLAN,Intake ID,Notes
+ESXi host 1,ESXi,,,,ESX Management,,
+ESXi host 2,ESXi,,,,ESX Management,,
+ESXi host 3,ESXi,,,,ESX Management,,
+ESXi host 4,ESXi,,,,ESX Management,,
+vCenter,vCenter Server,,,,VM Management,E6,
+SDDC Manager,SDDC Manager,,,,VM Management,E7,VCF Installer is deployed with this IP + FQDN
+NSX Manager VIP,NSX cluster VIP,,,,VM Management,E8,
+NSX Manager node 1,NSX node,,,,VM Management,E8,
+NSX Manager node 2,NSX node,,,,VM Management,E8,
+NSX Manager node 3,NSX node,,,,VM Management,E8,
+NSX Edge node 1,NSX Edge,,,,Uplink / mgmt,E11,
+NSX Edge node 2,NSX Edge,,,,Uplink / mgmt,E11,
+VCF Operations node a,Operations analytics,,,,VM Management,E9,Deployed at bring-up
+VCF Operations node b,Operations analytics,,,,VM Management,E9,Deployed at bring-up
+VCF Operations node c,Operations analytics,,,,VM Management,E9,Deployed at bring-up
+VCF Operations cluster address,Floating IP or LB VIP,,,,VM Management,E9,Floating IP (no LB) or external-LB VIP
+Cloud Proxy,Operations collector,,,,VM Management,E14,Deployed after bring-up; stays on VM-Management
+License Server,VCF Management Services,,,,VM Management,E14,FQDN/IP OUTSIDE the VCF services-runtime range (IPv4 only)
+VCF Automation appliance,Automation,,,,VM Management,E10,If deployed
+VCF services-runtime,Automation runtime,,,,VM Management,E10,Uses a cluster CIDR that must not overlap any routed subnet
+,,,,,,,Duplicate the block above per workload domain; add AZ2 hosts if the cluster is stretched

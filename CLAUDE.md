@@ -40,6 +40,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (private)
 | `docs/06-deployment-plan.md`     | Agile work breakdown (epics/stories/tasks); feeds the interactive export tool |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
+| `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |
 | `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
 | `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing & deployment-plan tools |
 | `tools/`                         | (future) helper scripts — see issue #1 for the workbook writer|

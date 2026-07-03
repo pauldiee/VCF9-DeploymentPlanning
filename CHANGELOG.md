@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8.6 — 2026-07-03
+- Added blank, downloadable **prereq planning templates** (`web/public/templates/`):
+  `ip-dns-plan.csv` (per-appliance FQDN/IP/PTR), `vlan-subnet-plan.csv`,
+  `ntp-ad-ca-plan.csv`, and `bgp-peering-plan.csv`. Pre-populated with the standard
+  component / traffic-type rows and an **Intake ID** column that maps to
+  `workbook-cell-mapping.md`, so a filled sheet transfers straight into the P&P
+  workbook or Coscia's planner. Linked from `prerequisites.md` (with a customer-
+  data-hygiene note) and `01-network-dns-plan.md`; added to the README/CLAUDE file
+  layouts. (#65)
+
 ## v0.8.5 — 2026-07-03
 - Supplemental-docs freshness sweep after the deployment-plan overhaul:
   - **CLAUDE.md** file layout — added the missing `docs/06-deployment-plan.md`

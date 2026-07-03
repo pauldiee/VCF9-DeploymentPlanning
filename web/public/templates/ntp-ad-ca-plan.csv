@@ -1,0 +1,13 @@
+Category,Field,Value,Intake ID,Notes
+NTP,NTP server 1,,,IP or FQDN; must resolve and be reachable from every appliance
+NTP,NTP server 2,,,Second source recommended
+AD,AD domain (FQDN),,,Forest root / parent domain reachable from the SDDC
+AD,Domain bind / join account,,,Service account (provide the DN)
+AD,Computer / service OU,,,Where SDDC computer/service objects live
+AD,SDDC admin group,,,Mapped to the admin role
+AD,SDDC operator group,,,Mapped to the operator role
+AD,SDDC viewer group,,,Mapped to the viewer role
+CA,CA type,,,Microsoft CA / OpenSSL / other
+CA,CA server or URL,,,Reachable from the management components
+CA,Certificate template,,,Validated with a test issuance
+CA,Signing approach,,,Full CA-signed replacement is a Day-2 step (whole fleet in one pass)

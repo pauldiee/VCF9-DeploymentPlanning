@@ -1,0 +1,14 @@
+Network (traffic type),VLAN ID,Subnet (CIDR),Gateway,MTU,DHCP (Y/N),AZ,Notes
+ESX Management,,,,1500,N,single,Host vmk0 management
+VM Management,,,,1500,N,single,SDDC Manager / VCF Installer / management appliances
+vMotion,,,,9000,,single,
+vSAN,,,,9000,,single,
+Host Overlay (TEP),,,,9000,,single,GENEVE; MTU >= 1600 (usually 9000); DHCP or a static IP pool
+Edge Overlay (TEP),,,,9000,,single,
+Uplink 01 (Edge to ToR-A),,,,9000,,single,
+Uplink 02 (Edge to ToR-B),,,,9000,,single,
+ESX Management AZ2,,,,1500,N,AZ2,Stretched only
+vMotion AZ2,,,,9000,,AZ2,Stretched only
+vSAN AZ2,,,,9000,,AZ2,Stretched only
+Host Overlay AZ2,,,,9000,,AZ2,Stretched only
+Witness (3rd site),,,,,N,witness,Witness traffic rides ESX Management (WTS); routed to the witness site

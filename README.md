@@ -35,6 +35,7 @@ This repo flips the order:
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
+| `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP) — downloadable from the site; feed the workbook / Coscia planner |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 

@@ -4,6 +4,9 @@ Lock this **before** filling any other workbook page. If you only have time
 for one meeting with the customer's network + AD/PKI teams, run it on this
 page. Everything in the workbook flows from these decisions.
 
+> **Prefer a spreadsheet?** Download the blank [fillable planning templates](https://pauldiee.github.io/VCF9-DeploymentPlanning/docs/prerequisites/#fillable-planning-templates-download)
+> (IP/DNS, VLAN/subnet, NTP/AD/CA, BGP) — capture the plan in CSV, then transfer to the workbook or Coscia's planner.
+
 > Convention used in the templates below: site code `sfo`, instance `m01`,
 > rack `r01`. Replace consistently when copying for a real customer. VLAN IDs
 > and CIDRs are placeholders.

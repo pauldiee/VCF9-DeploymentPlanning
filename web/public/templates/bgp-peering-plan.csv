@@ -1,0 +1,4 @@
+Peer,Local (Edge) AS,Peer (ToR) AS,Peer IP,BFD (Y/N),MD5 password (optional),Advertised routes,Received routes,Intake ID,Notes
+ToR-A (Uplink 01),,,,Y,,,,B12-B14,MD5 is optional (only if BGP authentication is enabled)
+ToR-B (Uplink 02),,,,Y,,,,B12-B14,MD5 is optional (only if BGP authentication is enabled)
+Public / upstream peer,,,,,,,,B22,Optional; only if a separate public / north-south peering is used

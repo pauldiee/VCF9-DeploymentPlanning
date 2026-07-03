@@ -4,6 +4,20 @@ This list mirrors the **Prerequisite Checklist** sheet of the official
 workbook. If any item is RED for the customer, fix it before spending a single
 meeting on the rest of the workbook — every later answer depends on these.
 
+## Fillable planning templates (download)
+
+Blank CSV sheets to capture the prereq plan, then transfer into the P&P workbook
+or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
+**Intake ID** column maps back to [`workbook-cell-mapping.md`](workbook-cell-mapping.md).
+
+- [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP / reverse record
+- [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU per traffic type
+- [NTP / AD / CA](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
+- [BGP peering](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
+
+> **Customer-data hygiene:** these are **blank** templates. A **filled** copy holds
+> real IPs/DNS/AS numbers — keep it in the customer's OneDrive folder, **not** the repo.
+
 ## Hardware
 
 ### Management Domain
