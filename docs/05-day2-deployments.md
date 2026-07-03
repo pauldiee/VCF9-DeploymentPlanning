@@ -47,7 +47,7 @@ network placement from section C.
 | **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | One appliance                                                  | Plus identity provider (AD/LDAP), user/group provisioning     |
-| **VCF Operations for Logs**   | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — outside the `/28` block) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); reserve the IPs in the Step 1 carve-out |
+| **VCF Operations for Logs**   | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them |
 | **VCF Operations for Networks**| Platform node + Collector node                                | Optional dual-stack (IPv4 / IPv6)                             |
 
 ### B.1 — VCF Operations load balancer is **external, never served by VCF**

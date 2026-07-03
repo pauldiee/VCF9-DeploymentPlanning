@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.2.0 — 2026-07-04
+- **Correction: Log Management / real-time metrics IPs come FROM the
+  services-runtime block** (#93). v1.1.9 claimed the Day-N Logs worker IPs
+  land *outside* the `/28` block — the TechDocs FQDN/IP page's own note says
+  the opposite: *"The IP addresses for the log management and real-time
+  metrics components are allocated from the IP block for VCF services runtime
+  nodes."* The row counts stand (Logs: 1 FQDN + 6 IPs, +2 per replica;
+  metrics: 6 IPs), but they consume the runtime block — which is exactly why
+  `/27` is the recommended block size. Corrected the `01` carve-out rows +
+  total note (runtime-block row now names the Day-N headroom), the `05`
+  Ops-for-Logs row, the Rainpole sample (dropped the bogus `.80–.86` /
+  `.90–.95` reservations; `/28` row notes the `/27` upgrade path), and the
+  CSV template row.
+
 ## v1.1.9 — 2026-07-03
 - **Carve-out sweep — the remaining Day-N components** (#93, extending #90 to
   everything on the TechDocs FQDN/IP list). The `01` VM Management carve-out

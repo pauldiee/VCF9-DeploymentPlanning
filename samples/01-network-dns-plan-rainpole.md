@@ -41,15 +41,15 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | License Server                  | `.14`                | Tied to VCF Operations; outside the services-runtime block |
 | VCF Operations VIP              | `.21`                | Load balancer (HA)                       |
 | VCF Automation services runtime | `.24`                |                                          |
-| VCF Management Services runtime | `.32–.47`            | CIDR-aligned `/28` block (`10.11.10.32/28`) |
+| VCF Management Services runtime | `.32–.47`            | CIDR-aligned `/28` block (`10.11.10.32/28`) — fits the 12-node minimum; plan a `/27` instead if Day-2 Log Management / real-time metrics are in scope |
 | VCF Automation nodes            | `.56–.63`            | CIDR-aligned `/29` block (`10.11.10.56/29`); 5 IPs used + buffer |
 | VCF Operations analytics        | `.52`, `.53`, `.54`  | Primary / replica / data                 |
 | vCenter                         | `.70`                |                                          |
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |
 | NSX Edge node mgmt              | `.75`, `.76`         | `sfo-m01-en01` / `en02`                  |
 | VCF Operations for Networks     | `.77`, `.78`         | Day-2, optional — platform + collector (a **Large** platform is a 3-node cluster: reserve 2 more) |
-| VCF Operations for Logs         | `.80–.86`            | Day-2, optional — integrated VIP (`.80`) + 6 runtime worker nodes, outside the `/28` block (+2 per extra replica) |
-| Real-time metrics               | `.90–.95`            | Day-2, optional — 6 runtime worker IPs |
+| VCF Operations for Logs         | — (runtime block)    | Day-2, optional — 1 FQDN + 6 IPs (+2 per extra replica), **allocated from the services-runtime block**; needs the `/27` variant of the block above |
+| Real-time metrics               | — (runtime block)    | Day-2, optional — 6 IPs, also from the services-runtime block |
 | Identity Broker                 | —                    | FQDN only — IP served from the services-runtime block (`.32–.47`) |
 
 Host-facing ranges: ESX Mgmt hosts `10.11.11.101–.116`, vMotion `10.11.12.101–.116`,
@@ -90,7 +90,7 @@ TEP `10.11.19.2–.5`.
 | Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
 | Ops for Networks platform | `flt-opsnet01.rainpole.io`    | `10.11.10.77` (Day-2, optional) |
 | Ops for Networks collector | `sfo-opsnetc01.sfo.rainpole.io` | `10.11.10.78` (Day-2, optional) |
-| Ops for Logs VIP   | `flt-logs01.rainpole.io`             | `10.11.10.80` (Day-2, optional; integrated LB — worker nodes `.81–.86` need IPs only) |
+| Ops for Logs VIP   | `flt-logs01.rainpole.io`             | (services-runtime block; Day-2, optional — integrated LB, worker nodes need IPs only) |
 | NSX Edge 1 / 2     | `sfo-m01-en0{1,2}.sfo.rainpole.io`   | `10.11.10.75` / `.76` |
 
 DNS search domains: `sfo.rainpole.io`, `rainpole.io`. Every FQDN needs both an A

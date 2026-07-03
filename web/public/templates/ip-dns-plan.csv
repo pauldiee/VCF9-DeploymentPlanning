@@ -25,5 +25,5 @@ Avi Controller node 2,Avi controller (only if Avi in scope),sfo-m01-avi01b.sfo.e
 Avi Controller node 3,Avi controller (only if Avi in scope),sfo-m01-avi01c.sfo.example.io -> 10.11.11.33,,,VM Management,Platform,E16
 Ops for Networks platform,Operations for Networks platform node (Day-2; 3 nodes if Large),sfo-m01-opsnet01.sfo.example.io -> 10.11.11.34,,,VM Management (or Day-2 placement network),Platform,E14
 Ops for Networks collector,Operations for Networks collector node (Day-2),sfo-m01-opsnet01c.sfo.example.io -> 10.11.11.35,,,VM Management (or Day-2 placement network),Platform,E14
-Ops for Logs VIP,Log Management integrated cluster VIP (Day-2; also reserve 6 worker-node IPs +2 per extra replica - IPs only),sfo-m01-logs01.sfo.example.io -> 10.11.11.36,,,VM Management (or Day-2 placement network),Platform,E14
+Ops for Logs VIP,Log Management integrated cluster VIP (Day-2; VIP + 6 worker IPs +2 per extra replica all come from the services-runtime block - size it /27),sfo-m01-logs01.sfo.example.io -> (services-runtime block),,,VM Management,Platform,E14
 Identity Broker,Fleet identity broker (IP comes from the services-runtime block),sfo-m01-idb01.sfo.example.io -> (services-runtime block),,,VM Management,Platform,E14
