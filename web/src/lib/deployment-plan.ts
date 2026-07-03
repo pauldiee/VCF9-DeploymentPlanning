@@ -304,7 +304,7 @@ function wldEpic(w: Wld, index: number): Epic {
           ],
           acceptance: 'SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
         },
-        { id: '9.6', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
+        { id: '9.6', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor — if you enable Supervisor, deploy and configure the Avi Load Balancer (NSX ALB) controller cluster first; Supervisor activation requires it.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
       ],
     };
   }
@@ -323,7 +323,7 @@ function wldEpic(w: Wld, index: number): Epic {
         acceptance: 'WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.',
       },
       { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
-      { id: '9.4', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
+      { id: '9.4', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor — if you enable Supervisor, deploy and configure the Avi Load Balancer (NSX ALB) controller cluster first; Supervisor activation requires it.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
     ],
   };
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.5 — 2026-07-03
+- Deployment-plan WLD connectivity stories (E9 9.4 / 9.6) now note the ordering
+  dependency: **if you enable vSphere Supervisor, deploy and configure the Avi Load
+  Balancer (NSX ALB) controller cluster first** — Supervisor activation requires it.
+  Verified against Broadcom's *Deploying vSphere Supervisor with NSX and Avi Load
+  Balancer*. Doc + lib. (#70)
+
 ## v0.9.4 — 2026-07-03
 - **Reverted the v0.9.3 CA correction — it was wrong.** Verified in a live lab that
   VCF 9.1 fleet certificate management (VCF Operations → Fleet Management →
