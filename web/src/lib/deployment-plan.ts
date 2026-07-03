@@ -244,7 +244,7 @@ const E8_DAY2: Epic = {
       id: '8.4',
       title: 'Certificates, identity & licensing (full fleet)',
       tasks: [
-        'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3), and apply licensing across the fleet (via VCF Operations).',
+        'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations).',
       ],
       acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.',
     },

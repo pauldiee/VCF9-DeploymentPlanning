@@ -137,7 +137,7 @@ components you defer or add after bring-up.
   - *Acceptance:* VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.
 - **Story 8.3 — Log Management, Operations for Networks & Identity Broker.** Deploy the remaining fleet components as needed: **Log Management**, VCF Operations for Networks, and the Identity Broker.
   - *Acceptance:* each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.
-- **Story 8.4 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, complete **fleet SSO via the VCF Identity Broker** (the recommended identity path, deferred from E6 6.3), and **apply licensing** across the fleet (via VCF Operations).
+- **Story 8.4 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, complete **fleet SSO via the VCF Identity Broker** (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: [`prerequisites.md` → Identity source for the VCF Identity Broker](prerequisites.md#identity-source-for-the-vcf-identity-broker)), and **apply licensing** across the fleet (via VCF Operations).
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
 
 ### E9 — Workload domain  ·  Owner: Platform + Network (+ Storage if stretched)

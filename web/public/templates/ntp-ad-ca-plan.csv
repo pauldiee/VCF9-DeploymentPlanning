@@ -7,6 +7,12 @@ AD,Computer / service OU,Where SDDC computer/service objects are created,"OU=VCF
 AD,SDDC admin group,AD group mapped to the admin role,gg-vcf-admins,,Customer / AD,
 AD,SDDC operator group,AD group mapped to the operator role,gg-vcf-operators,,Customer / AD,
 AD,SDDC viewer group,AD group mapped to the viewer role,gg-vcf-viewers,,Customer / AD,
+Identity Broker,Bind / service account,AD account the broker binds with (read on base DN),svc-idb@example.io,,Customer / AD,Needs TGGAU read if using Global Catalog
+Identity Broker,Base DN,Top of the directory tree queries start from,"dc=example,dc=io",,Customer / AD,
+Identity Broker,Base Group DN,Where the groups to sync live,"OU=Groups,DC=example,DC=io",,Customer / AD,Set high enough to cover ALL sync groups (single DN)
+Identity Broker,LDAPS root CA (PEM),Root CA cert for encrypted LDAP,ca-root.pem,,Customer / PKI,PEM with BEGIN/END CERTIFICATE lines
+Identity Broker,Login UPN suffix,Users sign in as user@suffix (not email),@example.io,,Customer / AD,KB 393150 - domain UPN not email address
+Identity Broker,Admin group DN,AD group mapped to the admin role,"CN=vcf-admins,OU=Groups,DC=example,DC=io",,Customer / AD,Must be a UNIVERSAL group if using Global Catalog
 CA,CA type,Which certificate authority signs the certs,Microsoft Enterprise CA,,Customer / PKI,Microsoft CA / OpenSSL / other
 CA,CA server or URL,Where the CA is reached,ca01.example.io,,Customer / PKI,Reachable from the management components
 CA,Certificate template,The template used to issue SDDC certs,VMware,,Customer / PKI,Validate with a test issuance

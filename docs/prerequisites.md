@@ -67,6 +67,46 @@ Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 - Users + groups from the workbook's *Active Directory Inputs* tab pre-created.
 - AD DCs reachable from every management component.
 
+### Identity source for the VCF Identity Broker
+
+VCF 9 federates fleet-wide SSO through the **VCF Identity Broker** (deployed and
+configured Day-2 — see the deployment plan **E8**). Prepare the AD-over-LDAP
+identity source up front; it has specific inputs and well-known gotchas.
+
+**What to prepare:**
+
+- **Bind / service account** — a dedicated AD account with read access to the base DN.
+  If you use the **Global Catalog**, it must also have read on the **TGGAU**
+  (Token-Groups-Global-And-Universal) attribute.
+- **Base DN** (e.g. `dc=example,dc=com`), a **Base Group DN** (required to sync
+  groups), and optionally a **Base User DN**.
+- **LDAPS root CA certificate** in **PEM** format (with the `BEGIN CERTIFICATE` /
+  `END CERTIFICATE` lines) if you use an encrypted connection (recommended).
+- **Domain controllers** — a primary (and a secondary for failover), or DNS
+  auto-discovery via **SRV records**; reachable on 389/636 (see [`07-firewall-ports.md`](07-firewall-ports.md)).
+- **Groups to sync**, including the group you will map to the **admin** role.
+
+**Common gotchas:**
+
+- **Login is the domain UPN (`user@domain.com`), *not* the email address** — even
+  when the email is synced, users must sign in with the domain UPN (Broadcom
+  KB 393150). Trips up organisations where the email suffix differs from the UPN suffix.
+- **Global Catalog syncs only *universal* groups** — local/global groups won't
+  appear until converted to universal, and the bind account needs the **TGGAU** read
+  permission.
+- **The LDAPS certificate must be PEM** (with `BEGIN`/`END CERTIFICATE` lines) — a
+  missing or wrong-format root CA breaks the encrypted connection.
+- **Single Base Group DN** — to sync groups spread across OUs, set the base group
+  DN **high enough** to cover them all; a too-narrow DN silently misses the admin group.
+- **Nested groups** — enable **Sync Nested Group** if admin membership comes via
+  nested groups, or those members won't sync.
+- **Sync runs weekly** by default — a service-account **password expiry or lockout**
+  will quietly stop group updates.
+
+> Other supported identity sources: **OpenLDAP**, and external IdPs — **Microsoft
+> Entra ID** (OIDC / SAML) and **AD FS**. Those need different prep; see Broadcom's
+> *Setting up SSO* / *Configure the VCF Identity Provider* docs.
+
 ## DHCP (optional but easiest)
 
 - Scope on the **ESX Host Overlay** VLAN: at least `nodes × pNICs` IPs.

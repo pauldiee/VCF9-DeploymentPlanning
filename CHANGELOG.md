@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.9.2 — 2026-07-03
+- Added **VCF Identity Broker identity-source prep + common gotchas** to the AD
+  prerequisites (`prerequisites.md`). What to prepare (bind account incl. TGGAU
+  read for Global Catalog; base DN / base group DN / optional base user DN; LDAPS
+  root CA in PEM; DC or DNS-SRV reachability; groups to sync incl. the admin
+  group) and the traps: **login is the domain UPN, not email** (KB 393150); GC
+  syncs only **universal** groups; LDAPS cert must be **PEM**; single base group
+  DN scoping; nested-group sync; weekly sync + service-account expiry. Added
+  matching rows to `ntp-ad-ca-plan.csv` and a pointer from deployment-plan E8.4.
+  Verified against Broadcom's *Configure AD as an Identity Provider (AD/LDAP)*. (#67)
+
 ## v0.9.1 — 2026-07-03
 - Added a **firewall / ports layer** (#66):
   - **`docs/07-firewall-ports.md`** — a curated reference of the deployment-critical
