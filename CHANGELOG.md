@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.9.1 — 2026-07-03
+- Added a **firewall / ports layer** (#66):
+  - **`docs/07-firewall-ports.md`** — a curated reference of the deployment-critical
+    cross-zone flows grouped by zone (prereq services, admin access, NSX fabric,
+    multi-AZ/witness, Day-2/fleet), the 9.1 gotchas (syslog 514 → **1514** TLS;
+    Cloud Proxy **443/4505/4506**), and prominent links to the authoritative tools —
+    **Coscia's Ports & Protocols matrix** (1,083 entries) and the **Broadcom Ports &
+    Protocols portal**. Deliberately not a full matrix copy.
+  - **`firewall-request-plan.csv`** — a downloadable fill-in change-request sheet for
+    the security team (source zone / destination / port / protocol / direction /
+    purpose / status), pre-populated with the common flows.
+  - Callouts wired into `prerequisites.md`, `01-network-dns-plan.md`, and the
+    deployment plan (E4.3 core services, E5.4 Cloud Proxy ports). Nav + README/CLAUDE
+    updated.
+
 ## v0.9.0 — 2026-07-03
 - Generic-language sweep of the customer-facing docs: "single-AZ **artifacts**" →
   "planning docs" (`05-day2-deployments.md`, `03-multi-az-prep.md`); "**This repo

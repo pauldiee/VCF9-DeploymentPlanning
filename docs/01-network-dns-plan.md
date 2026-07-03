@@ -6,6 +6,7 @@ page. Everything in the workbook flows from these decisions.
 
 > **Prefer a spreadsheet?** Download the blank [fillable planning templates](https://pauldiee.github.io/VCF9-DeploymentPlanning/docs/prerequisites/#fillable-planning-templates-download)
 > (IP/DNS, VLAN/subnet, NTP/AD/CA, BGP) — capture the plan in CSV, then transfer to the workbook or Coscia's planner.
+> For the firewall flows these networks depend on, see [Firewall & Ports](07-firewall-ports.md).
 
 > Convention used in the templates below: site code `sfo`, instance `m01`,
 > rack `r01`. Replace consistently when copying for a real customer. VLAN IDs

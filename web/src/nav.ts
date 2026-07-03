@@ -61,6 +61,13 @@ export const NAV: NavItem[] = [
     blurb: 'An agile work breakdown (epics, stories, tasks); build your deployment scope and export it to Markdown or a backlog CSV.',
   },
   {
+    slug: '07-firewall-ports',
+    step: 'Reference',
+    label: 'Firewall & Ports',
+    icon: 'shield-halved',
+    blurb: 'Deployment-critical firewall flows by zone, the 9.1 port gotchas, and links to the authoritative Ports & Protocols tools.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

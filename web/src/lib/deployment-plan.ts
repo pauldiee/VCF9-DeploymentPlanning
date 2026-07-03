@@ -105,7 +105,7 @@ const CORE_PRE: Epic[] = [
       {
         id: '4.3',
         title: 'Core services ready',
-        tasks: ['AD, DNS, NTP, CA, depot reachable.'],
+        tasks: ['AD, DNS, NTP, CA, depot reachable (open the firewall flows — see 07-firewall-ports.md).'],
         acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.',
       },
       {
@@ -152,7 +152,7 @@ const CORE_PRE: Epic[] = [
         title: 'Deploy VCF Management Services, License Server & Cloud Proxy',
         tasks: [
           'These are NOT part of the automatic bring-up. Once VCF Operations + SDDC Manager are up, deploy them via VCF Operations (its UI, or the SDDC Manager API for custom VLAN-backed placement to avoid IP exhaustion): VCF Management Services (VCF services runtime, fleet and SDDC lifecycle, software depot, telemetry), the License Server, and the Cloud Proxy collector as needed.',
-          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network. Licenses are applied fleet-wide later (E8 8.4).',
+          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.4).',
         ],
         acceptance: 'VCF Management Services + License Server deployed and healthy; the License Server FQDN resolves to an IP outside the services-runtime range; Cloud Proxy (if used) is collecting.',
       },

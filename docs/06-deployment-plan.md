@@ -76,7 +76,7 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
   - Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.
   - Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.
   - *Acceptance:* required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the network plan (E1).
-- **Story 4.3 — Core services ready.** AD, DNS, NTP, CA, depot reachable.
+- **Story 4.3 — Core services ready.** AD, DNS, NTP, CA, depot reachable (open the firewall flows — see [`07-firewall-ports.md`](07-firewall-ports.md)).
   - *Acceptance:* forward (A) **and** reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.
 - **Story 4.4 — Access & final readiness.** A jump/bastion host reaches the management network, and out-of-band (iDRAC / iLO / BMC) access to the hosts is available.
   - *Acceptance:* the build team can reach the management network and host consoles; and the full prerequisites checklist ([`prerequisites.md`](prerequisites.md) — hardware, network, AD, DNS, NTP, CA, depot) is green before bring-up starts.
@@ -91,7 +91,7 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
   - **VCF Operations is deployed at bring-up** in VCF 9.1 — not Day-2 (only VCF Automation can be deferred). Decide its cluster address up front: **floating IP** (default) or an **external load-balancer VIP** — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.
   - *Acceptance:* bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; vSAN datastore online.
 - **Story 5.4 — Deploy VCF Management Services, License Server & Cloud Proxy.** These are **not** part of the automatic bring-up — once VCF Operations + SDDC Manager are up, deploy them **via VCF Operations** (its UI, or the SDDC Manager API for custom VLAN-backed placement to avoid IP exhaustion): **VCF Management Services** (VCF services runtime, fleet & SDDC lifecycle, software depot, telemetry), the **License Server**, and the **Cloud Proxy** collector as needed.
-  - The **License Server** needs a unique FQDN resolving to an IP **outside** the VCF services-runtime range (IPv4 only). The **Cloud Proxy** stays on the **VM-Management** network. Licenses are applied fleet-wide later (E8 8.4).
+  - The **License Server** needs a unique FQDN resolving to an IP **outside** the VCF services-runtime range (IPv4 only). The **Cloud Proxy** stays on the **VM-Management** network and needs ports **443 / 4505 / 4506** to VCF Operations (see [`07-firewall-ports.md`](07-firewall-ports.md) §E). Licenses are applied fleet-wide later (E8 8.4).
   - *Acceptance:* VCF Management Services + License Server deployed and healthy; the License Server FQDN resolves to an IP outside the services-runtime range; Cloud Proxy (if used) is collecting.
 
 ### E6 — Management domain configuration  ·  Owner: Platform + Network + Security

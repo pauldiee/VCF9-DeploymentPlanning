@@ -1,0 +1,15 @@
+Source zone,Destination,Port(s),Protocol,Direction,Purpose,Status (open / pending),Notes
+Management subnets,DNS servers,53,TCP/UDP,Outbound,Forward + reverse name resolution,,Bring-up blocker if missing
+Management subnets,NTP servers,123,UDP,Outbound,Time sync,,Must be in sync before bring-up
+Management subnets,AD domain controllers,"88, 389, 636, 3268",TCP/UDP,Outbound,Kerberos / LDAP / LDAPS / Global Catalog,,AD integration
+Management subnets,Certificate Authority,443,TCP,Outbound,Certificate enrollment / signing,,Plus CA-specific RPC for Microsoft CA
+Management subnets,Software depot,443,TCP,Outbound,Binary / bundle download,,Online (Broadcom) or local depot
+Jump / bastion host,"vCenter, SDDC Manager, NSX Manager, VCF Operations",443,TCP,Inbound to mgmt,Admin UIs / APIs,,
+Jump / bastion host,"ESXi hosts, appliances",22,TCP,Inbound to mgmt,SSH (as needed),,
+NSX Edge nodes,ToR switches,179,TCP,Bidirectional,BGP peering,,
+NSX Edge nodes,ToR switches,"3784, 3785",UDP,Bidirectional,BFD (if enabled),,
+ESX-Management (AZ1 & AZ2),Witness site,vSAN witness traffic,TCP,Bidirectional,vSAN witness (WTS) - rides ESX-Management VMK,,Stretched only; route to 3rd site
+AZ1 networks,AZ2 networks,vSAN / vMotion / overlay,-,Bidirectional,Stretched cluster data + overlay,,Stretched only; routed between AZs
+Cloud Proxy / collected endpoints,VCF Operations,"443, 4505, 4506",TCP,Bidirectional,Operations collection; Telegraf monitoring,,9.1
+Management components,vCenter (syslog),1514,TCP,Outbound,Syslog (TLS),,9.1 change: 514 blocked - use 1514
+Fleet appliances,VCF Operations / License Server,443,TCP,Bidirectional,Fleet management / licensing,,License Server FQDN/IP outside services-runtime range

@@ -1,0 +1,92 @@
+# Firewall Dependencies & Ports
+
+VCF 9.1 has hundreds of component-to-component flows. **This page does not list
+them all** — the full, version-accurate matrix lives in the two authoritative
+tools below. What this page gives you is the **curated set of cross-zone flows
+that block a deployment if they are missed** — the ones a customer's firewall /
+security team must open *before and during* bring-up — grouped the way a firewall
+team thinks (by zone, not by component).
+
+> **Get the exhaustive, current list from a tool — don't hand-maintain it:**
+> - **[Coscia's VCF Planner](https://vcfplanning.lcoscia.fr/)** — includes a
+>   browsable **Ports & Protocols matrix (1,083 entries)**; friendlier to filter
+>   than the vendor portal.
+> - **[Broadcom Ports & Protocols portal](https://ports.broadcom.com/network-diagrams/VMware-Cloud-Foundation)** —
+>   vendor-authoritative: select your VCF components and it generates the complete
+>   source → destination → port list.
+>
+> Use those for the definitive per-component detail; use this page to make sure
+> the **deployment-critical** flows are on the firewall team's change request.
+> Grab the [firewall-request template](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv) (CSV) to hand them.
+
+Ports below are the well-known/high-confidence ones; where a flow's exact port
+varies by component, the flow is named and the specifics are left to the tools
+above.
+
+---
+
+## A. Prerequisite services — management → shared infrastructure
+
+These are the classic bring-up blockers: if DNS/NTP/AD/CA/depot aren't reachable
+from the management network, bring-up fails.
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| Management subnets | DNS servers | 53 | TCP/UDP | Forward + reverse resolution |
+| Management subnets | NTP servers | 123 | UDP | Time sync (must be in sync) |
+| Management subnets | AD domain controllers | 88, 389, 636, 3268/3269 | TCP/UDP | Kerberos, LDAP/LDAPS, Global Catalog |
+| Management subnets | Certificate Authority | 443 (+ CA-specific) | TCP | Certificate enrollment / signing |
+| Management subnets | Software depot | 443 | TCP | Binary / bundle download (online or local depot) |
+
+## B. Admin / management access — jump host → management
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| Jump / bastion host | vCenter, SDDC Manager, NSX Manager, VCF Operations | 443 | TCP | Admin UIs / APIs |
+| Jump / bastion host | ESXi hosts, appliances | 22 | TCP | SSH (as needed) |
+| Jump / bastion host | ESXi hosts | 902 | TCP | Host management / console |
+
+## C. NSX fabric & north-south — Edge ↔ ToR
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| NSX Edge nodes | ToR switches | 179 | TCP | BGP peering |
+| NSX Edge nodes | ToR switches | 3784/3785 | UDP | BFD (if enabled) |
+
+## D. Multi-AZ / stretched — inter-AZ + witness
+
+Only if the cluster is stretched (see `03-multi-az-prep.md`).
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| AZ1 ⇄ AZ2 (per-AZ networks) | AZ1 ⇄ AZ2 | vSAN / vMotion / overlay | — | Stretched cluster data + overlay (routed between AZs) |
+| ESX-Management (AZ1 & AZ2) | Witness site | vSAN witness traffic | TCP | Witness traffic rides the ESX-Management VMkernel (WTS); route to the 3rd site (≤ 200 ms) |
+
+## E. Day-2 / fleet — Operations, Cloud Proxy, License Server, syslog
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| Collected endpoints / Cloud Proxy | VCF Operations | 443, 4505, 4506 | TCP | Operations collection; Telegraf app monitoring (9.1) |
+| Management components | vCenter (syslog) | **1514** | TCP | Syslog — **9.1 change: use 1514 (TLS); plain 514 is blocked** |
+| Fleet appliances | VCF Operations / License Server | 443 | TCP | Fleet management, licensing |
+
+> **9.1 gotchas worth flagging to the firewall team:**
+> - **Syslog moved 514 → 1514.** vCenter 9.1 blocks the unencrypted 514; syslog
+>   must use **1514 (TLS)**.
+> - **Cloud Proxy** needs **443, 4505, 4506** for Telegraf-based app monitoring.
+> - **License Server** requires an FQDN/IP **outside** the VCF services-runtime
+>   range (IPv4 only) — a routing/reachability point, not just a port.
+
+---
+
+## Using this with the toolkit
+
+- The [firewall-request template](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv)
+  turns the above into a fill-in change request (source zone / destination /
+  port / protocol / direction / purpose / status) for the security team.
+- These flows are gated in `prerequisites.md` (core services reachable) and
+  surface in the deployment plan (witness routing, depot, License Server, Cloud
+  Proxy).
+- For anything not listed here, generate the exact ports from Coscia's Ports &
+  Protocols matrix or the Broadcom portal above — **do not** treat this page as
+  the complete list.
