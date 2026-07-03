@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.10.0 — 2026-07-03
+- Added the **Deployment Plan Export** tool to the sidebar **Tools** section
+  (previously only the Sizing calculator was listed there; the export tool was
+  only reachable via the doc link). (#73)
+
 ## v0.9.9 — 2026-07-03
 - **Export tool: NSX connectivity choice (Centralized / Distributed)** — the first
   of several deployment choices being added. Drives E6 story 6.1 and the WLD

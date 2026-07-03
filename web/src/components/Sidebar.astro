@@ -8,6 +8,7 @@ interface Props {
 const { active } = Astro.props;
 const sampleHref = withBase('samples/01-network-dns-plan-rainpole/');
 const sizerHref = withBase('tools/mgmt-sizing/');
+const planExportHref = withBase('tools/deployment-plan/');
 ---
 
 <aside class="sidebar" aria-label="Planning docs">
@@ -40,6 +41,13 @@ const sizerHref = withBase('tools/mgmt-sizing/');
     <span class="sidebar__text">
       <span class="sidebar__step">Interactive</span>
       <span class="sidebar__label">Sizing calculator</span>
+    </span>
+  </a>
+  <a class="sidebar__link" href={planExportHref}>
+    <i class="fa-solid fa-sitemap sidebar__icon" aria-hidden="true"></i>
+    <span class="sidebar__text">
+      <span class="sidebar__step">Interactive</span>
+      <span class="sidebar__label">Deployment Plan Export</span>
     </span>
   </a>
 
