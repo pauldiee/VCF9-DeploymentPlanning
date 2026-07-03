@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.10.9 — 2026-07-03
+- **Export tool: optional Day-2 fleet components are individually selectable**
+  (#78). Three new checkboxes under the Day-2 block — **Log Management**,
+  **Operations for Networks**, **Identity Broker** (all on by default,
+  matching previous output). Story 8.3 lists only the selected components and
+  disappears when none are selected. Knock-on: with the **Identity Broker out
+  of scope** (unticked, or no Day-2 fleet at all), **E6 6.3 becomes the
+  identity path** (bind vCenter SSO to AD/LDAP, with acceptance) and **8.4
+  drops the broker-based fleet SSO** from its tasks + acceptance. `docs/06`
+  story 8.3 renamed *Optional fleet components* with a note on the behaviour.
+
 ## v0.10.8 — 2026-07-03
 - **Export tool: workload domains are now truly optional** (#77). The remove
   button no longer locks at one WLD — deleting the last one yields a

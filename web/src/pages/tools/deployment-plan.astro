@@ -19,7 +19,8 @@ const epics = selectedEpics(sel);
       <p class="planx__lede">
         Build your deployment scope below — pick <strong>NSX connectivity</strong> (Centralized/Distributed)
         and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
-        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer),
+        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer, and the optional
+        components — <strong>Log Management</strong>, <strong>Operations for Networks</strong>, <strong>Identity Broker</strong> — each in or out),
         and optionally add <strong>workload domains</strong> (zero for a management-only scope), each independently
         <strong>non-stretched or stretched</strong> (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
         epics and stories, then export it: <strong>Copy as Markdown</strong> for a wiki or PR, or
@@ -58,6 +59,9 @@ const epics = selectedEpics(sel);
             </select>
           </label>
           <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Load-balance with Avi (management domain)</label>
+          <label class="planx__check"><input type="checkbox" id="optD2Logs" checked /> Log Management <span class="planx__tag">E8.3</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Networks" checked /> Operations for Networks <span class="planx__tag">E8.3</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Identity Broker (fleet SSO) <span class="planx__tag">E8.3</span></label>
         </div>
       </fieldset>
 
@@ -164,6 +168,11 @@ const epics = selectedEpics(sel);
         placement: (<HTMLSelectElement>$('selAutoPlacement')).value as AutomationPlacement,
         aviLb: (<HTMLInputElement>$('optAutoAvi')).checked,
       },
+      day2Components: {
+        logs: (<HTMLInputElement>$('optD2Logs')).checked,
+        networks: (<HTMLInputElement>$('optD2Networks')).checked,
+        identityBroker: (<HTMLInputElement>$('optD2Broker')).checked,
+      },
       wlds: wlds.map((w) => ({ ...w })),
     };
   }
@@ -200,6 +209,9 @@ const epics = selectedEpics(sel);
     (<HTMLSelectElement>$('selAutoModel')).disabled = !day2 || !deploy;
     (<HTMLSelectElement>$('selAutoPlacement')).disabled = !day2 || !deploy;
     (<HTMLInputElement>$('optAutoAvi')).disabled = !day2 || !deploy;
+    (<HTMLInputElement>$('optD2Logs')).disabled = !day2;
+    (<HTMLInputElement>$('optD2Networks')).disabled = !day2;
+    (<HTMLInputElement>$('optD2Broker')).disabled = !day2;
   }
 
   function esc(s: string): string {
@@ -316,7 +328,7 @@ const epics = selectedEpics(sel);
     render();
   });
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
-  for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi']) {
+  for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi', 'optD2Logs', 'optD2Networks', 'optD2Broker']) {
     $(id).addEventListener('change', () => { syncAuto(); render(); });
   }
 

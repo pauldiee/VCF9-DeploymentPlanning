@@ -49,6 +49,13 @@ export interface AutomationChoice {
   aviLb: boolean;
 }
 
+/** Optional Day-2 fleet components (each individually in or out of scope). */
+export interface Day2Components {
+  logs: boolean;
+  networks: boolean;
+  identityBroker: boolean;
+}
+
 export interface Selection {
   connectivity: NsxConnectivity;
   storage: StorageType;
@@ -56,6 +63,7 @@ export interface Selection {
   mgmtStretched: boolean;
   day2: boolean;
   automation: AutomationChoice;
+  day2Components: Day2Components;
   wlds: Wld[];
 }
 
@@ -97,6 +105,7 @@ export function defaultSelection(): Selection {
     mgmtStretched: false,
     day2: true,
     automation: { deploy: true, model: 'single', placement: 'shared', aviLb: false },
+    day2Components: { logs: true, networks: true, identityBroker: true },
     wlds: [{ name: 'wld01', stretched: false, supervisor: false }],
   };
 }
@@ -295,13 +304,22 @@ function coreEpics(sel: Selection): Epic[] {
           'Optional here: you can replace certificates for the components deployed so far, but the full CA-signed replacement is usually done once all components exist — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.4).',
         ],
       },
-      {
-        id: '6.3',
-        title: 'Identity & roles (optional, not recommended here)',
-        tasks: [
-          'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker (a Day-2 component; see E8 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
-        ],
-      },
+      sel.day2 && sel.day2Components.identityBroker
+        ? {
+            id: '6.3',
+            title: 'Identity & roles (optional, not recommended here)',
+            tasks: [
+              'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker (a Day-2 component; see E8 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
+            ],
+          }
+        : {
+            id: '6.3',
+            title: 'Identity & roles (vCenter SSO)',
+            tasks: [
+              `Bind vCenter SSO to AD/LDAP and map the admin/operator/viewer groups. (The fleet-wide VCF Identity Broker is not in this scope — add it under the Day-2 fleet if you want federated fleet SSO instead. TechDocs: ${TECHDOCS.identityProvider})`,
+            ],
+            acceptance: 'vCenter SSO bound to AD/LDAP; admin/operator/viewer groups mapped and tested with an AD login.',
+          },
       {
         id: '6.4',
         title: 'Backup & lifecycle',
@@ -392,24 +410,46 @@ function day2Epic(sel: Selection): Epic {
       acceptance: `VCF Automation deployed and healthy (${ha ? 'HA cluster' : 'single-node'}) on the ${p.label}; services-runtime cluster CIDR set and non-overlapping${a.aviLb ? '; Avi LB fronting the cluster' : ''}.`,
     };
   }
+  const c = sel.day2Components;
+  const compNames = [
+    c.logs ? 'Log Management' : null,
+    c.networks ? 'VCF Operations for Networks' : null,
+    c.identityBroker ? 'Identity Broker' : null,
+  ].filter(Boolean) as string[];
+  const compList =
+    compNames.length > 1 ? `${compNames.slice(0, -1).join(', ')} & ${compNames[compNames.length - 1]}` : compNames[0];
+
+  const stories: Story[] = [
+    { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
+    automationStory,
+  ];
+  if (compNames.length) {
+    stories.push({
+      id: '8.3',
+      title: `Optional fleet components: ${compList}`,
+      tasks: [`Deploy the selected optional fleet components: ${compList}. Each needs its FQDN + reserved IP with forward/reverse DNS in place (see 05-day2-deployments.md section B).`],
+      acceptance: 'Each selected Day-2 component healthy; the fleet-management health (synthetic) check passes.',
+    });
+  }
+  stories.push({
+    id: '8.4',
+    title: 'Certificates, identity & licensing (full fleet)',
+    tasks: [
+      c.identityBroker
+        ? `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations). TechDocs: configure a CA — ${TECHDOCS.configureCa} ; configure an identity provider — ${TECHDOCS.identityProvider}`
+        : `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass and apply licensing across the fleet (via VCF Operations). Identity stays on the direct vCenter SSO AD/LDAP binding from E6 6.3 (the Identity Broker is not in this scope). TechDocs: configure a CA — ${TECHDOCS.configureCa}`,
+    ],
+    acceptance: c.identityBroker
+      ? 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.'
+      : 'Every fleet endpoint presents a CA-signed cert with no trust warnings; licensing applied.',
+  });
+
   return {
     id: 'E8',
     title: 'Day-2 fleet deployment',
     owner: 'Platform',
     ref: '05-day2-deployments.md',
-    stories: [
-      { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
-      automationStory,
-      { id: '8.3', title: 'Log Management, Operations for Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed: Log Management, VCF Operations for Networks, and the Identity Broker.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
-      {
-        id: '8.4',
-        title: 'Certificates, identity & licensing (full fleet)',
-        tasks: [
-          `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations). TechDocs: configure a CA — ${TECHDOCS.configureCa} ; configure an identity provider — ${TECHDOCS.identityProvider}`,
-        ],
-        acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.',
-      },
-    ],
+    stories,
   };
 }
 
