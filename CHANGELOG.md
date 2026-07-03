@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.7 — 2026-07-03
+- **Internal-CIDR note in `01` now covers VCF Automation too** (#91). The
+  note under the VM Management carve-out attributed the internal
+  `198.18.0.0/15` CIDR (alternatives `240.0.0.0/15` / `250.0.0.0/15`) to the
+  VCF services runtime only; VCF Automation's **cluster CIDR** is the same
+  kind of internal, non-routed range with the same default and alternatives
+  (intake `B21`, `05` section D) — the note now says so.
+
 ## v1.1.6 — 2026-07-03
 - **VCF Operations for Networks added to the VM Management carve-out** (#90).
   The `01` carve-out table never accounted for the Ops-for-Networks platform +

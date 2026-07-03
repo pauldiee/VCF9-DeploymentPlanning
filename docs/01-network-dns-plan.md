@@ -100,11 +100,14 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | VCF Operations for Networks (optional) | 2 (+2 if Large) |  | Platform node + collector node — lands here when the Day-2 placement is the **Shared Management Network** (a **Large** platform is a 3-node cluster: +2); see `05-day2-deployments.md` |
 | **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room (+4 if the Avi LB is in scope, +2–4 if Operations for Networks shares this subnet) |
 
-> **Separate internal network — keep off the VM Mgmt subnet.** The VCF services
-> runtime also uses an *internal* container CIDR, `198.18.0.0/15` by default
-> (change to `240.0.0.0/15` or `250.0.0.0/15` if it clashes). These are internal
-> to the platform, not routed appliance IPs — just make sure the block does not
-> overlap anything you actually route.
+> **Separate internal networks — keep off the VM Mgmt subnet.** The VCF services
+> runtime uses an *internal* container CIDR, `198.18.0.0/15` by default
+> (change to `240.0.0.0/15` or `250.0.0.0/15` if it clashes) — and **VCF
+> Automation uses the same kind of internal cluster CIDR, with the same default
+> and alternatives** (the *cluster CIDR* captured in intake `B21`; see
+> `05-day2-deployments.md` section D). These are internal to the platform, not
+> routed appliance IPs — just make sure the blocks do not overlap anything you
+> actually route.
 
 ---
 
