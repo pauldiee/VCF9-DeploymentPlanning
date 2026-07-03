@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8.4 — 2026-07-03
+- Added an explicit **E5 5.4 — Deploy VCF Management Services, License Server &
+  Cloud Proxy**, and removed them from the E5.3 bring-up parenthetical. These are
+  **not** part of the automatic bring-up: bring-up deploys the appliances
+  (vCenter, SDDC Manager, NSX, vSAN, VCF Operations), then VCF Management Services
+  (services runtime, fleet/SDDC lifecycle, software depot, telemetry) + the
+  License Server + the Cloud Proxy are deployed **via VCF Operations** (UI or SDDC
+  Manager API). License Server needs a unique FQDN outside the services-runtime
+  range (IPv4 only); Cloud Proxy stays on the VM-Management network. Doc + lib. (#64)
+
 ## v0.8.3 — 2026-07-03
 - Clarified the **vSAN witness rule** for stretched clusters. Verified against
   Broadcom: *"A single witness host can support only one vSAN stretched cluster"*

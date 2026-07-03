@@ -142,10 +142,19 @@ const CORE_PRE: Epic[] = [
         id: '5.3',
         title: 'Deploy the management domain',
         tasks: [
-          'Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, vSAN, and VCF Operations (+ fleet management, Cloud Proxy, License Server); submit the JSON.',
+          'Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, vSAN, and VCF Operations; submit the JSON.',
           'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide its cluster address up front: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
         ],
         acceptance: 'Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; vSAN datastore online.',
+      },
+      {
+        id: '5.4',
+        title: 'Deploy VCF Management Services, License Server & Cloud Proxy',
+        tasks: [
+          'These are NOT part of the automatic bring-up. Once VCF Operations + SDDC Manager are up, deploy them via VCF Operations (its UI, or the SDDC Manager API for custom VLAN-backed placement to avoid IP exhaustion): VCF Management Services (VCF services runtime, fleet and SDDC lifecycle, software depot, telemetry), the License Server, and the Cloud Proxy collector as needed.',
+          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network. Licenses are applied fleet-wide later (E8 8.4).',
+        ],
+        acceptance: 'VCF Management Services + License Server deployed and healthy; the License Server FQDN resolves to an IP outside the services-runtime range; Cloud Proxy (if used) is collecting.',
       },
     ],
   },
