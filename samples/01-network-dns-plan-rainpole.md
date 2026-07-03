@@ -47,6 +47,7 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | vCenter                         | `.70`                |                                          |
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |
 | NSX Edge node mgmt              | `.75`, `.76`         | `sfo-m01-en01` / `en02`                  |
+| VCF Operations for Networks     | `.77`, `.78`         | Day-2, optional — platform + collector (a **Large** platform is a 3-node cluster: reserve 2 more) |
 
 Host-facing ranges: ESX Mgmt hosts `10.11.11.101–.116`, vMotion `10.11.12.101–.116`,
 vSAN `10.11.13.101–.116`, Host Overlay TEP pool `10.11.14.101–.132`, Edge Overlay
@@ -84,6 +85,8 @@ TEP `10.11.19.2–.5`.
 | License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |
 | VCF Automation     | `flt-auto01.rainpole.io`             | (from `/29`)  |
 | Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
+| Ops for Networks platform | `flt-opsnet01.rainpole.io`    | `10.11.10.77` (Day-2, optional) |
+| Ops for Networks collector | `sfo-opsnetc01.sfo.rainpole.io` | `10.11.10.78` (Day-2, optional) |
 | NSX Edge 1 / 2     | `sfo-m01-en0{1,2}.sfo.rainpole.io`   | `10.11.10.75` / `.76` |
 
 DNS search domains: `sfo.rainpole.io`, `rainpole.io`. Every FQDN needs both an A

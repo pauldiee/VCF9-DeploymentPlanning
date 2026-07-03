@@ -6,6 +6,8 @@ on:
     paths:
       - 'web/**'
       - 'docs/**'
+      - 'samples/**'
+      - 'CHANGELOG.md'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 

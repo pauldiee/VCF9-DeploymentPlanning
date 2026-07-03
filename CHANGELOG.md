@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.8 — 2026-07-03
+- **Operations for Networks in the Rainpole sample too** (#90 follow-up). The
+  sample's VM Management carve-out gains the optional Day-2 row (platform
+  `.77` + collector `.78`, reserve 2 more for a Large 3-node platform) and the
+  DNS table the matching records — fleet-style `flt-opsnet01.rainpole.io` for
+  the platform, site-local `sfo-opsnetc01.sfo.rainpole.io` for the collector.
+- **CI: deploys now trigger on `samples/**` and `CHANGELOG.md`** (#92). The
+  site renders the samples and reads the version badge from the changelog at
+  build time, but neither path triggered a deploy — a samples-only push left
+  the live site silently stale. Both the GitHub workflow and `.gitlab-ci.yml`
+  gained the two paths.
+
 ## v1.1.7 — 2026-07-03
 - **Internal-CIDR note in `01` now covers VCF Automation too** (#91). The
   note under the VM Management carve-out attributed the internal
