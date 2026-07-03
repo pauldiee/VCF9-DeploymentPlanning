@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.9 — 2026-07-03
+- Documented the **VCF Installer host port-group VLAN gotcha**: a fresh ESXi
+  host's default `VM Network` port group is untagged (VLAN 0), so if VM Management
+  is a tagged VLAN you must set the VLAN ID on the port group you deploy the
+  Installer to (on that host) — otherwise the appliance has no management
+  connectivity. Added to deployment-plan story 5.2 (+ mirrored lib) and the VCF
+  Installer callout in `01-network-dns-plan.md`. (#58)
+
 ## v0.7.8 — 2026-07-03
 - Corrected **BGP MD5/password to optional** (it was labelled "Required by NSX").
   Per Broadcom's *Configure BGP* (VCF 9.x), the only required BGP-neighbor

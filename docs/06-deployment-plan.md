@@ -85,7 +85,8 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
 - **Story 5.1 — Install & configure the management hosts.** Image each host with the supported **ESXi ISO** (see the [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) repo to prep + commission hosts quickly); set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.
   - *Acceptance:* every host reachable on the management network with the matched ESXi build; DNS + NTP correct.
 - **Story 5.2 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network.
-  - *Acceptance:* VCF Installer deployed, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.
+  - On that host, put the Installer on a port group carrying the **VM Management VLAN**. A fresh ESXi host's default `VM Network` port group is **untagged (VLAN 0)**, so if VM Management is a tagged VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the appliance has no management connectivity.
+  - *Acceptance:* VCF Installer deployed on the VM-Management VLAN, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.
 - **Story 5.3 — Deploy the management domain.** Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.
   - *Acceptance:* bring-up completes; vCenter, SDDC Manager, and NSX healthy; vSAN datastore online.
 

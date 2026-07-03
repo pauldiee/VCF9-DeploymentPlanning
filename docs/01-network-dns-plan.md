@@ -43,6 +43,12 @@ first WLD — duplicate it for additional WLDs / clusters.
 > hosts. (Only an Installer deployed *outside* the management infrastructure uses
 > a separate temporary address.) Per
 > [Broadcom TechDocs](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/deploy-the-vmware-cloud-foundation-installer-appliance.html).
+>
+> **Port group VLAN gotcha:** on the host you deploy it on, place the Installer on
+> a port group carrying the **VM Management VLAN**. A fresh ESXi host's default
+> `VM Network` port group is **untagged (VLAN 0)**, so if VM Management is a tagged
+> VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the
+> appliance comes up with no management connectivity.
 
 ### IP range carve-out (per subnet)
 

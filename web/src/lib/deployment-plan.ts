@@ -134,8 +134,9 @@ const CORE_PRE: Epic[] = [
         title: 'Stage the VCF Installer',
         tasks: [
           'Deploy the Installer on a management-domain host using the IP + FQDN planned for SDDC Manager (it switches into SDDC Manager at bring-up, not a throwaway IP); verify it reaches the ESXi management network.',
+          'On that host, put the Installer on a port group carrying the VM Management VLAN. A fresh ESXi host\'s default "VM Network" port group is untagged (VLAN 0), so if VM Management is a tagged VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the appliance has no management connectivity.',
         ],
-        acceptance: 'VCF Installer deployed, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.',
+        acceptance: 'VCF Installer deployed on the VM-Management VLAN, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.',
       },
       {
         id: '5.3',
