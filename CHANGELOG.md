@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.6 — 2026-07-03
+- Deployment-plan E8.2 (VCF Automation) now notes the specific case: a **clustered
+  / HA** VCF Automation (or self-service load balancing) is load-balanced by an
+  **Avi Load Balancer deployed in the management domain**, lifecycle-managed via
+  VCF Operations — cite Broadcom's *VCF Automation Load Balancing Design*. Doc + lib. (#71)
+
 ## v0.9.5 — 2026-07-03
 - Deployment-plan WLD connectivity stories (E9 9.4 / 9.6) now note the ordering
   dependency: **if you enable vSphere Supervisor, deploy and configure the Avi Load
