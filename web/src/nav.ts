@@ -58,7 +58,7 @@ export const NAV: NavItem[] = [
     step: 'Delivery',
     label: 'Deployment Plan',
     icon: 'sitemap',
-    blurb: 'An agile work breakdown (epics, stories, tasks) for the common VCF 9 deployment types; drop it into your scrum backlog.',
+    blurb: 'An agile work breakdown (epics, stories, tasks); build your deployment scope and export it to Markdown or a backlog CSV.',
   },
   {
     slug: 'workbook-cell-mapping',

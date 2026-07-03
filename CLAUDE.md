@@ -36,14 +36,15 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (private)
 | `docs/02-customer-intake.md`     | Step 2 — role-based intake questionnaire                      |
 | `docs/03-multi-az-prep.md`       | Multi-AZ (stretched) extra prep — witness, latency, capacity |
 | `docs/04-sizing.md`              | Step 3 — mgmt-domain sizing; links the interactive sizing tool|
-| `docs/05-day2-deployments.md`    | Day-2 fleet deployments (VCF Automation/Ops, network placement)|
+| `docs/05-day2-deployments.md`    | Day-N fleet added after bring-up (VCF Automation, Log Management, network placement) |
+| `docs/06-deployment-plan.md`     | Agile work breakdown (epics/stories/tasks); feeds the interactive export tool |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
-| `web/`                           | ITQ-branded Astro site (GitHub Pages) + the interactive sizing tool |
+| `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing & deployment-plan tools |
 | `tools/`                         | (future) helper scripts — see issue #1 for the workbook writer|
 
-Docs **plus** an Astro site (`web/`, incl. the interactive sizing tool) today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 patches per minor version.
+Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment-plan export tools) today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 patches per minor version.
 
 ---
 

@@ -21,8 +21,8 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 
 | # | Question                                                            | Notes                                                                 |
 | - | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-|D1 | Which fleet components are deployed at bring-up vs. Day-2?           | VCF Automation, VCF Operations for Logs/Networks are often Day-2       |
-|D2 | Is VCF Operations deployed at bring-up, or Day-2?                    | If reused/existing, "useExistingDeployment" — no new appliances        |
+|D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations is bring-up.** VCF Automation can be deferred; Log Management, Operations for Networks & Identity Broker are often Day-N |
+|D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (E5). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment? | Four options — see C; NSX Overlay needs an Edge cluster + transit gateway |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |

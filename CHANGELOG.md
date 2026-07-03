@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.5 — 2026-07-03
+- Supplemental-docs freshness sweep after the deployment-plan overhaul:
+  - **CLAUDE.md** file layout — added the missing `docs/06-deployment-plan.md`
+    row, refreshed the `05-day2` and `web/` rows (deployment-plan tool, GitLab Pages).
+  - **README.md** — added `web/src/lib/deployment-plan.ts`; fixed the
+    VCFHostPreparation host-prep reference (E5 / E7 / **E9**, was E8); refreshed the
+    `05-day2` / `06` descriptions (VCF Operations is a bring-up component).
+  - **`05-day2-deployments.md`** decision gate D1/D2 — corrected to state VCF
+    Operations is deployed at bring-up (the `useExistingDeployment` path is for
+    connecting an additional VCF instance to the fleet's existing Ops).
+  - Site nav blurb for the Deployment Plan refreshed (scope + export).
+
 ## v0.8.4 — 2026-07-03
 - Added an explicit **E5 5.4 — Deploy VCF Management Services, License Server &
   Cloud Proxy**, and removed them from the E5.3 bring-up parenthetical. These are

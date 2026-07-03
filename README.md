@@ -26,12 +26,13 @@ This repo flips the order:
 | `docs/02-customer-intake.md`        | Step 2 — role-based customer intake questionnaire      |
 | `docs/03-multi-az-prep.md`          | Extra prep for stretched / multi-AZ builds (if `A13`=Yes) |
 | `docs/04-sizing.md`                 | Step 3 — management-domain sizing + link to the fit-check calculator |
-| `docs/05-day2-deployments.md`       | Day-2 — fleet components deployed after bring-up (VCF Automation, Ops, network placement) |
-| `docs/06-deployment-plan.md`        | Agile work breakdown (epics/stories/tasks) for the common deployment types |
+| `docs/05-day2-deployments.md`       | Day-N — fleet components added after bring-up (VCF Automation, Log Management, Operations for Networks, network placement) |
+| `docs/06-deployment-plan.md`        | Agile work breakdown (epics/stories/tasks); build a scope (stretch, Day-2, workload domains) and export it |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — type selector + Markdown/CSV backlog export |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
+| `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters |
 | `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
@@ -97,7 +98,7 @@ deployment JSON for the VCF Installer — see *Related tools* below.
 - **[VCFHostPreparation](https://github.com/pauldiee/VCFHostPreparation)** —
   helper for quickly **imaging and commissioning ESXi hosts** before bring-up
   (management, workload-domain, and second-AZ hosts). Referenced from the
-  deployment plan's host-prep stories (E5 / E7 / E8).
+  deployment plan's host-prep stories (E5 bring-up / E7 mgmt stretch / E9 workload domains).
 
 **ITQ Consulting Services** (delivered as engagements, not public tools):
 
