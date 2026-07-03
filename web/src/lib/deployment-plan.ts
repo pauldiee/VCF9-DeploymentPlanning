@@ -209,8 +209,10 @@ const E7_MGMT_STRETCH: Epic = {
     {
       id: '7.4',
       title: 'Stretch the cluster',
-      tasks: ['Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity).'],
-      acceptance: 'vSAN reports the stretched cluster healthy and storage-policy compliant; isolating one AZ keeps VMs running on the surviving site.',
+      tasks: [
+        'SDDC Manager does the stretch for you: submit a stretch JSON spec via the SDDC Manager API and VCF builds the fault domains (AZ1 preferred / AZ2 secondary / witness), balances hosts across the AZs, and flips the datastore storage policy to site mirroring (stretched, ~2× capacity). You just supply the inputs from 7.1–7.3: an AZ2 network pool, the commissioned AZ2 hosts (equal count per AZ), and the witness. It will not stretch if the cluster shares a vSAN storage policy with another cluster, has DPU-backed hosts, or has L3-different subnets within an AZ. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html and 03-multi-az-prep.md.',
+      ],
+      acceptance: 'SDDC Manager reports the cluster stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
     },
   ],
 };
@@ -294,8 +296,10 @@ function wldEpic(w: Wld, index: number): Epic {
         {
           id: '9.5',
           title: 'Stretch the WLD cluster',
-          tasks: ['Configure fault domains (preferred/secondary/witness); per-AZ networks; storage policy for the dual-site mirror (~2× capacity). Edge stretched only under NSX Centralized connectivity.'],
-          acceptance: 'vSAN reports the stretched WLD healthy and storage-policy compliant; isolating one AZ keeps VMs running on the surviving site.',
+          tasks: [
+            "SDDC Manager stretches it for you, same as the management stretch — a JSON spec via the SDDC Manager API builds the fault domains, balances the per-AZ hosts, and sets the site-mirroring storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. The management domain must already be stretched (E7) before any workload-domain cluster can be stretched. Edge stretched only under NSX Centralized connectivity. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html.",
+          ],
+          acceptance: 'SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
         },
         { id: '9.6', title: 'WLD connectivity', tasks: ['Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.'], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
       ],

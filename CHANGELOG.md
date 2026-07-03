@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8.1 — 2026-07-03
+- Elaborated the **stretch stories (E7 7.4, E9 9.5)**: SDDC Manager does the
+  stretch from a **JSON spec via its API** — it builds the fault domains
+  (AZ1 preferred / AZ2 secondary / witness), balances hosts across AZs, and flips
+  the datastore policy to **site mirroring**; you supply the AZ2 network pool,
+  commissioned AZ2 hosts (equal per AZ), and witness. Added the **management-
+  domain-stretched-first** dependency for a stretched WLD, the limitations
+  (shared vSAN storage policy / DPU hosts / L3-split subnets within an AZ), and a
+  reference to Broadcom's *Stretching vSAN Clusters* (9.1). Doc + lib. (#60)
+
 ## v0.8.0 — 2026-07-03
 - Moved the **E10 — Validation & handover** section in `06-deployment-plan.md` to
   its own "Final epic (always last)" section **after** the variant epics, so the
