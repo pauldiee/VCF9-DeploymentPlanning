@@ -16,7 +16,8 @@ or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
 - [BGP peering](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
 
 > **Customer-data hygiene:** these are **blank** templates. A **filled** copy holds
-> real IPs/DNS/AS numbers — keep it in the customer's OneDrive folder, **not** the repo.
+> real, sensitive customer data (IPs, DNS names, AS numbers) — store it with the
+> customer's secure engagement material, **not** in a public or shared repository.
 
 ## Hardware
 

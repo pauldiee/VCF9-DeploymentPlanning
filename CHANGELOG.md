@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.9 — 2026-07-03
+- Made the templates' customer-data-hygiene note generic (dropped the
+  OneDrive/repo specifics): a filled copy holds real, sensitive customer data —
+  store it with the customer's secure engagement material, not in a public or
+  shared repository. (#65)
+
 ## v0.8.8 — 2026-07-03
 - Rolled the customer-readable format out to the remaining planning templates and
   fixed the empty value columns:
