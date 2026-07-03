@@ -98,14 +98,6 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
 - **Story 6.4 — Backup & lifecycle.** Configure SFTP backups; connect the depot for **fleet lifecycle** (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).
   - *Acceptance:* a test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.5.)
 
-### E10 — Validation & handover  ·  Owner: Architect + all teams
-- **Story 10.1 — Health check.** Run a post-deploy health check of the live environment.
-  - *Acceptance:* post-deploy health check run; no critical findings (or all triaged).
-- **Story 10.2 — As-built.** Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).
-  - *Acceptance:* as-built captured — FQDNs, IPs, VLANs recorded; passwords stored in the secret store.
-- **Story 10.3 — Handover.** Walk the customer through operations and hand over.
-  - *Acceptance:* health check clean; as-built delivered; customer sign-off received.
-
 ---
 
 ## Variant epics (add per scope)
@@ -174,6 +166,22 @@ order as the management stretch (E7).
   - *Acceptance:* vSAN reports the stretched WLD healthy and storage-policy compliant; isolating one AZ keeps VMs running on the surviving site.
 - **Story 9.6 — WLD connectivity.** Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor.
   - *Acceptance:* WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.
+
+---
+
+## Final epic (always last)
+
+### E10 — Validation & handover  ·  Owner: Architect + all teams
+
+A core epic that always runs **after** E6 and any variant epics (stretch / Day-2 /
+workload domains) — it validates and hands over the *complete* environment.
+
+- **Story 10.1 — Health check.** Run a post-deploy health check of the live environment.
+  - *Acceptance:* post-deploy health check run; no critical findings (or all triaged).
+- **Story 10.2 — As-built.** Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).
+  - *Acceptance:* as-built captured — FQDNs, IPs, VLANs recorded; passwords stored in the secret store.
+- **Story 10.3 — Handover.** Walk the customer through operations and hand over.
+  - *Acceptance:* health check clean; as-built delivered; customer sign-off received.
 
 ---
 

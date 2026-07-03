@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.0 — 2026-07-03
+- Moved the **E10 — Validation & handover** section in `06-deployment-plan.md` to
+  its own "Final epic (always last)" section **after** the variant epics, so the
+  doc's top-to-bottom order matches the execution order (variants are added per
+  scope before handover). The tool/export already emitted E10 last; this is a
+  doc-layout fix only. (#59)
+
 ## v0.7.9 — 2026-07-03
 - Documented the **VCF Installer host port-group VLAN gotcha**: a fresh ESXi
   host's default `VM Network` port group is untagged (VLAN 0), so if VM Management
