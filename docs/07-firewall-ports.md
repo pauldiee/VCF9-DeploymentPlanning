@@ -72,7 +72,9 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 
 > **9.1 gotchas worth flagging to the firewall team:**
 > - **Syslog moved 514 → 1514.** vCenter 9.1 blocks the unencrypted 514; syslog
->   must use **1514 (TLS)**.
+>   must use **1514 (TLS)** — [Broadcom KB 430675](https://knowledge.broadcom.com/external/article/430675/vcenter-server-syslog-messages-are-not-r.html).
+>   The full vCenter port list is on TechDocs:
+>   [Required Ports for vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vcenter-installation-and-setup/deploying-the-vcenter-server-appliance/vcenter-server-appliance-requirements/required-ports-for-vcenter-server.html).
 > - **Cloud Proxy** needs **443, 4505, 4506** for Telegraf-based app monitoring.
 > - **License Server** requires an FQDN/IP **outside** the VCF services-runtime
 >   range (IPv4 only) — a routing/reachability point, not just a port.

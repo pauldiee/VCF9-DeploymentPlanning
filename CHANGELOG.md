@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.10.5 — 2026-07-03
+- **Repo-wide Broadcom TechDocs enrichment pass** (#75) — every major claim now
+  carries an authoritative link, all URLs liveness-verified:
+  - `prerequisites.md`: 9.1 Planning & Preparation companion in the intro; ESX
+    host-prep page under Hardware; SFTP backup requirements (ECDSA/RSA key
+    support) + VCF Operations backup target; online-depot connect + offline
+    VCF Download Tool under Binaries.
+  - `01-network-dns-plan.md`: Edge-cluster/BGP setup under §B; Identity
+    Provider under §E; Configure-a-CA under §F.
+  - `02-customer-intake.md`: new **TechDocs references** section mapping intake
+    IDs (A/B/C/D/H) to the pages behind them.
+  - `03-multi-az-prep.md`: vSAN Stretched Cluster Bandwidth Sizing guide +
+    bandwidth/latency page on the AZ1↔AZ2 row; SDDC-Manager-driven stretch
+    (Stretching vSAN Clusters) in the intro.
+  - `04-sizing.md`: linked the vCenter / NSX Manager / NSX Edge appliance-size
+    sources the validation pass checked against.
+  - `06-deployment-plan.md`: VCF Installer deployment-wizard ref on 5.3;
+    centralized-connectivity ref on 6.1.
+  - `07-firewall-ports.md`: syslog 514→1514 now cites Broadcom KB 430675 + the
+    vCenter required-ports page.
+
 ## v0.10.4 — 2026-07-03
 - **Host Overlay TEP: static IP pool is now the recommended addressing** (DHCP
   scope stays documented as the supported alternative). Flipped the

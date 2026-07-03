@@ -126,6 +126,11 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 > **Centralized**, **per-AZ** under **Distributed** (intake `A10`). See
 > `03-multi-az-prep.md` section D.
 
+> TechDocs: the Edge cluster / Tier-0 / BGP peering this plan feeds is set up per
+> [Set up Centralized Connectivity with Edge Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html)
+> — neighbor IP + remote AS are the only required BGP settings (MD5 and BFD are
+> optional).
+
 ---
 
 ## C. DNS
@@ -197,6 +202,10 @@ same shape.
 | SDDC viewer group             | DN                                             |
 | Users to pre-create           | per *Active Directory Inputs* sheet            |
 
+> TechDocs: AD is bound fleet-wide via the VCF Identity Broker —
+> [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html);
+> prep details + gotchas in [`prerequisites.md`](prerequisites.md#identity-source-for-the-vcf-identity-broker).
+
 ---
 
 ## F. Certificates
@@ -208,6 +217,9 @@ same shape.
 | CSR submission method      | Web Enrollment (basic auth) / DCE-RPC / Other    |
 | Template name              | e.g. `VMware`                                    |
 | Wildcard allowed?          | Y/N (workbook expects per-host SAN certs)        |
+
+> TechDocs: [Configure a Certificate Authority for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
+> — CA prerequisites (Microsoft CA Web Enrollment / OpenSSL) in `prerequisites.md`.
 
 ---
 

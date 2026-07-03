@@ -92,7 +92,10 @@ The footprints are transcribed from the pinned workbook; they were cross-checked
 against Broadcom TechDocs (issue #16). Results:
 
 - **vCenter** (vCPU/RAM), **NSX Manager** (Extra_Small–Large), and **NSX Edge**
-  (all sizes) **match** the current vSphere 9 / NSX docs exactly.
+  (all sizes) **match** the current vSphere 9 / NSX docs exactly —
+  [Hardware Requirements for the vCenter Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vcenter-installation-and-setup/deploying-the-vcenter-server-appliance/vcenter-server-appliance-requirements/vcenter-server-appliance-hardware-requirements.html),
+  [NSX Manager Installation Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/installation-guide/nsx-manager-installation-requirements.html),
+  [NSX Edge Installation Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/installation-guide/installing-nsx-edge/nsx-edge-installation-requirements.html).
 - **AVI load balancer — the workbook diverges from the real NSX ALB Controller
   sizes.** The workbook (and so this tool) uses Small 6/32/**512**, Large
   16/48/**1400**, X-Large 16/64/**1750**. The authoritative

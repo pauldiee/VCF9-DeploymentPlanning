@@ -9,7 +9,9 @@ A stretched cluster spans two data sites (AZ1, AZ2) plus a **third witness
 site**. vSAN mirrors every object across both AZs and uses the witness to break
 split-brain. That means three things the single-AZ plan never asks for:
 a witness at a third location, a fabric that meets latency/bandwidth limits
-between all three, and roughly double the raw capacity.
+between all three, and roughly double the raw capacity. The stretch operation
+itself is driven by SDDC Manager — TechDocs:
+[Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html).
 
 > Convention on this page: `sfo01` = **AZ1 / preferred** fault domain,
 > `sfo02` = **AZ2 / secondary** fault domain, `sfo-wit` = **witness** site.
@@ -86,7 +88,7 @@ VCF management-network design doesn't). What you need instead:
 | Item                          | Requirement                                                        |
 | ----------------------------- | ------------------------------------------------------------------ |
 | RTT AZ1↔AZ2                    | **<5 ms** RTT — hard limit for vSAN data                          |
-| Bandwidth AZ1↔AZ2             | No fixed figure — driven by the write bandwidth being mirrored (VMs replicated between sites). Size against VMware's *vSAN Stretched Cluster Bandwidth Sizing* and plan for **resync** bursts |
+| Bandwidth AZ1↔AZ2             | No fixed figure — driven by the write bandwidth being mirrored (VMs replicated between sites). Size against the [vSAN Stretched Cluster Bandwidth Sizing guide](https://www.vmware.com/docs/vmw-vsan-stretched-cluster-bandwidth-sizing) (witness leg: ~2 Mbps per 1000 components; see also TechDocs [Bandwidth and Latency Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/vsan/vsan/8-0/vsan-network-design/understanding-vsan-networking/network-requirements-for-vsan/bandwidth-and-latency-requirements.html)) and plan for **resync** bursts |
 | L2 + HA L3 gateway             | Stretched L2 segments (see D) plus a **highly-available Layer 3 gateway** between AZs, provided by the physical fabric |
 | MTU across the inter-AZ link   | **9000** end-to-end for vSAN / vMotion / overlay                   |
 | Fault domains                  | `sfo01` = preferred, `sfo02` = secondary, `sfo-wit` = witness (3rd)|

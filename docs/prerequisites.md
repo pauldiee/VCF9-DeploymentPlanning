@@ -4,6 +4,10 @@ This list mirrors the **Prerequisite Checklist** sheet of the official
 workbook. If any item is RED for the customer, fix it before spending a single
 meeting on the rest of the workbook — every later answer depends on these.
 
+> Authoritative source: the Broadcom [VCF 9.1 Planning and Preparation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation.html)
+> doc set (the workbook's TechDocs companion). Sections below link the specific
+> pages where they exist.
+
 ## Fillable planning templates (download)
 
 Blank CSV sheets to capture the prereq plan, then transfer into the P&P workbook
@@ -47,6 +51,10 @@ or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
 ### Workload Domain
 
 Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
+
+> TechDocs: [Preparing ESX Hosts for VCF or vSphere Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html)
+> covers the ESX install + basic host configuration this gate expects (all pNICs
+> ≥ 10 Gbps; vSAN hosts certified on the compatibility guide).
 
 ## Network
 
@@ -182,6 +190,9 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 - SFTP target reachable from SDDC Manager and NSX Manager for backups.
 - Account + write path pre-created.
+- TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
+  (the external SFTP server must support 256-bit ECDSA and 2048-bit RSA SSH
+  keys) and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
 
 ## Jump host
 
@@ -195,6 +206,12 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 | --------------------------------------------------- | ----------------------------------------------- |
 | `VCF-SDDC-Manager-Appliance-9.1.x.0.xxxxxxxx.iso`   | support.broadcom.com                            |
 | `VMware-VirtualSAN-Witness-x.x.x-xxxxxxxx.ova`      | support.broadcom.com (only if multi-AZ / vSAN stretched) |
+
+TechDocs: [Connect VCF Installer to Broadcom or an Offline Depot and Download
+Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html)
+(online, needs the Download Service ID + token) or, for air-gapped sites,
+[Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html)
+— the Download Tool is the only supported offline method in 9.1.
 
 ## Sign-off
 
