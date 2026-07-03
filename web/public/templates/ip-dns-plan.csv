@@ -23,3 +23,5 @@ Avi Controller VIP,Avi LB cluster VIP (only if Avi in scope),sfo-m01-avi01.sfo.e
 Avi Controller node 1,Avi controller (only if Avi in scope),sfo-m01-avi01a.sfo.example.io -> 10.11.11.31,,,VM Management,Platform,E16
 Avi Controller node 2,Avi controller (only if Avi in scope),sfo-m01-avi01b.sfo.example.io -> 10.11.11.32,,,VM Management,Platform,E16
 Avi Controller node 3,Avi controller (only if Avi in scope),sfo-m01-avi01c.sfo.example.io -> 10.11.11.33,,,VM Management,Platform,E16
+Ops for Networks platform,Operations for Networks platform node (Day-2; 3 nodes if Large),sfo-m01-opsnet01.sfo.example.io -> 10.11.11.34,,,VM Management (or Day-2 placement network),Platform,E14
+Ops for Networks collector,Operations for Networks collector node (Day-2),sfo-m01-opsnet01c.sfo.example.io -> 10.11.11.35,,,VM Management (or Day-2 placement network),Platform,E14

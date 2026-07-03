@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.6 — 2026-07-03
+- **VCF Operations for Networks added to the VM Management carve-out** (#90).
+  The `01` carve-out table never accounted for the Ops-for-Networks platform +
+  collector nodes, which land on the VM Management subnet when the Day-2
+  placement is the Shared Management Network. Now: an optional carve-out row
+  (2 IPs, +2 when a Large platform runs as a 3-node cluster) with the total
+  row's headroom note extended, two optional A+PTR rows in the `01` DNS table,
+  intake `E14` names the platform + collector in the fleet-FQDN list, and the
+  IP/DNS CSV template gains the two matching optional rows (same pattern as
+  the #85 Avi rows). The Day-N sheet mapping row already existed in
+  `workbook-cell-mapping.md`.
+
 ## v1.1.5 — 2026-07-03
 - **Generic wording pass — no more consultant-for-customer framing** (#89,
   filed via the site's Feedback button). All public-facing prose now addresses

@@ -131,7 +131,7 @@ Legend:
 |E11| NSX Edge node 1 / 2 FQDNs + IPs                                | `[CFG-M]` |
 |E12| Cluster / vDS / DPG naming conventions                         | `[MGMT]`  |
 |E13| Any VI Workload Domains at GA? → capture each in **section H** below | `[WLD]`   |
-|E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (each needs A+PTR+IP); several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
+|E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime, Ops for Networks platform + collector (each needs A+PTR+IP); several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
 |E15| VCF Automation Day-2 deployment: **method** (SDDC Manager API vs. via VCF Operations) + **network placement** (Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) → `05-day2-deployments.md` | `[DAYN]`  |
 |E16| **Avi Load Balancer** (only if Avi is the chosen LB — e.g. for Supervisor, the Automation-HA VIP, or tenant LB; Supervisor also runs without Avi): controller size (Small / Large / XLarge), 3 controller node FQDNs+IPs + cluster VIP FQDN+IP (VM Mgmt subnet, A+PTR) → `prerequisites.md` | Prereq    |
 
