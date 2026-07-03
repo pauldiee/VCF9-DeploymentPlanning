@@ -1,14 +1,13 @@
-Network (traffic type),VLAN ID,Subnet (CIDR),Gateway,MTU,DHCP (Y/N),AZ,Notes
-ESX Management,,,,1500,N,single,Host vmk0 management
-VM Management,,,,1500,N,single,SDDC Manager / VCF Installer / management appliances
-vMotion,,,,9000,,single,
-vSAN,,,,9000,,single,
-Host Overlay (TEP),,,,9000,,single,GENEVE; MTU >= 1600 (usually 9000); DHCP or a static IP pool
-Edge Overlay (TEP),,,,9000,,single,
-Uplink 01 (Edge to ToR-A),,,,9000,,single,
-Uplink 02 (Edge to ToR-B),,,,9000,,single,
-ESX Management AZ2,,,,1500,N,AZ2,Stretched only
-vMotion AZ2,,,,9000,,AZ2,Stretched only
-vSAN AZ2,,,,9000,,AZ2,Stretched only
-Host Overlay AZ2,,,,9000,,AZ2,Stretched only
-Witness (3rd site),,,,,N,witness,Witness traffic rides ESX Management (WTS); routed to the witness site
+Network (traffic type),What it is,Example (VLAN / subnet / gateway / MTU),VLAN ID,Subnet (CIDR),Gateway,MTU,DHCP (Y/N),Provided by
+ESX Management,Host management (vmk0),1611 / 10.11.10.0/24 / 10.11.10.1 / 1500,,,,,N,Network
+VM Management,SDDC Manager / Installer / mgmt appliances,1612 / 10.11.11.0/24 / 10.11.11.1 / 1500,,,,,N,Network
+vMotion,Live-migration traffic,1613 / 10.11.12.0/24 / 10.11.12.1 / 9000,,,,,,Network
+vSAN,vSAN storage traffic,1614 / 10.11.13.0/24 / 10.11.13.1 / 9000,,,,,,Network
+Host Overlay (TEP),Host GENEVE tunnel endpoints,1615 / 10.11.14.0/24 / 10.11.14.1 / 9000,,,,,,Network
+Edge Overlay (TEP),Edge GENEVE tunnel endpoints,1616 / 10.11.15.0/24 / 10.11.15.1 / 9000,,,,,,Network
+Uplink 01 (Edge to ToR-A),North-south uplink 1,1317 / 10.13.17.0/24 / 10.13.17.1 / 9000,,,,,,Network
+Uplink 02 (Edge to ToR-B),North-south uplink 2,1318 / 10.13.18.0/24 / 10.13.18.1 / 9000,,,,,,Network
+ESX Management AZ2,AZ2 host management (stretched only),1621 / 10.12.10.0/24 / 10.12.10.1 / 1500,,,,,N,Network
+vMotion AZ2,AZ2 live-migration (stretched only),1623 / 10.12.12.0/24 / 10.12.12.1 / 9000,,,,,,Network
+vSAN AZ2,AZ2 vSAN storage (stretched only),1624 / 10.12.13.0/24 / 10.12.13.1 / 9000,,,,,,Network
+Host Overlay AZ2,AZ2 host TEP (stretched only),1625 / 10.12.14.0/24 / 10.12.14.1 / 9000,,,,,,Network

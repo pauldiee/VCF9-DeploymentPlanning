@@ -1,22 +1,21 @@
-Component,Role,FQDN,IP,PTR (reverse) record,Network / VLAN,Intake ID,Notes
-ESXi host 1,ESXi,,,,ESX Management,,
-ESXi host 2,ESXi,,,,ESX Management,,
-ESXi host 3,ESXi,,,,ESX Management,,
-ESXi host 4,ESXi,,,,ESX Management,,
-vCenter,vCenter Server,,,,VM Management,E6,
-SDDC Manager,SDDC Manager,,,,VM Management,E7,VCF Installer is deployed with this IP + FQDN
-NSX Manager VIP,NSX cluster VIP,,,,VM Management,E8,
-NSX Manager node 1,NSX node,,,,VM Management,E8,
-NSX Manager node 2,NSX node,,,,VM Management,E8,
-NSX Manager node 3,NSX node,,,,VM Management,E8,
-NSX Edge node 1,NSX Edge,,,,Uplink / mgmt,E11,
-NSX Edge node 2,NSX Edge,,,,Uplink / mgmt,E11,
-VCF Operations node a,Operations analytics,,,,VM Management,E9,Deployed at bring-up
-VCF Operations node b,Operations analytics,,,,VM Management,E9,Deployed at bring-up
-VCF Operations node c,Operations analytics,,,,VM Management,E9,Deployed at bring-up
-VCF Operations cluster address,Floating IP or LB VIP,,,,VM Management,E9,Floating IP (no LB) or external-LB VIP
-Cloud Proxy,Operations collector,,,,VM Management,E14,Deployed after bring-up; stays on VM-Management
-License Server,VCF Management Services,,,,VM Management,E14,FQDN/IP OUTSIDE the VCF services-runtime range (IPv4 only)
-VCF Automation appliance,Automation,,,,VM Management,E10,If deployed
-VCF services-runtime,Automation runtime,,,,VM Management,E10,Uses a cluster CIDR that must not overlap any routed subnet
-,,,,,,,Duplicate the block above per workload domain; add AZ2 hosts if the cluster is stretched
+Component,What it is,Example (FQDN -> IP),FQDN (fill in),IP (fill in),Network / VLAN,Provided by,Intake ID
+ESXi host 1,Management ESXi host,sfo-m01-esx01.sfo.example.io -> 10.11.10.101,,,ESX Management,Network,
+ESXi host 2,Management ESXi host,sfo-m01-esx02.sfo.example.io -> 10.11.10.102,,,ESX Management,Network,
+ESXi host 3,Management ESXi host,sfo-m01-esx03.sfo.example.io -> 10.11.10.103,,,ESX Management,Network,
+ESXi host 4,Management ESXi host,sfo-m01-esx04.sfo.example.io -> 10.11.10.104,,,ESX Management,Network,
+vCenter,Management vCenter Server,sfo-m01-vc01.sfo.example.io -> 10.11.11.11,,,VM Management,Architect,E6
+SDDC Manager,SDDC Manager (VCF Installer uses this IP + FQDN),sfo-m01-sddcm01.sfo.example.io -> 10.11.11.12,,,VM Management,Architect,E7
+NSX Manager VIP,NSX Manager cluster VIP,sfo-m01-nsx01.sfo.example.io -> 10.11.11.13,,,VM Management,Architect,E8
+NSX Manager node 1,NSX Manager node,sfo-m01-nsx01a.sfo.example.io -> 10.11.11.14,,,VM Management,Architect,E8
+NSX Manager node 2,NSX Manager node,sfo-m01-nsx01b.sfo.example.io -> 10.11.11.15,,,VM Management,Architect,E8
+NSX Manager node 3,NSX Manager node,sfo-m01-nsx01c.sfo.example.io -> 10.11.11.16,,,VM Management,Architect,E8
+NSX Edge node 1,NSX Edge appliance,sfo-m01-en01.sfo.example.io -> 10.11.11.17,,,Uplink / mgmt,Architect,E11
+NSX Edge node 2,NSX Edge appliance,sfo-m01-en02.sfo.example.io -> 10.11.11.18,,,Uplink / mgmt,Architect,E11
+VCF Operations node a,Operations analytics (bring-up),sfo-m01-ops01a.sfo.example.io -> 10.11.11.21,,,VM Management,Architect,E9
+VCF Operations node b,Operations analytics (bring-up),sfo-m01-ops01b.sfo.example.io -> 10.11.11.22,,,VM Management,Architect,E9
+VCF Operations node c,Operations analytics (bring-up),sfo-m01-ops01c.sfo.example.io -> 10.11.11.23,,,VM Management,Architect,E9
+VCF Operations cluster address,Floating IP or external-LB VIP,sfo-m01-ops01.sfo.example.io -> 10.11.11.20,,,VM Management,Architect,E9
+Cloud Proxy,Operations collector (after bring-up),sfo-m01-cp01.sfo.example.io -> 10.11.11.24,,,VM Management,Platform,E14
+License Server,VCF Management Services (after bring-up),sfo-m01-lic01.sfo.example.io -> 10.11.11.25,,,VM Management,Platform,E14
+VCF Automation appliance,Automation (if deployed),sfo-m01-vra01.sfo.example.io -> 10.11.11.26,,,VM Management,Platform,E10
+VCF services-runtime,Automation runtime nodes,sfo-m01-vra01svc.sfo.example.io -> 10.11.11.27,,,VM Management,Platform,E10

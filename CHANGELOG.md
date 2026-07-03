@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.8.8 — 2026-07-03
+- Rolled the customer-readable format out to the remaining planning templates and
+  fixed the empty value columns:
+  - **`ip-dns-plan.csv`** — added *What it is*, an *Example (FQDN -> IP)*, explicit
+    *FQDN / IP (fill in)* columns, and *Provided by*.
+  - **`vlan-subnet-plan.csv`** — added *What it is*, a combined *Example
+    (VLAN / subnet / gateway / MTU)*, and *Provided by*.
+  - **`ntp-ad-ca-plan.csv`** — moved to the *Setting / What it is / Example /
+    Your value / Provided by / Notes* layout.
+  Every header cell is now filled and each sheet has an explicit fill-in column
+  (the blank value cells previously had no header). (#65)
+
 ## v0.8.7 — 2026-07-03
 - Reworked **`bgp-peering-plan.csv`** to be customer-readable (was a bare technical
   matrix). New columns — *Setting · What it is (plain language) · Example · Your

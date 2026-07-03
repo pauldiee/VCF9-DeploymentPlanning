@@ -10,7 +10,7 @@ Blank CSV sheets to capture the prereq plan, then transfer into the P&P workbook
 or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
 **Intake ID** column maps back to [`workbook-cell-mapping.md`](workbook-cell-mapping.md).
 
-- [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP / reverse record
+- [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
 - [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU per traffic type
 - [NTP / AD / CA](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
 - [BGP peering](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)

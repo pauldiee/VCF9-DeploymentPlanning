@@ -1,13 +1,13 @@
-Category,Field,Value,Intake ID,Notes
-NTP,NTP server 1,,,IP or FQDN; must resolve and be reachable from every appliance
-NTP,NTP server 2,,,Second source recommended
-AD,AD domain (FQDN),,,Forest root / parent domain reachable from the SDDC
-AD,Domain bind / join account,,,Service account (provide the DN)
-AD,Computer / service OU,,,Where SDDC computer/service objects live
-AD,SDDC admin group,,,Mapped to the admin role
-AD,SDDC operator group,,,Mapped to the operator role
-AD,SDDC viewer group,,,Mapped to the viewer role
-CA,CA type,,,Microsoft CA / OpenSSL / other
-CA,CA server or URL,,,Reachable from the management components
-CA,Certificate template,,,Validated with a test issuance
-CA,Signing approach,,,Full CA-signed replacement is a Day-2 step (whole fleet in one pass)
+Category,Setting,What it is,Example,Your value,Provided by,Notes
+NTP,NTP server 1,Time source every appliance syncs to,ntp1.example.io,,Customer / Network,Must resolve and be reachable
+NTP,NTP server 2,Second time source (recommended),ntp2.example.io,,Customer / Network,
+AD,AD domain (FQDN),The Active Directory domain the SDDC integrates with,example.io,,Customer / AD,Forest root reachable from the SDDC
+AD,Domain bind / join account,Service account used to join / bind to AD,svc-vcf@example.io,,Customer / AD,Provide the account DN
+AD,Computer / service OU,Where SDDC computer/service objects are created,"OU=VCF,DC=example,DC=io",,Customer / AD,
+AD,SDDC admin group,AD group mapped to the admin role,gg-vcf-admins,,Customer / AD,
+AD,SDDC operator group,AD group mapped to the operator role,gg-vcf-operators,,Customer / AD,
+AD,SDDC viewer group,AD group mapped to the viewer role,gg-vcf-viewers,,Customer / AD,
+CA,CA type,Which certificate authority signs the certs,Microsoft Enterprise CA,,Customer / PKI,Microsoft CA / OpenSSL / other
+CA,CA server or URL,Where the CA is reached,ca01.example.io,,Customer / PKI,Reachable from the management components
+CA,Certificate template,The template used to issue SDDC certs,VMware,,Customer / PKI,Validate with a test issuance
+CA,Signing approach,When/how CA-signed certs are applied,CA-signed (whole fleet Day-2),,Architect,Full replacement is a Day-2 step
