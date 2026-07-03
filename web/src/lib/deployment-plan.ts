@@ -237,7 +237,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '4.3',
         title: 'Core services ready',
         tasks: ['AD, DNS, NTP, CA, depot reachable (open the firewall flows — see 07-firewall-ports.md).'],
-        acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.',
+        acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.',
       },
       {
         id: '4.4',
@@ -400,7 +400,7 @@ function day2Epic(sel: Selection): Epic {
     }
     if (a.aviLb) {
       tasks.push(
-        `Load-balance VCF Automation with an Avi Load Balancer deployed in the management domain (lifecycle-managed via VCF Operations); deploy the Avi controller cluster first. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`
+        `Load-balance VCF Automation with an Avi Load Balancer deployed in the management domain (lifecycle-managed via VCF Operations); deploy the Avi controller cluster first — its IPs/FQDNs/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`
       );
     }
     automationStory = {

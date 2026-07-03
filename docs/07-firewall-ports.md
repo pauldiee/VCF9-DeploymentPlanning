@@ -69,6 +69,8 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 | Collected endpoints / Cloud Proxy | VCF Operations | 443, 4505, 4506 | TCP | Operations collection; Telegraf app monitoring (9.1) |
 | Management components | vCenter (syslog) | **1514** | TCP | Syslog — **9.1 change: use 1514 (TLS); plain 514 is blocked** |
 | Fleet appliances | VCF Operations / License Server | 443 | TCP | Fleet management, licensing |
+| Jump / bastion host, VCF Operations | Avi Controller VIP + nodes | 443 | TCP | Avi controller UI / API (only if Avi LB in scope) |
+| Avi Service Engines | Avi Controllers | 8443 | TCP | SE ↔ controller secure channel (full Avi matrix: see the tools above) |
 
 > **9.1 gotchas worth flagging to the firewall team:**
 > - **Syslog moved 514 → 1514.** vCenter 9.1 blocks the unencrypted 514; syslog

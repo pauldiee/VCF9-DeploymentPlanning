@@ -133,6 +133,7 @@ Legend:
 |E13| Any VI Workload Domains at GA? → capture each in **section H** below | `[WLD]`   |
 |E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (each needs A+PTR+IP); several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
 |E15| VCF Automation Day-2 deployment: **method** (SDDC Manager API vs. via VCF Operations) + **network placement** (Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) → `05-day2-deployments.md` | `[DAYN]`  |
+|E16| **Avi Load Balancer** (only if Supervisor / Automation-HA / tenant LB): controller size (Small / Large / XLarge), 3 controller node FQDNs+IPs + cluster VIP FQDN+IP (VM Mgmt subnet, A+PTR) → `prerequisites.md` | Prereq    |
 
 ---
 
@@ -155,6 +156,7 @@ Capture in a password manager — not in this file. The intake just confirms
 |F8 | NSX Edge `admin` / `audit` / `root`    |       | `[CFG-M]` |
 |F9 | SSO bind account                       |       | `[CFG-M]` |
 |F10| Backup encryption passphrase           |       | `[CFG-M]` |
+|F11| Avi controller `admin` / VCF Ops admin (break-glass) — only if Avi LB in scope |       | Prereq    |
 
 Password policy: minimum 15 chars, mix of upper/lower/digit/special; no spaces.
 VMware appliances reject `<` `>` `&` `'` `"` in some fields — avoid them.

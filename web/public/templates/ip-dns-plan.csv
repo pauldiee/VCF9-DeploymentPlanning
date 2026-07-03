@@ -19,3 +19,7 @@ Cloud Proxy,Operations collector (after bring-up),sfo-m01-cp01.sfo.example.io ->
 License Server,VCF Management Services (after bring-up),sfo-m01-lic01.sfo.example.io -> 10.11.11.25,,,VM Management,Platform,E14
 VCF Automation appliance,Automation (if deployed),sfo-m01-vra01.sfo.example.io -> 10.11.11.26,,,VM Management,Platform,E10
 VCF services-runtime,Automation runtime nodes,sfo-m01-vra01svc.sfo.example.io -> 10.11.11.27,,,VM Management,Platform,E10
+Avi Controller VIP,Avi LB cluster VIP (only if Avi in scope),sfo-m01-avi01.sfo.example.io -> 10.11.11.30,,,VM Management,Platform,E16
+Avi Controller node 1,Avi controller (only if Avi in scope),sfo-m01-avi01a.sfo.example.io -> 10.11.11.31,,,VM Management,Platform,E16
+Avi Controller node 2,Avi controller (only if Avi in scope),sfo-m01-avi01b.sfo.example.io -> 10.11.11.32,,,VM Management,Platform,E16
+Avi Controller node 3,Avi controller (only if Avi in scope),sfo-m01-avi01c.sfo.example.io -> 10.11.11.33,,,VM Management,Platform,E16

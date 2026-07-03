@@ -70,6 +70,32 @@ Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 | **External load balancer** (only if fronting VCF Operations with a VIP) | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and Operations uses a floating IP. See `05-day2-deployments.md` B.1 |
 | **Stretched networks** (multi-AZ)   | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. See `03-multi-az-prep.md` |
 
+## Avi Load Balancer (only if in scope)
+
+Needed when any of these is planned: **vSphere Supervisor** on a workload
+domain (the controller cluster must exist **before activation**), a **VCF
+Automation HA cluster** (VIP), or tenant/workload load balancing. Deployed
+**Day-2 from VCF Operations** into the management domain — vCenter and NSX
+must already be configured. Prepare up front:
+
+- **4 IPs + FQDNs on the VM Management network**: 3 controller nodes + the
+  **cluster VIP**. The VIP FQDN must be **registered in DNS and resolve to the
+  cluster VIP** (A + PTR for all four, like every other appliance).
+- **Controller size**: Small / Large / XLarge (the deploy wizard's tiers). Size
+  it in `04-sizing.md` — note the workbook's Avi disk figures diverge from the
+  NSX ALB controller ladder.
+- **Two strong passwords** (password manager, owners in intake `F11`): the
+  controller **admin** and the **VCF Ops admin** (break-glass) accounts.
+- Firewall: admin access to the controller UI/API (443) and the Service
+  Engine ↔ controller secure channel — see [`07-firewall-ports.md`](07-firewall-ports.md) §E.
+
+> Not the same thing as the **external load balancer for VCF Operations**
+> (see the Network table above and `05-day2-deployments.md` B.1) — that one is
+> never served by VCF. TechDocs:
+> [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
+> The P&P workbook has **no Avi input fields** — only sizing rows — so capture
+> these values in the Step 1 plan / intake instead.
+
 ## Active Directory
 
 - Supported OS: Windows Server 2019 or 2022.

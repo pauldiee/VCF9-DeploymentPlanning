@@ -96,7 +96,8 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | NSX Edge nodes (if deployed)    | 2          |             | Mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below    |
 | VCF Automation                  | 5          | `/29`       | Active nodes + buffer for node redeploy / rolling upgrade; allocate a contiguous `/29` (5 IPs) |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended headroom) |
-| **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room                                  |
+| Avi Controller cluster (optional)| 4         |             | 3 controller nodes + cluster VIP — only if Avi LB is in scope (Supervisor / Automation HA / tenant LB); see `prerequisites.md` |
+| **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room (+4 if the Avi LB is in scope)   |
 
 > **Separate internal network — keep off the VM Mgmt subnet.** The VCF services
 > runtime also uses an *internal* container CIDR, `198.18.0.0/15` by default
@@ -160,6 +161,8 @@ same shape.
 | VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
 | NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
 | NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
+| Avi Controller VIP (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet   |
+| Avi Controller node 1–3 (optional) | `sfo-m01-avi01{a,b,c}.sfo.example.io` | VM Mgmt subnet |
 
 ### DNS settings checklist
 

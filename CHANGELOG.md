@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.2 — 2026-07-03
+- **Avi Load Balancer prerequisite layer, end-to-end** (#85). The plan
+  required the Avi controller cluster (Supervisor activation, Automation HA)
+  without ever capturing what Avi needs. Now: `prerequisites.md` gains an
+  **Avi Load Balancer** section (when it's needed, 3 controller nodes +
+  cluster VIP on VM Management with A+PTR, size tiers Small/Large/XLarge, the
+  two break-glass passwords, TechDocs deploy link — and the note that the
+  workbook has **no Avi input fields**, sizing rows only); `01` adds the
+  4-IP carve-out row + DNS records; intake gains **E16** (size, nodes, VIP)
+  and **F11** (password owners) with explicit no-workbook-field mapping rows;
+  `07` adds the curated flows (controller UI/API 443, SE↔controller 8443);
+  the IP/DNS CSV template gains the four optional Avi rows; and the
+  deployment plan's 4.3 acceptance + 8.2 Avi task (doc + export tool) point
+  at the new prereqs.
+
 ## v1.1.1 — 2026-07-03
 - **Versioning rule clarified + changelog renumbered** (#84). The max-10 cap
   (`.0`–`.9`) applies to **every** version component, not just the patch:
