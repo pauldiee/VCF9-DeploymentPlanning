@@ -46,7 +46,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (private)
 | `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing & deployment-plan tools |
 | `tools/`                         | (future) helper scripts — see issue #1 for the workbook writer|
 
-Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment-plan export tools) today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 patches per minor version.
+Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment-plan export tools) today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 values on every version component (`.0`–`.9`).
 
 ---
 
@@ -65,12 +65,12 @@ These go into every new script / doc that exposes author metadata.
 
 Before committing any doc change:
 
-1. **`CHANGELOG.md`** — new entry at the **TOP** (newest first, descending order). **Max 10 patches per minor**: patch numbers run `.0`–`.9`; after `.9`, roll the minor (e.g. `0.3.9` → `0.4.0`, never `0.3.10`).
+1. **`CHANGELOG.md`** — new entry at the **TOP** (newest first, descending order). **Max 10 values on EVERY version component** (`.0`–`.9`, never `.10`): after patch `.9` roll the minor (`0.3.9` → `0.4.0`, never `0.3.10`), and after minor `.9` roll the major (`0.9.9` → `1.0.0`, never `0.10.0`).
 2. **README.md** — if a file was added/moved/removed, the contents table is in sync
 3. **`docs/workbook-cell-mapping.md`** — if an intake question was renumbered or added in `02-customer-intake.md`, the mapping is updated in the same commit. Mapping uses sheet name + field label, **never** P-coordinates.
 4. **Sample / example values** — confirm no real customer data leaked in (use Rainpole-style placeholders only: `sfo.example.io`, `rainpole.io`, `10.11.x.x`)
 
-If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 patches per minor).
+If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 values on every version component).
 
 ---
 

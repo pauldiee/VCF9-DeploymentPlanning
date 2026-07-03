@@ -1,10 +1,17 @@
 # Changelog
 
-## v0.11.0 — 2026-07-03
+## v1.1.1 — 2026-07-03
+- **Versioning rule clarified + changelog renumbered** (#84). The max-10 cap
+  (`.0`–`.9`) applies to **every** version component, not just the patch:
+  after minor `.9` the **major** rolls (`0.9.9` → `1.0.0`, never `0.10.0`).
+  Renumbered accordingly: `0.10.0`–`0.10.9` → **`1.0.0`–`1.0.9`**, `0.11.0` →
+  **`1.1.0`**. `CLAUDE.md` rule wording updated. (Precedent: #28.)
+
+## v1.1.0 — 2026-07-03
 - **Full repo sweep — fixes from the three-reviewer audit** (#79–#83; minor
-  rolled because 0.10.x reached `.9`):
-  - **Changelog repair (#80):** reinserted the `v0.10.3` heading that the
-    v0.10.4 edit had consumed (the Stage-4 bullets were merged into v0.10.4).
+  rolled because 1.0.x reached `.9`):
+  - **Changelog repair (#80):** reinserted the `v1.0.3` heading that the
+    v1.0.4 edit had consumed (the Stage-4 bullets were merged into v1.0.4).
   - **Docs corrections (#79):** `06` — dangling "E8 8.5" → **8.4**, and the
     stretched-Edge note now points at `03` §D (E7 never covered it); `05` —
     ambiguous "(E5)" now says *deployment-plan epic E5*, the §B VCF Operations
@@ -35,7 +42,7 @@
     top-level enum fields (crafted imports/share hashes can't produce NaN
     totals); GitLab CI aligned to **Node 22** to match GitHub Actions.
 
-## v0.10.9 — 2026-07-03
+## v1.0.9 — 2026-07-03
 - **Export tool: optional Day-2 fleet components are individually selectable**
   (#78). Three new checkboxes under the Day-2 block — **Log Management**,
   **Operations for Networks**, **Identity Broker** (all on by default,
@@ -46,14 +53,14 @@
   drops the broker-based fleet SSO** from its tasks + acceptance. `docs/06`
   story 8.3 renamed *Optional fleet components* with a note on the behaviour.
 
-## v0.10.8 — 2026-07-03
+## v1.0.8 — 2026-07-03
 - **Export tool: workload domains are now truly optional** (#77). The remove
   button no longer locks at one WLD — deleting the last one yields a
   management-only scope (no E9 epic; label "management + Day-2 fleet"), with
   an empty-state hint in the list. Lede + hints updated to say zero WLDs is a
   valid scope.
 
-## v0.10.7 — 2026-07-03
+## v1.0.7 — 2026-07-03
 - **TechDocs references in the deployment plan** (#76). The export tool's
   generated stories (preview / Markdown / CSV) now carry authoritative
   Broadcom TechDocs links, mirrored in `docs/06-deployment-plan.md`: host prep
@@ -64,7 +71,7 @@
   (8.4), and the vSphere Supervisor platform (Supervisor story). All URLs
   liveness-verified; a full-scope export now carries 15 TechDocs links.
 
-## v0.10.6 — 2026-07-03
+## v1.0.6 — 2026-07-03
 - **Export tool: cross-choice constraints enforced** (#72). Certain choices now
   exclude others instead of exporting contradictory plans:
   - **NFS / VMFS-on-FC principal storage excludes stretching** (VCF stretching
@@ -80,7 +87,7 @@
     Distributed fleet doesn't have) — deploy one first or pick a VLAN-backed
     placement. `docs/06-deployment-plan.md` scope table + 8.2 updated to match.
 
-## v0.10.5 — 2026-07-03
+## v1.0.5 — 2026-07-03
 - **Repo-wide Broadcom TechDocs enrichment pass** (#75) — every major claim now
   carries an authoritative link, all URLs liveness-verified:
   - `prerequisites.md`: 9.1 Planning & Preparation companion in the intro; ESX
@@ -101,7 +108,7 @@
   - `07-firewall-ports.md`: syslog 514→1514 now cites Broadcom KB 430675 + the
     vCenter required-ports page.
 
-## v0.10.4 — 2026-07-03
+## v1.0.4 — 2026-07-03
 - **Host Overlay TEP: static IP pool is now the recommended addressing** (DHCP
   scope stays documented as the supported alternative). Flipped the
   `prerequisites.md` "DHCP (optional but easiest)" section into *Host Overlay
@@ -117,7 +124,7 @@
   note, identity-provider configuration (per-IdP sub-pages + AD over LDAP), and
   certificate-management walk-throughs. (#74)
 
-## v0.10.3 — 2026-07-03
+## v1.0.3 — 2026-07-03
 - **Export tool: VCF Automation deployment model (Stage 4 — completes #72).** A
   **Deployment model** dropdown in the VCF Automation sub-block — **single-node**
   (no LB) or **HA cluster** (nodes behind a VIP). Choosing HA without the Avi LB
@@ -126,14 +133,14 @@
   Segment, HA + Avi LB)"). All four staged deployment choices (connectivity,
   Supervisor, storage, deployment model) are now in the tool. (#72)
 
-## v0.10.2 — 2026-07-03
+## v1.0.2 — 2026-07-03
 - **Export tool: principal storage choice (Stage 3).** A **Principal storage**
   dropdown (**vSAN ESA / vSAN OSA / NFS / VMFS-on-FC**) adapts the E4 hardware
   prereqs (4.1 — disk/HBA + NIC guidance) and the E5 bring-up (5.3 — "builds …
   and the vSAN/NFS/FC datastore"; acceptance names the datastore). Core epics
   read `sel.storage`. (#72)
 
-## v0.10.1 — 2026-07-03
+## v1.0.1 — 2026-07-03
 - **Export tool: vSphere Supervisor choice (Stage 2).** Each workload domain now
   has a **Supervisor** checkbox, plus a **control-plane size** (Small/Medium/Large).
   Enabling it appends an *Enable vSphere Supervisor* story to that WLD, with the
@@ -142,7 +149,7 @@
   activation**. WLD titles reflect it (e.g. "Workload domain: wld01 + Supervisor").
   Supervisor moved out of the connectivity story into its own generated one. (#72)
 
-## v0.10.0 — 2026-07-03
+## v1.0.0 — 2026-07-03
 - Added the **Deployment Plan Export** tool to the sidebar **Tools** section
   (previously only the Sizing calculator was listed there; the export tool was
   only reachable via the doc link). (#73)
