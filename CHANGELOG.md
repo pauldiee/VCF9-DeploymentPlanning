@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.10.7 — 2026-07-03
+- **TechDocs references in the deployment plan** (#76). The export tool's
+  generated stories (preview / Markdown / CSV) now carry authoritative
+  Broadcom TechDocs links, mirrored in `docs/06-deployment-plan.md`: host prep
+  (4.1, 5.1), the VCF Installer appliance (5.2) + deployment wizard (5.3),
+  Centralized **and** Distributed connectivity setup (6.1), file-based backups
+  (6.4), witness deployment (7.3, 9.4), fleet-networking design models +
+  custom-networking deployment (8.1), Configure a CA + Identity Provider
+  (8.4), and the vSphere Supervisor platform (Supervisor story). All URLs
+  liveness-verified; a full-scope export now carries 15 TechDocs links.
+
 ## v0.10.6 — 2026-07-03
 - **Export tool: cross-choice constraints enforced** (#72). Certain choices now
   exclude others instead of exporting contradictory plans:

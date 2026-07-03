@@ -135,6 +135,35 @@ export const AUTOMATION_MODELS: { value: AutomationModel; label: string }[] = [
 const AVI_LB_URL =
   'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html';
 
+// Authoritative Broadcom TechDocs pages referenced from the generated stories
+// (all liveness-verified — issue #76; keep in sync with docs/06-deployment-plan.md).
+const TECHDOCS = {
+  hostPrep:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html',
+  installer:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/deploy-the-vmware-cloud-foundation-installer-appliance.html',
+  bringupWizard:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html',
+  centralized:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html',
+  distributed:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/set-up-distributed-network-connectivity.html',
+  backups:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html',
+  fleetNetDesign:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html',
+  customNetworking:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html',
+  configureCa:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html',
+  identityProvider:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html',
+  witness:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsan-deployment-administration-and-monitoring/vsan-planning-and-deployment/working-with-virtual-san-stretched-cluster/deploying-a-witness-appliance.html',
+  supervisor:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html',
+};
+
 // ---- Core epics (always) ---------------------------------------------------
 // Selection-driven: E6 story 6.1 adapts to the NSX connectivity model.
 
@@ -183,7 +212,7 @@ function coreEpics(sel: Selection): Epic[] {
       {
         id: '4.1',
         title: 'Hardware ready',
-        tasks: ['Hosts on the VCG, matched spec, BOM confirmed.', 'Confirm CPU/RAM/storage per host against the sizing output (E2).', `Storage — ${storage.label}: ${storage.prereq}.`],
+        tasks: [`Hosts on the VCG, matched spec, BOM confirmed. TechDocs: ${TECHDOCS.hostPrep}`, 'Confirm CPU/RAM/storage per host against the sizing output (E2).', `Storage — ${storage.label}: ${storage.prereq}.`],
         acceptance: 'All hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).',
       },
       {
@@ -218,7 +247,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.1',
         title: 'Install & configure the management hosts',
         tasks: [
-          `Image each host with the supported ESXi ISO (see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly); set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.`,
+          `Image each host with the supported ESXi ISO (see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly); set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM. TechDocs: ${TECHDOCS.hostPrep}`,
         ],
         acceptance: 'Every host reachable on the management network with the matched ESXi build; DNS + NTP correct.',
       },
@@ -226,7 +255,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.2',
         title: 'Stage the VCF Installer',
         tasks: [
-          'Deploy the Installer on a management-domain host using the IP + FQDN planned for SDDC Manager (it switches into SDDC Manager at bring-up, not a throwaway IP); verify it reaches the ESXi management network.',
+          `Deploy the Installer on a management-domain host using the IP + FQDN planned for SDDC Manager (it switches into SDDC Manager at bring-up, not a throwaway IP); verify it reaches the ESXi management network. TechDocs: ${TECHDOCS.installer}`,
           'On that host, put the Installer on a port group carrying the VM Management VLAN. A fresh ESXi host\'s default "VM Network" port group is untagged (VLAN 0), so if VM Management is a tagged VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the appliance has no management connectivity.',
         ],
         acceptance: 'VCF Installer deployed on the VM-Management VLAN, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.',
@@ -235,7 +264,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.3',
         title: 'Deploy the management domain',
         tasks: [
-          `Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, VCF Operations, and the ${storage.bringup}; submit the JSON.`,
+          `Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, VCF Operations, and the ${storage.bringup}; submit the JSON. TechDocs: ${TECHDOCS.bringupWizard}`,
           'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide its cluster address up front: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
         ],
         acceptance: `Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; ${storage.label} datastore online.`,
@@ -257,8 +286,8 @@ function coreEpics(sel: Selection): Epic[] {
     owner: 'Platform + Network + Security',
     stories: [
       distributed
-        ? { id: '6.1', title: 'NSX north-south (Distributed connectivity)', tasks: ['Configure Distributed connectivity: the Distributed Transit Gateway distributes routing to the hypervisors (no centralized Edge cluster). Deploy the Virtual Network Appliance (VNA) cluster for stateful services (NAT etc.) and the external network for the Distributed Transit Gateway.'], acceptance: 'Distributed Transit Gateway up; VNA cluster healthy; north-south (incl. stateful services) reachable.' }
-        : { id: '6.1', title: 'NSX north-south (Centralized connectivity)', tasks: ['Deploy the NSX Edge cluster + Tier-0 gateway; establish BGP peering to the ToRs; verify north-south routes.'], acceptance: 'Edge cluster + Tier-0 deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.' },
+        ? { id: '6.1', title: 'NSX north-south (Distributed connectivity)', tasks: [`Configure Distributed connectivity: the Distributed Transit Gateway distributes routing to the hypervisors (no centralized Edge cluster). Deploy the Virtual Network Appliance (VNA) cluster for stateful services (NAT etc.) and the external network for the Distributed Transit Gateway. TechDocs: ${TECHDOCS.distributed}`], acceptance: 'Distributed Transit Gateway up; VNA cluster healthy; north-south (incl. stateful services) reachable.' }
+        : { id: '6.1', title: 'NSX north-south (Centralized connectivity)', tasks: [`Deploy the NSX Edge cluster + Tier-0 gateway; establish BGP peering to the ToRs; verify north-south routes. TechDocs: ${TECHDOCS.centralized}`], acceptance: 'Edge cluster + Tier-0 deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.' },
       {
         id: '6.2',
         title: 'Certificates (optional / partial here)',
@@ -276,7 +305,7 @@ function coreEpics(sel: Selection): Epic[] {
       {
         id: '6.4',
         title: 'Backup & lifecycle',
-        tasks: ['Configure SFTP backups; connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).'],
+        tasks: [`Configure SFTP backups; connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do). TechDocs: ${TECHDOCS.backups}`],
         acceptance: 'A test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.4.)',
       },
     ],
@@ -311,7 +340,7 @@ const E7_MGMT_STRETCH: Epic = {
     {
       id: '7.3',
       title: 'Witness site (management)',
-      tasks: ['Deploy the vSAN witness appliance for the management cluster at the third site (its own — a vSAN witness serves only one stretched cluster); route it to both AZ ESX-management networks.'],
+      tasks: [`Deploy the vSAN witness appliance for the management cluster at the third site (its own — a vSAN witness serves only one stretched cluster); route it to both AZ ESX-management networks. TechDocs: ${TECHDOCS.witness}`],
       acceptance: 'Management witness appliance deployed at the third site and reachable from both AZ ESX-management networks.',
     },
     {
@@ -369,14 +398,14 @@ function day2Epic(sel: Selection): Epic {
     owner: 'Platform',
     ref: '05-day2-deployments.md',
     stories: [
-      { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared.'], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
+      { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
       automationStory,
       { id: '8.3', title: 'Log Management, Operations for Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed: Log Management, VCF Operations for Networks, and the Identity Broker.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
       {
         id: '8.4',
         title: 'Certificates, identity & licensing (full fleet)',
         tasks: [
-          'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations).',
+          `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations). TechDocs: configure a CA — ${TECHDOCS.configureCa} ; configure an identity provider — ${TECHDOCS.identityProvider}`,
         ],
         acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.',
       },
@@ -433,7 +462,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
         {
           id: '9.4',
           title: 'WLD witness',
-          tasks: ['Deploy a dedicated vSAN witness appliance for THIS WLD at the third site. A witness serves only ONE stretched cluster, so each stretched WLD needs its own, separate from the management witness (the shared-witness feature is 2-node-cluster only, not stretched). Route it to both AZ ESX-management networks.'],
+          tasks: [`Deploy a dedicated vSAN witness appliance for THIS WLD at the third site. A witness serves only ONE stretched cluster, so each stretched WLD needs its own, separate from the management witness (the shared-witness feature is 2-node-cluster only, not stretched). Route it to both AZ ESX-management networks. TechDocs: ${TECHDOCS.witness}`],
           acceptance: 'Dedicated WLD witness deployed at the third site and reachable from both AZ ESX-management networks.',
         },
         {
@@ -468,7 +497,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       title: 'Enable vSphere Supervisor',
       tasks: [
         `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and the Avi Load Balancer controller cluster is deployed — Supervisor activation requires the load balancer.`,
-        `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs.`,
+        `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
     });
