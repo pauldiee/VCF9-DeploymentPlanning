@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.4 — 2026-07-03
+- **Site version in the footer + always-present Feedback button** (#87). The
+  sticky footer now shows the current release version (read at build time
+  from this changelog's top entry — no second version constant to bump),
+  linking to the changelog on GitHub. Next to it an orange **Feedback**
+  button, visible on every page, opens a pre-filled GitHub issue form
+  (`.github/ISSUE_TEMPLATE/site-feedback.yml`, new `site feedback` label)
+  with the current page and site version filled in.
+- **CLAUDE.md: repo is public, not private** (#88). The header GitHub line
+  and the remotes table still described the repo as private; corrected both.
+
 ## v1.1.3 — 2026-07-03
 - **Supervisor does not require Avi — corrected** (#86, revising the #70-era
   wording; lab-verified). vSphere Supervisor needs **a load balancer** before

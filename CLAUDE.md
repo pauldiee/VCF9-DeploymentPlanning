@@ -19,7 +19,7 @@ Sister projects (**ITQ Consulting Services — internal / private, not public to
 - pauldiee/VCFHealthCheck — post-cutover health checks of live VCF 9 environments.
 - pauldiee/VCF9ReadinessAssessment — pre-cutover readiness scoring from RVTools / HST exports.
 
-GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (private)
+GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 
 ---
 
@@ -134,7 +134,7 @@ gh label create "requested-by: Full Name" --color "8250df" --description "Issue 
 
 | Remote   | URL                                                                            | Status                                        |
 | -------- | ------------------------------------------------------------------------------ | --------------------------------------------- |
-| `origin` | `https://github.com/pauldiee/VCF9-DeploymentPlanning`                          | Private, primary                              |
+| `origin` | `https://github.com/pauldiee/VCF9-DeploymentPlanning`                          | Public, primary                               |
 | `gitlab` | `https://gitlab.msp.itq.eu/ugt_con_sddc_nl/vcf9-deploymentplanning.git`        | Internal ITQ mirror (configured 2026-05-15)   |
 
 `main` tracks `origin/main`. To push commits to both remotes use the `pushall` alias (configured locally on this repo):

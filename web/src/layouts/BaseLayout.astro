@@ -2,6 +2,7 @@
 import '../styles/site.css';
 import Sidebar from '../components/Sidebar.astro';
 import { withBase } from '../lib/path';
+import { siteVersion } from '../lib/version';
 
 interface Props {
   title: string;
@@ -15,6 +16,11 @@ interface Props {
 const { title, description, active, fullWidth = false } = Astro.props;
 const asset = withBase;
 const year = 2026;
+const repoUrl = 'https://github.com/pauldiee/VCF9-DeploymentPlanning';
+const feedbackUrl =
+  `${repoUrl}/issues/new?template=site-feedback.yml` +
+  `&page=${encodeURIComponent(Astro.url.pathname)}` +
+  `&version=${encodeURIComponent(siteVersion)}`;
 ---
 
 <!doctype html>
@@ -78,6 +84,20 @@ const year = 2026;
           Generic templates only, Rainpole-style placeholders. &copy; {year} Paul van Dieen.
         </p>
         <a href="https://hollebollevsan.nl" target="_blank" rel="noopener">hollebollevsan.nl</a>
+        <div class="site-footer__meta">
+          <a
+            class="site-footer__version"
+            href={`${repoUrl}/blob/main/CHANGELOG.md`}
+            target="_blank"
+            rel="noopener"
+            title="What changed in this release"
+          >
+            {siteVersion}
+          </a>
+          <a class="site-footer__feedback" href={feedbackUrl} target="_blank" rel="noopener">
+            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i> Feedback
+          </a>
+        </div>
       </div>
     </footer>
   </body>

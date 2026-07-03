@@ -1,0 +1,36 @@
+name: Site feedback / bug report
+description: Report a problem or share an idea about the VCF 9.1 Deployment Planning site
+title: "[site] "
+labels: ["site feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time! A short note is plenty; the page and version below are pre-filled when you come in via the site's Feedback button.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, or what could be better?
+      description: A bug, a wrong or outdated statement, a confusing page, a missing topic, an idea. Anything goes.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead? (optional)
+    validations:
+      required: false
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Which page is this about? (pre-filled by the Feedback button)
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Site version
+      description: Shown in the site footer (pre-filled by the Feedback button)
+    validations:
+      required: false
