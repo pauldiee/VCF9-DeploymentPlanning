@@ -273,7 +273,7 @@ roadmap (intake **A15**), captured in a follow-up session.
 | E10    | VCF Automation Deployment              | VCF Automation FQDN; VCF services runtime FQDN; Node Prefix; IP addresses |
 | E9     | VCF Operations Deployment              | Primary / Replica / Data node FQDN + IP; Load Balancer FQDN + IP; appliance size |
 | E14    | Cloud Proxy / License Server / Identity Broker | FQDN + IP per appliance; Identity Broker provider + user/group provisioning |
-| —      | Deploy VCF Operations for Logs         | Log Management FQDN; node size; replica count; cluster VIP |
+| —      | Deploy Log management                  | Log Management FQDN; node size; replica count; cluster VIP (sheet section label; a legacy "Deploy VCF Operations for Logs" TechDocs-link cell also remains on the sheet) |
 | —      | Deploy VCF Operations for Networks     | Platform + Collector node VM name / IP; deployment size; dual-stack |
 | E16    | —                                      | — (the workbook has **no Avi input fields** — only sizing rows in *Management Domain Sizing*; capture the controller nodes / VIP in the Step 1 plan + `prerequisites.md`) |
 | F11    | —                                      | — (Avi controller `admin` / VCF Ops admin passwords — password manager only; no workbook field) |

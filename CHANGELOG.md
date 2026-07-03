@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.2 — 2026-07-04
+- **"VCF Operations for Logs" → "Log Management" everywhere** (#95 — 9.1
+  renamed the component). Renamed in the `01` carve-out + DNS rows, the `05`
+  component row (keeps one "formerly VCF Operations for Logs" parenthetical)
+  and don't-confuse note, intake `A17`, the Rainpole sample, the IP/DNS CSV
+  row, and two sizing-engine comments. The workbook mapping row now uses the
+  Day-N sheet's actual 9.1 section label **"Deploy Log management"** —
+  verified against the pinned v1.9.1.001 workbook, which still carries a
+  legacy "Deploy VCF Operations for Logs" TechDocs-link cell on that sheet
+  (noted in the mapping).
+
 ## v1.2.1 — 2026-07-04
 - **Public URLs absorbed as a prereq layer** (#94). The TechDocs *Public URLs
   Required for Online Functionalities* page (8 destinations, all outbound

@@ -42,7 +42,7 @@ Legend:
 |A14| Number of management hosts (4–16)                                                   | `[MGMT]`  | 4                           |
 |A15| Number of WLDs at GA, plus number of clusters in each                               | `[WLD]`   | 1 WLD, 1 cluster            |
 |A16| CEIP (telemetry) on?                                                                | `[MGMT]`  | On                          |
-|A17| Which fleet components at bring-up vs. **Day-2**? (VCF Automation, Ops for Logs/Networks) → `05-day2-deployments.md` | `[DAYN]`  | VCF Automation Day-2         |
+|A17| Which fleet components at bring-up vs. **Day-2**? (VCF Automation, Log Management, Ops for Networks) → `05-day2-deployments.md` | `[DAYN]`  | VCF Automation Day-2         |
 
 ---
 

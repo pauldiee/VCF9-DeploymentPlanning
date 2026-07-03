@@ -47,7 +47,7 @@ network placement from section C.
 | **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | One appliance                                                  | Plus identity provider (AD/LDAP), user/group provisioning     |
-| **VCF Operations for Logs**   | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them |
+| **Log Management** (formerly *VCF Operations for Logs* — renamed in 9.1) | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them |
 | **VCF Operations for Networks**| Platform node + Collector node                                | Optional dual-stack (IPv4 / IPv6)                             |
 
 ### B.1 — VCF Operations load balancer is **external, never served by VCF**
@@ -80,7 +80,7 @@ VCF Operations cluster address as a **floating IP** when no LB is used and as a
 external LB fronts the cluster. Decide it before you request certificates (the
 SAN list depends on it).
 
-> **Don't confuse this with VCF Operations *for Logs*.** The Logs cluster has an
+> **Don't confuse this with Log Management.** The Log Management cluster has an
 > **integrated** load balancer (its VIP is handled internally) — that one is not
 > external. Nor is it the platform's own **Avi/NSX ALB**, which VCF *can* deploy
 > and lifecycle-manage for **tenant / workload** load balancing — that is a

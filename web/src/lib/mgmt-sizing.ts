@@ -73,7 +73,7 @@ const vcfmsWorkerRam: SizeMap = { Small: 24, Medium: 48, Large: 48 };
 const vcfmsWorkerDisk: SizeMap = { Small: 100, Medium: 100, Large: 100 };
 // First-instance VCFMS worker data-disk uplift, per deployment size
 const vcfmsWorkerDataDiskFirst: SizeMap = { Small: 2600, Medium: 3000, Large: 3702 };
-// vRealize Log Insight (Log Management) per-appliance disk — 575 GB at every size
+// Log Management (formerly vRealize Log Insight) per-appliance disk — 575 GB at every size
 const VRLI_DISK = 575;
 
 const opsNetCpu: SizeMap = { Small: 4, Medium: 8, Large: 12 };
@@ -378,7 +378,7 @@ export function components(s: SizingState): Component[] {
     });
   }
 
-  // Log Management (vRealize Log Insight). First instance only (workbook O25:
+  // Log Management. First instance only (workbook O25:
   // "Log management can only be installed on the first instance"). Size must
   // match the deployment profile; replicas clamp to the per-size minimum..19.
   // Large uses 2 worker nodes per replica, else 1.
