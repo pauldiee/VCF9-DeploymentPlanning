@@ -202,7 +202,7 @@ On top of the records in `01-network-dns-plan.md`:
 ## Sign-off
 
 Once A–G are filled and signed by the owners above, feed the results back into
-the single-AZ artifacts:
+the single-AZ planning docs:
 
 - AZ2 + witness subnets → the VLAN/subnet table in `01-network-dns-plan.md`
 - Witness + AZ2 host FQDNs → the DNS section of `01-network-dns-plan.md`

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.0 — 2026-07-03
+- Generic-language sweep of the customer-facing docs: "single-AZ **artifacts**" →
+  "planning docs" (`05-day2-deployments.md`, `03-multi-az-prep.md`); "**This repo
+  ships** an interactive tool" → "This toolkit provides…" (`04-sizing.md`); dropped
+  "**the repo's**" from the Rainpole-placeholder note (`05-day2-deployments.md`).
+  (Remaining "internal" hits are legitimate technical terms and were left.)
+
 ## v0.8.9 — 2026-07-03
 - Made the templates' customer-data-hygiene note generic (dropped the
   OneDrive/repo specifics): a filled copy holds real, sensitive customer data —

@@ -6,7 +6,7 @@ the minimum number of hosts. In a customer meeting the question is usually the
 other way round — *"we're proposing four hosts with 64 cores and 1 TB each,
 does that fit?"* — and the sheet can't answer it.
 
-This repo ships an interactive tool that does both:
+This toolkit provides an interactive tool that does both:
 
 > **[▶ Open the Management Domain Sizing calculator](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/mgmt-sizing/)**
 

@@ -10,7 +10,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 "lock it first" idea as the Step 1 network plan. It maps to the workbook's
 *Deploy Fleet Management Day-N* sheet.
 
-> Placeholders below use the repo's Rainpole-style values (`sfo.example.io`,
+> Placeholders below use Rainpole-style values (`sfo.example.io`,
 > `10.11.x.x`). Replace consistently. This is a planning checklist, not a
 > step-by-step deployment guide — follow the Broadcom deployment guidance for
 > the actual procedure.
@@ -184,7 +184,7 @@ On top of `01-network-dns-plan.md`, for every Day-2 appliance you deploy:
 ## Sign-off
 
 Once A–F are filled and signed, feed the results back into the single-AZ
-artifacts and the workbook:
+planning docs and the workbook:
 
 - Day-2 FQDNs + IPs → the DNS section of `01-network-dns-plan.md`
 - Non-shared placement network → the VLAN/subnet table in `01-network-dns-plan.md`
