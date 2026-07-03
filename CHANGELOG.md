@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.1.9 — 2026-07-03
+- **Carve-out sweep — the remaining Day-N components** (#93, extending #90 to
+  everything on the TechDocs FQDN/IP list). The `01` VM Management carve-out
+  gains **VCF Operations for Logs** (integrated VIP + 6 services-runtime
+  worker IPs outside the `/28` block, +2 per extra replica), **real-time
+  metrics** (6 worker IPs), and an **Identity Broker** clarity row (FQDN only —
+  IP from the services-runtime block); the total row now flags ~20 optional
+  IPs. The `01` DNS minimum table adds the missing **required** records —
+  Ops analytics nodes 1–3, Cloud Proxy, License Server, Identity Broker —
+  plus the optional Ops-for-Logs VIP. Rainpole sample and the IP/DNS CSV
+  template extended to match; `05`'s Ops-for-Logs row now carries the same
+  worker-IP math.
+
 ## v1.1.8 — 2026-07-03
 - **Operations for Networks in the Rainpole sample too** (#90 follow-up). The
   sample's VM Management carve-out gains the optional Day-2 row (platform

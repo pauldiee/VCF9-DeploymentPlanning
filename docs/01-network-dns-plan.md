@@ -98,7 +98,10 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended headroom) |
 | Avi Controller cluster (optional)| 4         |             | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / Automation HA / tenant LB); see `prerequisites.md` |
 | VCF Operations for Networks (optional) | 2 (+2 if Large) |  | Platform node + collector node — lands here when the Day-2 placement is the **Shared Management Network** (a **Large** platform is a 3-node cluster: +2); see `05-day2-deployments.md` |
-| **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room (+4 if the Avi LB is in scope, +2–4 if Operations for Networks shares this subnet) |
+| VCF Operations for Logs (optional) | 7 (+2 per extra replica) | | Day-N Log Management: 1 integrated cluster VIP + 6 services-runtime **worker-node** IPs on this subnet, **outside** the `/28`–`/27` block (+2 per additional replica); see `05-day2-deployments.md` |
+| Real-time metrics (optional)    | 6          |             | Day-N VCF Operations real-time metrics adds 6 more runtime worker IPs (per the TechDocs FQDN/IP list) |
+| Identity Broker                 | —          |             | FQDN only — served from the services-runtime block above, no extra VM Mgmt IP |
+| **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room — the optional rows above add up to **~20 more** if everything lands on this subnet |
 
 > **Separate internal networks — keep off the VM Mgmt subnet.** The VCF services
 > runtime uses an *internal* container CIDR, `198.18.0.0/15` by default
@@ -162,6 +165,10 @@ same shape.
 | NSX Manager node 3 | `sfo-m01-nsx01c.sfo.example.io`      | VM Mgmt subnet       |
 | SDDC Manager       | `sfo-vcf01.sfo.example.io`           | VM Mgmt subnet       |
 | VCF Operations VIP | `sfo-vcfops01.sfo.example.io`        | VM Mgmt subnet       |
+| VCF Operations node 1–3 | `sfo-vcfops01{a,b,c}.sfo.example.io` | VM Mgmt subnet    |
+| Cloud Proxy        | `sfo-cp01.sfo.example.io`            | VM Mgmt subnet       |
+| License Server     | `sfo-lic01.sfo.example.io`           | VM Mgmt subnet       |
+| Identity Broker    | `sfo-idb01.sfo.example.io`           | services-runtime block |
 | VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
 | NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
 | NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
@@ -169,6 +176,7 @@ same shape.
 | Avi Controller node 1–3 (optional) | `sfo-m01-avi01{a,b,c}.sfo.example.io` | VM Mgmt subnet |
 | VCF Ops for Networks platform (optional) | `sfo-vcfopsnet01.sfo.example.io` | VM Mgmt subnet (or the Day-2 placement network) |
 | VCF Ops for Networks collector (optional) | `sfo-vcfopsnet01c.sfo.example.io` | VM Mgmt subnet (or the Day-2 placement network) |
+| VCF Ops for Logs VIP (optional) | `sfo-vcflogs01.sfo.example.io` | VM Mgmt subnet (integrated LB; the 6+ worker nodes need IPs, not FQDNs) |
 
 ### DNS settings checklist
 
