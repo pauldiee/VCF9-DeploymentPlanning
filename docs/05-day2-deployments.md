@@ -189,6 +189,6 @@ planning docs and the workbook:
 
 - Day-2 FQDNs + IPs → the DNS section of `01-network-dns-plan.md`
 - Non-shared placement network → the VLAN/subnet table in `01-network-dns-plan.md`
-- Decisions + method → intake `A17` / `E15` / `B21` in `02-customer-intake.md`
+- Decisions + method → intake `A17` / `E15` / `B21` in `02-intake.md`
 - All values → the *Deploy Fleet Management Day-N* sheet (see
   `workbook-cell-mapping.md`)

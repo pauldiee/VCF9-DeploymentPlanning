@@ -6,11 +6,11 @@
 
 ## Project overview
 
-Helper material for guiding customers through the **VMware Cloud Foundation 9.1 Planning and Preparation Workbook** (`vcf-9.1-planning-and-preparation-workbook.xlsx`, Broadcom). The workbook has ~9 deeply-technical visible sheets and hundreds of fields; handing it to customers cold tends to produce gaps and weeks of back-and-forth.
+A public field guide to the **VMware Cloud Foundation 9.1 Planning and Preparation Workbook** (`vcf-9.1-planning-and-preparation-workbook.xlsx`, Broadcom). The workbook has ~9 deeply-technical visible sheets and hundreds of fields; opened cold it tends to produce gaps and weeks of back-and-forth. All public-facing prose (docs, samples, site) is written as generic guidance addressed directly to the reader — no consultant-for-customer framing (#89); the consulting-engagement conventions below are repo-internal only.
 
 This repo flips the order:
 1. **Lock the network / DNS / NTP / AD plan first** (`docs/01-network-dns-plan.md`) — one page, one meeting. 80% of workbook errors trace back to this layer.
-2. **Run a role-based intake** (`docs/02-customer-intake.md`) — questions grouped by who owns the answer (Architect, Network, AD/DNS/NTP, PKI, Platform, Security, Depot).
+2. **Run a role-based intake** (`docs/02-intake.md`) — questions grouped by who owns the answer (Architect, Network, AD/DNS/NTP, PKI, Platform, Security, Depot).
 3. **Transfer answers into the official workbook last** via `docs/workbook-cell-mapping.md` (mapping uses sheet name + field label, **not** P-coordinates — Broadcom shifts rows between revisions).
 
 Generic / reusable — no customer names pre-filled. Real engagements live outside the repo (see "Customer data hygiene" below).
@@ -31,9 +31,9 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `CHANGELOG.md`                   | Per-release notes; **newest entry at TOP**                    |
 | `CLAUDE.md`                      | This file                                                     |
 | `.gitignore`                     | Excludes customer artifacts, the Broadcom workbook, dumps     |
-| `docs/prerequisites.md`          | Customer-side prereq gate (HW, network, AD, DNS, NTP, CA, …)  |
+| `docs/prerequisites.md`          | Environment prereq gate (HW, network, AD, DNS, NTP, CA, …)    |
 | `docs/01-network-dns-plan.md`    | Step 1 — one-page network / DNS / NTP / AD / BGP / CA plan    |
-| `docs/02-customer-intake.md`     | Step 2 — role-based intake questionnaire                      |
+| `docs/02-intake.md`              | Step 2 — role-based intake questionnaire                      |
 | `docs/03-multi-az-prep.md`       | Multi-AZ (stretched) extra prep — witness, latency, capacity |
 | `docs/04-sizing.md`              | Step 3 — mgmt-domain sizing; links the interactive sizing tool|
 | `docs/05-day2-deployments.md`    | Day-N fleet added after bring-up (VCF Automation, Log Management, network placement) |
@@ -67,7 +67,7 @@ Before committing any doc change:
 
 1. **`CHANGELOG.md`** — new entry at the **TOP** (newest first, descending order). **Max 10 values on EVERY version component** (`.0`–`.9`, never `.10`): after patch `.9` roll the minor (`0.3.9` → `0.4.0`, never `0.3.10`), and after minor `.9` roll the major (`0.9.9` → `1.0.0`, never `0.10.0`).
 2. **README.md** — if a file was added/moved/removed, the contents table is in sync
-3. **`docs/workbook-cell-mapping.md`** — if an intake question was renumbered or added in `02-customer-intake.md`, the mapping is updated in the same commit. Mapping uses sheet name + field label, **never** P-coordinates.
+3. **`docs/workbook-cell-mapping.md`** — if an intake question was renumbered or added in `02-intake.md`, the mapping is updated in the same commit. Mapping uses sheet name + field label, **never** P-coordinates.
 4. **Sample / example values** — confirm no real customer data leaked in (use Rainpole-style placeholders only: `sfo.example.io`, `rainpole.io`, `10.11.x.x`)
 
 If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 values on every version component).

@@ -4,9 +4,9 @@ A **filled** version of [`01-network-dns-plan.md`](../docs/01-network-dns-plan.m
 single-AZ management domain, using the classic **Rainpole** reference values
 (`sfo` / `rainpole.io`, `10.11.x.x`) that ship in the Broadcom workbook. Use it
 to see what "done" looks like before you fill the blank template for a real
-customer.
+deployment.
 
-> Illustrative only. No real customer data. The blank templates in `docs/` use
+> Illustrative only. Example values, no real data. The blank templates in `docs/` use
 > `example.io`; this worked example uses `rainpole.io` to match the workbook.
 > Passwords are never captured here (they live in a password manager).
 
@@ -59,7 +59,7 @@ TEP `10.11.19.2–.5`.
 | Item                     | Value                          |
 | ------------------------ | ------------------------------ |
 | Edge cluster / T0        | `sfo-m01-ec01` / `sfo-m01-ec01-t0-gw01` |
-| Customer AS (NSX Edge)   | `65101`                        |
+| NSX Edge AS (your side)  | `65101`                        |
 | ToR-A / ToR-B AS         | `65111` (both)                 |
 | Uplink-01 (VLAN 1117)    | edge `10.11.17.2` / `.3`, peer `10.11.17.10` |
 | Uplink-02 (VLAN 1118)    | edge `10.11.18.2` / `.3`, peer `10.11.18.10` |
@@ -119,5 +119,5 @@ Individual sources kept on different networks / fault domains.
 ---
 
 Ready to build the real thing? Copy [`01-network-dns-plan.md`](../docs/01-network-dns-plan.md)
-and replace every Rainpole value with the customer's. Then run the role-based
-[`02-customer-intake.md`](../docs/02-customer-intake.md).
+and replace every Rainpole value with your own. Then run the role-based
+[`02-intake.md`](../docs/02-intake.md).

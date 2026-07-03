@@ -2,7 +2,7 @@
 
 Run this **only if intake `A13` = Yes** (Multiple Availability Zones /
 stretched). Everything here is **additive** to the single-AZ flow — you still
-do `prerequisites.md` → `01-network-dns-plan.md` → `02-customer-intake.md`.
+do `prerequisites.md` → `01-network-dns-plan.md` → `02-intake.md`.
 This page captures what a stretched (multi-AZ) management domain adds on top.
 
 A stretched cluster spans two data sites (AZ1, AZ2) plus a **third witness
@@ -208,7 +208,7 @@ the single-AZ planning docs:
 
 - AZ2 + witness subnets → the VLAN/subnet table in `01-network-dns-plan.md`
 - Witness + AZ2 host FQDNs → the DNS section of `01-network-dns-plan.md`
-- Stretched answer + host counts → intake `A13`/`A14` in `02-customer-intake.md`
+- Stretched answer + host counts → intake `A13`/`A14` in `02-intake.md`
 
 Then continue with the normal workbook fill. A stretched build that clears this
 page will not surprise you at bring-up.

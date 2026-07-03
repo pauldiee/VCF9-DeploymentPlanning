@@ -151,7 +151,7 @@ before wiring a generator.
 **Not mapped (out of scope for a core WLD):** optional-solution prefixes —
 `input_srm_*` / `input_wld_vrms_*` (Site Recovery / DR), `input_ccm_*`
 (Cross-Cloud Mobility), `input_cbr_*` (Cloud-Based Ransomware), `input_k8s_*` /
-`input_vvs_*` — populate only if the customer uses those solutions.
+`input_vvs_*` — populate only if those solutions are in use.
 
 ## Sheet: VCF & VVF Planning
 
@@ -262,7 +262,7 @@ Repeat per additional cluster. New VLANs/subnets per cluster come from
 
 Fleet components deployed after bring-up (Day-2 / Day-N). Planned in
 `05-day2-deployments.md`; the table below maps its decisions to this sheet. Also
-covers extra Ops / Automation nodes and federation driven by the customer
+covers extra Ops / Automation nodes and federation driven by the platform
 roadmap (intake **A15**), captured in a follow-up session.
 
 | ID     | Sheet field / table                    | Field label                                          |

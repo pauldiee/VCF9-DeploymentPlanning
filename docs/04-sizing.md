@@ -2,7 +2,7 @@
 
 The Broadcom *Planning & Preparation Workbook* has a *Management Domain Sizing*
 sheet, but it only works **one direction**: you feed it a fleet and it tells you
-the minimum number of hosts. In a customer meeting the question is usually the
+the minimum number of hosts. In a planning meeting the question is usually the
 other way round — *"we're proposing four hosts with 64 cores and 1 TB each,
 does that fit?"* — and the sheet can't answer it.
 
@@ -14,7 +14,7 @@ It reproduces the workbook's sizing calculation (pinned revision `v1.9.1.001`)
 and adds a **cluster fit check**: enter the hosts you intend to build and it
 shows whether the fleet fits **at N-1** (surviving one host failure), the
 headroom on each dimension, and the binding constraint. Everything runs in the
-browser — no customer data leaves the page.
+browser — no data leaves the page.
 
 ---
 
@@ -81,7 +81,7 @@ Operations *on* for a greenfield fleet, which raises these figures):
 | vSAN raw (GB) | 17564 | 17564 |
 
 > This is a planning aid. Always confirm the final numbers against the official
-> workbook for the customer's actual revision before committing to hardware. For
+> workbook for your actual revision before committing to hardware. For
 > stretched (multi-AZ) builds, also work through [`03-multi-az-prep.md`](03-multi-az-prep.md) —
 > the tool doubles vSAN raw for the dual-site mirror, but the witness, latency
 > budgets, and per-AZ networking still need the multi-AZ prep page.

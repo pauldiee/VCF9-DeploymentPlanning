@@ -1,12 +1,12 @@
 # VCF9-DeploymentPlanning
 
-Helper material for working with the **VMware Cloud Foundation 9.1 Planning and
-Preparation Workbook** when guiding a customer through a from-scratch VCF 9
+A field guide to the **VMware Cloud Foundation 9.1 Planning and
+Preparation Workbook** for anyone planning a from-scratch VCF 9
 fleet deployment.
 
 The official workbook (`vcf-9.1-planning-and-preparation-workbook.xlsx`,
 downloaded from Broadcom) has ~9 deeply-technical sheets that ask hundreds of
-questions in a single flat layout. Handing it to a customer cold tends to
+questions in a single flat layout. Opened cold, it tends to
 produce gaps, wrong VLANs, missing DNS entries, and weeks of back-and-forth.
 
 This repo flips the order:
@@ -23,7 +23,7 @@ This repo flips the order:
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `docs/01-network-dns-plan.md`       | Step 1 — one-page network / DNS / NTP / AD plan        |
-| `docs/02-customer-intake.md`        | Step 2 — role-based customer intake questionnaire      |
+| `docs/02-intake.md`                 | Step 2 — role-based intake questionnaire               |
 | `docs/03-multi-az-prep.md`          | Extra prep for stretched / multi-AZ builds (if `A13`=Yes) |
 | `docs/04-sizing.md`                 | Step 3 — management-domain sizing + link to the fit-check calculator |
 | `docs/05-day2-deployments.md`       | Day-N — fleet components added after bring-up (VCF Automation, Log Management, Operations for Networks, network placement) |
@@ -34,7 +34,7 @@ This repo flips the order:
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters |
-| `docs/prerequisites.md`             | Customer-side prerequisites (gate before any inputs)   |
+| `docs/prerequisites.md`             | Environment prerequisites (gate before any inputs)     |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request) — downloadable from the site; feed the workbook / Coscia planner |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
@@ -102,7 +102,7 @@ deployment JSON for the VCF Installer — see *Related tools* below.
   (management, workload-domain, and second-AZ hosts). Referenced from the
   deployment plan's host-prep stories (E5 bring-up / E7 mgmt stretch / E9 workload domains).
 
-**ITQ Consulting Services** (delivered as engagements, not public tools):
+**ITQ Consulting Services** (professional services, not public tools):
 
 - **VCF9 Readiness Assessment** — pre-cutover readiness scoring from RVTools /
   HST exports.

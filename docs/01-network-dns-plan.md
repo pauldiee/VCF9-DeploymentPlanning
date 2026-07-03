@@ -1,7 +1,7 @@
 # Step 1 — Network / DNS / NTP / AD Plan (one page)
 
 Lock this **before** filling any other workbook page. If you only have time
-for one meeting with the customer's network + AD/PKI teams, run it on this
+for one meeting with the network + AD/PKI teams, run it on this
 page. Everything in the workbook flows from these decisions.
 
 > **Prefer a spreadsheet?** Download the blank [fillable planning templates](https://pauldiee.github.io/VCF9-DeploymentPlanning/docs/prerequisites/#fillable-planning-templates-download)
@@ -9,7 +9,7 @@ page. Everything in the workbook flows from these decisions.
 > For the firewall flows these networks depend on, see [Firewall & Ports](07-firewall-ports.md).
 
 > Convention used in the templates below: site code `sfo`, instance `m01`,
-> rack `r01`. Replace consistently when copying for a real customer. VLAN IDs
+> rack `r01`. Replace consistently when copying for a real deployment. VLAN IDs
 > and CIDRs are placeholders.
 
 ---
@@ -111,7 +111,7 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 
 | Item                    | Value | Notes                                              |
 | ----------------------- | ----- | -------------------------------------------------- |
-| Customer AS (NSX Edge)  |       | Private ASN, e.g. 65001                            |
+| NSX Edge AS (your side) |       | Private ASN, e.g. 65001                            |
 | ToR-A AS                |       | Private ASN, e.g. 65010                            |
 | ToR-B AS                |       | Same as ToR-A if iBGP within fabric, else distinct |
 | ToR-A peer IP (Uplink-01)|      |                                                    |
@@ -239,6 +239,6 @@ same shape.
 ## Sign-off
 
 Once **A–G** are filled and signed by the network/AD/PKI owners, move on to
-`02-customer-intake.md` to capture platform-side answers (hosts, sizing,
+`02-intake.md` to capture platform-side answers (hosts, sizing,
 passwords). The intake doc references this page rather than asking the same
 questions twice.

@@ -1,7 +1,7 @@
-# Customer Prerequisites — Gate Before Any Workbook Inputs
+# Prerequisites — Gate Before Any Workbook Inputs
 
 This list mirrors the **Prerequisite Checklist** sheet of the official
-workbook. If any item is RED for the customer, fix it before spending a single
+workbook. If any item is RED for your environment, fix it before spending a single
 meeting on the rest of the workbook — every later answer depends on these.
 
 > Authoritative source: the Broadcom [VCF 9.1 Planning and Preparation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation.html)
@@ -22,9 +22,9 @@ reference intake IDs in their notes where relevant).
 - [BGP peering](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
 - [Firewall request](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv) — deployment-critical flows (source / destination / port / purpose) for the security team; see [`07-firewall-ports.md`](07-firewall-ports.md)
 
-> **Customer-data hygiene:** these are **blank** templates. A **filled** copy holds
-> real, sensitive customer data (IPs, DNS names, AS numbers) — store it with the
-> customer's secure engagement material, **not** in a public or shared repository.
+> **Data hygiene:** these are **blank** templates. A **filled** copy holds
+> real, sensitive data (IPs, DNS names, AS numbers) — store it in a secure
+> location, **not** in a public or shared repository.
 
 ## Hardware
 
@@ -246,6 +246,6 @@ Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9
 
 ## Sign-off
 
-Customer to confirm in writing that **all** items above are green before the
+Confirm in writing that **all** items above are green before the
 intake meeting (Step 2). If anything is amber/red, capture the owner, target
 date, and risk before starting the workbook.

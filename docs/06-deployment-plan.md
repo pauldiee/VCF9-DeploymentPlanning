@@ -48,7 +48,7 @@ Ref: [`01-network-dns-plan.md`](01-network-dns-plan.md)
   - *Acceptance:* CA reachable; signing method and certificate template chosen, with a test issuance succeeding.
 
 ### E2 — Intake & sizing  ·  Owner: Architect + all role teams
-Ref: [`02-customer-intake.md`](02-customer-intake.md) · [`04-sizing.md`](04-sizing.md)
+Ref: [`02-intake.md`](02-intake.md) · [`04-sizing.md`](04-sizing.md)
 
 - **Story 2.1 — Role-based intake complete.** Sections A–F answered by their owners.
   - *Acceptance:* every intake question answered or explicitly marked N/A by its owner.
@@ -63,11 +63,11 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
 - **Story 3.2 — Generate the deployment JSON.** Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.
   - *Acceptance:* deployment JSON generated, schema-valid, and reviewed against the plan.
 
-### E4 — Prerequisites & readiness gate  ·  Owner: Architect + Customer
+### E4 — Prerequisites & readiness gate  ·  Owner: Architect + infrastructure teams
 Ref: [`prerequisites.md`](prerequisites.md)
 
-The final go/no-go before bring-up — it verifies the customer built everything the
-plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green before E5.
+The final go/no-go before bring-up — it verifies everything the
+plan (E1–E3) called for has actually been built. Runs in parallel with E1–E3; must be all-green before E5.
 
 - **Story 4.1 — Hardware ready.** Hosts on the VCG, matched spec, BOM confirmed. Ref: [Preparing ESX Hosts for VCF](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html).
   - Confirm CPU/RAM/storage per host against the sizing output (E2).
@@ -149,7 +149,7 @@ components you defer or add after bring-up.
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
 
 ### E9 — Workload domain  ·  Owner: Platform + Network (+ Storage if stretched)
-Ref: [`02-customer-intake.md`](02-customer-intake.md) section H (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) if stretched)
+Ref: [`02-intake.md`](02-intake.md) section H (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) if stretched)
 
 **Repeat this epic per workload domain.** Each WLD is independently
 **non-stretched** or **stretched** — a stretched WLD gets its **own** second-AZ
@@ -207,8 +207,8 @@ workload domains) — it validates and hands over the *complete* environment.
   - *Acceptance:* post-deploy health check run; no critical findings (or all triaged).
 - **Story 10.2 — As-built.** Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).
   - *Acceptance:* as-built captured — FQDNs, IPs, VLANs recorded; passwords stored in the secret store.
-- **Story 10.3 — Handover.** Walk the customer through operations and hand over.
-  - *Acceptance:* health check clean; as-built delivered; customer sign-off received.
+- **Story 10.3 — Handover.** Walk the operations team through the platform and hand over.
+  - *Acceptance:* health check clean; as-built delivered; operations sign-off received.
 
 ---
 
@@ -224,4 +224,4 @@ workload domains) — it validates and hands over the *complete* environment.
   role teams), E4 is the readiness gate (must be all-green before bring-up), E5
   onward is the build.
 - This page is generic — replace the linked detail pages' placeholder values with
-  the customer's real plan during E2/E3.
+  your real plan during E2/E3.

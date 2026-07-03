@@ -16,7 +16,7 @@ export const NAV: NavItem[] = [
     step: 'Gate',
     label: 'Prerequisites',
     icon: 'clipboard-check',
-    blurb: 'Customer-side gate: hardware, network, AD, DNS, NTP, CA. Fix reds before anything else.',
+    blurb: 'Environment gate: hardware, network, AD, DNS, NTP, CA. Fix reds before anything else.',
   },
   {
     slug: '01-network-dns-plan',
@@ -26,9 +26,9 @@ export const NAV: NavItem[] = [
     blurb: 'One page, one meeting: VLANs, subnets, BGP, DNS, NTP, AD, certificates.',
   },
   {
-    slug: '02-customer-intake',
+    slug: '02-intake',
     step: 'Step 2',
-    label: 'Customer Intake',
+    label: 'Intake',
     icon: 'list-check',
     blurb: 'Role-based questionnaire, grouped by who owns each answer.',
   },

@@ -1,0 +1,20 @@
+---
+// Legacy URL: the intake doc was renamed 02-customer-intake -> 02-intake (#89).
+// Static meta-refresh redirect so old links keep working on GitHub/GitLab Pages.
+import { docHref } from '../../lib/path';
+
+const target = docHref('02-intake');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>Moved — Step 2: Intake</title>
+  </head>
+  <body>
+    <p>This page moved to <a href={target}>Step 2 — Intake</a>.</p>
+  </body>
+</html>

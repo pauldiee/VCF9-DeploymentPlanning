@@ -3,7 +3,7 @@
 VCF 9.1 has hundreds of component-to-component flows. **This page does not list
 them all** — the full, version-accurate matrix lives in the two authoritative
 tools below. What this page gives you is the **curated set of cross-zone flows
-that block a deployment if they are missed** — the ones a customer's firewall /
+that block a deployment if they are missed** — the ones the firewall /
 security team must open *before and during* bring-up — grouped the way a firewall
 team thinks (by zone, not by component).
 

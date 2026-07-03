@@ -196,7 +196,7 @@ function coreEpics(sel: Selection): Epic[] {
     id: 'E2',
     title: 'Intake & sizing',
     owner: 'Architect + all role teams',
-    ref: '02-customer-intake.md, 04-sizing.md',
+    ref: '02-intake.md, 04-sizing.md',
     stories: [
       { id: '2.1', title: 'Role-based intake complete', tasks: ['Sections A–F answered by their owners.'], acceptance: 'Every intake question answered or explicitly marked N/A by its owner.' },
       { id: '2.2', title: 'Sizing & host fit', tasks: ['Run the sizing calculator; confirm the fleet fits the proposed hosts at N-1.'], acceptance: 'Sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.' },
@@ -215,7 +215,7 @@ function coreEpics(sel: Selection): Epic[] {
   {
     id: 'E4',
     title: 'Prerequisites & readiness gate',
-    owner: 'Architect + Customer',
+    owner: 'Architect + infrastructure teams',
     ref: 'prerequisites.md',
     stories: [
       {
@@ -462,7 +462,7 @@ const E10_HANDOVER: Epic = {
   stories: [
     { id: '10.1', title: 'Health check', tasks: ['Run a post-deploy health check of the live environment.'], acceptance: 'Post-deploy health check run; no critical findings (or all triaged).' },
     { id: '10.2', title: 'As-built', tasks: ['Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).'], acceptance: 'As-built captured — FQDNs, IPs, VLANs recorded; passwords stored in the secret store.' },
-    { id: '10.3', title: 'Handover', tasks: ['Walk the customer through operations and hand over.'], acceptance: 'Health check clean; as-built delivered; customer sign-off received.' },
+    { id: '10.3', title: 'Handover', tasks: ['Walk the operations team through the platform and hand over.'], acceptance: 'Health check clean; as-built delivered; operations sign-off received.' },
   ],
 };
 
@@ -547,7 +547,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
     id,
     title: `Workload domain: ${name}${w.stretched ? ' (stretched)' : ''}${w.supervisor ? ' + Supervisor' : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
-    ref: w.stretched ? '02-customer-intake.md section H, 03-multi-az-prep.md' : '02-customer-intake.md section H',
+    ref: w.stretched ? '02-intake.md section H, 03-multi-az-prep.md' : '02-intake.md section H',
     stories,
   };
 }

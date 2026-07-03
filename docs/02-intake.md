@@ -1,4 +1,4 @@
-# Step 2 — Customer Intake (role-based)
+# Step 2 — Intake (role-based)
 
 Use this after the Step 1 network/DNS plan is signed off. Questions are
 grouped by **who owns the answer**, so you can send the right section to the
@@ -22,7 +22,7 @@ Legend:
 
 ## A. Architect / Project decisions
 
-> Owner: solution architect (you + customer lead). 30 min.
+> Owner: solution architect + project lead. 30 min.
 
 | # | Question                                                                            | Sheet     | Default suggestion          |
 |---|-------------------------------------------------------------------------------------|-----------|-----------------------------|
@@ -63,7 +63,7 @@ Legend:
 |B9 | NSX Edge Overlay: VLAN, MTU=9000, gateway CIDR, IP range       | `[CFG-M]`  |
 |B10| NSX Edge Uplink-01: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |
 |B11| NSX Edge Uplink-02: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |
-|B12| Customer NSX Edge AS number                                    | `[CFG-M]`  |
+|B12| NSX Edge AS number (your side of the BGP peering)              | `[CFG-M]`  |
 |B13| ToR-A / ToR-B AS numbers                                       | `[CFG-M]`  |
 |B14| BGP MD5 password (per peer) — **optional**, only if BGP authentication is enabled | `[CFG-M]`  |
 |B15| BFD on edge uplinks? (recommended)                             | `[CFG-M]`  |
@@ -139,7 +139,7 @@ Legend:
 
 ## F. Security / passwords
 
-> Owner: customer security lead. 15 min.
+> Owner: security lead. 15 min.
 
 Capture in a password manager — not in this file. The intake just confirms
 **who owns each password** so it's available on deploy day.
@@ -165,7 +165,7 @@ VMware appliances reject `<` `>` `&` `'` `"` in some fields — avoid them.
 
 ## G. Depot / binaries
 
-> Owner: project manager / customer ops. 10 min.
+> Owner: project manager / operations team. 10 min.
 
 | # | Question                                                       | Sheet     |
 |---|----------------------------------------------------------------|-----------|

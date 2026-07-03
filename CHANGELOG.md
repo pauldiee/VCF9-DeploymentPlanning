@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.5 — 2026-07-03
+- **Generic wording pass — no more consultant-for-customer framing** (#89,
+  filed via the site's Feedback button). All public-facing prose now addresses
+  the reader directly as the team planning its own deployment: docs `01`–`07`,
+  `prerequisites.md`, `workbook-cell-mapping.md`, the Rainpole sample, README,
+  the site (hero, nav blurbs, sizing footer) and the deployment-plan export
+  tool (E4 owner "Architect + infrastructure teams", handover story now hands
+  over to the operations team). The NTP/AD/CA CSV template's "Provided by"
+  column says `Network team` / `AD team` / `PKI team` instead of `Customer / …`.
+- **Renamed `docs/02-customer-intake.md` → `docs/02-intake.md`** (#89). Page
+  title is now "Step 2 — Intake (role-based)"; intake IDs (`A1`–`G…`) and the
+  workbook mapping are unchanged. All cross-links, the nav slug/label, README
+  and CLAUDE.md updated; the old site URL `/docs/02-customer-intake/` keeps
+  working via a static redirect page.
+
 ## v1.1.4 — 2026-07-03
 - **Site version in the footer + always-present Feedback button** (#87). The
   sticky footer now shows the current release version (read at build time
