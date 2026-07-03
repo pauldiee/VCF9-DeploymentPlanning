@@ -31,7 +31,8 @@ const epics = selectedEpics(sel);
     <section class="planx__controls">
       <fieldset>
         <legend>Scope</legend>
-        <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.</p>
+        <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.
+          Stretching requires <strong>vSAN</strong> principal storage (an NFS / FC cluster cannot be vSAN-stretched).</p>
         <label class="planx__sublabel">NSX connectivity
           <select id="selConnectivity">
             {NSX_CONNECTIVITY.map((c) => <option value={c.value}>{c.label}</option>)}
@@ -62,7 +63,7 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Each workload domain is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
+        <p class="planx__hint">Each workload domain is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness — it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
         <div id="wldList"></div>
         <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
           <select id="selSuperSize">
@@ -167,6 +168,28 @@ const epics = selectedEpics(sel);
     };
   }
 
+  function vsanSelected(): boolean {
+    const s = (<HTMLSelectElement>$('selStorage')).value;
+    return s === 'vsan-esa' || s === 'vsan-osa';
+  }
+
+  // Cross-choice constraints (mirrors normalizeSelection in the library):
+  // stretching requires vSAN principal storage — with NFS / FC selected, the
+  // management stretch is unticked + disabled and stretched WLDs are reset.
+  // (A stretched WLD requiring the management stretch is handled in the WLD
+  // input handler: ticking it auto-ticks E7.)
+  function syncConstraints() {
+    const vsan = vsanSelected();
+    const mgmtEl = <HTMLInputElement>$('optMgmtStretched');
+    mgmtEl.disabled = !vsan;
+    if (!vsan) {
+      const hadStretch = mgmtEl.checked || wlds.some((w) => w.stretched);
+      mgmtEl.checked = false;
+      wlds.forEach((w) => (w.stretched = false));
+      if (hadStretch) toolbarMsg('Stretch removed — stretching requires vSAN principal storage');
+    }
+  }
+
   // Grey out / disable the Automation sub-choices when Day-2 is off, and the
   // placement/Avi when Automation isn't being deployed.
   function syncAuto() {
@@ -187,12 +210,13 @@ const epics = selectedEpics(sel);
   }
 
   function renderWlds() {
+    const vsan = vsanSelected();
     $('wldList').innerHTML = wlds
       .map(
         (w, i) => `
         <div class="planx__wld" data-i="${i}">
           <input class="planx__wldname" type="text" value="${esc(w.name)}" placeholder="wld${i + 1}" aria-label="Workload domain name" />
-          <label class="planx__check"><input type="checkbox" class="planx__wldstretch" ${w.stretched ? 'checked' : ''} /> Stretched</label>
+          <label class="planx__check"${vsan ? '' : ' title="Stretching requires vSAN principal storage"'}><input type="checkbox" class="planx__wldstretch" ${w.stretched ? 'checked' : ''}${vsan ? '' : ' disabled'} /> Stretched</label>
           <label class="planx__check"><input type="checkbox" class="planx__wldsuper" ${w.supervisor ? 'checked' : ''} /> Supervisor</label>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain" ${wlds.length <= 1 ? 'disabled' : ''}>×</button>
         </div>`
@@ -255,8 +279,14 @@ const epics = selectedEpics(sel);
     if (!row) return;
     const i = Number(row.dataset.i);
     if (t.classList.contains('planx__wldname')) wlds[i].name = (<HTMLInputElement>t).value;
-    else if (t.classList.contains('planx__wldstretch')) wlds[i].stretched = (<HTMLInputElement>t).checked;
-    else if (t.classList.contains('planx__wldsuper')) wlds[i].supervisor = (<HTMLInputElement>t).checked;
+    else if (t.classList.contains('planx__wldstretch')) {
+      wlds[i].stretched = (<HTMLInputElement>t).checked;
+      const mgmtEl = <HTMLInputElement>$('optMgmtStretched');
+      if (wlds[i].stretched && !mgmtEl.checked) {
+        mgmtEl.checked = true;
+        toolbarMsg('Management-domain stretch (E7) added — a stretched workload domain requires it');
+      }
+    } else if (t.classList.contains('planx__wldsuper')) wlds[i].supervisor = (<HTMLInputElement>t).checked;
     render();
   });
   $('wldList').addEventListener('click', (e) => {
@@ -270,9 +300,17 @@ const epics = selectedEpics(sel);
   });
 
   $('selConnectivity').addEventListener('change', render);
-  $('selStorage').addEventListener('change', render);
+  $('selStorage').addEventListener('change', () => { syncConstraints(); renderWlds(); render(); });
   $('selSuperSize').addEventListener('change', render);
-  $('optMgmtStretched').addEventListener('change', render);
+  $('optMgmtStretched').addEventListener('change', () => {
+    const mgmtEl = <HTMLInputElement>$('optMgmtStretched');
+    if (!mgmtEl.checked && wlds.some((w) => w.stretched)) {
+      wlds.forEach((w) => (w.stretched = false));
+      renderWlds();
+      toolbarMsg('Stretched workload domains reset — they require the management domain stretched');
+    }
+    render();
+  });
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
   for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi']) {
     $(id).addEventListener('change', () => { syncAuto(); render(); });
@@ -289,6 +327,7 @@ const epics = selectedEpics(sel);
     toolbarMsg('Downloaded vcf9-deployment-plan.csv');
   });
 
+  syncConstraints();
   renderWlds();
   syncAuto();
   render();

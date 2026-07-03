@@ -20,9 +20,9 @@ more workload domains**, each independently **non-stretched or stretched**.
 | Block | What it is | Epics |
 | ----- | ---------- | ----- |
 | **Core** (always) | The management fleet: plan → intake → workbook → readiness gate → bring-up → config → handover | E1–E6, E10 |
-| **Stretch the management domain** | Management cluster stretched across two AZs + its own witness | + E7 |
+| **Stretch the management domain** | Management cluster stretched across two AZs + its own witness. **vSAN principal storage only** — stretching is vSAN stretching, so an NFS / FC cluster cannot stretch | + E7 |
 | **Day-2 fleet** | Deferred/added after bring-up: VCF Automation (if not taken at bring-up), Log Management, Operations for Networks, Identity Broker (VCF Operations itself is a **bring-up** component) | + E8 |
-| **Workload domain** (repeat per WLD) | A VI workload domain — **non-stretched** or **stretched** (its own hosts, and if stretched its own witness) | + E9 (one per WLD) |
+| **Workload domain** (repeat per WLD) | A VI workload domain — **non-stretched** or **stretched** (its own hosts, and if stretched its own witness; a stretched WLD **requires the management domain stretched first**) | + E9 (one per WLD) |
 
 Epic ids follow execution order. Mix freely — e.g. a stretched management domain
 + the Day-2 fleet + two workload domains (one stretched) = Core **+ E7 + E8 + two
@@ -139,7 +139,7 @@ components you defer or add after bring-up.
 - **Story 8.2 — VCF Automation.** Choices (pick them in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/) and it writes the exact steps):
   - **Deploy it?** — VCF Automation is the one fleet component you can **defer** from bring-up to Day-N.
   - **Deployment model** — **single-node** (no load balancer) or an **HA cluster** (nodes behind a VIP — needs the Avi or an external LB).
-  - **Network placement** — **Shared Management** (nodes come from the mgmt `/29`, intake `B5`; simplest, no new network), or a non-shared placement (**Dedicated Management** / **NSX Overlay Segment** / **NSX VLAN Segment**) that **builds the network first** — see [`05-day2-deployments.md`](05-day2-deployments.md) §C.
+  - **Network placement** — **Shared Management** (nodes come from the mgmt `/29`, intake `B5`; simplest, no new network), or a non-shared placement (**Dedicated Management** / **NSX Overlay Segment** / **NSX VLAN Segment**) that **builds the network first** — see [`05-day2-deployments.md`](05-day2-deployments.md) §C. The **NSX Overlay Segment** placement needs an Edge cluster + Tier-0 — under **Distributed** connectivity (no centralized Edge) deploy one for the fleet segment first, or pick a VLAN-backed placement.
   - **Avi load balancer?** — optionally load-balance VCF Automation with an **Avi Load Balancer deployed in the management domain** (via VCF Operations; deploy the Avi controller cluster first) — [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
   - Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
   - *Acceptance:* VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.

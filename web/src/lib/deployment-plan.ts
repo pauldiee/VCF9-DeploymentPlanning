@@ -59,6 +59,34 @@ export interface Selection {
   wlds: Wld[];
 }
 
+/** True when the principal storage is vSAN (ESA or OSA). */
+export function isVsanStorage(storage: StorageType): boolean {
+  return storage === 'vsan-esa' || storage === 'vsan-osa';
+}
+
+/**
+ * Cross-choice constraints — certain choices exclude others:
+ *  - Stretching is vSAN stretching (SDDC Manager's "Stretching vSAN Clusters"
+ *    workflow), so NFS / VMFS-on-FC principal storage excludes a stretched
+ *    management domain and stretched WLDs.
+ *  - A stretched WLD requires the management domain stretched first (E7), so
+ *    any stretched WLD pulls the management stretch in.
+ * The tool UI enforces these interactively; this keeps programmatic selections
+ * (and any hand-built Selection) consistent before epics are generated.
+ */
+export function normalizeSelection(sel: Selection): Selection {
+  if (!isVsanStorage(sel.storage)) {
+    if (sel.mgmtStretched || sel.wlds.some((w) => w.stretched)) {
+      return { ...sel, mgmtStretched: false, wlds: sel.wlds.map((w) => ({ ...w, stretched: false })) };
+    }
+    return sel;
+  }
+  if (!sel.mgmtStretched && sel.wlds.some((w) => w.stretched)) {
+    return { ...sel, mgmtStretched: true };
+  }
+  return sel;
+}
+
 export function defaultSelection(): Selection {
   // Common build: Centralized connectivity, single non-stretched WLD + Day-2 fleet
   // (VCF Automation on the shared management network, no Avi), management not stretched.
@@ -320,6 +348,9 @@ function day2Epic(sel: Selection): Epic {
     if (ha && !a.aviLb) {
       tasks.push('An HA-cluster VCF Automation needs a load balancer for its cluster VIP — enable the Avi LB option (or provide an external LB).');
     }
+    if (a.placement === 'overlay' && sel.connectivity === 'distributed') {
+      tasks.push('This fleet uses Distributed connectivity (no centralized Edge cluster), but the NSX Overlay Segment placement needs an NSX Edge cluster + Tier-0 + Tier-1 for the fleet segment — deploy that Edge cluster first, or pick the Dedicated Management / NSX VLAN Segment placement instead (see 05-day2-deployments.md section C).');
+    }
     if (a.aviLb) {
       tasks.push(
         `Load-balance VCF Automation with an Avi Load Balancer deployed in the management domain (lifecycle-managed via VCF Operations); deploy the Avi controller cluster first. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`
@@ -456,6 +487,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
 
 /** The epics that apply given a selection, in execution order. */
 export function selectedEpics(sel: Selection): Epic[] {
+  sel = normalizeSelection(sel);
   const out: Epic[] = coreEpics(sel);
   if (sel.mgmtStretched) out.push(E7_MGMT_STRETCH);
   if (sel.day2) out.push(day2Epic(sel));
@@ -466,6 +498,7 @@ export function selectedEpics(sel: Selection): Epic[] {
 
 /** Human-readable scope label. */
 export function typeLabel(sel: Selection): string {
+  sel = normalizeSelection(sel);
   const parts: string[] = [`management${sel.mgmtStretched ? ' (stretched)' : ''}`];
   if (sel.day2) parts.push('Day-2 fleet');
   if (sel.wlds.length) {

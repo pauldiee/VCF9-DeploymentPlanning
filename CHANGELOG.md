@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.10.6 — 2026-07-03
+- **Export tool: cross-choice constraints enforced** (#72). Certain choices now
+  exclude others instead of exporting contradictory plans:
+  - **NFS / VMFS-on-FC principal storage excludes stretching** (VCF stretching
+    is vSAN stretching) — the management-stretch checkbox is disabled and any
+    stretched selection is reset, with a visible message.
+  - **A stretched workload domain requires the management domain stretched
+    first** — ticking a WLD *Stretched* auto-adds E7; unticking the management
+    stretch resets stretched WLDs.
+  - Both rules are also enforced in the library (`normalizeSelection`), so
+    programmatic/exported output stays consistent regardless of UI state.
+  - **Distributed connectivity + NSX Overlay Segment placement** gets a nudge
+    task (the overlay placement needs an Edge cluster + Tier-0, which a
+    Distributed fleet doesn't have) — deploy one first or pick a VLAN-backed
+    placement. `docs/06-deployment-plan.md` scope table + 8.2 updated to match.
+
 ## v0.10.5 — 2026-07-03
 - **Repo-wide Broadcom TechDocs enrichment pass** (#75) — every major claim now
   carries an authoritative link, all URLs liveness-verified:
