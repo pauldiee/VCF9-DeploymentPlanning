@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.7 — 2026-07-03
+- **Moved Prerequisites & readiness gate to just before bring-up.** It's the
+  go/no-go verify against the plan's outputs, so the planning epics now lead and
+  the gate is E4: **E1 = Network/DNS plan, E2 = Intake & sizing, E3 = Workbook/JSON,
+  E4 = Prerequisites & readiness gate, E5 = bring-up**. Story ids and cross-refs
+  updated (hardware → sizing E2, physical network → plan E1); story 4.4 renamed
+  "Access & final readiness". Doc + `web/src/lib/deployment-plan.ts`. (#56)
+
 ## v0.7.6 — 2026-07-03
 - **Specificity pass over every deployment-plan acceptance criterion** (doc +
   `web/src/lib/deployment-plan.ts`). Replaced vague/cryptic wording with concrete,

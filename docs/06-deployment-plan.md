@@ -19,7 +19,7 @@ more workload domains**, each independently **non-stretched or stretched**.
 
 | Block | What it is | Epics |
 | ----- | ---------- | ----- |
-| **Core** (always) | The management fleet: prereqs → plan → intake → workbook → bring-up → config → handover | E1–E6, E10 |
+| **Core** (always) | The management fleet: plan → intake → workbook → readiness gate → bring-up → config → handover | E1–E6, E10 |
 | **Stretch the management domain** | Management cluster stretched across two AZs + its own witness | + E7 |
 | **Day-2 fleet** | VCF Operations / Automation / Logs deployed after bring-up | + E8 |
 | **Workload domain** (repeat per WLD) | A VI workload domain — **non-stretched** or **stretched** (its own hosts, and if stretched its own witness) | + E9 (one per WLD) |
@@ -35,48 +35,51 @@ assembles the exact epic/story set per scope.
 
 ## Core epics (every deployment)
 
-### E1 — Prerequisites & readiness gate  ·  Owner: Architect + Customer
-Ref: [`prerequisites.md`](prerequisites.md)
-
-- **Story 1.1 — Hardware ready.** Hosts on the VCG, matched spec, BOM confirmed.
-  - Confirm CPU/RAM/storage per host against the sizing output (E3).
-  - *Acceptance:* all hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).
-- **Story 1.2 — Physical network ready.** VLANs, MTU, and BGP fabric provisioned.
-  - Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.
-  - Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.
-  - *Acceptance:* required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the Step 1 plan (E2).
-- **Story 1.3 — Core services ready.** AD, DNS, NTP, CA, depot reachable.
-  - *Acceptance:* forward (A) **and** reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.
-- **Story 1.4 — Access ready.** A jump/bastion host reaches the management network, and out-of-band (iDRAC / iLO / BMC) access to the hosts is available.
-  - *Acceptance:* the build team can reach the management network and host consoles; and the full prerequisites checklist ([`prerequisites.md`](prerequisites.md) — hardware, network, AD, DNS, NTP, CA, depot) is green before bring-up starts.
-
-### E2 — Network, DNS & routing plan  ·  Owner: Network + AD/DNS/NTP
+### E1 — Network, DNS & routing plan  ·  Owner: Network + AD/DNS/NTP
 Ref: [`01-network-dns-plan.md`](01-network-dns-plan.md)
 
-- **Story 2.1 — VLAN / subnet plan.** Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.
+- **Story 1.1 — VLAN / subnet plan.** Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.
   - *Acceptance:* one-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.
-- **Story 2.2 — BGP plan.** Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.
+- **Story 1.2 — BGP plan.** Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.
   - *Acceptance:* Edge AS, ToR AS, peer IPs, MD5 keys, BFD, and advertised/received routes agreed and documented with the fabric team.
-- **Story 2.3 — DNS & NTP records.** All A + PTR records created; NTP sources confirmed.
+- **Story 1.3 — DNS & NTP records.** All A + PTR records created; NTP sources confirmed.
   - *Acceptance:* forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.
-- **Story 2.4 — Certificates.** CA type, template, and signing approach decided.
+- **Story 1.4 — Certificates.** CA type, template, and signing approach decided.
   - *Acceptance:* CA reachable; signing method and certificate template chosen, with a test issuance succeeding.
 
-### E3 — Intake & sizing  ·  Owner: Architect + all role teams
+### E2 — Intake & sizing  ·  Owner: Architect + all role teams
 Ref: [`02-customer-intake.md`](02-customer-intake.md) · [`04-sizing.md`](04-sizing.md)
 
-- **Story 3.1 — Role-based intake complete.** Sections A–F answered by their owners.
+- **Story 2.1 — Role-based intake complete.** Sections A–F answered by their owners.
   - *Acceptance:* every intake question answered or explicitly marked N/A by its owner.
-- **Story 3.2 — Sizing & host fit.** Run the [sizing calculator](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/mgmt-sizing/); confirm the fleet fits the proposed hosts at N-1.
+- **Story 2.2 — Sizing & host fit.** Run the [sizing calculator](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/mgmt-sizing/); confirm the fleet fits the proposed hosts at N-1.
   - *Acceptance:* sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.
 
-### E4 — Workbook & deployment-JSON prep  ·  Owner: Architect + Platform
+### E3 — Workbook & deployment-JSON prep  ·  Owner: Architect + Platform
 Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
 
-- **Story 4.1 — Fill the P&P workbook.** Transfer intake answers into the official workbook — or use [**Coscia's VCF Planner**](https://vcfplanning.lcoscia.fr/) for an easier fillable form (live VLAN/IP/CIDR validation) that also doubles as an **as-built** record, with JSON/Markdown/CSV export.
+- **Story 3.1 — Fill the P&P workbook.** Transfer intake answers into the official workbook — or use [**Coscia's VCF Planner**](https://vcfplanning.lcoscia.fr/) for an easier fillable form (live VLAN/IP/CIDR validation) that also doubles as an **as-built** record, with JSON/Markdown/CSV export.
   - *Acceptance:* workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner).
-- **Story 4.2 — Generate the deployment JSON.** Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.
+- **Story 3.2 — Generate the deployment JSON.** Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.
   - *Acceptance:* deployment JSON generated, schema-valid, and reviewed against the plan.
+
+### E4 — Prerequisites & readiness gate  ·  Owner: Architect + Customer
+Ref: [`prerequisites.md`](prerequisites.md)
+
+The final go/no-go before bring-up — it verifies the customer built everything the
+plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green before E5.
+
+- **Story 4.1 — Hardware ready.** Hosts on the VCG, matched spec, BOM confirmed.
+  - Confirm CPU/RAM/storage per host against the sizing output (E2).
+  - *Acceptance:* all hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).
+- **Story 4.2 — Physical network ready.** VLANs, MTU, and BGP fabric provisioned.
+  - Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.
+  - Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.
+  - *Acceptance:* required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the network plan (E1).
+- **Story 4.3 — Core services ready.** AD, DNS, NTP, CA, depot reachable.
+  - *Acceptance:* forward (A) **and** reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.
+- **Story 4.4 — Access & final readiness.** A jump/bastion host reaches the management network, and out-of-band (iDRAC / iLO / BMC) access to the hosts is available.
+  - *Acceptance:* the build team can reach the management network and host consoles; and the full prerequisites checklist ([`prerequisites.md`](prerequisites.md) — hardware, network, AD, DNS, NTP, CA, depot) is green before bring-up starts.
 
 ### E5 — Management domain bring-up  ·  Owner: Platform
 - **Story 5.1 — Install & configure the management hosts.** Image each host with the supported **ESXi ISO** (see the [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) repo to prep + commission hosts quickly); set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM.
@@ -181,7 +184,8 @@ order as the management stretch (E7).
 - Add the **stretch** (E7) / **Day-2** (E8) blocks and **one E9 per workload
   domain** you need (see the scope table up top); order runs core → management
   stretch → Day-2 → workload domains → handover.
-- Sequence is roughly top-to-bottom; E1–E4 are planning (parallelisable across
-  role teams), E5 onward is the build.
+- Sequence is roughly top-to-bottom; E1–E3 are planning (parallelisable across
+  role teams), E4 is the readiness gate (must be all-green before bring-up), E5
+  onward is the build.
 - This page is generic — replace the linked detail pages' placeholder values with
   the customer's real plan during E2/E3.

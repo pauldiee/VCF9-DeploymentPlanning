@@ -2,7 +2,9 @@
 // export tool (src/pages/tools/deployment-plan.astro). The markdown doc stays
 // the human-readable source of truth; keep this in sync when it changes.
 //
-// Model: core epics E1–E6 and E10 always apply. On top, the selection adds:
+// Planning epics run E1 (network/DNS plan) → E2 (intake & sizing) → E3
+// (workbook/JSON) → E4 (prerequisites & readiness gate, the go/no-go verify) →
+// E5 (bring-up). Core epics E1–E6 and E10 always apply. On top, the selection adds:
 //   - E7  when the management domain is stretched
 //   - E8  when the Day-2 fleet is deployed
 //   - one E9 epic per workload domain (each independently non-stretched or
@@ -49,69 +51,69 @@ export function defaultSelection(): Selection {
 const CORE_PRE: Epic[] = [
   {
     id: 'E1',
+    title: 'Network, DNS & routing plan',
+    owner: 'Network + AD/DNS/NTP',
+    ref: '01-network-dns-plan.md',
+    stories: [
+      { id: '1.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
+      { id: '1.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.'], acceptance: 'Edge AS, ToR AS, peer IPs, MD5 keys, BFD, and advertised/received routes agreed and documented with the fabric team.' },
+      { id: '1.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.' },
+      { id: '1.4', title: 'Certificates', tasks: ['CA type, template, and signing approach decided.'], acceptance: 'CA reachable; signing method and certificate template chosen, with a test issuance succeeding.' },
+    ],
+  },
+  {
+    id: 'E2',
+    title: 'Intake & sizing',
+    owner: 'Architect + all role teams',
+    ref: '02-customer-intake.md, 04-sizing.md',
+    stories: [
+      { id: '2.1', title: 'Role-based intake complete', tasks: ['Sections A–F answered by their owners.'], acceptance: 'Every intake question answered or explicitly marked N/A by its owner.' },
+      { id: '2.2', title: 'Sizing & host fit', tasks: ['Run the sizing calculator; confirm the fleet fits the proposed hosts at N-1.'], acceptance: 'Sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.' },
+    ],
+  },
+  {
+    id: 'E3',
+    title: 'Workbook & deployment-JSON prep',
+    owner: 'Architect + Platform',
+    ref: 'workbook-cell-mapping.md',
+    stories: [
+      { id: '3.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: "Workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner)." },
+      { id: '3.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'Deployment JSON generated, schema-valid, and reviewed against the plan.' },
+    ],
+  },
+  {
+    id: 'E4',
     title: 'Prerequisites & readiness gate',
     owner: 'Architect + Customer',
     ref: 'prerequisites.md',
     stories: [
       {
-        id: '1.1',
+        id: '4.1',
         title: 'Hardware ready',
-        tasks: ['Hosts on the VCG, matched spec, BOM confirmed.', 'Confirm CPU/RAM/storage per host against the sizing output (E3).'],
+        tasks: ['Hosts on the VCG, matched spec, BOM confirmed.', 'Confirm CPU/RAM/storage per host against the sizing output (E2).'],
         acceptance: 'All hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).',
       },
       {
-        id: '1.2',
+        id: '4.2',
         title: 'Physical network ready',
         tasks: [
           'Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.',
           'Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.',
         ],
-        acceptance: 'Required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the Step 1 plan (E2).',
+        acceptance: 'Required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the network plan (E1).',
       },
       {
-        id: '1.3',
+        id: '4.3',
         title: 'Core services ready',
         tasks: ['AD, DNS, NTP, CA, depot reachable.'],
         acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker); NTP in sync; CA reachable; depot/binaries staged.',
       },
       {
-        id: '1.4',
-        title: 'Access ready',
+        id: '4.4',
+        title: 'Access & final readiness',
         tasks: ['A jump/bastion host reaches the management network, and out-of-band (iDRAC / iLO / BMC) access to the hosts is available.'],
         acceptance: 'The build team can reach the management network and host consoles; and the full prerequisites checklist (prerequisites.md — hardware, network, AD, DNS, NTP, CA, depot) is green before bring-up starts.',
       },
-    ],
-  },
-  {
-    id: 'E2',
-    title: 'Network, DNS & routing plan',
-    owner: 'Network + AD/DNS/NTP',
-    ref: '01-network-dns-plan.md',
-    stories: [
-      { id: '2.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
-      { id: '2.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, MD5, BFD, advertised/received routes.'], acceptance: 'Edge AS, ToR AS, peer IPs, MD5 keys, BFD, and advertised/received routes agreed and documented with the fabric team.' },
-      { id: '2.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.' },
-      { id: '2.4', title: 'Certificates', tasks: ['CA type, template, and signing approach decided.'], acceptance: 'CA reachable; signing method and certificate template chosen, with a test issuance succeeding.' },
-    ],
-  },
-  {
-    id: 'E3',
-    title: 'Intake & sizing',
-    owner: 'Architect + all role teams',
-    ref: '02-customer-intake.md, 04-sizing.md',
-    stories: [
-      { id: '3.1', title: 'Role-based intake complete', tasks: ['Sections A–F answered by their owners.'], acceptance: 'Every intake question answered or explicitly marked N/A by its owner.' },
-      { id: '3.2', title: 'Sizing & host fit', tasks: ['Run the sizing calculator; confirm the fleet fits the proposed hosts at N-1.'], acceptance: 'Sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.' },
-    ],
-  },
-  {
-    id: 'E4',
-    title: 'Workbook & deployment-JSON prep',
-    owner: 'Architect + Platform',
-    ref: 'workbook-cell-mapping.md',
-    stories: [
-      { id: '4.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: "Workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner)." },
-      { id: '4.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'Deployment JSON generated, schema-valid, and reviewed against the plan.' },
     ],
   },
   {
