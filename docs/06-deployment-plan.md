@@ -133,8 +133,11 @@ components you defer or add after bring-up.
 
 - **Story 8.1 — Network placement.** Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared.
   - *Acceptance:* chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.
-- **Story 8.2 — VCF Automation.** Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR. (VCF Automation is the one fleet component you can **defer** from bring-up to Day-N.)
-  - In some cases (a **clustered / HA** VCF Automation, or to offer self-service load balancing), an **Avi Load Balancer** deployed in the **management domain** — lifecycle-managed via VCF Operations — load-balances VCF Automation; deploy it as part of this step. See Broadcom's [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
+- **Story 8.2 — VCF Automation.** Three choices (pick them in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/) and it writes the exact steps):
+  - **Deploy it?** — VCF Automation is the one fleet component you can **defer** from bring-up to Day-N.
+  - **Network placement** — **Shared Management** (nodes come from the mgmt `/29`, intake `B5`; simplest, no new network), or a non-shared placement (**Dedicated Management** / **NSX Overlay Segment** / **NSX VLAN Segment**) that **builds the network first** — see [`05-day2-deployments.md`](05-day2-deployments.md) §C.
+  - **Avi load balancer?** — optionally load-balance VCF Automation with an **Avi Load Balancer deployed in the management domain** (via VCF Operations; deploy the Avi controller cluster first) — [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
+  - Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
   - *Acceptance:* VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.
 - **Story 8.3 — Log Management, Operations for Networks & Identity Broker.** Deploy the remaining fleet components as needed: **Log Management**, VCF Operations for Networks, and the Identity Broker.
   - *Acceptance:* each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.

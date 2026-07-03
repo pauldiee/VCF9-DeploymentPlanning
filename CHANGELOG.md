@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.8 — 2026-07-03
+- **Export tool now has VCF Automation choices** that drive the exported plan.
+  Under Day-2 fleet: **Deploy VCF Automation?** (it's deferrable), a **network
+  placement** dropdown (Shared Management / Dedicated / NSX Overlay Segment / NSX
+  VLAN Segment — non-shared placements add the build-the-network detail), and
+  **Load-balance with Avi** (management domain). The E8.2 story title, tasks, and
+  acceptance are generated from these (e.g. "VCF Automation (NSX Overlay Segment +
+  Avi LB)"). `deployment-plan.ts` E8 is now selection-driven (`day2Epic`); the doc
+  E8.2 describes the choices and points to the tool. (#71)
+
 ## v0.9.7 — 2026-07-03
 - Added a verified reference link to the E8.2 Avi/VCF-Automation note — Broadcom's
   *Deploy Avi Load Balancer from VCF Operations* (the design page had moved / 404'd;

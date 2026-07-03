@@ -35,16 +35,42 @@ export interface Wld {
   stretched: boolean;
 }
 
+export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
+
+export interface AutomationChoice {
+  deploy: boolean;
+  placement: AutomationPlacement;
+  aviLb: boolean;
+}
+
 export interface Selection {
   mgmtStretched: boolean;
   day2: boolean;
+  automation: AutomationChoice;
   wlds: Wld[];
 }
 
 export function defaultSelection(): Selection {
-  // Common build: single non-stretched WLD + Day-2 fleet, management not stretched.
-  return { mgmtStretched: false, day2: true, wlds: [{ name: 'wld01', stretched: false }] };
+  // Common build: single non-stretched WLD + Day-2 fleet (VCF Automation on the
+  // shared management network, no Avi), management not stretched.
+  return {
+    mgmtStretched: false,
+    day2: true,
+    automation: { deploy: true, placement: 'shared', aviLb: false },
+    wlds: [{ name: 'wld01', stretched: false }],
+  };
 }
+
+/** VCF Automation network placements (mirrors docs/05-day2-deployments.md §C). */
+export const AUTOMATION_PLACEMENTS: { value: AutomationPlacement; label: string; text: string }[] = [
+  { value: 'shared', label: 'Shared Management Network', text: 'nodes come from the management /29 (intake B5); simplest, no new network to build' },
+  { value: 'dedicated', label: 'Dedicated Management Network', text: 'build the dedicated vDS port group / VLAN first; Cloud Proxy stays on the VM-Management network' },
+  { value: 'overlay', label: 'NSX Overlay Segment', text: 'needs an NSX Edge cluster + Tier-0 (BGP) + Tier-1 and the overlay segment first; Cloud Proxy stays on VM-Management' },
+  { value: 'vlan', label: 'NSX VLAN Segment', text: 'deploy on an NSX VLAN-backed segment (no overlay / Edge routing)' },
+];
+
+const AVI_LB_URL =
+  'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html';
 
 // ---- Core epics (always) ---------------------------------------------------
 
@@ -231,25 +257,54 @@ const E7_MGMT_STRETCH: Epic = {
 
 // ---- Day-2 fleet (E8) ------------------------------------------------------
 
-const E8_DAY2: Epic = {
-  id: 'E8',
-  title: 'Day-2 fleet deployment',
-  owner: 'Platform',
-  ref: '05-day2-deployments.md',
-  stories: [
-    { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared.'], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
-    { id: '8.2', title: 'VCF Automation', tasks: ['Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR. (VCF Automation is the one fleet component you can defer from bring-up to Day-N — VCF Operations itself is deployed at bring-up; see E5 5.3.)', 'In some cases (a clustered / HA VCF Automation, or to offer self-service load balancing), an Avi Load Balancer deployed in the management domain — lifecycle-managed via VCF Operations — load-balances VCF Automation; deploy it as part of this step. See Broadcom Deploy Avi Load Balancer from VCF Operations: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html'], acceptance: 'VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.' },
-    { id: '8.3', title: 'Log Management, Operations for Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed: Log Management, VCF Operations for Networks, and the Identity Broker.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
-    {
-      id: '8.4',
-      title: 'Certificates, identity & licensing (full fleet)',
-      tasks: [
-        'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations).',
-      ],
-      acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.',
-    },
-  ],
-};
+// Day-2 fleet epic — the VCF Automation story (8.2) is generated from the
+// selection's automation choices (deploy? / network placement / Avi LB).
+function day2Epic(sel: Selection): Epic {
+  const a = sel.automation;
+  let automationStory: Story;
+  if (!a.deploy) {
+    automationStory = {
+      id: '8.2',
+      title: 'VCF Automation (deferred — not deployed)',
+      tasks: ['VCF Automation is deferred at this Day-N pass (it is the one fleet component you can skip from bring-up to Day-N). Deploy it later when needed.'],
+    };
+  } else {
+    const p = AUTOMATION_PLACEMENTS.find((x) => x.value === a.placement) ?? AUTOMATION_PLACEMENTS[0];
+    const tasks = [
+      `Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C).`,
+    ];
+    if (a.aviLb) {
+      tasks.push(
+        `Load-balance VCF Automation with an Avi Load Balancer deployed in the management domain (lifecycle-managed via VCF Operations); deploy the Avi controller cluster first. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`
+      );
+    }
+    automationStory = {
+      id: '8.2',
+      title: `VCF Automation (${p.label}${a.aviLb ? ' + Avi LB' : ''})`,
+      tasks,
+      acceptance: `VCF Automation deployed and healthy on the ${p.label}; services-runtime cluster CIDR set and non-overlapping${a.aviLb ? '; Avi LB fronting the cluster' : ''}.`,
+    };
+  }
+  return {
+    id: 'E8',
+    title: 'Day-2 fleet deployment',
+    owner: 'Platform',
+    ref: '05-day2-deployments.md',
+    stories: [
+      { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared.'], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
+      automationStory,
+      { id: '8.3', title: 'Log Management, Operations for Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed: Log Management, VCF Operations for Networks, and the Identity Broker.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
+      {
+        id: '8.4',
+        title: 'Certificates, identity & licensing (full fleet)',
+        tasks: [
+          'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations).',
+        ],
+        acceptance: 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.',
+      },
+    ],
+  };
+}
 
 // ---- Validation & handover (E10, always last) ------------------------------
 
@@ -334,7 +389,7 @@ function wldEpic(w: Wld, index: number): Epic {
 export function selectedEpics(sel: Selection): Epic[] {
   const out: Epic[] = [...CORE_PRE];
   if (sel.mgmtStretched) out.push(E7_MGMT_STRETCH);
-  if (sel.day2) out.push(E8_DAY2);
+  if (sel.day2) out.push(day2Epic(sel));
   sel.wlds.forEach((w, i) => out.push(wldEpic(w, i)));
   out.push(E10_HANDOVER);
   return out;

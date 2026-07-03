@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { docHref } from '../../lib/path';
-import { defaultSelection, selectedEpics, typeLabel, includedEpicList } from '../../lib/deployment-plan';
+import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS } from '../../lib/deployment-plan';
 
 const sel = defaultSelection();
 const epics = selectedEpics(sel);
@@ -17,7 +17,8 @@ const epics = selectedEpics(sel);
       <p class="itq-eyebrow">Export tool</p>
       <h1>Deployment Plan Export</h1>
       <p class="planx__lede">
-        Build your deployment scope below — stretch the management domain or not, add the Day-2 fleet,
+        Build your deployment scope below — stretch the management domain or not, add the Day-2 fleet
+        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer),
         and add one or more <strong>workload domains</strong>, each independently <strong>non-stretched or stretched</strong>
         (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
         epics and stories, then export it: <strong>Copy as Markdown</strong> for a wiki or PR, or
@@ -32,6 +33,15 @@ const epics = selectedEpics(sel);
         <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.</p>
         <label class="planx__check"><input type="checkbox" id="optMgmtStretched" /> Stretch the management domain <span class="planx__tag">E7</span></label>
         <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Operations / Automation / Logs) <span class="planx__tag">E8</span></label>
+        <div class="planx__sub" id="autoBlock">
+          <label class="planx__check"><input type="checkbox" id="optAutoDeploy" checked /> Deploy VCF Automation <span class="planx__tag">E8.2</span></label>
+          <label class="planx__sublabel">Network placement
+            <select id="selAutoPlacement">
+              {AUTOMATION_PLACEMENTS.map((p) => <option value={p.value}>{p.label}</option>)}
+            </select>
+          </label>
+          <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Load-balance with Avi (management domain)</label>
+        </div>
       </fieldset>
 
       <fieldset>
@@ -107,6 +117,7 @@ const epics = selectedEpics(sel);
     buildCsv,
     type Selection,
     type Wld,
+    type AutomationPlacement,
   } from '../../lib/deployment-plan';
 
   const $ = (id: string) => document.getElementById(id)!;
@@ -118,8 +129,24 @@ const epics = selectedEpics(sel);
     return {
       mgmtStretched: (<HTMLInputElement>$('optMgmtStretched')).checked,
       day2: (<HTMLInputElement>$('optDay2')).checked,
+      automation: {
+        deploy: (<HTMLInputElement>$('optAutoDeploy')).checked,
+        placement: (<HTMLSelectElement>$('selAutoPlacement')).value as AutomationPlacement,
+        aviLb: (<HTMLInputElement>$('optAutoAvi')).checked,
+      },
       wlds: wlds.map((w) => ({ ...w })),
     };
+  }
+
+  // Grey out / disable the Automation sub-choices when Day-2 is off, and the
+  // placement/Avi when Automation isn't being deployed.
+  function syncAuto() {
+    const day2 = (<HTMLInputElement>$('optDay2')).checked;
+    const deploy = (<HTMLInputElement>$('optAutoDeploy')).checked;
+    ($('autoBlock') as HTMLElement).style.opacity = day2 ? '1' : '0.45';
+    (<HTMLInputElement>$('optAutoDeploy')).disabled = !day2;
+    (<HTMLSelectElement>$('selAutoPlacement')).disabled = !day2 || !deploy;
+    (<HTMLInputElement>$('optAutoAvi')).disabled = !day2 || !deploy;
   }
 
   function esc(s: string): string {
@@ -211,7 +238,10 @@ const epics = selectedEpics(sel);
   });
 
   $('optMgmtStretched').addEventListener('change', render);
-  $('optDay2').addEventListener('change', render);
+  $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
+  for (const id of ['optAutoDeploy', 'selAutoPlacement', 'optAutoAvi']) {
+    $(id).addEventListener('change', () => { syncAuto(); render(); });
+  }
 
   $('btnCopyMd').addEventListener('click', () => copy(buildMarkdown(readSel()), 'Plan copied (Markdown)'));
   $('btnCopyCsv').addEventListener('click', () => copy(buildCsv(readSel()), 'CSV copied'));
@@ -225,6 +255,7 @@ const epics = selectedEpics(sel);
   });
 
   renderWlds();
+  syncAuto();
   render();
 </script>
 
@@ -260,6 +291,21 @@ const epics = selectedEpics(sel);
     background: transparent; border-radius: var(--radius-sm); cursor: pointer;
   }
   .planx__add:hover { background: var(--itq-orange); color: var(--itq-white); }
+
+  .planx__sub {
+    margin: 0.2rem 0 0.2rem 1.5rem;
+    padding: 0.4rem 0 0.2rem 0.7rem;
+    border-left: 2px solid var(--border-default);
+  }
+  .planx__sublabel {
+    display: block; font-size: 0.82rem; color: var(--itq-royal-40); margin: 0.4rem 0;
+  }
+  .planx__sublabel select {
+    display: block; margin-top: 0.2rem; font: inherit; font-size: 0.85rem;
+    padding: 0.35rem 0.5rem; border: var(--border-width) solid var(--border-default);
+    border-radius: var(--radius-sm); background: var(--itq-white); max-width: 22rem;
+  }
+  .planx__sublabel select:disabled, .planx__sub input:disabled { cursor: not-allowed; }
 
   .planx__wld {
     display: flex; align-items: center; gap: 0.6rem;
