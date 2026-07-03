@@ -95,8 +95,10 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
   - *Acceptance:* VCF Management Services + License Server deployed and healthy; the License Server FQDN resolves to an IP outside the services-runtime range; Cloud Proxy (if used) is collecting.
 
 ### E6 — Management domain configuration  ·  Owner: Platform + Network + Security
-- **Story 6.1 — NSX edges & north-south.** Deploy edges; establish BGP peering to the ToRs; verify routes.
-  - *Acceptance:* edges deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.
+- **Story 6.1 — NSX north-south connectivity (choice: Centralized or Distributed).** Pick the model in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/); it writes the right steps.
+  - **Centralized** — deploy the NSX **Edge cluster** + Tier-0 gateway; establish **BGP** peering to the ToRs; verify north-south routes. (A **stretched Edge** is only possible under Centralized — see E7.)
+  - **Distributed** — the **Distributed Transit Gateway** distributes routing to the hypervisors (**no** centralized Edge cluster); deploy the **Virtual Network Appliance (VNA) cluster** for stateful services (NAT etc.) and the external network for the Distributed Transit Gateway.
+  - *Acceptance:* the chosen model is up — Centralized: Edge cluster + Tier-0 + BGP routes reachable; Distributed: Transit Gateway + VNA cluster healthy, north-south (incl. stateful services) reachable.
 - **Story 6.2 — Certificates (optional / partial here).** You *can* replace certificates for the components deployed **so far** now, but the **full** CA-signed replacement is usually done **once all components exist** — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.4).
 - **Story 6.3 — Identity & roles (optional, *not recommended* at this stage).** You *can* bind **vCenter SSO** directly to AD/LDAP now for early management access, but the **recommended** path is fleet-wide SSO via the **VCF Identity Broker**, a Day-2 component (see E8 / [`05-day2-deployments.md`](05-day2-deployments.md)). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, and map admin/operator/viewer groups if you do.
 - **Story 6.4 — Backup & lifecycle.** Configure SFTP backups; connect the depot for **fleet lifecycle** (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).

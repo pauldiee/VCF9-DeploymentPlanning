@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.9.9 — 2026-07-03
+- **Export tool: NSX connectivity choice (Centralized / Distributed)** — the first
+  of several deployment choices being added. Drives E6 story 6.1 and the WLD
+  connectivity stories: **Centralized** = NSX Edge cluster + Tier-0 + BGP;
+  **Distributed** = Distributed Transit Gateway + **Virtual Network Appliance (VNA)
+  cluster** for stateful services (NAT). Core epics are now selection-driven
+  (`coreEpics(sel)` in `deployment-plan.ts`). Doc E6 6.1 describes both models. (#72)
+
 ## v0.9.8 — 2026-07-03
 - **Export tool now has VCF Automation choices** that drive the exported plan.
   Under Day-2 fleet: **Deploy VCF Automation?** (it's deferrable), a **network

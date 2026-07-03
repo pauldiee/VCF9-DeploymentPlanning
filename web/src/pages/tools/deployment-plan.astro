@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { docHref } from '../../lib/path';
-import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS } from '../../lib/deployment-plan';
+import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, NSX_CONNECTIVITY } from '../../lib/deployment-plan';
 
 const sel = defaultSelection();
 const epics = selectedEpics(sel);
@@ -17,7 +17,8 @@ const epics = selectedEpics(sel);
       <p class="itq-eyebrow">Export tool</p>
       <h1>Deployment Plan Export</h1>
       <p class="planx__lede">
-        Build your deployment scope below — stretch the management domain or not, add the Day-2 fleet
+        Build your deployment scope below — pick <strong>NSX connectivity</strong> (Centralized/Distributed),
+        stretch the management domain or not, add the Day-2 fleet
         (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer),
         and add one or more <strong>workload domains</strong>, each independently <strong>non-stretched or stretched</strong>
         (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
@@ -31,6 +32,11 @@ const epics = selectedEpics(sel);
       <fieldset>
         <legend>Scope</legend>
         <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.</p>
+        <label class="planx__sublabel">NSX connectivity
+          <select id="selConnectivity">
+            {NSX_CONNECTIVITY.map((c) => <option value={c.value}>{c.label}</option>)}
+          </select>
+        </label>
         <label class="planx__check"><input type="checkbox" id="optMgmtStretched" /> Stretch the management domain <span class="planx__tag">E7</span></label>
         <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Operations / Automation / Logs) <span class="planx__tag">E8</span></label>
         <div class="planx__sub" id="autoBlock">
@@ -118,6 +124,7 @@ const epics = selectedEpics(sel);
     type Selection,
     type Wld,
     type AutomationPlacement,
+    type NsxConnectivity,
   } from '../../lib/deployment-plan';
 
   const $ = (id: string) => document.getElementById(id)!;
@@ -127,6 +134,7 @@ const epics = selectedEpics(sel);
 
   function readSel(): Selection {
     return {
+      connectivity: (<HTMLSelectElement>$('selConnectivity')).value as NsxConnectivity,
       mgmtStretched: (<HTMLInputElement>$('optMgmtStretched')).checked,
       day2: (<HTMLInputElement>$('optDay2')).checked,
       automation: {
@@ -237,6 +245,7 @@ const epics = selectedEpics(sel);
     render();
   });
 
+  $('selConnectivity').addEventListener('change', render);
   $('optMgmtStretched').addEventListener('change', render);
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
   for (const id of ['optAutoDeploy', 'selAutoPlacement', 'optAutoAvi']) {
