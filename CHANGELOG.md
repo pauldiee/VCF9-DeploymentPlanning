@@ -1,6 +1,20 @@
 # Changelog
 
-## v0.10.3 — 2026-07-03
+## v0.10.4 — 2026-07-03
+- **Host Overlay TEP: static IP pool is now the recommended addressing** (DHCP
+  scope stays documented as the supported alternative). Flipped the
+  `prerequisites.md` "DHCP (optional but easiest)" section into *Host Overlay
+  TEP addressing (static IP pool recommended)*, updated the Section A VLAN
+  table + IP carve-out in `01-network-dns-plan.md`, and reworded intake `B8`
+  (static pool range asked for up front). The workbook's own *Deploy Management
+  Domain* sample uses **IP Pool** for *IP Assignment (TEP)* — mapping row `B8`
+  now names the real field labels (Host Overlay Network: VLAN ID / Gateway
+  CIDR / IP Assignment (TEP) / Range From / To). (#74)
+- **More Broadcom TechDocs references:** TEP addressing (WLD prerequisites +
+  per-cluster TEP IP pools), the per-component FQDN/IP inventory (9.1 Planning
+  and Preparation) linked from the DNS prereqs and the VM-Management sizing
+  note, identity-provider configuration (per-IdP sub-pages + AD over LDAP), and
+  certificate-management walk-throughs. (#74)
 - **Export tool: VCF Automation deployment model (Stage 4 — completes #72).** A
   **Deployment model** dropdown in the VCF Automation sub-block — **single-node**
   (no LB) or **HA cluster** (nodes behind a VIP). Choosing HA without the Avi LB

@@ -105,13 +105,32 @@ identity source up front; it has specific inputs and well-known gotchas.
 
 > Other supported identity sources: **OpenLDAP**, and external IdPs — **Microsoft
 > Entra ID** (OIDC / SAML) and **AD FS**. Those need different prep; see Broadcom's
-> *Setting up SSO* / *Configure the VCF Identity Provider* docs.
+> [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html)
+> (per-IdP sub-pages) and [Configure Active Directory as an Identity Provider
+> Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)
+> on TechDocs.
 
-## DHCP (optional but easiest)
+## Host Overlay TEP addressing (static IP pool recommended)
 
-- Scope on the **ESX Host Overlay** VLAN: at least `nodes × pNICs` IPs.
-  - Example: 4-node cluster × 2 pNICs = 8 IPs minimum.
-- Alternative: static IP pool on the overlay TEP (configured in VCF Installer).
+How each host gets its GENEVE tunnel-endpoint (TEP) IPs on the **ESX Host
+Overlay** VLAN. Either way, size for at least `nodes × pNICs` IPs plus growth —
+e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
+
+- **Recommended: static IP pool** — entered directly in the VCF Installer at
+  bring-up (and per cluster in the workload-domain wizard). No external DHCP
+  service to build, monitor, or keep alive; and in stretched (multi-AZ) designs
+  no per-AZ DHCP scope per TEP subnet. The P&P workbook's own *Deploy
+  Management Domain* sample uses **IP Pool** for the *IP Assignment (TEP)*
+  field.
+- **Alternative: DHCP scope** on the ESX Host Overlay VLAN — fully supported,
+  same sizing rule; use it when the network team already operates DHCP on that
+  VLAN and prefers central address management.
+
+> Broadcom TechDocs accepts either for the prerequisite — *"a static IP pool
+> or a DHCP server configured and advertising IP addresses on the … NSX host
+> overlay (Host TEP) VLAN"* ([Create a New Workload Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-private-cloud-infrastructure/working-with-workload-domains/deploy-a-vi-workload-domain-using-the-sddc-manager-ui.html)).
+> TEP IP pools can also be created per cluster after bring-up
+> ([Create an IP Pool for Tunnel Endpoint IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/create-an-ip-pool-for-tunnel-endpoint-ip-addresses.html)).
 
 ## DNS
 
@@ -121,6 +140,9 @@ identity source up front; it has specific inputs and well-known gotchas.
 - Replication scope: all DNS servers in the forest.
 - Two DNS servers configured on every appliance.
 - One **CNAME** wrapping the two NTP A-records for round-robin (see below).
+- The authoritative per-component FQDN/IP inventory is in Broadcom TechDocs:
+  [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses.html)
+  (9.1 Planning and Preparation).
 
 ## NTP
 
@@ -150,6 +172,11 @@ identity source up front; it has specific inputs and well-known gotchas.
   Enrollment` roles (Web Enrollment on the same host as the CA role).
 - **OpenSSL:** configured on the appliance with the org details (Common Name,
   Country, Locality, Organization, OU, State) — no external prerequisites.
+- TechDocs walk-throughs: [Configure a Certificate Authority for VMware Cloud
+  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
+  and the umbrella [Managing Certificates in VMware Cloud
+  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0.html)
+  section (verify CA-type behaviour in-product — the docs lag the 9.1 UI).
 
 ## SFTP
 

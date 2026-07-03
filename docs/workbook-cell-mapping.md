@@ -200,7 +200,7 @@ before wiring a generator.
 | B5     | VCF Automation IP Range        | IPv4 address Range From / To                         |
 | B6     | vMotion Network                | VLAN / MTU / Gateway / Range From / To               |
 | B7     | vSAN Network                   | VLAN / MTU / Gateway / Range From / To               |
-| B8     | ESX Host Overlay Network       | VLAN / MTU / Gateway / DHCP or static                |
+| B8     | Host Overlay Network           | VLAN ID / Gateway CIDR / IP Assignment (TEP): IP Pool (recommended) or DHCP / IP address Range From / To |
 | B20    | VPC Gateway Connectivity       | VLAN ID / Gateway CIDR IPv4 Address (Distributed only) |
 | E6     | vCenter                        | FQDN / IP                                            |
 | E7     | SDDC Manager                   | FQDN / IP                                            |

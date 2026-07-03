@@ -59,7 +59,7 @@ Legend:
 |B5 | VCF Automation IP range — 5 IPs, allocate a `/29`; inside the VM Mgmt subnet (Shared-Network placement; other placements see `B21`) | `[MGMT]`   |
 |B6 | vMotion: VLAN, MTU=9000, gateway CIDR, host IP range           | `[MGMT]`   |
 |B7 | vSAN: VLAN, MTU=9000, gateway CIDR, host IP range              | `[MGMT]`   |
-|B8 | ESX Host Overlay: VLAN, MTU=9000, gateway CIDR; DHCP or static?| `[MGMT]`   |
+|B8 | ESX Host Overlay: VLAN, MTU=9000, gateway CIDR; static TEP pool (recommended) or DHCP? If static: pool range | `[MGMT]`   |
 |B9 | NSX Edge Overlay: VLAN, MTU=9000, gateway CIDR, IP range       | `[CFG-M]`  |
 |B10| NSX Edge Uplink-01: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |
 |B11| NSX Edge Uplink-02: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |

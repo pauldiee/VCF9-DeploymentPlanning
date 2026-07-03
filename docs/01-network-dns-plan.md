@@ -26,7 +26,7 @@ first WLD — duplicate it for additional WLDs / clusters.
 | 3 | VCF Management (optional)      |         | `/24`             |                       | 1500 |                  | Only if separating VCF services from VM-mgmt   |
 | 4 | vMotion                        |         | `/24`             |                       | 9000 |                  | Jumbo required                                 |
 | 5 | vSAN                           |         | `/24`             |                       | 9000 |                  | Jumbo required; skip if NFS/FC only            |
-| 6 | ESX Host Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo; MTU inherited from the vDS; DHCP scope or static TEP pool |
+| 6 | ESX Host Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo; MTU inherited from the vDS; **static TEP pool recommended** (DHCP scope supported) |
 | 7 | NSX Edge Overlay (TEP)         |         | `/24`             |                       | 9000 |                  | Jumbo                                          |
 | 8 | NSX Edge Uplink-01             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-A; BGP peer              |
 | 9 | NSX Edge Uplink-02             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-B; BGP peer              |
@@ -56,7 +56,7 @@ first WLD — duplicate it for additional WLDs / clusters.
 
 ### IP range carve-out (per subnet)
 
-Inside each `/24` reserve contiguous ranges so DHCP / static pools don't
+Inside each `/24` reserve contiguous ranges so static pools / DHCP scopes don't
 collide with appliance IPs.
 
 **Host-facing subnets** — one IP per host VMK, sized here for up to 16 mgmt
@@ -67,8 +67,15 @@ hosts:
 | ESX Mgmt     | Host mgmt VMK           | `.11–.30`                  |
 | vMotion      | Host vMotion VMK        | `.101–.116`                |
 | vSAN         | Host vSAN VMK           | `.101–.116`                |
-| ESX Overlay  | Host TEPs (×2 per host) | DHCP scope or static pool  |
+| ESX Overlay  | Host TEPs (×2 per host) | Static pool (recommended), e.g. `.101–.132`; DHCP scope supported |
 | Edge Overlay | Edge TEPs               | `.11–.20`                  |
+
+> **TEP addressing:** prefer a **static IP pool**, entered in the VCF Installer —
+> no external DHCP dependency, and no per-AZ scopes in stretched designs. Per
+> [Broadcom TechDocs](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-private-cloud-infrastructure/working-with-workload-domains/deploy-a-vi-workload-domain-using-the-sddc-manager-ui.html)
+> either a static IP pool or a DHCP server on the Host Overlay VLAN satisfies
+> the prerequisite; pools can also be created per cluster later
+> ([Create an IP Pool for Tunnel Endpoint IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/create-an-ip-pool-for-tunnel-endpoint-ip-addresses.html)).
 
 **VM Management subnet — the crowded one.** A VCF 9.1 management domain packs a
 lot onto this network: ~30–48 IPs. Size it generously (a `/24` is normal — do
@@ -76,7 +83,8 @@ lot onto this network: ~30–48 IPs. Size it generously (a `/24` is normal — d
 needs **two dedicated contiguous blocks**: a `/29` for VCF Automation and a
 `/28`–`/27` for the VCF management-services runtime. Each additional VI Workload
 Domain also lands its **vCenter (1) + NSX Manager cluster (4)** on *this* subnet
-— **+5 IPs per WLD** — so leave headroom.
+— **+5 IPs per WLD** — so leave headroom. The full per-component FQDN/IP list is
+on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses.html).
 
 | Component                       | IPs        | Block       | Notes                                                                     |
 | ------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------- |
