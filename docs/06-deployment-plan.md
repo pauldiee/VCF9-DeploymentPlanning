@@ -116,7 +116,7 @@ stretch** (the same order a stretched workload domain follows in E9).
   - *Acceptance:* inter-AZ link measured under 5 ms RTT, at least 10 Gbps, MTU 9000 end-to-end; HA L3 gateway between AZs verified.
 - **Story 7.2 — Install, configure & commission the second-AZ hosts.** Image the AZ2 hosts with the supported **ESXi ISO** (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) to prep + commission hosts quickly); configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then **commission** them into SDDC Manager, ready for the stretch.
   - *Acceptance:* AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned and available in SDDC Manager.
-- **Story 7.3 — Witness site (management).** Deploy the vSAN witness appliance for the **management** cluster at the third site; route it to both AZ ESX-management networks.
+- **Story 7.3 — Witness site (management).** Deploy the vSAN witness appliance for the **management** cluster at the third site (its **own** — a vSAN witness serves **only one** stretched cluster); route it to both AZ ESX-management networks.
   - *Acceptance:* management witness appliance deployed at the third site and reachable from both AZ ESX-management networks.
 - **Story 7.4 — Stretch the cluster.** **SDDC Manager does the stretch for you** — submit a stretch **JSON spec via the SDDC Manager API** and VCF builds the fault domains (AZ1 preferred / AZ2 secondary / witness), balances hosts across the AZs, and flips the datastore storage policy to **site mirroring** (stretched, ~2× capacity). You just supply the inputs from 7.1–7.3: an **AZ2 network pool**, the commissioned AZ2 hosts (equal count per AZ), and the witness. It **won't** stretch if the cluster shares a vSAN storage policy with another cluster, has DPU-backed hosts, or has L3-different subnets within an AZ. Ref: [Broadcom — Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html) · [`03-multi-az-prep.md`](03-multi-az-prep.md).
   - *Acceptance:* SDDC Manager reports the cluster stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.
@@ -142,8 +142,9 @@ Ref: [`02-customer-intake.md`](02-customer-intake.md) section H (+ [`03-multi-az
 
 **Repeat this epic per workload domain.** Each WLD is independently
 **non-stretched** or **stretched** — a stretched WLD gets its **own** second-AZ
-hosts and its **own** vSAN witness (one witness per stretched cluster, separate
-from the management witness), and follows the same **hosts → witness → stretch**
+hosts and its **own** vSAN witness (a witness serves **only one** stretched
+cluster, so each has a dedicated one; **shared-witness is 2-node-cluster only**,
+not stretched), and follows the same **hosts → witness → stretch**
 order as the management stretch (E7). A stretched WLD also requires the
 **management domain to be stretched first (E7)**.
 
@@ -164,7 +165,7 @@ order as the management stretch (E7). A stretched WLD also requires the
   - *Acceptance:* WLD hosts in both AZs reachable, matched ESXi build, commissioned in SDDC Manager.
 - **Story 9.3 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster.
   - *Acceptance:* WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.
-- **Story 9.4 — WLD witness.** Deploy a **dedicated** vSAN witness for **this** WLD at the third site (one per stretched cluster, separate from the management witness); route it to both AZ ESX-management networks.
+- **Story 9.4 — WLD witness.** Deploy a **dedicated** vSAN witness for **this** WLD at the third site. A witness serves **only one** stretched cluster, so each stretched WLD needs its own, separate from the management witness (the **shared-witness** feature is **2-node-cluster only**, not stretched). Route it to both AZ ESX-management networks.
   - *Acceptance:* dedicated WLD witness deployed at the third site and reachable from both AZ ESX-management networks.
 - **Story 9.5 — Stretch the WLD cluster.** Same as the management stretch — **SDDC Manager stretches it for you** from a **JSON spec via the API**: it builds the fault domains, balances the per-AZ hosts, and sets the **site-mirroring** storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. **The management domain must already be stretched (E7)** before any workload-domain cluster can be stretched. Edge stretched only under NSX **Centralized** connectivity. Ref: [Broadcom — Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html).
   - *Acceptance:* SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.

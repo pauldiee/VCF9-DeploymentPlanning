@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.8.3 — 2026-07-03
+- Clarified the **vSAN witness rule** for stretched clusters. Verified against
+  Broadcom: *"A single witness host can support only one vSAN stretched cluster"*
+  and *"two-node vSAN clusters can share a single witness host."* So a dedicated
+  witness per stretched cluster is **required** (not just recommended) — the
+  **shared-witness** feature is **2-node-cluster only**, not stretched. Strengthened
+  the wording in E7 7.3, E9 9.4, and the E9 intro. Doc + lib. (#63)
+
 ## v0.8.2 — 2026-07-03
 - **VCF Operations is a bring-up component in 9.1, not Day-2.** Moved it out of the
   Day-2 epic into E5 bring-up (5.3 now builds vCenter/SDDC Manager/NSX/vSAN **+ VCF

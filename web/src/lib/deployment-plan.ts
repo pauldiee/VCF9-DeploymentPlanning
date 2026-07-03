@@ -206,7 +206,7 @@ const E7_MGMT_STRETCH: Epic = {
     {
       id: '7.3',
       title: 'Witness site (management)',
-      tasks: ['Deploy the vSAN witness appliance for the management cluster at the third site; route it to both AZ ESX-management networks.'],
+      tasks: ['Deploy the vSAN witness appliance for the management cluster at the third site (its own — a vSAN witness serves only one stretched cluster); route it to both AZ ESX-management networks.'],
       acceptance: 'Management witness appliance deployed at the third site and reachable from both AZ ESX-management networks.',
     },
     {
@@ -284,7 +284,7 @@ function wldEpic(w: Wld, index: number): Epic {
         {
           id: '9.4',
           title: 'WLD witness',
-          tasks: ['Deploy a dedicated vSAN witness appliance for THIS WLD at the third site (one witness per stretched cluster — separate from the management witness); route it to both AZ ESX-management networks.'],
+          tasks: ['Deploy a dedicated vSAN witness appliance for THIS WLD at the third site. A witness serves only ONE stretched cluster, so each stretched WLD needs its own, separate from the management witness (the shared-witness feature is 2-node-cluster only, not stretched). Route it to both AZ ESX-management networks.'],
           acceptance: 'Dedicated WLD witness deployed at the third site and reachable from both AZ ESX-management networks.',
         },
         {
