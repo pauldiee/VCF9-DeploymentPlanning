@@ -21,7 +21,7 @@ more workload domains**, each independently **non-stretched or stretched**.
 | ----- | ---------- | ----- |
 | **Core** (always) | The management fleet: plan → intake → workbook → readiness gate → bring-up → config → handover | E1–E6, E10 |
 | **Stretch the management domain** | Management cluster stretched across two AZs + its own witness | + E7 |
-| **Day-2 fleet** | VCF Operations / Automation / Logs deployed after bring-up | + E8 |
+| **Day-2 fleet** | Deferred/added after bring-up: VCF Automation (if not taken at bring-up), Log Management, Operations for Networks, Identity Broker (VCF Operations itself is a **bring-up** component) | + E8 |
 | **Workload domain** (repeat per WLD) | A VI workload domain — **non-stretched** or **stretched** (its own hosts, and if stretched its own witness) | + E9 (one per WLD) |
 
 Epic ids follow execution order. Mix freely — e.g. a stretched management domain
@@ -87,13 +87,14 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
 - **Story 5.2 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network.
   - On that host, put the Installer on a port group carrying the **VM Management VLAN**. A fresh ESXi host's default `VM Network` port group is **untagged (VLAN 0)**, so if VM Management is a tagged VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the appliance has no management connectivity.
   - *Acceptance:* VCF Installer deployed on the VM-Management VLAN, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.
-- **Story 5.3 — Deploy the management domain.** Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.
-  - *Acceptance:* bring-up completes; vCenter, SDDC Manager, and NSX healthy; vSAN datastore online.
+- **Story 5.3 — Deploy the management domain.** Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, vSAN, and **VCF Operations** (+ fleet management, Cloud Proxy, License Server); submit the JSON.
+  - **VCF Operations is deployed at bring-up** in VCF 9.1 — not Day-2 (only VCF Automation can be deferred). Decide its cluster address up front: **floating IP** (default) or an **external load-balancer VIP** — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.
+  - *Acceptance:* bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; vSAN datastore online.
 
 ### E6 — Management domain configuration  ·  Owner: Platform + Network + Security
 - **Story 6.1 — NSX edges & north-south.** Deploy edges; establish BGP peering to the ToRs; verify routes.
   - *Acceptance:* edges deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.
-- **Story 6.2 — Certificates (optional / partial here).** You *can* replace certificates for the components deployed **so far** now, but the **full** CA-signed replacement is usually done **once all components exist** — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.5).
+- **Story 6.2 — Certificates (optional / partial here).** You *can* replace certificates for the components deployed **so far** now, but the **full** CA-signed replacement is usually done **once all components exist** — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.4).
 - **Story 6.3 — Identity & roles (optional, *not recommended* at this stage).** You *can* bind **vCenter SSO** directly to AD/LDAP now for early management access, but the **recommended** path is fleet-wide SSO via the **VCF Identity Broker**, a Day-2 component (see E8 / [`05-day2-deployments.md`](05-day2-deployments.md)). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, and map admin/operator/viewer groups if you do.
 - **Story 6.4 — Backup & lifecycle.** Configure SFTP backups; connect the depot for **fleet lifecycle** (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).
   - *Acceptance:* a test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.5.)
@@ -123,15 +124,17 @@ stretch** (the same order a stretched workload domain follows in E9).
 ### E8 — Day-2 fleet deployment  ·  Owner: Platform
 Ref: [`05-day2-deployments.md`](05-day2-deployments.md)
 
-- **Story 8.1 — Network placement.** Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment; build the network if non-shared.
+**VCF Operations (+ fleet management) is deployed at bring-up (E5 5.3), not here** —
+in VCF 9.1 only **VCF Automation** can be deferred to Day-N. This epic covers the
+components you defer or add after bring-up.
+
+- **Story 8.1 — Network placement.** Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared.
   - *Acceptance:* chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.
-- **Story 8.2 — VCF Operations.** Deploy Operations (+ Cloud Proxy, License Server). Decide the cluster address: **floating IP** (default) or an **external load-balancer VIP** — VCF never provides the LB for Operations, so if a VIP is wanted, provision the external LB and add its FQDN to the cert SAN *first* (see `05-day2-deployments.md` B.1).
-  - *Acceptance:* VCF Operations cluster up and healthy; its cluster address (floating IP, or external-LB VIP) is reachable.
-- **Story 8.3 — VCF Automation.** Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
+- **Story 8.2 — VCF Automation.** Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR. (VCF Automation is the one fleet component you can **defer** from bring-up to Day-N.)
   - *Acceptance:* VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.
-- **Story 8.4 — Ops for Logs / Networks & Identity Broker.** Deploy the remaining fleet components as needed.
+- **Story 8.3 — Log Management, Operations for Networks & Identity Broker.** Deploy the remaining fleet components as needed: **Log Management**, VCF Operations for Networks, and the Identity Broker.
   - *Acceptance:* each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.
-- **Story 8.5 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, complete **fleet SSO via the VCF Identity Broker** (the recommended identity path, deferred from E6 6.3), and **apply licensing** across the fleet (via VCF Operations).
+- **Story 8.4 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, complete **fleet SSO via the VCF Identity Broker** (the recommended identity path, deferred from E6 6.3), and **apply licensing** across the fleet (via VCF Operations).
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
 
 ### E9 — Workload domain  ·  Owner: Platform + Network (+ Storage if stretched)

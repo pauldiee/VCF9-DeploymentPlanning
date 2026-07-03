@@ -141,8 +141,11 @@ const CORE_PRE: Epic[] = [
       {
         id: '5.3',
         title: 'Deploy the management domain',
-        tasks: ['Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, and vSAN; submit the JSON.'],
-        acceptance: 'Bring-up completes; vCenter, SDDC Manager, and NSX healthy; vSAN datastore online.',
+        tasks: [
+          'Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, vSAN, and VCF Operations (+ fleet management, Cloud Proxy, License Server); submit the JSON.',
+          'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide its cluster address up front: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
+        ],
+        acceptance: 'Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; vSAN datastore online.',
       },
     ],
   },
@@ -156,7 +159,7 @@ const CORE_PRE: Epic[] = [
         id: '6.2',
         title: 'Certificates (optional / partial here)',
         tasks: [
-          'Optional here: you can replace certificates for the components deployed so far, but the full CA-signed replacement is usually done once all components exist — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.5).',
+          'Optional here: you can replace certificates for the components deployed so far, but the full CA-signed replacement is usually done once all components exist — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.4).',
         ],
       },
       {
@@ -170,7 +173,7 @@ const CORE_PRE: Epic[] = [
         id: '6.4',
         title: 'Backup & lifecycle',
         tasks: ['Configure SFTP backups; connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do).'],
-        acceptance: 'A test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.5.)',
+        acceptance: 'A test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.4.)',
       },
     ],
   },
@@ -225,20 +228,11 @@ const E8_DAY2: Epic = {
   owner: 'Platform',
   ref: '05-day2-deployments.md',
   stories: [
-    { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment; build the network if non-shared.'], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
+    { id: '8.1', title: 'Network placement', tasks: ['Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared.'], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
+    { id: '8.2', title: 'VCF Automation', tasks: ['Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR. (VCF Automation is the one fleet component you can defer from bring-up to Day-N — VCF Operations itself is deployed at bring-up; see E5 5.3.)'], acceptance: 'VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.' },
+    { id: '8.3', title: 'Log Management, Operations for Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed: Log Management, VCF Operations for Networks, and the Identity Broker.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
     {
-      id: '8.2',
-      title: 'VCF Operations',
-      tasks: [
-        'Deploy Operations (+ Cloud Proxy, License Server).',
-        'Decide the cluster address: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so if a VIP is wanted, provision the external LB and add its FQDN to the cert SAN first.',
-      ],
-      acceptance: 'VCF Operations cluster up and healthy; its cluster address (floating IP, or external-LB VIP) is reachable.',
-    },
-    { id: '8.3', title: 'VCF Automation', tasks: ['Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.'], acceptance: 'VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.' },
-    { id: '8.4', title: 'Ops for Logs / Networks & Identity Broker', tasks: ['Deploy the remaining fleet components as needed.'], acceptance: 'Each deployed Day-2 component healthy; the fleet-management health (synthetic) check passes.' },
-    {
-      id: '8.5',
+      id: '8.4',
       title: 'Certificates, identity & licensing (full fleet)',
       tasks: [
         'Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3), and apply licensing across the fleet (via VCF Operations).',

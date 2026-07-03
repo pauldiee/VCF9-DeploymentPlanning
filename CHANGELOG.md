@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8.2 — 2026-07-03
+- **VCF Operations is a bring-up component in 9.1, not Day-2.** Moved it out of the
+  Day-2 epic into E5 bring-up (5.3 now builds vCenter/SDDC Manager/NSX/vSAN **+ VCF
+  Operations**, with the cluster-address / external-LB decision); per Broadcom's
+  fleet bring-up wizard, only VCF Automation can be deferred to Day-N. E8
+  renumbered (8.1 network placement, 8.2 VCF Automation, 8.3 Log Management /
+  Operations for Networks / Identity Broker, 8.4 full-fleet finalization); cross-
+  refs 6.2/6.4 → E8 8.4; scope-table Day-2 description updated. (#61)
+- Renamed **"Ops for Logs" → "Log Management"** (VCF 9.1 / workbook name). (#62)
+
 ## v0.8.1 — 2026-07-03
 - Elaborated the **stretch stories (E7 7.4, E9 9.5)**: SDDC Manager does the
   stretch from a **JSON spec via its API** — it builds the fault domains
