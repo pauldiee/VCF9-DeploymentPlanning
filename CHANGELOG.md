@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.7 — 2026-07-03
+- Added a verified reference link to the E8.2 Avi/VCF-Automation note — Broadcom's
+  *Deploy Avi Load Balancer from VCF Operations* (the design page had moved / 404'd;
+  this URL was HTTP-checked). Doc + lib. (#71)
+
 ## v0.9.6 — 2026-07-03
 - Deployment-plan E8.2 (VCF Automation) now notes the specific case: a **clustered
   / HA** VCF Automation (or self-service load balancing) is load-balanced by an
