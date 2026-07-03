@@ -39,6 +39,7 @@ export interface Wld {
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
 export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
+export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
 
 export interface AutomationChoice {
   deploy: boolean;
@@ -48,6 +49,7 @@ export interface AutomationChoice {
 
 export interface Selection {
   connectivity: NsxConnectivity;
+  storage: StorageType;
   supervisorSize: SupervisorSize;
   mgmtStretched: boolean;
   day2: boolean;
@@ -60,6 +62,7 @@ export function defaultSelection(): Selection {
   // (VCF Automation on the shared management network, no Avi), management not stretched.
   return {
     connectivity: 'centralized',
+    storage: 'vsan-esa',
     supervisorSize: 'Small',
     mgmtStretched: false,
     day2: true,
@@ -77,6 +80,14 @@ export const NSX_CONNECTIVITY: { value: NsxConnectivity; label: string }[] = [
 /** vSphere Supervisor control-plane sizes. */
 export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
 
+/** Principal storage types (mirrors the workbook's Storage Type). */
+export const STORAGE_TYPES: { value: StorageType; label: string; prereq: string; bringup: string }[] = [
+  { value: 'vsan-esa', label: 'vSAN ESA', prereq: 'all-flash NVMe (TLC) capacity, single storage pool; 25 GbE NICs recommended', bringup: 'vSAN ESA datastore' },
+  { value: 'vsan-osa', label: 'vSAN OSA', prereq: 'all-flash cache + capacity disk groups (OSA); 10/25 GbE', bringup: 'vSAN OSA datastore' },
+  { value: 'nfs', label: 'NFS (external)', prereq: 'external NFSv3 storage + the NFS network/VLAN; no local vSAN disks required', bringup: 'external NFS datastore (principal storage)' },
+  { value: 'fc', label: 'VMFS on Fibre Channel', prereq: 'FC HBAs, SAN zoning, and LUNs presented to the hosts; no local vSAN disks required', bringup: 'external VMFS-on-FC datastore (principal storage)' },
+];
+
 /** VCF Automation network placements (mirrors docs/05-day2-deployments.md §C). */
 export const AUTOMATION_PLACEMENTS: { value: AutomationPlacement; label: string; text: string }[] = [
   { value: 'shared', label: 'Shared Management Network', text: 'nodes come from the management /29 (intake B5); simplest, no new network to build' },
@@ -93,6 +104,7 @@ const AVI_LB_URL =
 
 function coreEpics(sel: Selection): Epic[] {
   const distributed = sel.connectivity === 'distributed';
+  const storage = STORAGE_TYPES.find((s) => s.value === sel.storage) ?? STORAGE_TYPES[0];
   return [
   {
     id: 'E1',
@@ -135,7 +147,7 @@ function coreEpics(sel: Selection): Epic[] {
       {
         id: '4.1',
         title: 'Hardware ready',
-        tasks: ['Hosts on the VCG, matched spec, BOM confirmed.', 'Confirm CPU/RAM/storage per host against the sizing output (E2).'],
+        tasks: ['Hosts on the VCG, matched spec, BOM confirmed.', 'Confirm CPU/RAM/storage per host against the sizing output (E2).', `Storage — ${storage.label}: ${storage.prereq}.`],
         acceptance: 'All hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).',
       },
       {
@@ -187,10 +199,10 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.3',
         title: 'Deploy the management domain',
         tasks: [
-          'Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, vSAN, and VCF Operations; submit the JSON.',
+          `Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, VCF Operations, and the ${storage.bringup}; submit the JSON.`,
           'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide its cluster address up front: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
         ],
-        acceptance: 'Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; vSAN datastore online.',
+        acceptance: `Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; ${storage.label} datastore online.`,
       },
       {
         id: '5.4',

@@ -71,6 +71,7 @@ plan (E1–E3) called for. Runs in parallel with E1–E3; must be all-green befo
 
 - **Story 4.1 — Hardware ready.** Hosts on the VCG, matched spec, BOM confirmed.
   - Confirm CPU/RAM/storage per host against the sizing output (E2).
+  - **Principal storage** (choice: **vSAN ESA / vSAN OSA / NFS / VMFS-on-FC**) — pick it in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/); it adapts these prereqs and the E5 bring-up. vSAN ESA wants all-flash NVMe + 25 GbE; NFS/FC need external storage + the storage network (no local vSAN disks).
   - *Acceptance:* all hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).
 - **Story 4.2 — Physical network ready.** VLANs, MTU, and BGP fabric provisioned.
   - Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.

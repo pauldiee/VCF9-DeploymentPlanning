@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.10.2 — 2026-07-03
+- **Export tool: principal storage choice (Stage 3).** A **Principal storage**
+  dropdown (**vSAN ESA / vSAN OSA / NFS / VMFS-on-FC**) adapts the E4 hardware
+  prereqs (4.1 — disk/HBA + NIC guidance) and the E5 bring-up (5.3 — "builds …
+  and the vSAN/NFS/FC datastore"; acceptance names the datastore). Core epics
+  read `sel.storage`. (#72)
+
 ## v0.10.1 — 2026-07-03
 - **Export tool: vSphere Supervisor choice (Stage 2).** Each workload domain now
   has a **Supervisor** checkbox, plus a **control-plane size** (Small/Medium/Large).

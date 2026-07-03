@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { docHref } from '../../lib/path';
-import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, NSX_CONNECTIVITY, SUPERVISOR_SIZES } from '../../lib/deployment-plan';
+import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, NSX_CONNECTIVITY, SUPERVISOR_SIZES, STORAGE_TYPES } from '../../lib/deployment-plan';
 
 const sel = defaultSelection();
 const epics = selectedEpics(sel);
@@ -17,8 +17,8 @@ const epics = selectedEpics(sel);
       <p class="itq-eyebrow">Export tool</p>
       <h1>Deployment Plan Export</h1>
       <p class="planx__lede">
-        Build your deployment scope below — pick <strong>NSX connectivity</strong> (Centralized/Distributed),
-        stretch the management domain or not, add the Day-2 fleet
+        Build your deployment scope below — pick <strong>NSX connectivity</strong> (Centralized/Distributed)
+        and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
         (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer),
         and add one or more <strong>workload domains</strong>, each independently <strong>non-stretched or stretched</strong>
         (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
@@ -35,6 +35,11 @@ const epics = selectedEpics(sel);
         <label class="planx__sublabel">NSX connectivity
           <select id="selConnectivity">
             {NSX_CONNECTIVITY.map((c) => <option value={c.value}>{c.label}</option>)}
+          </select>
+        </label>
+        <label class="planx__sublabel">Principal storage
+          <select id="selStorage">
+            {STORAGE_TYPES.map((s) => <option value={s.value}>{s.label}</option>)}
           </select>
         </label>
         <label class="planx__check"><input type="checkbox" id="optMgmtStretched" /> Stretch the management domain <span class="planx__tag">E7</span></label>
@@ -131,6 +136,7 @@ const epics = selectedEpics(sel);
     type AutomationPlacement,
     type NsxConnectivity,
     type SupervisorSize,
+    type StorageType,
   } from '../../lib/deployment-plan';
 
   const $ = (id: string) => document.getElementById(id)!;
@@ -141,6 +147,7 @@ const epics = selectedEpics(sel);
   function readSel(): Selection {
     return {
       connectivity: (<HTMLSelectElement>$('selConnectivity')).value as NsxConnectivity,
+      storage: (<HTMLSelectElement>$('selStorage')).value as StorageType,
       supervisorSize: (<HTMLSelectElement>$('selSuperSize')).value as SupervisorSize,
       mgmtStretched: (<HTMLInputElement>$('optMgmtStretched')).checked,
       day2: (<HTMLInputElement>$('optDay2')).checked,
@@ -255,6 +262,7 @@ const epics = selectedEpics(sel);
   });
 
   $('selConnectivity').addEventListener('change', render);
+  $('selStorage').addEventListener('change', render);
   $('selSuperSize').addEventListener('change', render);
   $('optMgmtStretched').addEventListener('change', render);
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
