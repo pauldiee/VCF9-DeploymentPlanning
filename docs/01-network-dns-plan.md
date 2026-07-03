@@ -94,7 +94,7 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | VCF Operations                  | 5          |             | 3 analytics nodes (primary / replica / data) + cloud proxy + license server |
 | VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
 | NSX Edge nodes (if deployed)    | 2          |             | Mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below    |
-| VCF Automation                  | 5          | `/29`       | Active nodes + buffer for node redeploy / rolling upgrade; allocate a contiguous `/29` (5 IPs) |
+| VCF Automation                  | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below) |
 | Avi Controller cluster (optional)| 4         |             | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / Automation HA / tenant LB); see `prerequisites.md` |
 | VCF Operations for Networks (optional) | 2 (+2 if Large) |  | Platform node + collector node — lands here when the Day-2 placement is the **Shared Management Network** (a **Large** platform is a 3-node cluster: +2); see `05-day2-deployments.md` |
@@ -155,6 +155,13 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 Every FQDN below needs **both** an A and a PTR. Add WLD/cluster hosts in the
 same shape.
 
+> **Lowercase only.** The TechDocs [FQDN/IP list](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses.html)
+> marks the fleet-services family with *"Do not use capital letters in the
+> FQDN"*: **VCF Automation, VCF services runtime, fleet components, instance
+> components, Identity Broker, Log Management, real-time metrics**. DNS itself
+> is case-insensitive but the appliances are not always — the practical rule:
+> create **every** VCF FQDN lowercase.
+
 | Role               | Sample FQDN                          | IP source            |
 | ------------------ | ------------------------------------ | -------------------- |
 | ESXi host 1..N     | `sfo01-m01-r01-esx0N.sfo.example.io` | ESX Mgmt subnet      |
@@ -186,6 +193,7 @@ same shape.
 - [ ] Zone replication scope: **All DNS servers in this forest**
 - [ ] Every FQDN unique; every PTR present
 - [ ] No CNAME for any VCF appliance hostname (must be A)
+- [ ] All FQDNs **lowercase** (required for the fleet-services family; recommended everywhere)
 
 ---
 

@@ -42,7 +42,7 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | VCF Operations VIP              | `.21`                | Load balancer (HA)                       |
 | VCF Automation services runtime | `.24`                |                                          |
 | VCF Management Services runtime | `.32–.47`            | CIDR-aligned `/28` block (`10.11.10.32/28`) — fits the 12-node minimum; plan a `/27` instead if Day-2 Log Management / real-time metrics are in scope |
-| VCF Automation nodes            | `.56–.63`            | CIDR-aligned `/29` block (`10.11.10.56/29`); 5 IPs used + buffer |
+| VCF Automation nodes            | `.56–.63`            | CIDR-aligned `/29` block (`10.11.10.56/29`); 3 node IPs + 2 redeploy/rolling-update buffer |
 | VCF Operations analytics        | `.52`, `.53`, `.54`  | Primary / replica / data                 |
 | vCenter                         | `.70`                |                                          |
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |

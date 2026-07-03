@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.3 — 2026-07-04
+- **Lowercase-FQDN requirement absorbed from the TechDocs asterisks** (#96).
+  The FQDN/IP page marks the fleet-services family — VCF Automation, VCF
+  services runtime, fleet components, instance components, Identity Broker,
+  Log Management, real-time metrics — with *"Do not use capital letters in
+  the FQDN."* Now: a **Lowercase only** warning under `01`'s A+PTR table
+  (practical rule: create every VCF FQDN lowercase), a DNS-checklist item,
+  "(lowercase)" tags on intake `E10`/`E14` and the four affected IP/DNS CSV
+  rows.
+- **Automation `/29` breakdown made exact** (#96). TechDocs: **3 node IPs +
+  2 buffer** for automatic redeploy / rolling updates — replaced the "5 IPs
+  used + buffer" wording in `01` and the Rainpole sample.
+
 ## v1.2.2 — 2026-07-04
 - **"VCF Operations for Logs" → "Log Management" everywhere** (#95 — 9.1
   renamed the component). Renamed in the `01` carve-out + DNS rows, the `05`
