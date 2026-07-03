@@ -4,6 +4,7 @@ Management subnets,NTP servers,123,UDP,Outbound,Time sync,,Must be in sync befor
 Management subnets,AD domain controllers,"88, 389, 636, 3268",TCP/UDP,Outbound,Kerberos / LDAP / LDAPS / Global Catalog,,AD integration
 Management subnets,Certificate Authority,443,TCP,Outbound,Certificate enrollment / signing,,Plus CA-specific RPC for Microsoft CA
 Management subnets,Software depot,443,TCP,Outbound,Binary / bundle download,,Online (Broadcom) or local depot
+"VCF Installer, SDDC Manager, vCenter, VCF Operations, Cloud Proxy, VCF Download Tool","Broadcom public URLs: dl / eapi / vvs / projects.packages .broadcom.com; vcf.broadcom.com; vsanhealth / vcsa .vmware.com; auth.esp.vmware.com",443,TCP,Outbound,Online depot / licensing / CEIP / UMDS,,Allowlist on egress proxy if used; air-gapped: only the Download Tool host needs these
 Jump / bastion host,"vCenter, SDDC Manager, NSX Manager, VCF Operations",443,TCP,Inbound to mgmt,Admin UIs / APIs,,
 Jump / bastion host,"ESXi hosts, appliances",22,TCP,Inbound to mgmt,SSH (as needed),,
 NSX Edge nodes,ToR switches,179,TCP,Bidirectional,BGP peering,,

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.1 — 2026-07-04
+- **Public URLs absorbed as a prereq layer** (#94). The TechDocs *Public URLs
+  Required for Online Functionalities* page (8 destinations, all outbound
+  TCP 443, per-row source components) is now in the flow:
+  `prerequisites.md` gains a **Public URLs (online functionality)** section —
+  the full URL/purpose/source table, proxy-allowlist guidance, and the
+  air-gapped note (only the **VCF Download Tool** host needs the access);
+  `07` gains **A.1 Outbound public URLs** with the flows grouped by source;
+  intake `G` gets a pointer note tying `G1`/`G5` to the allowlist; and the
+  firewall-request CSV template gains the consolidated outbound-443 row.
+
 ## v1.2.0 — 2026-07-04
 - **Correction: Log Management / real-time metrics IPs come FROM the
   services-runtime block** (#93). v1.1.9 claimed the Day-N Logs worker IPs

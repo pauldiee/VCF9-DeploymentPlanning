@@ -175,6 +175,10 @@ VMware appliances reject `<` `>` `&` `'` `"` in some fields — avoid them.
 |G4 | Offline depot FQDN + port (offline only)                       | `[MGMT]`  |
 |G5 | Proxy required? (FQDN, port, auth)                             | `[MGMT]`  |
 
+> If `G1` = online — or the offline flow uses the **VCF Download Tool** — the
+> egress firewall / proxy (`G5`) must allow the **Public URLs** table in
+> `prerequisites.md` (all outbound 443).
+
 ---
 
 ## H. Workload Domain / Cluster

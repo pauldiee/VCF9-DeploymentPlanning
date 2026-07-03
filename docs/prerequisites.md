@@ -244,6 +244,30 @@ Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9
 [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html)
 — the Download Tool is the only supported offline method in 9.1.
 
+## Public URLs (online functionality)
+
+Everything online in VCF 9.1 — depot downloads, licensing, compatibility /
+vSAN HCL data, CEIP — talks to a short list of public URLs, all **outbound
+TCP 443**. Hand this table to the firewall team as-is, and if egress goes
+through a proxy (intake `G5`), have these allowlisted on it. Source:
+[Public URLs Required for Online Functionalities](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/public-urls-required-for-vmware-cloud-foundation.html)
+(earlier versions: KB 327186).
+
+| Destination URL                 | Purpose                                        | Needed by (source components)                                      |
+| ------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------ |
+| `dl.broadcom.com`               | Binaries download                              | VCF Installer, vCenter, VCF Operations, VCF Download Tool, depot services runtime |
+| `eapi.broadcom.com`             | Binaries, vSAN HCL data, licensing, Cloud Proxy connectivity | VCF Installer, SDDC Manager, vCenter, VCF Operations, Cloud Proxy, VCF Download Tool, depot services runtime |
+| `vvs.broadcom.com`              | Binaries, compatibility data, vSAN HCL data    | VCF Installer, SDDC Manager, VCF Download Tool, depot services runtime |
+| `vsanhealth.vmware.com`         | Binaries, vSAN HCL data                        | VCF Installer, SDDC Manager, vCenter, VCF Download Tool, depot services runtime |
+| `projects.packages.broadcom.com`| Binaries for Supervisor services and VCF services | Depot services runtime                                            |
+| `vcsa.vmware.com`               | CEIP telemetry                                 | SDDC Manager, all VCF services runtime instances                   |
+| `vcf.broadcom.com`              | Licensing                                      | VCF Operations                                                     |
+| `auth.esp.vmware.com`           | Update Manager Download Service (UMDS)         | SDDC Manager, VCF Download Tool                                    |
+
+> **Air-gapped?** The platform itself then needs none of these — but the
+> machine running the **VCF Download Tool** still does, from wherever it runs.
+> Plan that host's outbound access (or proxy allowlist) as part of this gate.
+
 ## Sign-off
 
 Confirm in writing that **all** items above are green before the

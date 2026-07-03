@@ -38,6 +38,22 @@ from the management network, bring-up fails.
 | Management subnets | Certificate Authority | 443 (+ CA-specific) | TCP | Certificate enrollment / signing |
 | Management subnets | Software depot | 443 | TCP | Binary / bundle download (online or local depot) |
 
+### A.1 Outbound public URLs — online depot / licensing / CEIP
+
+The concrete allowlist behind the "Software depot" row, from the TechDocs
+[Public URLs list](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/public-urls-required-for-vmware-cloud-foundation.html)
+(full per-URL source breakdown in [`prerequisites.md`](prerequisites.md)).
+All outbound TCP 443 — via the egress proxy if one is in path (intake `G5`).
+Air-gapped: only the **VCF Download Tool** host needs these.
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| VCF Installer, SDDC Manager, vCenter, VCF Operations, depot services runtime, VCF Download Tool | `dl.broadcom.com`, `eapi.broadcom.com`, `vvs.broadcom.com`, `vsanhealth.vmware.com`, `projects.packages.broadcom.com` | 443 | TCP | Online depot binaries, compatibility + vSAN HCL data |
+| SDDC Manager, VCF services runtime instances | `vcsa.vmware.com` | 443 | TCP | CEIP telemetry |
+| VCF Operations | `vcf.broadcom.com`, `eapi.broadcom.com` | 443 | TCP | Licensing |
+| SDDC Manager, VCF Download Tool | `auth.esp.vmware.com` | 443 | TCP | Update Manager Download Service (UMDS) |
+| Cloud Proxy | `eapi.broadcom.com` | 443 | TCP | Cloud Proxy connectivity |
+
 ## B. Admin / management access — jump host → management
 
 | Source | Destination | Port(s) | Proto | Purpose |
