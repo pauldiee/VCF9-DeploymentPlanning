@@ -33,10 +33,12 @@ export interface Epic {
 export interface Wld {
   name: string;
   stretched: boolean;
+  supervisor: boolean;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
 export type NsxConnectivity = 'centralized' | 'distributed';
+export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 
 export interface AutomationChoice {
   deploy: boolean;
@@ -46,6 +48,7 @@ export interface AutomationChoice {
 
 export interface Selection {
   connectivity: NsxConnectivity;
+  supervisorSize: SupervisorSize;
   mgmtStretched: boolean;
   day2: boolean;
   automation: AutomationChoice;
@@ -57,10 +60,11 @@ export function defaultSelection(): Selection {
   // (VCF Automation on the shared management network, no Avi), management not stretched.
   return {
     connectivity: 'centralized',
+    supervisorSize: 'Small',
     mgmtStretched: false,
     day2: true,
     automation: { deploy: true, placement: 'shared', aviLb: false },
-    wlds: [{ name: 'wld01', stretched: false }],
+    wlds: [{ name: 'wld01', stretched: false, supervisor: false }],
   };
 }
 
@@ -69,6 +73,9 @@ export const NSX_CONNECTIVITY: { value: NsxConnectivity; label: string }[] = [
   { value: 'centralized', label: 'Centralized (Edge cluster + BGP)' },
   { value: 'distributed', label: 'Distributed (VNA cluster)' },
 ];
+
+/** vSphere Supervisor control-plane sizes. */
+export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
 
 /** VCF Automation network placements (mirrors docs/05-day2-deployments.md §C). */
 export const AUTOMATION_PLACEMENTS: { value: AutomationPlacement; label: string; text: string }[] = [
@@ -340,7 +347,7 @@ function wldEpicId(index: number): string {
   return index === 0 ? 'E9' : `E9-${index + 1}`;
 }
 
-function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity): Epic {
+function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, supervisorSize: SupervisorSize): Epic {
   const name = (w.name || `wld${index + 1}`).trim();
   const id = wldEpicId(index);
   const hostPrep = `see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly`;
@@ -348,14 +355,17 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity): Epic {
     connectivity === 'distributed'
       ? 'Distributed connectivity — Distributed Transit Gateway + VNA cluster (stateful services / NAT)'
       : 'Centralized connectivity — NSX Edges / uplinks (Tier-0 + BGP)';
+  // Supervisor no longer floats in the connectivity story — it becomes its own
+  // story below when enabled for this WLD.
+  const connStory = (sid: string): Story => ({
+    id: sid,
+    title: 'WLD connectivity',
+    tasks: [`${connText}.`],
+    acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.',
+  });
 
-  if (w.stretched) {
-    return {
-      id,
-      title: `Workload domain: ${name} (stretched)`,
-      owner: 'Platform + Network + Storage',
-      ref: '02-customer-intake.md section H, 03-multi-az-prep.md',
-      stories: [
+  const stories: Story[] = w.stretched
+    ? [
         { id: '9.1', title: 'WLD network prep (per-AZ)', tasks: ['Provision the per-WLD VLANs/subnets across both AZs (per-AZ networks) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'], acceptance: 'Per-WLD VLANs/subnets provisioned across both AZs; the 5 mgmt-subnet IPs reserved; DNS in place.' },
         {
           id: '9.2',
@@ -378,27 +388,42 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity): Epic {
           ],
           acceptance: 'SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
         },
-        { id: '9.6', title: 'WLD connectivity', tasks: [`${connText}. Optional vSphere Supervisor — if you enable Supervisor, deploy and configure the Avi Load Balancer (NSX ALB) controller cluster first; Supervisor activation requires it.`], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
+        connStory('9.6'),
+      ]
+    : [
+        { id: '9.1', title: 'WLD network prep', tasks: ['Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'], acceptance: 'Per-WLD VLANs/subnets provisioned; the 5 mgmt-subnet IPs reserved; DNS in place.' },
+        {
+          id: '9.2',
+          title: 'Prepare & commission the WLD hosts',
+          tasks: [`Image the WLD hosts with the supported ESXi ISO (${hostPrep}); configure the management network, DNS, NTP; then commission them into SDDC Manager.`],
+          acceptance: 'WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.',
+        },
+        { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
+        connStory('9.4'),
+      ];
+
+  if (w.supervisor) {
+    const connPrereq =
+      connectivity === 'distributed'
+        ? 'Distributed — the NSX VPC workflow + VNA cluster'
+        : 'Centralized — the Edge cluster + Tier-0 gateway';
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Enable vSphere Supervisor',
+      tasks: [
+        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and the Avi Load Balancer controller cluster is deployed — Supervisor activation requires the load balancer.`,
+        `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs.`,
       ],
-    };
+      acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
+    });
   }
 
   return {
     id,
-    title: `Workload domain: ${name}`,
-    owner: 'Platform + Network',
-    ref: '02-customer-intake.md section H',
-    stories: [
-      { id: '9.1', title: 'WLD network prep', tasks: ['Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'], acceptance: 'Per-WLD VLANs/subnets provisioned; the 5 mgmt-subnet IPs reserved; DNS in place.' },
-      {
-        id: '9.2',
-        title: 'Prepare & commission the WLD hosts',
-        tasks: [`Image the WLD hosts with the supported ESXi ISO (${hostPrep}); configure the management network, DNS, NTP; then commission them into SDDC Manager.`],
-        acceptance: 'WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.',
-      },
-      { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
-      { id: '9.4', title: 'WLD connectivity', tasks: [`${connText}. Optional vSphere Supervisor — if you enable Supervisor, deploy and configure the Avi Load Balancer (NSX ALB) controller cluster first; Supervisor activation requires it.`], acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.' },
-    ],
+    title: `Workload domain: ${name}${w.stretched ? ' (stretched)' : ''}${w.supervisor ? ' + Supervisor' : ''}`,
+    owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
+    ref: w.stretched ? '02-customer-intake.md section H, 03-multi-az-prep.md' : '02-customer-intake.md section H',
+    stories,
   };
 }
 
@@ -409,7 +434,7 @@ export function selectedEpics(sel: Selection): Epic[] {
   const out: Epic[] = coreEpics(sel);
   if (sel.mgmtStretched) out.push(E7_MGMT_STRETCH);
   if (sel.day2) out.push(day2Epic(sel));
-  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.connectivity)));
+  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.connectivity, sel.supervisorSize)));
   out.push(E10_HANDOVER);
   return out;
 }

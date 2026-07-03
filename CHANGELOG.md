@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.10.1 — 2026-07-03
+- **Export tool: vSphere Supervisor choice (Stage 2).** Each workload domain now
+  has a **Supervisor** checkbox, plus a **control-plane size** (Small/Medium/Large).
+  Enabling it appends an *Enable vSphere Supervisor* story to that WLD, with the
+  dependency chain: WLD north-south connectivity in place (Centralized Edge/Tier-0,
+  or Distributed NSX VPC + VNA) **and** the Avi Load Balancer deployed **before
+  activation**. WLD titles reflect it (e.g. "Workload domain: wld01 + Supervisor").
+  Supervisor moved out of the connectivity story into its own generated one. (#72)
+
 ## v0.10.0 — 2026-07-03
 - Added the **Deployment Plan Export** tool to the sidebar **Tools** section
   (previously only the Sizing calculator was listed there; the export tool was

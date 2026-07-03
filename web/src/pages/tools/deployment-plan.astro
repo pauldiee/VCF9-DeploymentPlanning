@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { docHref } from '../../lib/path';
-import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, NSX_CONNECTIVITY } from '../../lib/deployment-plan';
+import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, NSX_CONNECTIVITY, SUPERVISOR_SIZES } from '../../lib/deployment-plan';
 
 const sel = defaultSelection();
 const epics = selectedEpics(sel);
@@ -52,8 +52,13 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Each workload domain is its own epic (E9…). Tick <em>Stretched</em> to add per-AZ host prep, a dedicated witness, and the stretch stories.</p>
+        <p class="planx__hint">Each workload domain is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs Avi + connectivity first).</p>
         <div id="wldList"></div>
+        <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
+          <select id="selSuperSize">
+            {SUPERVISOR_SIZES.map((s) => <option value={s}>{s}</option>)}
+          </select>
+        </label>
       </fieldset>
 
       <p class="planx__summary" id="typeSummary">
@@ -125,6 +130,7 @@ const epics = selectedEpics(sel);
     type Wld,
     type AutomationPlacement,
     type NsxConnectivity,
+    type SupervisorSize,
   } from '../../lib/deployment-plan';
 
   const $ = (id: string) => document.getElementById(id)!;
@@ -135,6 +141,7 @@ const epics = selectedEpics(sel);
   function readSel(): Selection {
     return {
       connectivity: (<HTMLSelectElement>$('selConnectivity')).value as NsxConnectivity,
+      supervisorSize: (<HTMLSelectElement>$('selSuperSize')).value as SupervisorSize,
       mgmtStretched: (<HTMLInputElement>$('optMgmtStretched')).checked,
       day2: (<HTMLInputElement>$('optDay2')).checked,
       automation: {
@@ -171,6 +178,7 @@ const epics = selectedEpics(sel);
         <div class="planx__wld" data-i="${i}">
           <input class="planx__wldname" type="text" value="${esc(w.name)}" placeholder="wld${i + 1}" aria-label="Workload domain name" />
           <label class="planx__check"><input type="checkbox" class="planx__wldstretch" ${w.stretched ? 'checked' : ''} /> Stretched</label>
+          <label class="planx__check"><input type="checkbox" class="planx__wldsuper" ${w.supervisor ? 'checked' : ''} /> Supervisor</label>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain" ${wlds.length <= 1 ? 'disabled' : ''}>×</button>
         </div>`
       )
@@ -222,7 +230,7 @@ const epics = selectedEpics(sel);
 
   // WLD list events (delegated).
   $('btnAddWld').addEventListener('click', () => {
-    wlds.push({ name: `wld0${wlds.length + 1}`, stretched: false });
+    wlds.push({ name: `wld0${wlds.length + 1}`, stretched: false, supervisor: false });
     renderWlds();
     render();
   });
@@ -233,6 +241,7 @@ const epics = selectedEpics(sel);
     const i = Number(row.dataset.i);
     if (t.classList.contains('planx__wldname')) wlds[i].name = (<HTMLInputElement>t).value;
     else if (t.classList.contains('planx__wldstretch')) wlds[i].stretched = (<HTMLInputElement>t).checked;
+    else if (t.classList.contains('planx__wldsuper')) wlds[i].supervisor = (<HTMLInputElement>t).checked;
     render();
   });
   $('wldList').addEventListener('click', (e) => {
@@ -246,6 +255,7 @@ const epics = selectedEpics(sel);
   });
 
   $('selConnectivity').addEventListener('change', render);
+  $('selSuperSize').addEventListener('change', render);
   $('optMgmtStretched').addEventListener('change', render);
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
   for (const id of ['optAutoDeploy', 'selAutoPlacement', 'optAutoAvi']) {

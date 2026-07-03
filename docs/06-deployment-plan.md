@@ -157,6 +157,14 @@ not stretched), and follows the same **hosts → witness → stretch**
 order as the management stretch (E7). A stretched WLD also requires the
 **management domain to be stretched first (E7)**.
 
+**vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
+[export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)
+to add an *Enable vSphere Supervisor* story to that WLD. It needs the WLD's
+north-south connectivity in place (**Centralized:** Edge cluster + Tier-0;
+**Distributed:** the NSX VPC workflow + VNA) **and** the **Avi Load Balancer**
+controller cluster deployed **before activation**, plus a control-plane size
+(Small / Medium / Large).
+
 **Non-stretched WLD:**
 - **Story 9.1 — WLD network prep.** Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.
   - *Acceptance:* per-WLD VLANs/subnets provisioned; the 5 mgmt-subnet IPs reserved; DNS in place.
@@ -164,7 +172,7 @@ order as the management stretch (E7). A stretched WLD also requires the
   - *Acceptance:* WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.
 - **Story 9.3 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster.
   - *Acceptance:* WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.
-- **Story 9.4 — WLD connectivity.** Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor — if you enable Supervisor, deploy and configure the **Avi Load Balancer (NSX ALB)** controller cluster **first**; Supervisor activation requires it.
+- **Story 9.4 — WLD connectivity.** Wire up north-south per the connectivity model (Centralized: Edges/uplinks; Distributed: Transit Gateway + VNA).
   - *Acceptance:* WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.
 
 **Stretched WLD** (multi-AZ set):
@@ -178,7 +186,7 @@ order as the management stretch (E7). A stretched WLD also requires the
   - *Acceptance:* dedicated WLD witness deployed at the third site and reachable from both AZ ESX-management networks.
 - **Story 9.5 — Stretch the WLD cluster.** Same as the management stretch — **SDDC Manager stretches it for you** from a **JSON spec via the API**: it builds the fault domains, balances the per-AZ hosts, and sets the **site-mirroring** storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. **The management domain must already be stretched (E7)** before any workload-domain cluster can be stretched. Edge stretched only under NSX **Centralized** connectivity. Ref: [Broadcom — Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html).
   - *Acceptance:* SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.
-- **Story 9.6 — WLD connectivity.** Edges / uplinks (Centralized or Distributed); optional vSphere Supervisor — if you enable Supervisor, deploy and configure the **Avi Load Balancer (NSX ALB)** controller cluster **first**; Supervisor activation requires it.
+- **Story 9.6 — WLD connectivity.** Wire up north-south per the connectivity model (Centralized: Edges/uplinks; Distributed: Transit Gateway + VNA).
   - *Acceptance:* WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.
 
 ---
