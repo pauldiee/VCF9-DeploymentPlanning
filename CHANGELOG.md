@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.5 — 2026-07-04
+- **vCenter file-based backup is manual — noted everywhere it matters** (#97).
+  Setting the fleet SFTP target does **not** configure vCenter backups: each
+  vCenter's schedule/target/retention is set per instance in its own
+  management interface (VAMI, `:5480`). Added as a callout + table note in
+  `08-backup-and-depot.md` §A.1, and folded into deployment-plan story 6.4
+  (doc + export tool) with per-vCenter acceptance.
+
 ## v1.2.4 — 2026-07-04
 - **New reference doc `08-backup-and-depot.md`** (#97, #98) — build guide for
   the two pieces of your own infrastructure VCF depends on: **§A SFTP backup

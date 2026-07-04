@@ -15,7 +15,7 @@ covers *how to build it* and the gotchas that cost redo time.
 | Component                             | Cadence (recommended)             | Note                                                        |
 | ------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
 | SDDC Manager                          | Daily, 7-day retention            | Configure after bring-up                                     |
-| vCenter (every instance)              | Daily, 7-day retention            | Jobs must start within the **same 5-minute window** as the SDDC Manager job |
+| vCenter (every instance)              | Daily, 7-day retention            | **Manual, per instance, in the vCenter Management Interface (VAMI)** — see below. Jobs must start within the **same 5-minute window** as the SDDC Manager job |
 | NSX Manager                           | Hourly, 7-day retention           | Configured **automatically at bring-up**                     |
 | VCF Automation + VCF Identity Broker  | Follows the VCF Operations target | The SFTP config **propagates** to these — incorrect values make the Identity Broker backup config fail |
 | vSphere Distributed Switch            | On-demand export, keep last 3     | Manual                                                       |
@@ -26,6 +26,14 @@ the service account, the backup directory, the **encryption passphrase**, then
 credentials before saving — wrong values propagate to the fleet components and
 fail there. Monitor free space on the target: a full retention window of every
 component lands on it.
+
+> **vCenter backup is NOT configured by VCF.** Setting the fleet SFTP target
+> covers SDDC Manager, NSX and the fleet components — but each vCenter's
+> file-based backup must be set up **manually** in that vCenter's own
+> management interface (VAMI, `https://<vcenter-fqdn>:5480` → Backup):
+> schedule, target, retention, per instance. Easy to miss because everything
+> else is handled centrally — make it an explicit task per vCenter (it's in
+> the deployment plan, story 6.4).
 
 > **The passphrase is a restore-blocker.** Backups are encrypted with the
 > passphrase you set here; restore is impossible without it. Store it in a

@@ -323,8 +323,8 @@ function coreEpics(sel: Selection): Epic[] {
       {
         id: '6.4',
         title: 'Backup & lifecycle',
-        tasks: [`Configure SFTP backups; connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do). TechDocs: ${TECHDOCS.backups}`],
-        acceptance: 'A test SFTP backup completes; fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.4.)',
+        tasks: [`Configure SFTP backups — including each vCenter's file-based backup, set manually in that vCenter's management interface (VAMI); VCF does not configure it for you. Connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do). TechDocs: ${TECHDOCS.backups}`],
+        acceptance: 'A test SFTP backup completes — for SDDC Manager AND for every vCenter (VAMI schedule set); fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.4.)',
       },
     ],
   },
