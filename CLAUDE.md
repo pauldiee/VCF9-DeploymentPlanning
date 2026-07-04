@@ -45,9 +45,9 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |
 | `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
 | `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing & deployment-plan tools |
-| `tools/`                         | (future) helper scripts — see issue #1 for the workbook writer|
+| `tools/`                         | (future) helper scripts — none planned currently (the workbook-writer idea was closed as not needed, issue #1) |
 
-Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment-plan export tools) today. If scripts get added (see issue #1), they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 values on every version component (`.0`–`.9`).
+Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment-plan export tools) today. If scripts ever get added, they follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 values on every version component (`.0`–`.9`).
 
 ---
 

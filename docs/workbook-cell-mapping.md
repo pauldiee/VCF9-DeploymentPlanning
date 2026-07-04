@@ -27,9 +27,9 @@ Concretely it collects:
 Names are structured by area — `input_mgmt_*`, `input_wld_*`, `input_cluster_*`,
 `input_flt_*`, `input_xreg_*`, etc. (biggest sets: WLD ~1188, mgmt ~428, cluster
 ~218, fleet ~190). **Named ranges move with their cell, so they survive
-Broadcom's row shifts** — which is why they're the stable target for a writer
-tool. A future intake→workbook writer (issue #1) should populate these
-`input_*` / `*_chosen` named ranges so VCF.JSONGenerator consumes them directly.
+Broadcom's row shifts** — which is why they're the stable reference if you
+script against the workbook: populate these `input_*` / `*_chosen` named
+ranges and VCF.JSONGenerator consumes them directly.
 
 ### Intake → named range (management domain) — first cut
 

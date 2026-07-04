@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.7 — 2026-07-04
+- **Workbook-writer idea retired** (#99). Issue #1 (`Write-VCF9Workbook.ps1`,
+  stamp intake answers into the workbook) closed as not needed — Coscia's
+  planner covers the transfer step. Stale pointers cleaned: `CLAUDE.md`
+  `tools/` row + scripts note, and the mapping doc's named-range intro now
+  addresses anyone scripting against the workbook instead of promising a
+  future writer tool (the named-range map itself is unchanged — it still
+  serves VCF.JSONGenerator users).
+
 ## v1.2.6 — 2026-07-04
 - **Download-credential prep documented** (#98). `08` §B.1 step 4 now walks
   the activation-code flow (software depot ID via
