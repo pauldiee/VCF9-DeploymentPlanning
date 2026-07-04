@@ -39,6 +39,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/05-day2-deployments.md`    | Day-N fleet added after bring-up (VCF Automation, Log Management, network placement) |
 | `docs/06-deployment-plan.md`     | Agile work breakdown (epics/stories/tasks); feeds the interactive export tool |
 | `docs/07-firewall-ports.md`      | Curated firewall flows by zone + links to the authoritative Ports & Protocols tools |
+| `docs/08-backup-and-depot.md`    | Build guide — SFTP backup target + offline depot / VCF Download Tool |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |

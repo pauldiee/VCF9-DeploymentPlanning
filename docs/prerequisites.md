@@ -217,13 +217,25 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
   Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0.html)
   section (verify CA-type behaviour in-product — the docs lag the 9.1 UI).
 
-## SFTP
+## SFTP backup target
 
-- SFTP target reachable from SDDC Manager and NSX Manager for backups.
-- Account + write path pre-created.
-- TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
-  (the external SFTP server must support 256-bit ECDSA and 2048-bit RSA SSH
-  keys) and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
+- SFTP target (TCP **22**) reachable from the VCF management network — SDDC
+  Manager, NSX Manager, vCenter **and** the fleet components (VCF Automation,
+  VCF Identity Broker) all back up to it.
+- Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
+- The external SFTP server must support **256-bit ECDSA and 2048-bit RSA SSH
+  keys**.
+- A **backup encryption passphrase** chosen and stored in a password manager
+  with a named owner — it is **required during restore**; a lost passphrase
+  makes every backup on the target useless.
+- Placed **outside the management domain it protects** — a backup target that
+  dies with the platform is not a backup.
+
+> Build guidance (what backs up and how often, placement, a hardened chrooted
+> OpenSSH worked example, gotchas) + references:
+> [`08-backup-and-depot.md`](08-backup-and-depot.md) §A. TechDocs:
+> [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
+> and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
 
 ## Jump host
 
@@ -238,11 +250,21 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 | `VCF-SDDC-Manager-Appliance-9.1.x.0.xxxxxxxx.iso`   | support.broadcom.com                            |
 | `VMware-VirtualSAN-Witness-x.x.x-xxxxxxxx.ova`      | support.broadcom.com (only if multi-AZ / vSAN stretched) |
 
-TechDocs: [Connect VCF Installer to Broadcom or an Offline Depot and Download
-Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html)
-(online, needs the Download Service ID + token) or, for air-gapped sites,
-[Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html)
-— the Download Tool is the only supported offline method in 9.1.
+Everything else comes through the **depot** — decide online vs offline early
+(intake `G1`), because the offline path means building infrastructure:
+
+- **Online depot** — VCF Installer and the fleet talk to the Broadcom depot
+  directly; have the **Download Service ID + Activation Code** ready (intake
+  `G2`/`G3`) and outbound 443 per the Public URLs table below. TechDocs:
+  [Connect VCF Installer to Broadcom or an Offline Depot and Download Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html).
+- **Offline depot** (air-gapped) — the **VCF Download Tool** is the only
+  supported method in 9.1; you also need a web server (**≥ 1 TB** disk,
+  HTTPS) to serve the downloaded depot store. TechDocs:
+  [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html).
+
+> Build guidance (depot web server setup, Download Tool commands, transfer +
+> connect steps, using the tool standalone to pre-stage binaries) + references:
+> [`08-backup-and-depot.md`](08-backup-and-depot.md) §B.
 
 ## Public URLs (online functionality)
 

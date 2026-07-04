@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.2.4 — 2026-07-04
+- **New reference doc `08-backup-and-depot.md`** (#97, #98) — build guide for
+  the two pieces of your own infrastructure VCF depends on: **§A SFTP backup
+  target** (what backs up and how often, the propagate-to-fleet and
+  encryption-passphrase gotchas, placement, a hardened chrooted-OpenSSH worked
+  example) and **§B offline depot / VCF Download Tool** (depot web server
+  requirements, auth split incl. the hardcoded `umds-patch-store` name,
+  activation-code prep, `vcf-download-tool` commands, transfer + connect
+  steps, and using the tool standalone to pre-stage binaries). TechDocs +
+  community-walkthrough references throughout.
+- `prerequisites.md`: the **SFTP** and **Binaries** gate sections tightened
+  and expanded in place — SFTP gains the fleet-components scope, SSH-key
+  support, passphrase custody and placement bullets; Binaries now spells out
+  the online vs offline depot decision (`G1`–`G4`). Both link to `08` for the
+  build detail.
+- New doc wired into the README contents table, `CLAUDE.md` layout, and the
+  site nav (`web/src/nav.ts`, Reference section).
+
 ## v1.2.3 — 2026-07-04
 - **Lowercase-FQDN requirement absorbed from the TechDocs asterisks** (#96).
   The FQDN/IP page marks the fleet-services family — VCF Automation, VCF
