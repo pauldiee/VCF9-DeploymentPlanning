@@ -95,7 +95,8 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
 
 - **Online depot** — VCF Installer (and later the fleet) connect to the
   Broadcom depot directly using the **Download Service ID + Activation Code**
-  (intake `G2`/`G3`, generated in the Broadcom support portal). Needs outbound
+  (intake `G2`/`G3`; how to obtain them — and the Product-Administrator-role
+  gotcha — is in B.1 step 4). Needs outbound
   443 to the [Public URLs table](prerequisites.md#public-urls-online-functionality)
   (via the proxy from intake `G5` if there is one). TechDocs:
   [Connect VCF Installer to Broadcom or an Offline Depot and Download Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html).
@@ -120,10 +121,24 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
    Downloads → VMware Cloud Foundation → your version → Drivers & Tools*) and
    extract it on an internet-connected host — the depot server itself if it's
    allowed out, otherwise any staging machine.
-4. **Activation code** — generate a software depot ID + activation code in the
-   Broadcom support portal and save the code to a text file for the
-   `--depot-download-activation-code-file` flag. (The 9.0-era tool used a
-   download-*token* file — same idea, different flag/name.)
+4. **Activation code** — generate a **software depot ID** with the tool
+   (`./vcf-download-tool configuration generate --software-depot-id`), then
+   log in to the **VCF Business Services console**, select the tenant + site
+   ID that map to your VCF entitlement, and generate the **activation code**
+   against that depot ID. Save the code to a text file for the
+   `--depot-download-activation-code-file` flag.
+
+   > **Token vs. activation code:** Broadcom is mid-transition. The older
+   > **download token** (support portal → *My Dashboard → Generate Download
+   > Token*, see [KB 390098](https://knowledge.broadcom.com/external/article/390098))
+   > still works for 9.1 downloads — the 9.0-era tool took it as a
+   > download-*token* file — but the **activation code is the go-forward
+   > mechanism** that replaces the token workflow.
+   >
+   > **Get the credential early:** generating either requires the **Product
+   > Administrator** role on the Broadcom support-portal site. If your named
+   > contact doesn't have it, the site's User Administrator must assign it
+   > first — plan days for this, not minutes.
 5. **Download the binaries** into the depot store (the web server's document
    root, or a staging directory):
 
@@ -166,7 +181,13 @@ outbound 443 to the [Public URLs](prerequisites.md#public-urls-online-functional
 - TechDocs: [Set Up an Offline Depot Web Server for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-offline-depot-to-download-binaries/set-up-an-offline-depot-web-server-for-vmware-cloud-foundation.html)
   (full Apache walk-through incl. certificate + basic-auth config) and
   [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html).
-- Community walkthroughs: [VCF 9 offline depot installation and configuration](https://vtam.nl/2025/11/12/vmware-cloud-foundation-9-offline-depot-installation-and-configuration/)
+- Broadcom KBs: [VCF authenticated downloads configuration update instructions](https://knowledge.broadcom.com/external/article/390098)
+  (generating the download token; Product Administrator role required) and
+  [VCF Download Tool fails with "Download Token is not entitled"](https://knowledge.broadcom.com/external/article/443322/vcf-download-tool-fails-with-download-to.html)
+  (entitlement troubleshooting).
+- Community walkthroughs: [VCF 9.1 VCF Download Tool (VCFDT) cheatsheet](https://williamlam.com/2026/05/vcf-9-1-vcf-download-tool-vcfdt-cheatsheet.html)
+  (William Lam — command reference incl. the token → activation-code
+  transition), [VCF 9 offline depot installation and configuration](https://vtam.nl/2025/11/12/vmware-cloud-foundation-9-offline-depot-installation-and-configuration/)
   (Ubuntu + Apache end to end, written against 9.0 — commands and directory
   layout carry over to 9.1; watch the version-specific KB notes) and
   [VCF 9.1.x Ultimate Deployment Guide](https://blog.leaha.co.uk/2026/05/06/vcf-9-1-x-ultimate-deployment-guide/)

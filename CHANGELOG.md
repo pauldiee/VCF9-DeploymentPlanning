@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.6 — 2026-07-04
+- **Download-credential prep documented** (#98). `08` §B.1 step 4 now walks
+  the activation-code flow (software depot ID via
+  `vcf-download-tool configuration generate`, then the VCF Business Services
+  console), notes the **token → activation-code transition** (tokens per
+  KB 390098 still work in 9.1), and flags the **Product Administrator role**
+  requirement — arrange the credential days ahead, not minutes. Role gotcha
+  also added to the `prerequisites.md` online-depot bullet; §B.3 references
+  gain KB 390098, KB 443322 and William Lam's VCFDT cheatsheet.
+
 ## v1.2.5 — 2026-07-04
 - **vCenter file-based backup is manual — noted everywhere it matters** (#97).
   Setting the fleet SFTP target does **not** configure vCenter backups: each

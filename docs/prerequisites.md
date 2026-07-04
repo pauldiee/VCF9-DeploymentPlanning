@@ -255,7 +255,10 @@ Everything else comes through the **depot** — decide online vs offline early
 
 - **Online depot** — VCF Installer and the fleet talk to the Broadcom depot
   directly; have the **Download Service ID + Activation Code** ready (intake
-  `G2`/`G3`) and outbound 443 per the Public URLs table below. TechDocs:
+  `G2`/`G3`) and outbound 443 per the Public URLs table below. Generating the
+  download credential requires the **Product Administrator** role on the
+  Broadcom support-portal site — arrange it early (see
+  [`08-backup-and-depot.md`](08-backup-and-depot.md) §B). TechDocs:
   [Connect VCF Installer to Broadcom or an Offline Depot and Download Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html).
 - **Offline depot** (air-gapped) — the **VCF Download Tool** is the only
   supported method in 9.1; you also need a web server (**≥ 1 TB** disk,
