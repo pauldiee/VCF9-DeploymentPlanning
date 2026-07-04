@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.9 — 2026-07-04
+- **Authoritative depot-registration doc linked** (#100). `08` §B.1 step 4 now
+  anchors on TechDocs *Software Depot Registration in the VCF Business
+  Services Console* — from 9.1, whatever connects to Broadcom for binaries
+  (Installer / depot / Download Tool) must be registered there — plus
+  KB 399124 for the activation-code-not-generated failure. §B.3 references
+  regrouped under "Registration / credentials".
+
 ## v1.2.8 — 2026-07-04
 - **Licensing vs. depot activation code disambiguated** (#100). `08` §B.1's
   credential note now warns the VCF Operations *licensing* activation code

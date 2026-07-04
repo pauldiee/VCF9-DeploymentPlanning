@@ -121,12 +121,18 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
    Downloads → VMware Cloud Foundation → your version → Drivers & Tools*) and
    extract it on an internet-connected host — the depot server itself if it's
    allowed out, otherwise any staging machine.
-4. **Activation code** — generate a **software depot ID** with the tool
+4. **Activation code** — from 9.1, whatever connects to Broadcom for binaries
+   (VCF Installer, a software depot, the Download Tool) must be **registered
+   in the VCF Business Services console** — the authoritative how-to is
+   [Software Depot Registration in the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/business-services/home/depot-service-authentication-in-the-vcf-business-services-console.html)
+   (per-component registration sub-pages). For the Download Tool: generate a
+   **software depot ID** with the tool
    (`./vcf-download-tool configuration generate --software-depot-id`), then
-   log in to the **VCF Business Services console**, select the tenant + site
-   ID that map to your VCF entitlement, and generate the **activation code**
-   against that depot ID. Save the code to a text file for the
-   `--depot-download-activation-code-file` flag.
+   log in to the console, select the tenant + site ID that map to your VCF
+   entitlement, and generate the **activation code** against that depot ID.
+   Save the code to a text file for the
+   `--depot-download-activation-code-file` flag. (Code not appearing? —
+   [KB 399124](https://knowledge.broadcom.com/external/article/399124/activation-code-not-generated-in-connect.html).)
 
    > **Token vs. activation code:** Broadcom is mid-transition. The older
    > **download token** (support portal → *My Dashboard → Generate Download
@@ -189,10 +195,13 @@ outbound 443 to the [Public URLs](prerequisites.md#public-urls-online-functional
 - TechDocs: [Set Up an Offline Depot Web Server for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-offline-depot-to-download-binaries/set-up-an-offline-depot-web-server-for-vmware-cloud-foundation.html)
   (full Apache walk-through incl. certificate + basic-auth config) and
   [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html).
-- Broadcom KBs: [VCF authenticated downloads configuration update instructions](https://knowledge.broadcom.com/external/article/390098)
-  (generating the download token; Product Administrator role required) and
+- Registration / credentials: [Software Depot Registration in the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/business-services/home/depot-service-authentication-in-the-vcf-business-services-console.html)
+  (authoritative 9.1 registration procedures per component). Broadcom KBs:
+  [VCF authenticated downloads configuration update instructions](https://knowledge.broadcom.com/external/article/390098)
+  (generating the legacy download token; Product Administrator role required),
   [VCF Download Tool fails with "Download Token is not entitled"](https://knowledge.broadcom.com/external/article/443322/vcf-download-tool-fails-with-download-to.html)
-  (entitlement troubleshooting).
+  (entitlement troubleshooting) and
+  [Activation code not generated in connected registration flow](https://knowledge.broadcom.com/external/article/399124/activation-code-not-generated-in-connect.html).
 - VMware blog: [Licensing in VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2025/06/24/licensing-in-vmware-cloud-foundation-9-0/)
   — the *licensing* activation code and single-license-file model
   (VCF Operations ↔ `vcf.broadcom.com`), distinct from the depot-download
