@@ -139,6 +139,14 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
    > Administrator** role on the Broadcom support-portal site. If your named
    > contact doesn't have it, the site's User Administrator must assign it
    > first — plan days for this, not minutes.
+   >
+   > **Don't confuse it with the *licensing* activation code.** VCF 9 also
+   > uses an activation code to register **VCF Operations** with the licensing
+   > service (`vcf.broadcom.com`) for the single fleet license file — a
+   > separate credential from the depot-download one, generated in its own
+   > registration wizard. The activation/registration model is explained in
+   > the VMware blog [Licensing in VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2025/06/24/licensing-in-vmware-cloud-foundation-9-0/)
+   > (Sehjung Hah & Kyle Gleed).
 5. **Download the binaries** into the depot store (the web server's document
    root, or a staging directory):
 
@@ -185,6 +193,10 @@ outbound 443 to the [Public URLs](prerequisites.md#public-urls-online-functional
   (generating the download token; Product Administrator role required) and
   [VCF Download Tool fails with "Download Token is not entitled"](https://knowledge.broadcom.com/external/article/443322/vcf-download-tool-fails-with-download-to.html)
   (entitlement troubleshooting).
+- VMware blog: [Licensing in VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2025/06/24/licensing-in-vmware-cloud-foundation-9-0/)
+  — the *licensing* activation code and single-license-file model
+  (VCF Operations ↔ `vcf.broadcom.com`), distinct from the depot-download
+  credential above.
 - Community walkthroughs: [VCF 9.1 VCF Download Tool (VCFDT) cheatsheet](https://williamlam.com/2026/05/vcf-9-1-vcf-download-tool-vcfdt-cheatsheet.html)
   (William Lam — command reference incl. the token → activation-code
   transition), [VCF 9 offline depot installation and configuration](https://vtam.nl/2025/11/12/vmware-cloud-foundation-9-offline-depot-installation-and-configuration/)

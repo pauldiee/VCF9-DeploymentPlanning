@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.8 — 2026-07-04
+- **Licensing vs. depot activation code disambiguated** (#100). `08` §B.1's
+  credential note now warns the VCF Operations *licensing* activation code
+  (registers with `vcf.broadcom.com` for the single fleet license file) is a
+  **separate credential** from the depot-download one, citing the VMware blog
+  *Licensing in VMware Cloud Foundation 9.0* (Hah & Gleed) — also added to
+  §B.3 references.
+
 ## v1.2.7 — 2026-07-04
 - **Workbook-writer idea retired** (#99). Issue #1 (`Write-VCF9Workbook.ps1`,
   stamp intake answers into the workbook) closed as not needed — Coscia's
