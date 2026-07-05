@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.6 — 2026-07-05
+- **AD + Identity Broker prereq once-over vs the reference workbook** (#107).
+  The pre-create bullet now names the actual 9.1 account set (vSphere / NSX
+  bind accounts, Identity Broker bind account, admin groups → VCF roles,
+  intake section C) instead of deferring to the workbook's *Active Directory
+  Inputs* tab — that tab is **hidden** in v1.9.1.001 and still carries
+  VCF 4.x/5.x-era content (Workspace ONE Access / Aria Suite Lifecycle groups,
+  `VMw@re1!` reference passwords); a gotcha note demotes it to a `svc-*`/`gg-*`
+  naming-convention reference. The two identity-provider TechDocs links are
+  annotated as deliberately 9.0 (verified: the 9.1 doc set doesn't republish
+  the SSO section), and the Identity Broker pointer sharpened to E8 stories
+  8.3 / 8.4.
+
 ## v1.3.5 — 2026-07-05
 - **CLAUDE.md: Pages-deploy retry cap** (#106). New "CI / Pages deploys"
   section — the transient *"Deployment failed, try again later"* recovery is

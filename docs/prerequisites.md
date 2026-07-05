@@ -118,13 +118,24 @@ front:
 
 - Supported OS: Windows Server 2019 or 2022.
 - Parent domain (forest root) reachable from SDDC components.
-- Users + groups from the workbook's *Active Directory Inputs* tab pre-created.
+- Bind / service accounts and admin groups pre-created **before** install: the
+  AD bind accounts you plan for vSphere / NSX, the **Identity Broker bind
+  account** (see below), and the **admin groups** you will map to VCF roles —
+  capture them in the intake (section C, e.g. `C5`).
 - AD DCs reachable from every management component.
+
+> **Workbook gotcha:** the *Active Directory Inputs* tab that the workbook's
+> own prereq row points at is **hidden** in the 9.1 workbook (v1.9.1.001) and
+> still carries VCF 4.x/5.x-era content — Workspace ONE Access and Aria Suite
+> Lifecycle groups, old Aria product names, HCX/HRM service accounts,
+> `VMw@re1!` reference passwords. Unhide it for the `svc-*` / `gg-*` **naming
+> convention** only; the actual 9.1 account set is the short list above.
 
 ### Identity source for the VCF Identity Broker
 
 VCF 9 federates fleet-wide SSO through the **VCF Identity Broker** (deployed and
-configured Day-2 — see the deployment plan **E8**). Prepare the AD-over-LDAP
+configured Day-2 — deployment plan **E8**, stories **8.3** deploy / **8.4**
+fleet SSO). Prepare the AD-over-LDAP
 identity source up front; it has specific inputs and well-known gotchas.
 
 **What to prepare:**
@@ -162,7 +173,8 @@ identity source up front; it has specific inputs and well-known gotchas.
 > [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html)
 > (per-IdP sub-pages) and [Configure Active Directory as an Identity Provider
 > Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)
-> on TechDocs.
+> on TechDocs. These are deliberately the **9.0** pages — the 9.1 doc set does
+> not republish the SSO setup section, so 9.0 is the newest published version.
 
 ## Host Overlay TEP addressing (static IP pool recommended)
 
