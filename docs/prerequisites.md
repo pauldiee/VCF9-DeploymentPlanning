@@ -242,20 +242,27 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
   outside VCF** (VCF does not accept an externally-generated private key).
 - **Microsoft CA:** must support **Basic authentication**; recommended Windows
   Server 2019/2022 with the `Certificate Authority` + `Certificate Authority Web
-  Enrollment` roles (Web Enrollment on the same host as the CA role).
+  Enrollment` roles (Web Enrollment on the same host as the CA role). The full
+  four-step prep (roles, basic auth, certificate template, least-privilege
+  service account) is TechDocs [Prepare Your Microsoft Certificate Authority to
+  Allow VMware Cloud Foundation to Manage Certificates](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0/prepare-your-certificate-authority-to-enable-sddc-manger-to-manage-certificates-9-0.html).
+- **Have ready for the Configure-CA wizard** (Microsoft CA): the CA server URL
+  (`https://<ca-fqdn>/certsrv`), the **least-privileged service account** +
+  password, and the **issuing certificate template** name.
 - **OpenSSL:** configured on the appliance with the org details (Common Name,
   Country, Locality, Organization, OU, State) — no external prerequisites.
 - TechDocs walk-throughs: [Configure a Certificate Authority for VMware Cloud
-  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
+  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
   and the umbrella [Managing Certificates in VMware Cloud
-  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0.html)
-  section (verify CA-type behaviour in-product — the docs lag the 9.1 UI).
+  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0.html)
+  section.
 
 ## SFTP backup target
 
 - SFTP target (TCP **22**) reachable from the VCF management network — SDDC
-  Manager, NSX Manager, vCenter **and** the fleet components (VCF Automation,
-  VCF Identity Broker) all back up to it.
+  Manager, NSX Manager, vCenter **and** the fleet components — VCF Automation
+  plus the VCF management services (Log Management, Identity Broker, Software
+  Depot, fleet/SDDC lifecycle, real-time metrics, Salt) — all back up to it.
 - Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
 - The external SFTP server must support **256-bit ECDSA and 2048-bit RSA SSH
   keys**.
@@ -268,14 +275,34 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 > Build guidance (what backs up and how often, placement, a hardened chrooted
 > OpenSSH worked example, gotchas) + references:
 > [`08-backup-and-depot.md`](08-backup-and-depot.md) §A. TechDocs:
-> [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
-> and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
+> [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
+> and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
+> Note the workbook's own SFTP row is stale here — it still says NSX + SDDC
+> Manager "configured through SDDC Manager"; in 9.1 the fleet-wide target is
+> set in **VCF Operations** and covers the components listed above.
 
 ## Jump host
 
-- VM or physical with **routed** access to: ESXi mgmt, VM mgmt, VCF mgmt,
-  internet (for binary downloads if online depot is used).
-- Browser + ovftool installed.
+The machine the whole deployment is driven from. It must exist **before** day
+one and survive independently of the platform it deploys — don't place it on
+the cluster being built (or on storage that depends on it).
+
+- **Routed access** to: ESXi mgmt, VM mgmt, VCF mgmt, and the internet (binary
+  downloads, if the online depot is used).
+- **Modern browser** — VCF Installer UI, vCenter, NSX Manager, VCF Operations.
+- **OVF Tool** — deploys the VCF Installer appliance OVA.
+- **SSH client** — PuTTY, or the OpenSSH client built into Windows 10+ /
+  Windows Server 2019+ (appliance console work on the VCF Installer, SDDC
+  Manager, vCenter).
+- **SFTP/SCP client** — WinSCP (or plain `scp`/`sftp`) for moving bundles,
+  certificates, and log collections on and off appliances.
+- **PowerShell 7 + VCF PowerCLI** — needed if you build a
+  [custom ESX ISO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/create-a-custom-esx-iso-image-using-vmware-powercli.html)
+  (vendor add-ons / async drivers), and generally useful for day-2 automation.
+- **Excel** — for the P&P workbook itself.
+- **Verification tools** — `nslookup` / `Resolve-DnsName` for the DNS gate and
+  `w32tm` (Windows) / `ntpdate -q` (Linux) for the NTP gate, run from the same
+  network vantage point the appliances will use.
 
 ## Binaries
 
