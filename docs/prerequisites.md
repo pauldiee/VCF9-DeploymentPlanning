@@ -188,8 +188,15 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 ## DNS
 
-- Forward + reverse zones for every FQDN in: Mgmt Domain, WLD, and Clusters
-  tabs. **All A and PTR records present *before* deploy.**
+- Forward + reverse zones for every FQDN in the *Deploy Management Domain*,
+  *Deploy Workload Domain* and *Deploy Cluster* sheets. **All A and PTR records
+  present *before* deploy.**
+- **Every FQDN and IP unique** — each FQDN must resolve to a unique, currently
+  **unassigned** IP address (workbook + the FQDN inventory page below).
+- Create **every FQDN lowercase** — TechDocs requires it for the fleet-services
+  family ("Do not use capital letters in the FQDN"), and creating all records
+  lowercase avoids the trap entirely — see the Step 1 plan
+  ([`01-network-dns-plan.md`](01-network-dns-plan.md) §C).
 - Dynamic updates: Nonsecure and secure.
 - Replication scope: all DNS servers in the forest.
 - Two DNS servers configured on every appliance.
@@ -200,16 +207,28 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 ## NTP
 
-- Two external time sources per site (radio/GPS or upstream NTP).
+- Two external time sources per site (radio/GPS, upstream NTP, or NTP served
+  by the ToR switches / physical routers).
 - Two A-records pointing at the two sources.
 - One CNAME (e.g. `ntp.sfo.rainpole.io`) → A-record name for round-robin HA.
+- The two external servers themselves synced to **different upstreams**
+  (healthy NTP dispersion).
+- Optional: per-server A-records (e.g. `ntp0` / `ntp1`) for direct management
+  of the individual sources.
 - AD domain controllers synced to the same external NTP.
 - Different time sources for different fault domains / sites.
+
+> Source: the workbook's *Prerequisite Checklist* → *NTP* block (incl. the
+> A-record/CNAME construction). Host-side setup: TechDocs
+> [Configure NTP on the ESX Hosts](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/configure-ntp-on-vmware-cloud-foundation-hosts.html).
 
 ## SMTP
 
 - Mail relay reachable from each SDDC component (alerting).
 - Restrict relay to SDDC management IP range(s).
+- The consumer is **VCF Operations' outbound Standard Email plug-in** (alert
+  notifications), configured Day-2 with exactly these values — TechDocs:
+  [Configure Email Alert Plug-in Settings](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vvs/9-X/configure-email-alert-plugin-settings-for-vrealize-operations-manager.html).
 
 ## Certificate Authority
 

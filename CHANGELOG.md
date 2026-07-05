@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.3.2 — 2026-07-05
+- **DNS / NTP / SMTP prereq once-over vs the reference workbook** (#103). DNS
+  gains the **uniqueness** rule (every FQDN → unique, unassigned IP) and the
+  **lowercase-FQDN** pointer (per #96, detailed in `01` §C), and names the
+  real 9.1 sheets (*Deploy Management Domain* / *Deploy Workload Domain* /
+  *Deploy Cluster*) instead of the workbook prose's stale "Creation Tabs".
+  NTP absorbs the dispersion rule (sources synced to different upstreams) and
+  the optional `ntp0`/`ntp1` records, plus a source footer (workbook +
+  TechDocs *Configure NTP on the ESX Hosts*). SMTP now names its consumer —
+  VCF Operations' outbound Standard Email plug-in — with the TechDocs
+  plug-in page linked.
+
 ## v1.3.1 — 2026-07-05
 - **Network prereq once-over vs the reference workbook** (#102). BGP and ECMP
   rows now scoped to **NSX Centralized Connectivity / Edge clusters** (intake
