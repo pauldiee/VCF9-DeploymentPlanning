@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.1 — 2026-07-05
+- **Network prereq once-over vs the reference workbook** (#102). BGP and ECMP
+  rows now scoped to **NSX Centralized Connectivity / Edge clusters** (intake
+  `A10`) — the Distributed model needs no BGP peering, matching how the
+  stretched row and `01` §B already model it. Overlay MTU row gains the
+  TechDocs 9.1 values (**1600 minimum, 1700 recommended, ≥ 9000 optimal**)
+  with the *MTU guidance* page linked. Every table row now carries a
+  reference: TechDocs 9.1 links on MTU / BGP / vDS teaming, plus a source
+  footer anchoring the rest on the workbook's *Prerequisite Checklist*.
+
 ## v1.3.0 — 2026-07-05
 - **Hardware prereq once-over vs the reference workbook** (#101). Host-count
   minimum now matches the *Prerequisite Checklist*: **2** (Simple, NFS/FC) /

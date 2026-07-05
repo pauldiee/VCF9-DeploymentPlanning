@@ -71,13 +71,19 @@ VI workload domains support up to **64 pNICs per host**.
 
 | Requirement                         | Why                                                                  |
 | ----------------------------------- | -------------------------------------------------------------------- |
-| **Jumbo frames** (MTU 9000)         | Required on vSAN, vMotion, ESX Host Overlay, NSX Edge Overlay, NFS. Overlay needs MTU **≥ 1600** (GENEVE) |
-| **BGP** adjacency + AS numbers      | Dynamic routing in the SDDC (NSX Edge ↔ ToR)                         |
-| **ECMP** on Edge↔ToR uplinks        | NSX Edge multipath                                                   |
-| **vDS teaming**                     | vSphere Distributed Switch teaming for uplink load-balancing + failover |
+| **Jumbo frames** (MTU 9000)         | Required on vSAN, vMotion, ESX Host Overlay, NSX Edge Overlay, NFS. Overlay (GENEVE) needs MTU **≥ 1600** minimum, **1700 recommended** (headroom for GENEVE header growth), ≥ 9000 for optimal throughput — [MTU guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/mtu-guidance.html) |
+| **BGP** adjacency + AS numbers      | Dynamic routing NSX Edge ↔ ToR — **only with NSX Centralized Connectivity / Edge clusters** (intake `A10`); the Distributed model needs no BGP peering. [Set up Centralized Connectivity with Edge Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html) |
+| **ECMP** on Edge↔ToR uplinks        | NSX Edge multipath — same scope as BGP: **Centralized Connectivity only** |
+| **vDS teaming**                     | vSphere Distributed Switch teaming for uplink load-balancing + failover — profiles + algorithms are chosen in the [Installer wizard](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html) |
 | **VLANs** per traffic type          | See `01-network-dns-plan.md`                                         |
 | **External load balancer** (only if fronting VCF Operations with a VIP) | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and Operations uses a floating IP. See `05-day2-deployments.md` B.1 |
 | **Stretched networks** (multi-AZ)   | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. See `03-multi-az-prep.md` |
+
+> Source: the workbook's *Prerequisite Checklist* → *Network Requirements*
+> block — every row above mirrors it except the VLAN and load-balancer rows,
+> which are this guide's additions. TechDocs 9.1 links inline where a page
+> exists; the ECMP and stretched wording has no standalone TechDocs page and is
+> anchored on the workbook itself.
 
 ## Avi Load Balancer (only if in scope)
 
