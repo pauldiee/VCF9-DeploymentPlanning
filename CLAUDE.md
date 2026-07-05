@@ -147,3 +147,12 @@ git pushall   # equivalent to: git push origin && git push gitlab
 Regular `git push` only goes to `origin` (GitHub). Use `git pushall` for any commit you want mirrored to the ITQ GitLab too.
 
 Issues and releases are mirrored separately by `..\Sync-VCFReposToGitLab.ps1` (the multi-repo sync script in the parent GitHub directory). Run that after a `pushall` to keep issues/releases in sync.
+
+## CI / Pages deploys
+
+The GitHub Pages workflow's **deploy** step randomly fails with *"Deployment
+failed, try again later"* while the build job is green — a known transient on
+GitHub's side. Recovery: `gh run rerun <run-id> --failed`. **Retry at most 3
+times total, then stop and inform Paul** — don't keep hammering it; the site
+simply keeps serving the previous deploy until a later push or manual rerun
+succeeds.

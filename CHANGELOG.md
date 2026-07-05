@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.5 — 2026-07-05
+- **CLAUDE.md: Pages-deploy retry cap** (#106). New "CI / Pages deploys"
+  section — the transient *"Deployment failed, try again later"* recovery is
+  `gh run rerun --failed`, capped at **3 retries**, then stop and inform Paul.
+
 ## v1.3.4 — 2026-07-05
 - **Jump host expanded into a tooling checklist** (#105). Placement warning
   (must survive independently of the platform it deploys), plus the practical
