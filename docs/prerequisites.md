@@ -32,14 +32,20 @@ reference intake IDs in their notes where relevant).
 
 | Item              | Minimum                                                                       | Notes                                                  |
 | ----------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Host count        | **4–16** (workbook host slots; Rainpole baseline **4**)                       | The *Management Domain Sizing* sheet computes the exact minimum for your component set — the 9.1 baseline needs **4** (see `04-sizing.md`) |
+| Host count        | **2** (Simple deployment, NFS/FC) / **3** (Simple, vSAN) / **4** (High Availability) | HA with 4 hosts is the production baseline (Rainpole example); the workbook offers **16 host slots**. The *Management Domain Sizing* sheet computes the exact minimum for your component set — the 9.1 HA baseline needs **4** (see `04-sizing.md`) |
 | CPU               | VCG-supported                                                                 | VCG: <https://compatibilityguide.broadcom.com>. vSphere 9 counts a **16-core/CPU minimum** for licensing (even if the socket has fewer); size on **physical** cores, keep vCPU:pCPU **≤ 2:1** |
 | Memory            | ~1 TB per host (Rainpole reference, 4 hosts, single-host failure tolerance)   | The 9.1 mgmt fleet is **larger** than earlier VCF (see note below) — **always** confirm via *Management Domain Sizing* sheet |
 | Boot storage      | M.2/SATADOM/SSD — **NOT SD cards** (legacy)                                   |                                                        |
 | vSAN-OSA cache    | All-flash, ~1.2 TB raw per host, two disk groups (~600 GB cache/group)        | Skip if vSAN-ESA / NFS / FC. 32 GB host RAM needed to support the max disk groups |
 | vSAN-OSA capacity | All-flash, ~12.5 TB raw per host, two disk groups (~6.25 TB/group)            | Skip if vSAN-ESA / NFS / FC                            |
 | vSAN-ESA          | ~12.5 TB raw per host, e.g. 4× 3.2 TB NVMe SSDs                               | Recommended for new builds                             |
-| NICs              | Min 1× 10 GbE + 1× 1 GbE BMC (single-NIC is API-only); **25 GbE for vSAN-ESA**| Up to 64 pNICs/host on VI WLD                          |
+| NICs              | Min 1× 10 GbE + 1× 1 GbE BMC; 25 GbE **recommended** for vSAN-ESA             | Plan **2× pNICs** as the normal route — the Installer's vDS profiles assume it (Default profile = 2 uplinks, `vmnic0`/`vmnic1`). Hosts *can* run [a single pNIC](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html), but single-NIC bring-up is **API-only** (JSON spec) per the workbook |
+
+> **Two easy-to-miss gate checks:** disks intended for vSAN must have **no
+> existing partitions** (the workbook repeats this on every storage row — a
+> classic bring-up validation failure), and all management-domain hosts must
+> come from a **single hardware vendor**
+> ([Preparing ESX Hosts for VCF or vSphere Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html)).
 
 > **9.1 management footprint is bigger.** Even with most optional fleet
 > components excluded, the management domain runs ~12 appliances / ~120 vCPU,
@@ -53,10 +59,13 @@ reference intake IDs in their notes where relevant).
 ### Workload Domain
 
 Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
+VI workload domains support up to **64 pNICs per host**.
 
 > TechDocs: [Preparing ESX Hosts for VCF or vSphere Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html)
-> covers the ESX install + basic host configuration this gate expects (all pNICs
-> ≥ 10 Gbps; vSAN hosts certified on the compatibility guide).
+> covers the ESX install + basic host configuration this gate expects. The
+> hardware minimums themselves (all pNICs ≥ 10 GbE, vSAN hosts certified on the
+> [compatibility guide](https://compatibilityguide.broadcom.com)) come from the
+> workbook's *Prerequisite Checklist*, not that page.
 
 ## Network
 

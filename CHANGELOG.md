@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.0 — 2026-07-05
+- **Hardware prereq once-over vs the reference workbook** (#101). Host-count
+  minimum now matches the *Prerequisite Checklist*: **2** (Simple, NFS/FC) /
+  **3** (Simple, vSAN) / **4** (High Availability — the production baseline),
+  with the 16 host slots moved to Notes. NIC row rewritten: 2× pNICs is the
+  normal route (Installer vDS Default profile = 2 uplinks), single-pNIC
+  bring-up is **API-only** per the workbook (TechDocs *Commission Hosts*
+  linked), and 25 GbE for vSAN-ESA is **recommended**, not a minimum. Added
+  the no-existing-partitions and single-hardware-vendor gate checks. Fixed the
+  Workload Domain blockquote that misattributed the ≥ 10 GbE / VCG
+  requirements to the *Preparing ESX Hosts* TechDocs page (they come from the
+  workbook), and moved the 64-pNIC VI-WLD note into the WLD section.
+
 ## v1.2.9 — 2026-07-04
 - **Authoritative depot-registration doc linked** (#100). `08` §B.1 step 4 now
   anchors on TechDocs *Software Depot Registration in the VCF Business
