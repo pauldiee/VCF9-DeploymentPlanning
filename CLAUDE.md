@@ -113,6 +113,22 @@ Internal working files (gap notes, planning sheets, memory) freely use consultin
 - **Workbook revision tracking:** record the revision (e.g. `v1.9.1.001`, cell `VCF & VVF Planning!P5`) at the top of any cell-mapping change. Broadcom ships new minor revs that shift rows without renaming fields — that's why the mapping uses field labels.
 - **Don't pin to P-coordinates.** If a P-style coordinate appears in commit messages or docs (e.g. "Deploy Management Domain P12"), reject the change and rewrite using sheet name + field label.
 - **Working dump location:** when extracting workbook content for analysis, write to `_workbook_dump/` (gitignored). Use `ImportExcel` (available on the workstation) — `Get-ExcelSheetInfo` for sheet list, `Import-Excel -NoHeader -DataOnly` for content.
+- **Hidden tabs / unhide recipe:** the 9.1 workbook ships with **13 hidden sheets** (incl. *Active Directory Inputs* — hidden and stale, see issue #107) behind **password-protected structure protection** (SHA-512 hash in `xl/workbook.xml`), so Excel's Unhide UI is a dead end. The protection is UI-advisory only — strip it on a **copy** (never the pinned reference; ImportExcel/EPPlus cannot re-save this workbook, and Excel COM is flaky in-session, so edit the XML directly):
+
+```powershell
+$src = "reference\vcf-9.1-planning-and-preparation-workbook.xlsx"
+$out = "$env:TEMP\vcf-workbook-all-visible.xlsx"
+Copy-Item $src $out -Force
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::Open($out, 'Update')
+$entry = $zip.GetEntry("xl/workbook.xml")
+$reader = New-Object System.IO.StreamReader($entry.Open()); $xml = $reader.ReadToEnd(); $reader.Close()
+$xml = $xml -replace '<workbookProtection[^>]*/>', '' -replace 'state="(very)?[Hh]idden"', 'state="visible"'
+$writer = New-Object System.IO.StreamWriter($entry.Open()); $writer.BaseStream.SetLength(0); $writer.Write($xml); $writer.Close()
+$zip.Dispose()
+```
+
+Verify with `Get-ExcelSheetInfo $out` → all 27 sheets `Visible` (validated 2026-07-05).
 
 ---
 

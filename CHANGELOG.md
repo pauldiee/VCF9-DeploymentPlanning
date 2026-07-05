@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.8 — 2026-07-05
+- **Workbook unhide recipe documented** (#109). CLAUDE.md *Workbook handling*
+  now carries the verified PowerShell recipe for the 13 hidden tabs: the 9.1
+  workbook's structure protection is password-protected (SHA-512 hash), so
+  the Excel Unhide UI is a dead end — strip the `workbookProtection` element
+  and flip sheet states on a **copy** via direct XML edit.
+
 ## v1.3.7 — 2026-07-05
 - **Host Overlay TEP + Binaries prereq once-over vs the reference workbook**
   (#108). All TEP claims verified (DHCP-optional row, `nodes × pNICs` sizing
