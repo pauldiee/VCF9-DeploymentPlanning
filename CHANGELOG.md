@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.3.4 — 2026-07-05
+- **Jump host expanded into a tooling checklist** (#105). Placement warning
+  (must survive independently of the platform it deploys), plus the practical
+  kit: browser, OVF Tool, SSH client (PuTTY / built-in OpenSSH), SFTP/SCP
+  client (WinSCP), PowerShell 7 + VCF PowerCLI (custom ESX ISO per TechDocs,
+  linked), Excel, and DNS/NTP verification tools run from the same network
+  vantage point the appliances will use.
+
+## v1.3.3 — 2026-07-05
+- **CA + SFTP prereq once-over vs the reference workbook** (#104). All four
+  cert/SFTP TechDocs links upgraded **9.0 → 9.1** (verified live) and the
+  "docs lag the 9.1 UI" caveat dropped. CA section gains the have-ready
+  wizard inputs (CA server URL `…/certsrv`, least-privileged service account,
+  issuing certificate template) and links the four-step *Prepare Your
+  Microsoft CA* walkthrough. SFTP consumer list broadened per the 9.1 docs —
+  VCF Automation plus the VCF management services (Log Management, Identity
+  Broker, Software Depot, fleet/SDDC lifecycle, real-time metrics, Salt) —
+  with a note that the workbook's own SFTP row (NSX + SDDC Manager via SDDC
+  Manager) is stale in 9.1.
+
 ## v1.3.2 — 2026-07-05
 - **DNS / NTP / SMTP prereq once-over vs the reference workbook** (#103). DNS
   gains the **uniqueness** rule (every FQDN → unique, unassigned IP) and the
