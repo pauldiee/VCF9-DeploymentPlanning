@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.7 — 2026-07-05
+- **Host Overlay TEP + Binaries prereq once-over vs the reference workbook**
+  (#108). All TEP claims verified (DHCP-optional row, `nodes × pNICs` sizing
+  rule, the *Deploy Management Domain* IP-Pool sample); the *Create a New
+  Workload Domain* citation upgraded **9.0 → 9.1** (verified live, same
+  prerequisite sentence). Binaries section verified clean — no changes.
+
 ## v1.3.6 — 2026-07-05
 - **AD + Identity Broker prereq once-over vs the reference workbook** (#107).
   The pre-create bullet now names the actual 9.1 account set (vSphere / NSX
