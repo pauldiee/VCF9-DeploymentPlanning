@@ -82,7 +82,7 @@ TEP `10.11.19.2–.5`.
 | NSX Manager VIP    | `sfo-m01-nsx01.sfo.rainpole.io`      | `10.11.10.71` |
 | NSX Manager node a/b/c | `sfo-m01-nsx01{a,b,c}.sfo.rainpole.io` | `10.11.10.72–.74` |
 | SDDC Manager       | `sfo-vcf01.sfo.rainpole.io`          | `10.11.10.13` |
-| VCF Operations VIP | `flt-ops01.rainpole.io`              | `10.11.10.21` |
+| VCF Operations LB VIP (optional — external LB only) | `flt-ops01.rainpole.io` | `10.11.10.21` |
 | VCF Ops nodes      | `flt-ops01{a,b,c}.rainpole.io`       | `10.11.10.52–.54` |
 | VCF Ops cloud proxy| `sfo-cp01.sfo.rainpole.io`           | `10.11.10.12` |
 | License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |

@@ -14,7 +14,7 @@ NSX Edge node 2,NSX Edge appliance,sfo-m01-en02.sfo.example.io -> 10.11.11.18,,,
 VCF Operations node a,Operations analytics (bring-up),sfo-m01-ops01a.sfo.example.io -> 10.11.11.21,,,VM Management,Architect,E9
 VCF Operations node b,Operations analytics (bring-up),sfo-m01-ops01b.sfo.example.io -> 10.11.11.22,,,VM Management,Architect,E9
 VCF Operations node c,Operations analytics (bring-up),sfo-m01-ops01c.sfo.example.io -> 10.11.11.23,,,VM Management,Architect,E9
-VCF Operations cluster address,Floating IP or external-LB VIP,sfo-m01-ops01.sfo.example.io -> 10.11.11.20,,,VM Management,Architect,E9
+VCF Operations LB VIP,Optional - only if an external LB fronts the cluster (no built-in floating/cluster IP; without an LB use the node FQDNs),sfo-m01-ops01.sfo.example.io -> 10.11.11.20,,,VM Management,Architect,E9
 Cloud Proxy,Operations collector (after bring-up),sfo-m01-cp01.sfo.example.io -> 10.11.11.24,,,VM Management,Platform,E14
 License Server,VCF Management Services (after bring-up),sfo-m01-lic01.sfo.example.io -> 10.11.11.25,,,VM Management,Platform,E14
 VCF Automation appliance,Automation (if deployed; lowercase FQDN),sfo-m01-auto01.sfo.example.io -> 10.11.11.26,,,VM Management,Platform,E10

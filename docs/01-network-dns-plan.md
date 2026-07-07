@@ -171,7 +171,7 @@ same shape.
 | NSX Manager node 2 | `sfo-m01-nsx01b.sfo.example.io`      | VM Mgmt subnet       |
 | NSX Manager node 3 | `sfo-m01-nsx01c.sfo.example.io`      | VM Mgmt subnet       |
 | SDDC Manager       | `sfo-vcf01.sfo.example.io`           | VM Mgmt subnet       |
-| VCF Operations VIP | `sfo-vcfops01.sfo.example.io`        | VM Mgmt subnet       |
+| VCF Operations LB VIP (optional — external LB only) | `sfo-vcfops01.sfo.example.io` | VM Mgmt subnet — no built-in cluster/floating IP; without an LB use the node FQDNs |
 | VCF Operations node 1–3 | `sfo-vcfops01{a,b,c}.sfo.example.io` | VM Mgmt subnet    |
 | Cloud Proxy        | `sfo-cp01.sfo.example.io`            | VM Mgmt subnet       |
 | License Server     | `sfo-lic01.sfo.example.io`           | VM Mgmt subnet       |

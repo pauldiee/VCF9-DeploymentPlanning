@@ -274,7 +274,7 @@ function coreEpics(sel: Selection): Epic[] {
         title: 'Deploy the management domain',
         tasks: [
           `Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, VCF Operations, and the ${storage.bringup}; submit the JSON. TechDocs: ${TECHDOCS.bringupWizard}`,
-          'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide its cluster address up front: floating IP (default) or an external load-balancer VIP — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
+          'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide up front whether an external load-balancer VIP fronts the cluster (optional — without one you reach the cluster via the node FQDNs; there is no built-in cluster/floating IP) — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
         ],
         acceptance: `Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; ${storage.label} datastore online.`,
       },

@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.5 — 2026-07-07
+- **VCF Operations floating-IP claim removed — no such mechanism exists**
+  (#114, flagged by Paul). TechDocs (verbatim) says only *"Supports an
+  optional external load balancer"* for both HA and Continuous Availability
+  models — no floating IP, failover, or cluster address anywhere (the only
+  "Cluster VIP" on that page is Log Management's integrated LB, the likely
+  source of the confusion); the workbook likewise carries just an optional
+  *Load Balancer FQDN*. Corrected everywhere to the real model — **node FQDNs
+  directly, or an optional external-LB VIP**: `05-day2-deployments.md` §B.1,
+  intake `E9`, `06-deployment-plan.md` + the interactive deployment-plan tool,
+  `prerequisites.md`, the ip-dns-plan template row, and the "VCF Operations
+  VIP" rows in the docs/01 + Rainpole-sample DNS tables (now marked
+  optional / external-LB only).
+
 ## v1.4.4 — 2026-07-07
 - **vlan-subnet-plan template: IP range (from - to) column added** (#113).
   Bring-up assigns per-host vMotion and vSAN VMkernel IPs from mandatory

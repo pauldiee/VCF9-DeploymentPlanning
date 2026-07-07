@@ -42,7 +42,7 @@ network placement from section C.
 
 | Component                     | Appliances / nodes                                             | Notes                                                        |
 | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| **VCF Operations**            | Primary, Replica, Data nodes (cluster **floating IP**, or a **VIP** if an external LB is used — see B.1) | **Reuse / additional-instance case only** — a fleet's first VCF Operations is deployed **at bring-up** (see D2); `useExistingDeployment` connects an additional instance to it |
+| **VCF Operations**            | Primary, Replica, Data nodes (+ a **VIP** only if an external LB fronts the cluster — see B.1) | **Reuse / additional-instance case only** — a fleet's first VCF Operations is deployed **at bring-up** (see D2); `useExistingDeployment` connects an additional instance to it |
 | **Cloud Proxy** (Ops collector)| One or more collector appliances                              | Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement |
 | **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
@@ -56,9 +56,9 @@ This trips people up, so plan it up front. The VCF Operations analytics cluster
 (Primary / Replica / Data) is reached two ways, and **only one of them involves a
 load balancer**:
 
-- **Floating IP (default, no LB).** With no load balancer the cluster answers on
-  a **floating IP** that fails over between the Primary and Replica nodes. This is
-  built in — nothing extra to provision. Most deployments use this.
+- **No load balancer (default).** There is **no built-in floating or cluster IP**
+  for VCF Operations — you reach the cluster directly on the **node FQDNs**.
+  Nothing extra to provision. Most deployments use this.
 - **Load-balancer VIP (optional).** If you want a real load balancer in front of
   the analytics nodes, **VCF does not deploy or manage one for VCF Operations** —
   you must bring your own **external load balancer** (e.g. F5, or a *standalone*
@@ -74,11 +74,11 @@ When you do use an external LB, plan for:
 - **certificate SAN coverage** — every cluster node FQDN **and** the load-balancer
   FQDN must be in the certificate's Subject Alternative Names.
 
-Where the setting lives: the *Deploy Fleet Management Day-N* sheet carries the
-VCF Operations cluster address as a **floating IP** when no LB is used and as a
-**VIP** when one is; that is the switch that tells the deployment whether an
-external LB fronts the cluster. Decide it before you request certificates (the
-SAN list depends on it).
+Where the setting lives: the *Deploy Management Domain* and *Deploy Fleet
+Management Day-N* sheets carry an **optional "Load Balancer FQDN"** (+ IP) for
+VCF Operations — leaving it empty means no LB (node FQDNs only); filling it is
+the switch that says an external LB fronts the cluster. Decide it before you
+request certificates (the SAN list depends on it).
 
 > **Don't confuse this with Log Management.** The Log Management cluster has an
 > **integrated** load balancer (its VIP is handled internally) — that one is not

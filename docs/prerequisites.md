@@ -76,7 +76,7 @@ VI workload domains support up to **64 pNICs per host**.
 | **ECMP** on Edge↔ToR uplinks        | NSX Edge multipath — same scope as BGP: **Centralized Connectivity only** |
 | **vDS teaming**                     | vSphere Distributed Switch teaming for uplink load-balancing + failover — profiles + algorithms are chosen in the [Installer wizard](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html) |
 | **VLANs** per traffic type          | See `01-network-dns-plan.md`                                         |
-| **External load balancer** (only if fronting VCF Operations with a VIP) | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and Operations uses a floating IP. See `05-day2-deployments.md` B.1 |
+| **External load balancer** (only if fronting VCF Operations with a VIP) | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and you reach the cluster via the node FQDNs directly (no built-in cluster/floating IP). See `05-day2-deployments.md` B.1 |
 | **Stretched networks** (multi-AZ)   | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. See `03-multi-az-prep.md` |
 
 > Source: the workbook's *Prerequisite Checklist* → *Network Requirements*
