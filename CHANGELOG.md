@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.4.2 — 2026-07-07
+- **ip-dns-plan template: the v1.4.1 VCF Automation services-runtime row
+  removed again** (#110). Automation's own services runtime is a hidden /
+  internal component — it does not have or need an FQDN, despite the workbook
+  carrying a same-labelled field with a rainpole example for it. The DNS list
+  keeps only the **fleet** services-runtime record (`sfo-m01-svcs01`, E14,
+  example IP back to `.27`).
+
 ## v1.4.1 — 2026-07-07
 - **ip-dns-plan template: VCF Automation services-runtime record restored**
   (#110, completes the #111 disambiguation). Automation's **own** services
