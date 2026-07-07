@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.9 — 2026-07-07
+- **ip-dns-plan template: services-runtime row decoupled from VCF Automation**
+  (#110). The two example FQDNs are now independent — `sfo-m01-auto01` for the
+  Automation appliance, `sfo-m01-svcs01` for the services-runtime (no shared
+  stem, no legacy `vra` naming) — and the services-runtime row now reads
+  *Fleet management-services runtime* with intake ID **E14** (was "Automation
+  runtime nodes" / E10): the two components are not related.
+
 ## v1.3.8 — 2026-07-05
 - **Workbook unhide recipe documented** (#109). CLAUDE.md *Workbook handling*
   now carries the verified PowerShell recipe for the 13 hidden tabs: the 9.1
