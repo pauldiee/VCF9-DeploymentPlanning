@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4.3 — 2026-07-07
+- **FQDN once-over vs TechDocs + workbook: Avi and Ops for Networks
+  overstated, fleet/instance components missing** (#112). Verified verbatim
+  against the TechDocs FQDN/IP list and the pinned v1.9.1.001 workbook:
+  **Ops for Networks** platform + collector need **IPs only** (TechDocs: FQDN
+  N/A; workbook asks VM name + IP) and **Avi** needs exactly **one cluster
+  FQDN** (workbook Avi section: node 1–3 + VIP are IP-only fields). Dropped
+  those FQDN rows from `ip-dns-plan.csv`, the docs/01 A+PTR table and the
+  Rainpole sample; added the required-but-missing **fleet components** and
+  **instance components** records (lowercase family) everywhere. Intake
+  `E14`/`E16` corrected; the mapping's false "no Avi input fields" claim
+  replaced with the real *AVI Load Balancer {SDDC}* section mapping.
+
 ## v1.4.2 — 2026-07-07
 - **ip-dns-plan template: the v1.4.1 VCF Automation services-runtime row
   removed again** (#110). Automation's own services runtime is a hidden /

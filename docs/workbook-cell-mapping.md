@@ -232,6 +232,7 @@ before wiring a generator.
 | F9     | Identity Sources         | SSO bind password                        |
 | F10    | Backups                  | Backup encryption passphrase             |
 | B18    | Backups                  | SFTP host / port / account / path        |
+| E16    | AVI Load Balancer {SDDC} | Version / Edge Cluster form factor / Admin Password / Node 1–3 IP Address / Cluster VIP / Cluster FQDN / Cluster Name — **only the Cluster FQDN needs DNS** (nodes + VIP are IP-only fields) |
 
 ## Sheet: Deploy Workload Domain
 
@@ -275,5 +276,5 @@ roadmap (intake **A15**), captured in a follow-up session.
 | E14    | Cloud Proxy / License Server / Identity Broker | FQDN + IP per appliance; Identity Broker provider + user/group provisioning |
 | —      | Deploy Log management                  | Log Management FQDN; node size; replica count; cluster VIP (sheet section label; a legacy "Deploy VCF Operations for Logs" TechDocs-link cell also remains on the sheet) |
 | —      | Deploy VCF Operations for Networks     | Platform + Collector node VM name / IP; deployment size; dual-stack |
-| E16    | —                                      | — (the workbook has **no Avi input fields** — only sizing rows in *Management Domain Sizing*; capture the controller nodes / VIP in the Step 1 plan + `prerequisites.md`) |
+| E16    | —                                      | — (Avi inputs live in the *AVI Load Balancer {SDDC}* section of **Configure Management Domain** — see that table above; sizing rows in *Management Domain Sizing*) |
 | F11    | —                                      | — (Avi controller `admin` / VCF Ops admin passwords — password manager only; no workbook field) |

@@ -88,13 +88,15 @@ TEP `10.11.19.2–.5`.
 | License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |
 | VCF Automation     | `flt-auto01.rainpole.io`             | (from `/29`)  |
 | Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
-| Ops for Networks platform | `flt-opsnet01.rainpole.io`    | `10.11.10.77` (Day-2, optional) |
-| Ops for Networks collector | `sfo-opsnetc01.sfo.rainpole.io` | `10.11.10.78` (Day-2, optional) |
+| VCF services runtime | `sfo-sr01.sfo.rainpole.io`         | `10.11.10.10` |
+| Fleet components   | `flt-fc01.rainpole.io`               | `10.11.10.20` |
+| Instance components | `sfo-ic01.sfo.rainpole.io`          | `10.11.10.11` |
 | Log Management VIP | `flt-logs01.rainpole.io`             | (services-runtime block; Day-2, optional — integrated LB, worker nodes need IPs only) |
 | NSX Edge 1 / 2     | `sfo-m01-en0{1,2}.sfo.rainpole.io`   | `10.11.10.75` / `.76` |
 
 DNS search domains: `sfo.rainpole.io`, `rainpole.io`. Every FQDN needs both an A
-and a PTR record.
+and a PTR record. Ops for Networks platform + collector (Day-2, optional) need
+**IPs only** (e.g. `10.11.10.77` / `.78`) — no DNS records.
 
 ---
 

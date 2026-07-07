@@ -176,13 +176,12 @@ same shape.
 | Cloud Proxy        | `sfo-cp01.sfo.example.io`            | VM Mgmt subnet       |
 | License Server     | `sfo-lic01.sfo.example.io`           | VM Mgmt subnet       |
 | Identity Broker    | `sfo-idb01.sfo.example.io`           | services-runtime block |
+| Fleet components   | `sfo-fc01.sfo.example.io`            | VM Mgmt subnet       |
+| Instance components | `sfo-ic01.sfo.example.io`           | VM Mgmt subnet       |
 | VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
 | NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
 | NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
-| Avi Controller VIP (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet   |
-| Avi Controller node 1–3 (optional) | `sfo-m01-avi01{a,b,c}.sfo.example.io` | VM Mgmt subnet |
-| VCF Ops for Networks platform (optional) | `sfo-vcfopsnet01.sfo.example.io` | VM Mgmt subnet (or the Day-2 placement network) |
-| VCF Ops for Networks collector (optional) | `sfo-vcfopsnet01c.sfo.example.io` | VM Mgmt subnet (or the Day-2 placement network) |
+| Avi Controller cluster FQDN (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet — the 3 controller nodes are **IP-only** (no DNS records) |
 | Log Management VIP (optional) | `sfo-vcflogs01.sfo.example.io` | services-runtime block (integrated LB; the 6+ worker nodes need IPs, not FQDNs) |
 
 ### DNS settings checklist

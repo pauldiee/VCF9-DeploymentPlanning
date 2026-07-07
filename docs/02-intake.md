@@ -131,9 +131,9 @@ Legend:
 |E11| NSX Edge node 1 / 2 FQDNs + IPs                                | `[CFG-M]` |
 |E12| Cluster / vDS / DPG naming conventions                         | `[MGMT]`  |
 |E13| Any VI Workload Domains at GA? → capture each in **section H** below | `[WLD]`   |
-|E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (the **fleet** management-services runtime — **not** Automation's same-named runtime in `E10`), Ops for Networks platform + collector (each needs A+PTR+IP; services-runtime / fleet-services FQDNs **lowercase only** — TechDocs); several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
+|E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (the **fleet** management-services runtime — **not** Automation's same-named runtime in `E10`), fleet components + instance components (each needs A+PTR+IP; services-runtime / fleet-services FQDNs **lowercase only** — TechDocs). Ops for Networks platform + collector need **IPs only** — no FQDNs (TechDocs marks them N/A; the workbook asks VM name + IP). Several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
 |E15| VCF Automation Day-2 deployment: **method** (SDDC Manager API vs. via VCF Operations) + **network placement** (Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) → `05-day2-deployments.md` | `[DAYN]`  |
-|E16| **Avi Load Balancer** (only if Avi is the chosen LB — e.g. for Supervisor, the Automation-HA VIP, or tenant LB; Supervisor also runs without Avi): controller size (Small / Large / XLarge), 3 controller node FQDNs+IPs + cluster VIP FQDN+IP (VM Mgmt subnet, A+PTR) → `prerequisites.md` | Prereq    |
+|E16| **Avi Load Balancer** (only if Avi is the chosen LB — e.g. for Supervisor, the Automation-HA VIP, or tenant LB; Supervisor also runs without Avi): controller size (Small / Large / XLarge), 3 controller node **IPs** + cluster VIP IP + **one cluster FQDN** (VM Mgmt subnet; only the cluster FQDN needs A+PTR — the workbook's Avi section asks node IPs only) → `prerequisites.md` | Prereq    |
 
 ---
 
