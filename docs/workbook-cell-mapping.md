@@ -207,8 +207,8 @@ before wiring a generator.
 | E7     | SDDC Manager                   | FQDN / IP                                            |
 | E8     | NSX Manager                    | VIP FQDN / VIP IP / Node 1..3 FQDN+IP                |
 | E9     | VCF Operations                 | Primary / Replica / Data node FQDN; Load Balancer FQDN (optional) |
-| E10    | VCF Automation                 | VCF Automation FQDN; VCF services runtime FQDN       |
-| E14    | VCF Management services        | Cloud Proxy / License Server / Identity Broker / VCF services runtime FQDN |
+| E10    | VCF Automation                 | VCF Automation FQDN; VCF services runtime FQDN (Automation's **own** runtime — the *VCF Management Services* section has a **same-labelled** fleet field → `E14`) |
+| E14    | VCF Management services        | Cloud Proxy / License Server / Identity Broker / VCF services runtime FQDN (**fleet** runtime — distinct from the same-labelled field in the *VCF Automation* section → `E10`) |
 | F1–F7  | Passwords                      | Per appliance                                        |
 
 ## Sheet: Configure Management Domain
@@ -270,7 +270,7 @@ roadmap (intake **A15**), captured in a follow-up session.
 | A17    | Fleet Components Deployment — Select Option | Deploy scope (Exclude / Deploy VCF Operations and Automation / Deploy VCF Automation) + Identity Broker + per-component Include/Exclude |
 | E15    | Fleet Components Deployment — Select Option | Network placement (Shared / Dedicated Management Network / NSX Overlay Segment / NSX VLAN Segment) + deploy method; Installation Type (New / Import 8.x appliance) |
 | B21    | localRegionNetwork / xRegionNetwork    | networkName / subnetMask / gateway; ipPool #1–5; Cluster Cidr (default 198.18.0.0/15) |
-| E10    | VCF Automation Deployment              | VCF Automation FQDN; VCF services runtime FQDN; Node Prefix; IP addresses |
+| E10    | VCF Automation Deployment              | VCF Automation FQDN; VCF services runtime FQDN (Automation's **own** runtime — not the `E14` fleet field with the same label); Node Prefix; IP addresses |
 | E9     | VCF Operations Deployment              | Primary / Replica / Data node FQDN + IP; Load Balancer FQDN + IP; appliance size |
 | E14    | Cloud Proxy / License Server / Identity Broker | FQDN + IP per appliance; Identity Broker provider + user/group provisioning |
 | —      | Deploy Log management                  | Log Management FQDN; node size; replica count; cluster VIP (sheet section label; a legacy "Deploy VCF Operations for Logs" TechDocs-link cell also remains on the sheet) |

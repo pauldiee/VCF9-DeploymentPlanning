@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.4.0 — 2026-07-07
+- **Intake + mapping: the two same-named "VCF services runtime FQDN" fields
+  disambiguated** (#111, follow-up to #110). Verified against the pinned
+  v1.9.1.001 workbook: *Deploy Management Domain* carries the identical field
+  label twice — the **fleet** management-services runtime (under *VCF
+  Management Services* → intake `E14`) and Automation's **own** services
+  runtime (under *VCF Automation* → intake `E10`, nodes from the `B5` `/29`
+  range). Intake `E10`/`E14` and the three mapping rows now say which is which
+  and cross-reference each other.
+
 ## v1.3.9 — 2026-07-07
 - **ip-dns-plan template: services-runtime row decoupled from VCF Automation**
   (#110). The two example FQDNs are now independent — `sfo-m01-auto01` for the
