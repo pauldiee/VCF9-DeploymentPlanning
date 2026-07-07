@@ -18,7 +18,8 @@ VCF Operations cluster address,Floating IP or external-LB VIP,sfo-m01-ops01.sfo.
 Cloud Proxy,Operations collector (after bring-up),sfo-m01-cp01.sfo.example.io -> 10.11.11.24,,,VM Management,Platform,E14
 License Server,VCF Management Services (after bring-up),sfo-m01-lic01.sfo.example.io -> 10.11.11.25,,,VM Management,Platform,E14
 VCF Automation appliance,Automation (if deployed; lowercase FQDN),sfo-m01-auto01.sfo.example.io -> 10.11.11.26,,,VM Management,Platform,E10
-VCF services-runtime,Fleet management-services runtime (lowercase FQDN),sfo-m01-svcs01.sfo.example.io -> 10.11.11.27,,,VM Management,Platform,E14
+VCF Automation services-runtime,Automation's own services runtime (lowercase FQDN; nodes from the Automation /29 range),sfo-m01-autosr01.sfo.example.io -> 10.11.11.27,,,VM Management,Platform,E10
+VCF services-runtime,Fleet management-services runtime (lowercase FQDN),sfo-m01-svcs01.sfo.example.io -> 10.11.11.28,,,VM Management,Platform,E14
 Avi Controller VIP,Avi LB cluster VIP (only if Avi in scope),sfo-m01-avi01.sfo.example.io -> 10.11.11.30,,,VM Management,Platform,E16
 Avi Controller node 1,Avi controller (only if Avi in scope),sfo-m01-avi01a.sfo.example.io -> 10.11.11.31,,,VM Management,Platform,E16
 Avi Controller node 2,Avi controller (only if Avi in scope),sfo-m01-avi01b.sfo.example.io -> 10.11.11.32,,,VM Management,Platform,E16

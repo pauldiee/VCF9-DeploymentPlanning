@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.4.1 — 2026-07-07
+- **ip-dns-plan template: VCF Automation services-runtime record restored**
+  (#110, completes the #111 disambiguation). Automation's **own** services
+  runtime gets back its own DNS row — `sfo-m01-autosr01` (E10; nodes from the
+  Automation `/29` range) — next to the appliance row, distinct from the
+  fleet-runtime row (`sfo-m01-svcs01`, E14, example IP shifted `.27` → `.28`
+  to keep the examples monotonic).
+
 ## v1.4.0 — 2026-07-07
 - **Intake + mapping: the two same-named "VCF services runtime FQDN" fields
   disambiguated** (#111, follow-up to #110). Verified against the pinned
