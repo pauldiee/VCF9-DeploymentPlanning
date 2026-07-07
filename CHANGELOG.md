@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4.4 — 2026-07-07
+- **vlan-subnet-plan template: IP range (from - to) column added** (#113).
+  Bring-up assigns per-host vMotion and vSAN VMkernel IPs from mandatory
+  contiguous ranges (workbook: IPv4 address Range From / To; intake `B6`/`B7`)
+  and the Host/Edge Overlay TEPs use IP pools (`B8`/`B9`) — the template now
+  captures those next to the DHCP column, with per-row range examples
+  (1 IP per host; TEP `nodes × pNICs`) and "n/a" guidance for the
+  discrete-IP networks (ESX/VM Management, uplinks).
+
 ## v1.4.3 — 2026-07-07
 - **FQDN once-over vs TechDocs + workbook: Avi and Ops for Networks
   overstated, fleet/instance components missing** (#112). Verified verbatim
