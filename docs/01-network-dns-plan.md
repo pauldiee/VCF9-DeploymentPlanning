@@ -68,7 +68,7 @@ hosts:
 | vMotion      | Host vMotion VMK        | `.101–.116`                |
 | vSAN         | Host vSAN VMK           | `.101–.116`                |
 | ESX Overlay  | Host TEPs (×2 per host) | Static pool (recommended), e.g. `.101–.132`; DHCP scope supported |
-| Edge Overlay | Edge TEPs               | `.11–.20`                  |
+| Edge Overlay | Edge TEPs (×2 per edge node) | IP Pool (start–end) **or** per-node static list — size **2 × edge nodes**, e.g. `.11–.14` for a 2-edge cluster (no DHCP option) |
 
 > **TEP addressing:** prefer a **static IP pool**, entered in the VCF Installer —
 > no external DHCP dependency, and no per-AZ scopes in stretched designs. Per

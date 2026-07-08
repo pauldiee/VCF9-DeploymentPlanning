@@ -60,7 +60,7 @@ Legend:
 |B6 | vMotion: VLAN, MTU=9000, gateway CIDR, host IP range           | `[MGMT]`   |
 |B7 | vSAN: VLAN, MTU=9000, gateway CIDR, host IP range              | `[MGMT]`   |
 |B8 | ESX Host Overlay: VLAN, MTU=9000, gateway CIDR; static TEP pool (recommended) or DHCP? If static: pool range | `[MGMT]`   |
-|B9 | NSX Edge Overlay: VLAN, MTU=9000, gateway CIDR, IP range       | `[CFG-M]`  |
+|B9 | NSX Edge Overlay: VLAN, MTU=9000, gateway CIDR; TEP IPs as an **IP Pool (start–end)** or **per-node static list** — **2 TEP IPs per edge node** (no DHCP option, unlike `B8`) | `[CFG-M]`  |
 |B10| NSX Edge Uplink-01: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |
 |B11| NSX Edge Uplink-02: VLAN, /29 or /30, edge IP, ToR peer IP     | `[CFG-M]`  |
 |B12| NSX Edge AS number (your side of the BGP peering)              | `[CFG-M]`  |

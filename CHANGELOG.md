@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.4.6 — 2026-07-08
+- **Edge TEP allocation detail added** (#115). The workbook's *Create an NSX
+  Edge Cluster* section allocates edge TEPs as an **IP Pool (start–end)** or a
+  **per-node static list** — **2 TEP IPs per edge node**, no DHCP option
+  (DHCP exists only for the Host Overlay). Added the sizing/mode note to the
+  vlan-subnet template's Edge Overlay row, intake `B9`, and the docs/01 §A
+  pool table (example right-sized to `.11–.14` for a 2-edge cluster).
+
 ## v1.4.5 — 2026-07-07
 - **VCF Operations floating-IP claim removed — no such mechanism exists**
   (#114, flagged by Paul). TechDocs (verbatim) says only *"Supports an

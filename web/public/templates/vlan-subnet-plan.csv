@@ -4,7 +4,7 @@ VM Management,SDDC Manager / Installer / mgmt appliances,1612 / 10.11.11.0/24 / 
 vMotion,Live-migration traffic,1613 / 10.11.12.0/24 / 10.11.12.1 / 9000 / 10.11.12.101-.116 (1 IP per host),,,,,,,Network
 vSAN,vSAN storage traffic,1614 / 10.11.13.0/24 / 10.11.13.1 / 9000 / 10.11.13.101-.116 (1 IP per host),,,,,,,Network
 Host Overlay (TEP),Host GENEVE tunnel endpoints,1615 / 10.11.14.0/24 / 10.11.14.1 / 9000 / 10.11.14.101-.132 (nodes x pNICs; IP Pool recommended or DHCP),,,,,,,Network
-Edge Overlay (TEP),Edge GENEVE tunnel endpoints,1616 / 10.11.15.0/24 / 10.11.15.1 / 9000 / 10.11.15.101-.104,,,,,,,Network
+Edge Overlay (TEP),Edge GENEVE tunnel endpoints,1616 / 10.11.15.0/24 / 10.11.15.1 / 9000 / 10.11.15.101-.104 (2 TEPs per edge node; IP Pool or per-node static list - no DHCP),,,,,,,Network
 Uplink 01 (Edge to ToR-A),North-south uplink 1,1317 / 10.13.17.0/24 / 10.13.17.1 / 9000 / n/a - edge IPs in the BGP plan,,,,,,,Network
 Uplink 02 (Edge to ToR-B),North-south uplink 2,1318 / 10.13.18.0/24 / 10.13.18.1 / 9000 / n/a - edge IPs in the BGP plan,,,,,,,Network
 ESX Management AZ2,AZ2 host management (stretched only),1621 / 10.12.10.0/24 / 10.12.10.1 / 1500 / n/a - discrete host IPs,,,,,,N,Network
