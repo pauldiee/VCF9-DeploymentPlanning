@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.4.8 — 2026-07-08
+- **Site: "On this page" section index on every doc page** (#117). The intake
+  (and any other long doc) now opens with a clickable chip list of its `##`
+  sections — built in the shared docs template from Astro's heading anchors,
+  so all docs get it for free; anchor targets carry `scroll-margin` so
+  headings land clear of the sticky header. Shown only when a doc has more
+  than two sections.
+
 ## v1.4.7 — 2026-07-08
 - **Intake F: per-component password requirements table** (#116). The old
   two-line blanket policy ("min 15, upper/lower/digit/special") contradicted

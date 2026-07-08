@@ -13,7 +13,8 @@ export async function getStaticPaths() {
 }
 
 const { doc } = Astro.props;
-const { Content } = await render(doc);
+const { Content, headings } = await render(doc);
+const sections = headings.filter((h) => h.depth === 2);
 
 const meta = navBySlug(doc.id);
 const idx = NAV.findIndex((n) => n.slug === doc.id);
@@ -25,6 +26,20 @@ const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 
 
 <BaseLayout title={title} description={meta?.blurb} active={doc.id}>
   {meta && <p class="doc-eyebrow itq-eyebrow">{meta.step}</p>}
+  {
+    sections.length > 2 && (
+      <nav class="doc-toc" aria-label="On this page">
+        <span class="doc-toc__label">On this page</span>
+        <ul class="doc-toc__list">
+          {sections.map((h) => (
+            <li>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
   <article class="doc prose">
     <Content />
   </article>
@@ -50,3 +65,51 @@ const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 
     }
   </nav>
 </BaseLayout>
+
+<style>
+  .doc-toc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0 0 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--itq-mist);
+    border-left: 3px solid var(--itq-orange);
+    border-radius: 4px;
+  }
+  .doc-toc__label {
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--itq-royal-blue);
+  }
+  .doc-toc__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .doc-toc__list a {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    background: var(--itq-white, #fff);
+    border: 1px solid var(--itq-light-blue);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: var(--itq-royal-blue);
+  }
+  .doc-toc__list a:hover {
+    border-color: var(--itq-orange);
+    color: var(--itq-orange);
+  }
+  /* Anchor targets inside the rendered markdown: keep headings clear of the sticky header */
+  :global(.doc.prose h2),
+  :global(.doc.prose h3) {
+    scroll-margin-top: 90px;
+  }
+</style>
