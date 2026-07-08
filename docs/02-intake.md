@@ -158,8 +158,31 @@ Capture in a password manager — not in this file. The intake just confirms
 |F10| Backup encryption passphrase           |       | `[CFG-M]` |
 |F11| Avi controller `admin` / VCF Ops admin (break-glass) — only if Avi LB in scope |       | Prereq    |
 
-Password policy: minimum 15 chars, mix of upper/lower/digit/special; no spaces.
-VMware appliances reject `<` `>` `&` `'` `"` in some fields — avoid them.
+### Per-component password requirements (VCF 9.1)
+
+The rules differ per component and getting one wrong is a bring-up validation
+failure. Verified against TechDocs
+[Default Password Requirements for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/manage-passwords/default-password-requirements-for-vcf-components.html):
+
+| Component / account | Length | Classes / restrictions |
+|---|---|---|
+| SDDC Manager `admin@local` | 15–127 | 1 upper, 1 lower, 1 digit, 1 special; **no 3 consecutive identical characters** |
+| SDDC Manager `vcf` / `root` / `backup` | min 12 | 1 upper, 1 lower, 1 digit, 1 special; no dictionary words |
+| ESX `root` | 7–40 | at least **3 of 4** character classes; no dictionary words |
+| vCenter `root` | 8–20 | 1 upper, 1 lower, 1 digit, 1 special |
+| vCenter SSO `administrator@vsphere.local` | 8–20 | 1 lower, 1 digit, 1 special (**no uppercase requirement**) |
+| NSX Manager / Edge / Global Manager `admin` / `audit` / `root` | 12–128 | 1 upper, 1 lower, 1 digit, 1 special |
+| VCF Operations `admin` / `root` | min 15 | 1 upper, 1 lower, 1 digit, 1 special |
+| VCF Automation `admin` / `root` (and Automation UI `vmware-system-user`) | min 15 | 1 upper, 1 lower, 1 digit, 1 special |
+| Log Management / Ops for Networks / Identity Broker accounts | min 8 | 1 upper, 1 lower, 1 digit, 1 special |
+| VMware Live Recovery `admin` / `root` | 8–20 | 1 upper, 1 lower, 1 digit, 1 special; password history 5 |
+| Avi controller `admin` | min 15 | 1 upper, 1 special (workbook *AVI Load Balancer* section) |
+
+Practical rule: one strong **15–20 character** pattern with all four character
+classes (and no triple-repeats, dictionary words, or spaces) satisfies every
+minimum above without breaching any maximum. Stick to the special characters
+TechDocs marks valid across **all** VCF components — `!` `@` `#` `$` `^` — and
+avoid `<` `>` `&` `'` `"`, which some appliance fields reject.
 
 ---
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.4.7 — 2026-07-08
+- **Intake F: per-component password requirements table** (#116). The old
+  two-line blanket policy ("min 15, upper/lower/digit/special") contradicted
+  TechDocs in places — the vCenter SSO administrator has **no uppercase
+  requirement** (8–20), ESX root is 7–40 with 3-of-4 classes, vCenter root
+  maxes at 20, SDDC Manager has two distinct rules (admin@local 15–127 +
+  no triple-repeats; vcf/root/backup min 12 + no dictionary words), NSX is
+  12–128. Replaced with the verbatim-verified table, the cross-component
+  special-character set (`! @ # $ ^`), and a practical one-pattern tip
+  (15–20 chars, all four classes) that satisfies every minimum.
+
 ## v1.4.6 — 2026-07-08
 - **Edge TEP allocation detail added** (#115). The workbook's *Create an NSX
   Edge Cluster* section allocates edge TEPs as an **IP Pool (start–end)** or a
