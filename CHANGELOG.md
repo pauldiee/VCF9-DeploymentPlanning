@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.4 — 2026-07-09
+- **Tracker: export buttons fixed** (#124). Copy Markdown / Download .md /
+  Download CSV on the Deployment Tracker rendered but did nothing — their
+  click handlers were never wired when the tracker split off the export
+  page. Now wired to the status-bearing exports.
+
 ## v1.5.3 — 2026-07-09
 - **Docs synced with the new Deployment Tracker** (#123). README contents
   table gains the `plan-tracker.astro` row (missed in the #121 merge —
