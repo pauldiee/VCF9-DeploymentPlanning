@@ -227,6 +227,16 @@ const exportHref = withBase('tools/deployment-plan/');
     }
   }
 
+  $('btnCopyMd').addEventListener('click', () => copy(buildMarkdown(sel, progress), 'Plan copied (Markdown, with status)'));
+  $('btnDlMd').addEventListener('click', () => {
+    download('vcf9-deployment-plan.md', buildMarkdown(sel, progress), 'text/markdown');
+    toolbarMsg('Downloaded vcf9-deployment-plan.md');
+  });
+  $('btnDlCsv').addEventListener('click', () => {
+    download('vcf9-deployment-plan.csv', buildCsv(sel, progress), 'text/csv');
+    toolbarMsg('Downloaded vcf9-deployment-plan.csv');
+  });
+
   // Story checkboxes (delegated: the list is re-rendered on every change).
   $('tracker').addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
