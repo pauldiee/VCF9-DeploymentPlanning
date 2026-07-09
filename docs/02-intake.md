@@ -89,10 +89,10 @@ Legend:
 |C4 | LDAPS reachable from VM Mgmt subnet?                           | `[CFG-M]` |
 |C5 | SSO bind service account (DN + password owner)                 | `[CFG-M]` |
 |C6 | SDDC admin / operator / viewer AD group DNs                    | `[CFG-M]` |
-|C7 | DNS server #1 / #2 IP addresses                                | `[MGMT]`  |
+|C7 | DNS server #1 / #2 IP addresses — the Installer accepts **max 2** at bring-up | `[MGMT]`  |
 |C8 | Default DNS suffix for VCF (e.g. `sfo.example.io`)             | `[MGMT]`  |
 |C9 | Confirmation: every FQDN from `01-network-dns-plan.md` has A+PTR| Prereq   |
-|C10| NTP source #1 / #2 FQDNs (and CNAME wrapper)                   | `[MGMT]`  |
+|C10| NTP source #1 / #2 FQDNs (and CNAME wrapper) — the Installer accepts **max 3** at bring-up | `[MGMT]`  |
 |C11| AD DCs syncing to the same NTP sources                         | Prereq    |
 
 ---

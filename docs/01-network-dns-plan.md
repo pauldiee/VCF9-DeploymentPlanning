@@ -145,6 +145,10 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 
 ### Two DNS servers (resolver IPs to put into appliances)
 
+Two is not just the recommendation — the VCF Installer's *General Information*
+screen accepts a **maximum of 2 DNS servers** at bring-up. If you run more,
+pick the two the VCF appliances will use.
+
 | #   | FQDN / hostname           | IPv4         |
 | --- | ------------------------- | ------------ |
 | 1   |                           |              |
@@ -209,6 +213,7 @@ same shape.
 - Sources must sync to **different** upstream NTP (avoid common-mode failure).
 - AD DCs configured to sync to the same external sources.
 - Two NTP entries on every appliance (use the CNAME and a backup A-record).
+- The VCF Installer accepts a **maximum of 3 NTP servers** at bring-up.
 
 ---
 

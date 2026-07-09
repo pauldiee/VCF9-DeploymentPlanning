@@ -265,6 +265,7 @@ function coreEpics(sel: Selection): Epic[] {
         title: 'Stage the VCF Installer',
         tasks: [
           `Deploy the Installer on a management-domain host using the IP + FQDN planned for SDDC Manager (it switches into SDDC Manager at bring-up, not a throwaway IP); verify it reaches the ESXi management network. TechDocs: ${TECHDOCS.installer}`,
+          'Running the Installer OUTSIDE the management domain is also supported — the wizard then deploys a separate, new SDDC Manager appliance and asks for its FQDN. Plan the extra FQDN + IP if you take that route; on the host-resident route the SDDC Manager FQDN is not asked again.',
           'On that host, put the Installer on a port group carrying the VM Management VLAN. A fresh ESXi host\'s default "VM Network" port group is untagged (VLAN 0), so if VM Management is a tagged VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the appliance has no management connectivity.',
         ],
         acceptance: 'VCF Installer deployed on the VM-Management VLAN, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.',
@@ -273,17 +274,19 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.3',
         title: 'Deploy the management domain',
         tasks: [
-          `Run bring-up: the Installer validates the prepared hosts, then builds vCenter, SDDC Manager, NSX, VCF Operations, and the ${storage.bringup}; submit the JSON. TechDocs: ${TECHDOCS.bringupWizard}`,
-          'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2 — only VCF Automation can be deferred). Decide up front whether an external load-balancer VIP fronts the cluster (optional — without one you reach the cluster via the node FQDNs; there is no built-in cluster/floating IP) — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
+          `Run bring-up: the Installer validates the prepared hosts, then works through its milestones — deploy vCenter, deploy SDDC Manager, configure the vSphere cluster (${storage.bringup}), deploy and configure NSX, VCF Management Platform (VCF Operations), operations appliance, VCF Management Services. Plan ~4-6 hours for the run. On the Review page, download the JSON spec — it can be edited and re-uploaded from the Installer homepage for repeatable/automated runs. TechDocs: ${TECHDOCS.bringupWizard}`,
+          'VCF Operations is deployed AT bring-up in VCF 9.1 (not Day-2). Only VCF Automation can be deferred indefinitely (Existing Component screen: "I have an existing VCF Automation instance, or I will deploy later"). VCF Operations can be deferred only short-term for custom network placement: the "Management Components Custom Networking" toggle (Network Options > Customize) defers VCF Operations + Automation — along with their cloud proxy and license server — until you run the wizard\'s third deployment path, "Deploy deferred components", onto the prepared vDS / NSX segment.',
+          'Decide up front whether an external load-balancer VIP fronts the cluster (optional — without one you reach the cluster via the node FQDNs; there is no built-in cluster/floating IP) — VCF never provides the LB for Operations, so provision an external LB and add its FQDN to the cert SAN first if you want a VIP.',
+          'The Installer warns (soft-stop) when the hosts leave less than 20% resource headroom over the deployment\'s requirement, and it auto-generates all component passwords — capture them via "Review Passwords" during/after the deploy.',
         ],
-        acceptance: `Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; ${storage.label} datastore online.`,
+        acceptance: `Bring-up completes; vCenter, SDDC Manager, NSX, and VCF Operations healthy; ${storage.label} datastore online; auto-generated component passwords captured in the password vault.`,
       },
       {
         id: '5.4',
         title: 'Verify VCF Management Services, License Server & Cloud Proxy',
         tasks: [
           'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only.)',
-          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.4).',
+          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.4) — within the 90-day evaluation period that starts at bring-up.',
         ],
         acceptance: 'VCF Management Services + License Server up and healthy after bring-up; the License Server FQDN resolves to an IP outside the services-runtime range; the Cloud Proxy is collecting.',
       },

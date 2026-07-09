@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.5.0 — 2026-07-09
+- **Bring-up wizard corrections + enrichment from a 9.1 Installer walkthrough**
+  (#119, follow-up to #118; source: vstellar.com part 5, all 29 wizard screens
+  reviewed). Story 5.3 deferral claim refined: **VCF Automation** defers
+  *indefinitely*; **VCF Operations** (+ Automation, cloud proxy, license
+  server) defers only *short-term* via the *Management Components Custom
+  Networking* toggle, deployed afterwards through the wizard's third path
+  (*Deploy deferred components*) — 05 §C notes the Installer exposes the same
+  placement choice. Story 5.2: running the Installer outside the management
+  domain deploys a **separate new SDDC Manager appliance** (extra FQDN + IP).
+  Story 5.3 color: milestone sequence, ~4–6 h duration, 20% headroom warning,
+  auto-generated passwords (*Review Passwords*), re-uploadable JSON spec;
+  licenses due within the **90-day evaluation period** (5.4). Installer input
+  caps documented in 01 + intake C7/C10: **max 2 DNS / 3 NTP servers**.
+  Prereq NIC row: default profile = one NSX-enabled vDS for all traffic;
+  custom switch config supports **VDS LAG**. Export tool mirrors 5.2–5.4.
+
 ## v1.4.9 — 2026-07-09
 - **Story 5.4 corrected: VCF Management Services, License Server & Cloud Proxy
   ARE deployed at bring-up** (#118). Lab-verified against the 9.1 Installer

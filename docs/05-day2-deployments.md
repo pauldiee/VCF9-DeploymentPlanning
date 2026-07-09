@@ -21,7 +21,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 
 | # | Question                                                            | Notes                                                                 |
 | - | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-|D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations, VCF Management Services, the Cloud Proxy and the License Server are bring-up** — the Installer deploys them automatically. VCF Automation can be deferred; Log Management, Operations for Networks & Identity Broker are often Day-N |
+|D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations, VCF Management Services, the Cloud Proxy and the License Server are bring-up** — the Installer deploys them automatically (or defers Operations + Automation + cloud proxy + license server as a set for **custom network placement** — see C). VCF Automation can be deferred indefinitely; Log Management, Operations for Networks & Identity Broker are often Day-N |
 |D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (deployment-plan epic E5, `06-deployment-plan.md`). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment? | Four options — see C; NSX Overlay needs an Edge cluster + transit gateway |
@@ -95,6 +95,13 @@ the sheet does **not** offer a VPC. It offers four placements, and they line up
 with the Broadcom design library's four *fleet-level components* network models
 ([Fleet-Level Components Networking Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html))
 and the [custom-networking deployment guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html):
+
+> **The Installer exposes this same choice at bring-up.** Plan → Network
+> Options → Customize → *Management Components Custom Networking* **defers**
+> VCF Operations + VCF Automation (plus their cloud proxy and license server);
+> after bring-up you run the wizard's third deployment path — *Deploy deferred
+> components* — to place them on the vDS / NSX segment you prepared. The
+> SDDC Manager API / VCF Operations methods below achieve the same for Day-N.
 
 | Placement (Day-N sheet)          | Design-library model                              | Where components land + key requirements                                                          |
 | -------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
