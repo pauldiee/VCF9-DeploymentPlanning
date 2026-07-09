@@ -10,8 +10,12 @@ site**. vSAN mirrors every object across both AZs and uses the witness to break
 split-brain. That means three things the single-AZ plan never asks for:
 a witness at a third location, a fabric that meets latency/bandwidth limits
 between all three, and roughly double the raw capacity. The stretch operation
-itself is driven by SDDC Manager — TechDocs:
-[Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html).
+itself is driven by SDDC Manager and is **API-only** — a JSON stretch spec
+validated and submitted via the SDDC Manager API (`POST
+/v1/clusters/{id}/validations` + `PATCH /v1/clusters/{id}`); there is no UI
+workflow. TechDocs:
+[Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html) ·
+[Stretch a vSAN ESA or OSA Cluster Using the SDDC Manager API](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-private-cloud-infrastructure/stretching-clusters/stretch-a-cluster.html).
 
 > Convention on this page: `sfo01` = **AZ1 / preferred** fault domain,
 > `sfo02` = **AZ2 / secondary** fault domain, `sfo-wit` = **witness** site.
@@ -127,6 +131,17 @@ the Edge Overlay / Uplink rows.
 > connectivity** (intake `A10`). With **Distributed** connectivity each AZ has
 > its own local transit gateway / edges, so Edge Overlay + Uplinks are **per-AZ**.
 > Consistent with `prerequisites.md`.
+
+> **Edge cluster before or after the stretch — both are supported.** Stretching
+> a cluster that already hosts an Edge cluster is a first-class path: the
+> stretch spec's `isEdgeClusterConfiguredForMultiAZ` field *"should be set to
+> 'true' if the cluster hosts an NSX Edge cluster"*. Deploying an Edge cluster
+> onto an **already-stretched** cluster is equally supported (*"VMware Cloud
+> Foundation 4.5 and later support deploying an NSX Edge cluster on a vSphere
+> cluster that is stretched"*) — new edge nodes are placed on **AZ1** hosts.
+> The stretched Edge Overlay + Uplink rows above are required either way; only
+> the order is a design choice (the deployment plan defaults to edges first —
+> see `06-deployment-plan.md` E6/E7).
 
 > Confirmed against the Broadcom VCF 9 design library — *vSphere Stretched
 > Cluster Model* ([techdocs.broadcom.com](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/design/design-library/cluster-models/single-instance-multiple-availability-zones.html)):

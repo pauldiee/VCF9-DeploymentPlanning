@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.1 — 2026-07-09
+- **Stretched management domain: Edge cluster order is a choice, not a
+  constraint** (#120). TechDocs-verified both ways: the stretch spec carries
+  `isEdgeClusterConfiguredForMultiAZ` (stretching a cluster that already hosts
+  edges is a first-class path), and *"VCF 4.5 and later support deploying an
+  NSX Edge cluster on a vSphere cluster that is stretched"* (new edge nodes
+  land on AZ1 hosts). Noted in 03 §D and the E7 epic (doc + export tool),
+  with the flag called out in story 7.4. Also sharpened: the stretch
+  operation is **SDDC Manager API-only** (validate + `PATCH
+  /v1/clusters/{id}`; no UI workflow) — 03 intro + story 7.4.
+
 ## v1.5.0 — 2026-07-09
 - **Bring-up wizard corrections + enrichment from a 9.1 Installer walkthrough**
   (#119, follow-up to #118; source: vstellar.com part 5, all 29 wizard screens

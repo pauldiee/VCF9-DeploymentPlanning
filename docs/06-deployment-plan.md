@@ -121,13 +121,24 @@ Ref: [`03-multi-az-prep.md`](03-multi-az-prep.md)
 Stretch sequence: **inter-AZ fabric → commission second-AZ hosts → witness →
 stretch** (the same order a stretched workload domain follows in E9).
 
+> **Edge cluster before or after the stretch? Either works — it's a choice, not
+> a constraint.** Stretching a cluster that already hosts the Edge cluster is a
+> first-class path (the stretch spec carries `isEdgeClusterConfiguredForMultiAZ`
+> for exactly this), and deploying an Edge cluster onto an **already-stretched**
+> cluster is equally supported — *"VMware Cloud Foundation 4.5 and later support
+> deploying an NSX Edge cluster on a vSphere cluster that is stretched"*, with
+> new edge nodes placed on AZ1 hosts. This plan's default order (E6 edges → E7
+> stretch) simply verifies north-south while the environment is still single-AZ.
+> Either way the stretched **Edge Overlay + Uplink** networks must exist first
+> ([`03-multi-az-prep.md`](03-multi-az-prep.md) §D — Centralized connectivity only).
+
 - **Story 7.1 — Inter-AZ fabric.** Verify <5 ms RTT, ≥10 Gbps, MTU 9000, HA L3 gateway between AZs.
   - *Acceptance:* inter-AZ link measured under 5 ms RTT, at least 10 Gbps, MTU 9000 end-to-end; HA L3 gateway between AZs verified.
 - **Story 7.2 — Install, configure & commission the second-AZ hosts.** Image the AZ2 hosts with the supported **ESXi ISO** (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) to prep + commission hosts quickly); configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then **commission** them into SDDC Manager, ready for the stretch.
   - *Acceptance:* AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned and available in SDDC Manager.
 - **Story 7.3 — Witness site (management).** Deploy the vSAN witness appliance for the **management** cluster at the third site (its **own** — a vSAN witness serves **only one** stretched cluster); route it to both AZ ESX-management networks. Ref: [Deploying a Witness Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsan-deployment-administration-and-monitoring/vsan-planning-and-deployment/working-with-virtual-san-stretched-cluster/deploying-a-witness-appliance.html).
   - *Acceptance:* management witness appliance deployed at the third site and reachable from both AZ ESX-management networks.
-- **Story 7.4 — Stretch the cluster.** **SDDC Manager does the stretch for you** — submit a stretch **JSON spec via the SDDC Manager API** and VCF builds the fault domains (AZ1 preferred / AZ2 secondary / witness), balances hosts across the AZs, and flips the datastore storage policy to **site mirroring** (stretched, ~2× capacity). You just supply the inputs from 7.1–7.3: an **AZ2 network pool**, the commissioned AZ2 hosts (equal count per AZ), and the witness. It **won't** stretch if the cluster shares a vSAN storage policy with another cluster, has DPU-backed hosts, or has L3-different subnets within an AZ. Ref: [Broadcom — Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html) · [`03-multi-az-prep.md`](03-multi-az-prep.md).
+- **Story 7.4 — Stretch the cluster.** **SDDC Manager does the stretch for you** — submit a stretch **JSON spec via the SDDC Manager API** and VCF builds the fault domains (AZ1 preferred / AZ2 secondary / witness), balances hosts across the AZs, and flips the datastore storage policy to **site mirroring** (stretched, ~2× capacity). You just supply the inputs from 7.1–7.3: an **AZ2 network pool**, the commissioned AZ2 hosts (equal count per AZ), and the witness. It **won't** stretch if the cluster shares a vSAN storage policy with another cluster, has DPU-backed hosts, or has L3-different subnets within an AZ. If the cluster already hosts an **NSX Edge cluster** (E6 6.1, Centralized), set **`isEdgeClusterConfiguredForMultiAZ: true`** in the stretch spec — wrong, and the edge-specific AZ configuration is skipped. Ref: [Broadcom — Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html) · [Stretch a vSAN ESA or OSA Cluster Using the SDDC Manager API](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-private-cloud-infrastructure/stretching-clusters/stretch-a-cluster.html) · [`03-multi-az-prep.md`](03-multi-az-prep.md).
   - *Acceptance:* SDDC Manager reports the cluster stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.
 
 ### E8 — Day-2 fleet deployment  ·  Owner: Platform
