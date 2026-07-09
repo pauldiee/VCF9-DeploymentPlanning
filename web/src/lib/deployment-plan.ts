@@ -280,12 +280,12 @@ function coreEpics(sel: Selection): Epic[] {
       },
       {
         id: '5.4',
-        title: 'Deploy VCF Management Services, License Server & Cloud Proxy',
+        title: 'Verify VCF Management Services, License Server & Cloud Proxy',
         tasks: [
-          'These are NOT part of the automatic bring-up. Once VCF Operations + SDDC Manager are up, deploy them via VCF Operations (its UI, or the SDDC Manager API for custom VLAN-backed placement to avoid IP exhaustion): VCF Management Services (VCF services runtime, fleet and SDDC lifecycle, software depot, telemetry), the License Server, and the Cloud Proxy collector as needed.',
+          'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only.)',
           'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.4).',
         ],
-        acceptance: 'VCF Management Services + License Server deployed and healthy; the License Server FQDN resolves to an IP outside the services-runtime range; Cloud Proxy (if used) is collecting.',
+        acceptance: 'VCF Management Services + License Server up and healthy after bring-up; the License Server FQDN resolves to an IP outside the services-runtime range; the Cloud Proxy is collecting.',
       },
     ],
   },

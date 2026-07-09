@@ -78,7 +78,11 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 | AZ1 ⇄ AZ2 (per-AZ networks) | AZ1 ⇄ AZ2 | vSAN / vMotion / overlay | — | Stretched cluster data + overlay (routed between AZs) |
 | ESX-Management (AZ1 & AZ2) | Witness site | vSAN witness traffic | TCP | Witness traffic rides the ESX-Management VMkernel (WTS); route to the 3rd site (≤ 200 ms) |
 
-## E. Day-2 / fleet — Operations, Cloud Proxy, License Server, syslog
+## E. Fleet — Operations, Cloud Proxy, License Server, syslog
+
+> Cloud Proxy and the (first) License Server are deployed **automatically at
+> bring-up** in 9.1 — open these flows *before* bring-up, not as a Day-2
+> follow-up.
 
 | Source | Destination | Port(s) | Proto | Purpose |
 | ------ | ----------- | ------- | ----- | ------- |

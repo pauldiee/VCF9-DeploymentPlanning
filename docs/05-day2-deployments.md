@@ -21,7 +21,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 
 | # | Question                                                            | Notes                                                                 |
 | - | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-|D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations is bring-up.** VCF Automation can be deferred; Log Management, Operations for Networks & Identity Broker are often Day-N |
+|D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations, VCF Management Services, the Cloud Proxy and the License Server are bring-up** — the Installer deploys them automatically. VCF Automation can be deferred; Log Management, Operations for Networks & Identity Broker are often Day-N |
 |D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (deployment-plan epic E5, `06-deployment-plan.md`). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment? | Four options — see C; NSX Overlay needs an Edge cluster + transit gateway |
@@ -43,8 +43,8 @@ network placement from section C.
 | Component                     | Appliances / nodes                                             | Notes                                                        |
 | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
 | **VCF Operations**            | Primary, Replica, Data nodes (+ a **VIP** only if an external LB fronts the cluster — see B.1) | **Reuse / additional-instance case only** — a fleet's first VCF Operations is deployed **at bring-up** (see D2); `useExistingDeployment` connects an additional instance to it |
-| **Cloud Proxy** (Ops collector)| One or more collector appliances                              | Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement |
-| **License Server**            | One appliance                                                  | Tied to VCF Operations                                        |
+| **Cloud Proxy** (Ops collector)| One or more collector appliances                              | **Additional collectors only** — a unified cloud proxy is configured **by default at bring-up** by the VCF Installer. Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement |
+| **License Server**            | One appliance                                                  | **Additional license server only** — the first one is deployed **automatically at bring-up**. Tied to VCF Operations |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | One appliance                                                  | Plus identity provider (AD/LDAP), user/group provisioning     |
 | **Log Management** (formerly *VCF Operations for Logs* — renamed in 9.1) | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them |

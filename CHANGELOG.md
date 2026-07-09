@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4.9 — 2026-07-09
+- **Story 5.4 corrected: VCF Management Services, License Server & Cloud Proxy
+  ARE deployed at bring-up** (#118). Lab-verified against the 9.1 Installer
+  wizard + TechDocs: a unified Cloud Proxy is *"configured by default by the
+  VCF Installer"*, a License Server is *"automatically deployed as part of the
+  installation"*, and VCF Management Services deploys with the instance — the
+  manual deploy procedure applies to the 9.0 → 9.1 **upgrade** path only.
+  Story 5.4 (doc + export tool) is now a *verify* story; 05's decision gate and
+  deployable-set rows mark Cloud Proxy / License Server as bring-up (Day-N =
+  additional appliances only); 07 §E flows flagged as pre-bring-up. Story 5.3's
+  "only VCF Automation can be deferred" confirmed correct (the Installer's
+  VCF Operations option is connect-to-existing, not a deferral).
+
 ## v1.4.8 — 2026-07-08
 - **Site: "On this page" section index on every doc page** (#117). The intake
   (and any other long doc) now opens with a clickable chip list of its `##`
