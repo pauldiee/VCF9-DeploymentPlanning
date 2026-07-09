@@ -591,6 +591,60 @@ export function includedEpicList(sel: Selection): string {
     .replace('E1, E2, E3, E4, E5, E6', 'E1–E6');
 }
 
+// ---- Selection persistence ---------------------------------------------------
+
+/**
+ * localStorage key shared by the export tool (which writes the scope on every
+ * change) and the tracker page (which reads it). The tracker deliberately has
+ * no scope controls of its own.
+ */
+export const SELECTION_STORE_KEY = 'vcf9-plan-selection-v1';
+
+/**
+ * Coerce untrusted data (localStorage, a loaded progress file) into a valid
+ * Selection: unknown fields are dropped, invalid values fall back to the
+ * defaults, and the cross-choice constraints are re-applied. Returns null when
+ * the data is not an object at all.
+ */
+export function coerceSelection(data: unknown): Selection | null {
+  if (!data || typeof data !== 'object') return null;
+  const d = data as Record<string, unknown>;
+  const base = defaultSelection();
+  const oneOf = <T extends string>(v: unknown, allowed: readonly string[], fb: T): T =>
+    typeof v === 'string' && allowed.includes(v) ? (v as T) : fb;
+  const bool = (v: unknown, fb: boolean): boolean => (typeof v === 'boolean' ? v : fb);
+  const auto = (d.automation && typeof d.automation === 'object' ? d.automation : {}) as Record<string, unknown>;
+  const comps = (d.day2Components && typeof d.day2Components === 'object' ? d.day2Components : {}) as Record<string, unknown>;
+  const wlds: Wld[] = Array.isArray(d.wlds)
+    ? d.wlds
+        .filter((w): w is Record<string, unknown> => !!w && typeof w === 'object')
+        .map((w, i) => ({
+          name: typeof w.name === 'string' ? w.name : `wld${i + 1}`,
+          stretched: bool(w.stretched, false),
+          supervisor: bool(w.supervisor, false),
+        }))
+    : base.wlds;
+  return normalizeSelection({
+    connectivity: oneOf(d.connectivity, NSX_CONNECTIVITY.map((c) => c.value), base.connectivity),
+    storage: oneOf(d.storage, STORAGE_TYPES.map((s) => s.value), base.storage),
+    supervisorSize: oneOf(d.supervisorSize, SUPERVISOR_SIZES, base.supervisorSize),
+    mgmtStretched: bool(d.mgmtStretched, base.mgmtStretched),
+    day2: bool(d.day2, base.day2),
+    automation: {
+      deploy: bool(auto.deploy, base.automation.deploy),
+      model: oneOf(auto.model, AUTOMATION_MODELS.map((m) => m.value), base.automation.model),
+      placement: oneOf(auto.placement, AUTOMATION_PLACEMENTS.map((p) => p.value), base.automation.placement),
+      aviLb: bool(auto.aviLb, base.automation.aviLb),
+    },
+    day2Components: {
+      logs: bool(comps.logs, base.day2Components.logs),
+      networks: bool(comps.networks, base.day2Components.networks),
+      identityBroker: bool(comps.identityBroker, base.day2Components.identityBroker),
+    },
+    wlds,
+  });
+}
+
 // ---- Progress tracking ------------------------------------------------------
 
 /**
