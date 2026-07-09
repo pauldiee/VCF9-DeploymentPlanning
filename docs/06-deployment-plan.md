@@ -9,6 +9,11 @@ those in your own tool.
 > **[▶ Open the Deployment Plan export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)** —
 > build your deployment scope and export this plan as **Markdown** or a **CSV** that
 > imports into Jira, Azure DevOps, or GitLab.
+>
+> **[▶ Track execution in the Deployment Tracker](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/plan-tracker/)** —
+> the same plan as a checklist: tick stories as done, watch per-epic progress, and
+> save/load the progress file to hand over between colleagues (it follows the scope
+> you set in the export tool).
 
 Build your **scope** from the blocks below: the **core epics apply to every
 deployment**, and the variants switch on **independently**. The management domain

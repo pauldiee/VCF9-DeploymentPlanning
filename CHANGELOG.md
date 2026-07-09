@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.3 — 2026-07-09
+- **Docs synced with the new Deployment Tracker** (#123). README contents
+  table gains the `plan-tracker.astro` row (missed in the #121 merge —
+  pre-commit checklist item 2), `docs/06-deployment-plan.md` now links the
+  tracker next to the export tool at the top, and CLAUDE.md's `web/` layout
+  row names all three interactive tools.
+
 ## v1.5.2 — 2026-07-09
 - **New tool: Deployment Tracker** (#121). A dedicated page
   (`tools/plan-tracker/`) for the execution side of the plan: a checkbox per
