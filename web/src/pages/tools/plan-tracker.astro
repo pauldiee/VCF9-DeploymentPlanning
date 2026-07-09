@@ -1,0 +1,364 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { docHref, withBase } from '../../lib/path';
+import { defaultSelection, selectedEpics, storyKey } from '../../lib/deployment-plan';
+
+const sel = defaultSelection();
+const epics = selectedEpics(sel);
+const exportHref = withBase('tools/deployment-plan/');
+---
+
+<BaseLayout
+  title="Deployment Tracker | VCF 9.1 Planning"
+  description="Track your VCF 9.1 deployment: tick stories as done, watch per-epic progress, and save/load the progress file so a colleague can pick up where you left off."
+  active="tools/plan-tracker"
+>
+  <article class="plant">
+    <header class="plant__head">
+      <p class="itq-eyebrow">Tracker</p>
+      <h1>Deployment Tracker</h1>
+      <p class="plant__lede">
+        The execution side of the <a href={exportHref}>Deployment Plan Export</a>: the same plan, as a
+        checklist. Tick a story when it is done and the per-epic and overall progress update. The scope
+        follows what you set in the export tool; adjust it there and this page picks it up. Progress is
+        remembered by this browser; use <strong>Save progress</strong> to keep the tracking file with the
+        engagement (it is customer data: store it with the customer's files, not in a repo) and
+        <strong>Load progress</strong> to continue on another machine or hand over to a colleague. The
+        saved file carries the scope too, so loading it restores the exact plan. Everything runs in your
+        browser.
+      </p>
+    </header>
+
+    <section class="plant__scopebox">
+      <p class="plant__scope" id="scopeSummary">
+        <strong>Scope:</strong> (loading)
+      </p>
+      <a class="plant__scopelink" href={exportHref}><i class="fa-solid fa-sliders" aria-hidden="true"></i> Adjust scope in the export tool</a>
+    </section>
+
+    <div class="plant__toolbar">
+      <button type="button" id="btnSaveProg"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save progress</button>
+      <button type="button" id="btnLoadProg"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Load progress</button>
+      <button type="button" id="btnResetProg"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset progress</button>
+      <span class="plant__toolbar-sep" aria-hidden="true"></span>
+      <button type="button" id="btnCopyMd"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy Markdown</button>
+      <button type="button" id="btnDlMd"><i class="fa-solid fa-download" aria-hidden="true"></i> Download .md</button>
+      <button type="button" id="btnDlCsv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Download CSV</button>
+      <input type="file" id="fileProgress" accept=".json,application/json" hidden />
+      <span id="toolbarMsg" class="plant__toolbar-msg" role="status"></span>
+    </div>
+    <p class="plant__note">
+      Exports here carry the tracking state: the Markdown is a GitHub-flavored task list
+      (<code>- [x]</code> with done dates), and the CSV's <code>Status</code>/<code>Done On</code>
+      columns come from the checkboxes below.
+    </p>
+
+    <section class="plant__list" id="tracker">
+      {
+        epics.map((e) => (
+          <div class="plant__epic">
+            <h2>
+              {e.id} — {e.title} <span class="plant__owner">Owner: {e.owner}</span>
+              <span class="plant__epicprog">0/{e.stories.length} done</span>
+            </h2>
+            <div class="plant__bar" role="presentation"><span style="width:0%" /></div>
+            <ul>
+              {e.stories.map((s) => (
+                <li class="plant__story">
+                  <label class="plant__storycheck">
+                    <input type="checkbox" class="plant__done" data-key={storyKey(e.id, s.id)} aria-label={`Mark story ${s.id} done`} />
+                  </label>
+                  <div class="plant__storybody">
+                    <strong>Story {s.id} — {s.title}.</strong>
+                    <ul>
+                      {s.tasks.map((t) => (
+                        <li>{t}</li>
+                      ))}
+                      {s.acceptance && (
+                        <li class="plant__accept">
+                          <em>Acceptance:</em> {s.acceptance}
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </section>
+
+    <p class="plant__source">
+      Source of truth: <a href={docHref('06-deployment-plan')}>docs/06-deployment-plan.md</a>.
+      Build the scope and export the backlog on the <a href={exportHref}>Deployment Plan Export</a> page.
+    </p>
+  </article>
+</BaseLayout>
+
+<script>
+  import {
+    defaultSelection,
+    selectedEpics,
+    typeLabel,
+    includedEpicList,
+    buildMarkdown,
+    buildCsv,
+    storyKey,
+    progressStats,
+    coerceSelection,
+    SELECTION_STORE_KEY,
+    type PlanProgress,
+    type Selection,
+  } from '../../lib/deployment-plan';
+
+  const $ = (id: string) => document.getElementById(id)!;
+
+  const LS_KEY = 'vcf9-plan-progress-v1';
+  let progress: PlanProgress = loadLocalProgress();
+
+  function loadLocalProgress(): PlanProgress {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return {};
+      const data = JSON.parse(raw);
+      if (!data || typeof data.progress !== 'object' || data.progress === null) return {};
+      const out: PlanProgress = {};
+      for (const [k, v] of Object.entries(data.progress)) if (typeof v === 'string') out[k] = v;
+      return out;
+    } catch {
+      return {};
+    }
+  }
+  function saveLocalProgress() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({ savedAt: new Date().toISOString(), progress }));
+    } catch {
+      /* storage may be unavailable (private mode); tracking still works in-page */
+    }
+  }
+
+  function loadScope(): Selection {
+    try {
+      return coerceSelection(JSON.parse(localStorage.getItem(SELECTION_STORE_KEY) || 'null')) ?? defaultSelection();
+    } catch {
+      return defaultSelection();
+    }
+  }
+  function saveScope(sel: Selection) {
+    try {
+      localStorage.setItem(SELECTION_STORE_KEY, JSON.stringify(sel));
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  let sel: Selection = loadScope();
+
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function linkify(s: string): string {
+    // Trailing sentence punctuation stays outside the anchor so the href works.
+    return esc(s).replace(/https?:\/\/[^\s)]+/g, (url) => {
+      const m = url.match(/^(.*?)([.,;:]+)$/);
+      const clean = m ? m[1] : url;
+      const tail = m ? m[2] : '';
+      return `<a href="${clean}">${clean}</a>${tail}`;
+    });
+  }
+  function bar(done: number, total: number): string {
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    return `<div class="plant__bar" role="presentation"><span style="width:${pct}%"></span></div>`;
+  }
+
+  function render() {
+    const stats = progressStats(sel, progress);
+    const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
+    $('scopeSummary').innerHTML =
+      `<strong>Scope:</strong> ${esc(typeLabel(sel))} · ${esc(includedEpicList(sel))}<br />` +
+      `<strong>Progress:</strong> ${stats.done}/${stats.total} stories done (${pct}%)${bar(stats.done, stats.total)}`;
+
+    const html = selectedEpics(sel)
+      .map((e) => {
+        const pe = stats.perEpic[e.id];
+        const stories = e.stories
+          .map((s) => {
+            const key = storyKey(e.id, s.id);
+            const doneAt = progress[key];
+            const tasks = s.tasks.map((t) => `<li>${linkify(t)}</li>`).join('');
+            const accept = s.acceptance
+              ? `<li class="plant__accept"><em>Acceptance:</em> ${esc(s.acceptance)}</li>`
+              : '';
+            const check = `<label class="plant__storycheck" title="${doneAt ? `Done on ${esc(doneAt)}` : 'Mark story done'}"><input type="checkbox" class="plant__done" data-key="${esc(key)}"${doneAt ? ' checked' : ''} aria-label="Mark story ${esc(s.id)} done" /></label>`;
+            return `<li class="plant__story${doneAt ? ' plant__story--done' : ''}">${check}<div class="plant__storybody"><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></div></li>`;
+          })
+          .join('');
+        const epicProg = `<span class="plant__epicprog">${pe.done}/${pe.total} done</span>`;
+        return `<div class="plant__epic"><h2>${esc(e.id)} — ${esc(e.title)} <span class="plant__owner">Owner: ${esc(e.owner)}</span>${epicProg}</h2>${bar(pe.done, pe.total)}<ul>${stories}</ul></div>`;
+      })
+      .join('');
+    $('tracker').innerHTML = html;
+  }
+
+  function toolbarMsg(msg: string) {
+    const el = $('toolbarMsg');
+    el.textContent = msg;
+    setTimeout(() => {
+      if (el.textContent === msg) el.textContent = '';
+    }, 2500);
+  }
+
+  function download(name: string, text: string, mime: string) {
+    const blob = new Blob([text], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function copy(text: string, ok: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toolbarMsg(ok);
+    } catch {
+      toolbarMsg('Copy failed (clipboard blocked)');
+    }
+  }
+
+  // Story checkboxes (delegated: the list is re-rendered on every change).
+  $('tracker').addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (!t.classList.contains('plant__done') || !t.dataset.key) return;
+    if (t.checked) progress[t.dataset.key] = new Date().toISOString().slice(0, 10);
+    else delete progress[t.dataset.key];
+    saveLocalProgress();
+    render();
+  });
+
+  $('btnSaveProg').addEventListener('click', () => {
+    const payload = {
+      tool: 'vcf9-deployment-plan',
+      version: 2,
+      savedAt: new Date().toISOString(),
+      selection: sel,
+      progress,
+    };
+    download('vcf9-plan-progress.json', JSON.stringify(payload, null, 2), 'application/json');
+    toolbarMsg('Progress saved to vcf9-plan-progress.json');
+  });
+  $('btnLoadProg').addEventListener('click', () => ($('fileProgress') as HTMLInputElement).click());
+  $('fileProgress').addEventListener('change', async () => {
+    const input = $('fileProgress') as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || data.tool !== 'vcf9-deployment-plan' || typeof data.progress !== 'object' || data.progress === null) {
+        throw new Error('shape');
+      }
+      const loaded: PlanProgress = {};
+      for (const [k, v] of Object.entries(data.progress)) if (typeof v === 'string') loaded[k] = v;
+      progress = loaded;
+      saveLocalProgress();
+      // v2 files carry the scope too; restore it so the plan matches the ticks.
+      const loadedSel = coerceSelection(data.selection);
+      if (loadedSel) {
+        sel = loadedSel;
+        saveScope(sel);
+      }
+      render();
+      toolbarMsg(`Progress loaded (${Object.keys(loaded).length} stories done)`);
+    } catch {
+      toolbarMsg('Not a valid progress file');
+    }
+  });
+
+  // Reset needs a second click within 3 seconds (no modal dialogs).
+  let resetArmedAt = 0;
+  $('btnResetProg').addEventListener('click', () => {
+    if (Date.now() - resetArmedAt > 3000) {
+      resetArmedAt = Date.now();
+      toolbarMsg('Click Reset again to clear all progress');
+      return;
+    }
+    resetArmedAt = 0;
+    progress = {};
+    saveLocalProgress();
+    render();
+    toolbarMsg('Progress cleared');
+  });
+
+  // Follow scope changes made in the export tool in another tab.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== SELECTION_STORE_KEY) return;
+    sel = loadScope();
+    render();
+  });
+
+  render();
+</script>
+
+<style is:global>
+  .plant { max-width: 900px; }
+  .plant__head h1 { margin: 0.2rem 0 0.6rem; }
+  .plant__lede { color: var(--itq-royal-40); max-width: 72ch; }
+
+  .plant__scopebox {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+    margin: 0 0 0.8rem; padding: 0.55rem 0.7rem;
+    background: var(--itq-mist); border-radius: var(--radius-sm);
+  }
+  .plant__scope { margin: 0; font-size: 0.88rem; color: var(--itq-royal-blue); line-height: 1.5; flex: 1; min-width: 16rem; }
+  .plant__scopelink {
+    flex: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;
+  }
+
+  .plant__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.3rem 0 0.5rem; }
+  .plant__toolbar button {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white); color: var(--itq-royal-blue); cursor: pointer;
+  }
+  .plant__toolbar button:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .plant__toolbar-sep { width: 1px; height: 1.4rem; background: var(--border-default); margin: 0 0.25rem; }
+  .plant__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
+  .plant__note { font-size: 0.78rem; color: var(--itq-royal-40); margin: 0 0 1rem; max-width: 72ch; }
+  .plant__note code { font-size: 0.72rem; }
+
+  .plant__list { border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+  .plant__bar {
+    height: 4px; background: var(--itq-mist); border: var(--border-width) solid var(--border-default);
+    border-radius: 3px; overflow: hidden; margin-top: 0.3rem;
+  }
+  .plant__scopebox .plant__bar { background: var(--itq-white); }
+  .plant__bar span { display: block; height: 100%; background: var(--itq-orange); transition: width 0.25s ease; }
+  .plant__epicprog { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-royal-40); margin-left: auto; }
+
+  .plant__epic { margin-bottom: 1.3rem; }
+  .plant__epic h2 {
+    font-size: 1.05rem; margin: 0.6rem 0 0.3rem; color: var(--itq-royal-blue);
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem;
+  }
+  .plant__owner { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-orange); }
+  .plant__epic ul { margin: 0.2rem 0 0; }
+  .plant__epic > ul > li { margin-bottom: 0.35rem; }
+  .plant__epic ul ul { margin: 0.15rem 0 0.4rem; }
+  .plant__accept { color: var(--itq-royal-40); font-size: 0.85rem; }
+
+  .plant__story { display: flex; align-items: flex-start; gap: 0.55rem; }
+  .plant__storycheck { flex: none; padding-top: 0.2rem; cursor: pointer; }
+  .plant__storycheck input {
+    width: 1rem; height: 1rem; accent-color: var(--itq-orange); cursor: pointer; margin: 0;
+  }
+  .plant__storybody { flex: 1; min-width: 0; }
+  .plant__story--done { opacity: 0.6; }
+  .plant__story--done > .plant__storybody > strong {
+    text-decoration: line-through; text-decoration-color: var(--itq-orange); text-decoration-thickness: 2px;
+  }
+
+  .plant__source { font-size: 0.78rem; color: var(--itq-royal-40); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+</style>

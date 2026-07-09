@@ -237,7 +237,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '4.3',
         title: 'Core services ready',
         tasks: ['AD, DNS, NTP, CA, depot reachable (open the firewall flows — see 07-firewall-ports.md).'],
-        acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes (and any Day-2 fleet appliances: VCF Operations, Automation, Logs, Identity Broker; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.',
+        acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes, VCF Operations nodes (+ optional external LB VIP), Cloud Proxy, License Server, and the VCF Management Services FQDNs (fleet components, instance components, identity broker, services runtime — all deployed at bring-up), and any Day-2 fleet appliances (Automation, Log Management; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.',
       },
       {
         id: '4.4',
@@ -591,21 +591,112 @@ export function includedEpicList(sel: Selection): string {
     .replace('E1, E2, E3, E4, E5, E6', 'E1–E6');
 }
 
+// ---- Selection persistence ---------------------------------------------------
+
+/**
+ * localStorage key shared by the export tool (which writes the scope on every
+ * change) and the tracker page (which reads it). The tracker deliberately has
+ * no scope controls of its own.
+ */
+export const SELECTION_STORE_KEY = 'vcf9-plan-selection-v1';
+
+/**
+ * Coerce untrusted data (localStorage, a loaded progress file) into a valid
+ * Selection: unknown fields are dropped, invalid values fall back to the
+ * defaults, and the cross-choice constraints are re-applied. Returns null when
+ * the data is not an object at all.
+ */
+export function coerceSelection(data: unknown): Selection | null {
+  if (!data || typeof data !== 'object') return null;
+  const d = data as Record<string, unknown>;
+  const base = defaultSelection();
+  const oneOf = <T extends string>(v: unknown, allowed: readonly string[], fb: T): T =>
+    typeof v === 'string' && allowed.includes(v) ? (v as T) : fb;
+  const bool = (v: unknown, fb: boolean): boolean => (typeof v === 'boolean' ? v : fb);
+  const auto = (d.automation && typeof d.automation === 'object' ? d.automation : {}) as Record<string, unknown>;
+  const comps = (d.day2Components && typeof d.day2Components === 'object' ? d.day2Components : {}) as Record<string, unknown>;
+  const wlds: Wld[] = Array.isArray(d.wlds)
+    ? d.wlds
+        .filter((w): w is Record<string, unknown> => !!w && typeof w === 'object')
+        .map((w, i) => ({
+          name: typeof w.name === 'string' ? w.name : `wld${i + 1}`,
+          stretched: bool(w.stretched, false),
+          supervisor: bool(w.supervisor, false),
+        }))
+    : base.wlds;
+  return normalizeSelection({
+    connectivity: oneOf(d.connectivity, NSX_CONNECTIVITY.map((c) => c.value), base.connectivity),
+    storage: oneOf(d.storage, STORAGE_TYPES.map((s) => s.value), base.storage),
+    supervisorSize: oneOf(d.supervisorSize, SUPERVISOR_SIZES, base.supervisorSize),
+    mgmtStretched: bool(d.mgmtStretched, base.mgmtStretched),
+    day2: bool(d.day2, base.day2),
+    automation: {
+      deploy: bool(auto.deploy, base.automation.deploy),
+      model: oneOf(auto.model, AUTOMATION_MODELS.map((m) => m.value), base.automation.model),
+      placement: oneOf(auto.placement, AUTOMATION_PLACEMENTS.map((p) => p.value), base.automation.placement),
+      aviLb: bool(auto.aviLb, base.automation.aviLb),
+    },
+    day2Components: {
+      logs: bool(comps.logs, base.day2Components.logs),
+      networks: bool(comps.networks, base.day2Components.networks),
+      identityBroker: bool(comps.identityBroker, base.day2Components.identityBroker),
+    },
+    wlds,
+  });
+}
+
+// ---- Progress tracking ------------------------------------------------------
+
+/**
+ * Story-completion state: `${epicId}:${storyId}` (e.g. `E5:5.4`, `E9-2:9.3`)
+ * mapped to the ISO date (YYYY-MM-DD) the story was marked done. Keys for
+ * stories outside the current scope are kept (harmless) so progress survives
+ * scope toggles.
+ */
+export type PlanProgress = Record<string, string>;
+
+export function storyKey(epicId: string, storyId: string): string {
+  return `${epicId}:${storyId}`;
+}
+
+/** Done/total story counts for the current scope, overall and per epic. */
+export function progressStats(
+  sel: Selection,
+  progress: PlanProgress
+): { done: number; total: number; perEpic: Record<string, { done: number; total: number }> } {
+  const perEpic: Record<string, { done: number; total: number }> = {};
+  let done = 0;
+  let total = 0;
+  for (const e of selectedEpics(sel)) {
+    const pe = { done: 0, total: e.stories.length };
+    for (const s of e.stories) if (progress[storyKey(e.id, s.id)]) pe.done += 1;
+    perEpic[e.id] = pe;
+    done += pe.done;
+    total += pe.total;
+  }
+  return { done, total, perEpic };
+}
+
 // ---- Exporters -------------------------------------------------------------
 
-export function buildMarkdown(sel: Selection): string {
+export function buildMarkdown(sel: Selection, progress: PlanProgress = {}): string {
+  const stats = progressStats(sel, progress);
   const L: string[] = [];
   L.push('# VCF 9.1 Deployment Plan');
   L.push('');
   L.push(`**Scope:** ${typeLabel(sel)}`);
   L.push(`**Epics included:** ${includedEpicList(sel)}`);
+  if (stats.done > 0) L.push(`**Progress:** ${stats.done}/${stats.total} stories done`);
   L.push('');
   for (const e of selectedEpics(sel)) {
-    L.push(`## ${e.id} — ${e.title}  ·  Owner: ${e.owner}`);
+    const pe = stats.perEpic[e.id];
+    const prog = stats.done > 0 ? `  ·  ${pe.done}/${pe.total} done` : '';
+    L.push(`## ${e.id} — ${e.title}  ·  Owner: ${e.owner}${prog}`);
     if (e.ref) L.push(`Ref: ${e.ref}`);
     L.push('');
     for (const s of e.stories) {
-      L.push(`- **Story ${s.id} — ${s.title}.**`);
+      const doneAt = progress[storyKey(e.id, s.id)];
+      L.push(`- [${doneAt ? 'x' : ' '}] **Story ${s.id} — ${s.title}.**${doneAt ? ` _(done ${doneAt})_` : ''}`);
       for (const t of s.tasks) L.push(`  - ${t}`);
       if (s.acceptance) L.push(`  - _Acceptance:_ ${s.acceptance}`);
     }
@@ -627,17 +718,18 @@ function csvCell(v: string): string {
  * story, and task; `Parent` references the parent row's Summary so importers can
  * rebuild the epic → story → task hierarchy.
  */
-export function buildCsv(sel: Selection): string {
-  const header = ['Issue Type', 'Summary', 'Parent', 'Owner', 'Acceptance Criteria', 'Reference'];
+export function buildCsv(sel: Selection, progress: PlanProgress = {}): string {
+  const header = ['Issue Type', 'Summary', 'Parent', 'Owner', 'Acceptance Criteria', 'Reference', 'Status', 'Done On'];
   const rows: string[][] = [header];
   for (const e of selectedEpics(sel)) {
     const epicSummary = `${e.id} ${e.title}`;
-    rows.push(['Epic', epicSummary, '', e.owner, '', e.ref ?? '']);
+    rows.push(['Epic', epicSummary, '', e.owner, '', e.ref ?? '', '', '']);
     for (const s of e.stories) {
       const storySummary = `${e.id}.${s.id.split('.').pop()} ${s.title}`;
-      rows.push(['Story', storySummary, epicSummary, e.owner, s.acceptance ?? '', '']);
+      const doneAt = progress[storyKey(e.id, s.id)];
+      rows.push(['Story', storySummary, epicSummary, e.owner, s.acceptance ?? '', '', doneAt ? 'Done' : 'Open', doneAt ?? '']);
       for (const t of s.tasks) {
-        rows.push(['Task', t, storySummary, '', '', '']);
+        rows.push(['Task', t, storySummary, '', '', '', '', '']);
       }
     }
   }

@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.5.2 — 2026-07-09
+- **New tool: Deployment Tracker** (#121). A dedicated page
+  (`tools/plan-tracker/`) for the execution side of the plan: a checkbox per
+  story, per-epic counters + progress bars, and an overall progress header.
+  The scope follows what you set in the export tool (shared via
+  localStorage — the tracker has no scope controls of its own); progress
+  persists in the browser and travels as a JSON file that **carries scope +
+  ticks together** (*Save/Load progress* — keep it with the customer's files,
+  not in a repo); *Reset* needs a confirm click. The tracker's exports carry
+  the state: Markdown as a GitHub-flavored task list (`- [x]` with done-dates
+  and per-epic counts), CSV with `Status` + `Done On` columns. The export
+  tool itself stays a pure scope-builder/exporter (its stored scope now also
+  survives reloads); its Markdown gains `- [ ]` task-list syntax and the CSV
+  the (empty) `Status`/`Done On` columns for a consistent schema.
+- **Export tool: stale Day-2 framing fixed** (#122, follow-up to #118). The
+  scope checkbox now reads "Day-2 fleet (Automation / Logs / Networks /
+  Identity Broker)" (Operations removed), and story 4.3's DNS acceptance
+  (doc + tool) lists the bring-up FQDNs (VCF Operations nodes + optional LB
+  VIP, Cloud Proxy, License Server, VCF Management Services fleet / instance /
+  identity broker / services runtime) instead of counting VCF Operations
+  among the Day-2 appliances.
+
 ## v1.5.1 — 2026-07-09
 - **Stretched management domain: Edge cluster order is a choice, not a
   constraint** (#120). TechDocs-verified both ways: the stretch spec carries
