@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.7 — 2026-07-10
+- **ntp-ad-ca-plan template: CA enrollment service account row added** (#128).
+  The CA block captured type / server / template / signing approach but not
+  the **least-privileged service account** the Configure-CA-for-Fleet wizard
+  authenticates with on a Microsoft CA — even though `docs/prerequisites.md`
+  lists URL + account + template as the wizard's "have ready" trio. The *CA
+  server or URL* example now shows the `/certsrv` Web Enrollment form with
+  the Basic-authentication note; the new row flags that the OpenSSL CA type
+  needs no account at all.
+
 ## v1.5.6 — 2026-07-10
 - **docs 08: Windows OpenSSH SFTP-target subsection** (#127). A.3 named
   "Windows Server with OpenSSH Server" as a valid backup target but only
