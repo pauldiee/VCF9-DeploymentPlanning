@@ -8,6 +8,13 @@ page. Everything in the workbook flows from these decisions.
 > (IP/DNS, VLAN/subnet, NTP/AD/CA, BGP) — capture the plan in CSV, then transfer to the workbook or Coscia's planner.
 > For the firewall flows these networks depend on, see [Firewall & Ports](07-firewall-ports.md).
 
+> **Want a generated starting point?** [Coscia's VCF 9.1 Network Planner](https://vcfplanner.lcoscia.fr/)
+> produces a complete starter network design — VLAN plan, appliance IPs + FQDNs, VIPs, with
+> validation and XLSX/JSON export — from a handful of inputs (scenario, host count, storage,
+> NSX config, DNS prefix/suffix). Generate there, then walk it through this page: the sizing
+> minimums, the VM-Management carve-out, and the hand-off order (network team owns the
+> subnets, you assign from them) still need a human decision per row.
+
 > Convention used in the templates below: site code `sfo`, instance `m01`,
 > rack `r01`. Replace consistently when copying for a real deployment. VLAN IDs
 > and CIDRs are placeholders.

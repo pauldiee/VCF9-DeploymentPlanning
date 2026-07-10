@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6.1 — 2026-07-10
+- **Coscia's VCF 9.1 Network Planner referenced** (#134). Leonardo Coscia
+  published a second tool ([vcfplanner.lcoscia.fr](https://vcfplanner.lcoscia.fr/),
+  distinct from his workbook reimplementation): it generates a starter VCF 9
+  network design — VLAN plan, appliance IPs + FQDNs, VIPs, validation,
+  XLSX/JSON export — from a handful of inputs. Added to the landing page's
+  Related-tools grid and to `docs/01-network-dns-plan.md` as a generated
+  starting point for Step 1 (the sizing minimums, VM-Management carve-out
+  and the network-team/architect hand-off still apply per row).
+
 ## v1.6.0 — 2026-07-10
 - **Site search** (#132). New `/search/` page (linked in the header) with
   full-text search across docs, samples, and tool pages — powered by
