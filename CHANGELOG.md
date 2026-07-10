@@ -1,15 +1,5 @@
 # Changelog
 
-## v1.6.2 — 2026-07-10
-- **ci: Pages site offline by default** (#135). The GitHub Pages site is no
-  longer permanently published: the Pages site was deleted on the repo and
-  `deploy.yml` is now `workflow_dispatch`-only, so pushes to `main` no longer
-  auto-deploy. To preview: re-enable Pages
-  (`gh api -X POST repos/pauldiee/VCF9-DeploymentPlanning/pages -f build_type=workflow`),
-  run the workflow (`gh workflow run deploy.yml`), and delete the Pages site
-  again when done
-  (`gh api -X DELETE repos/pauldiee/VCF9-DeploymentPlanning/pages`).
-
 ## v1.6.1 — 2026-07-10
 - **Coscia's VCF 9.1 Network Planner referenced** (#134). Leonardo Coscia
   published a new, separate tool:

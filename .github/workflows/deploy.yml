@@ -1,10 +1,14 @@
 name: Deploy site to GitHub Pages
 
-# Manual-only: the Pages site is offline by default (issue #135).
-# To preview: enable Pages (gh api -X POST repos/pauldiee/VCF9-DeploymentPlanning/pages -f build_type=workflow),
-# then run this workflow (gh workflow run deploy.yml). Disable Pages again when done
-# (gh api -X DELETE repos/pauldiee/VCF9-DeploymentPlanning/pages).
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'docs/**'
+      - 'samples/**'
+      - 'CHANGELOG.md'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
