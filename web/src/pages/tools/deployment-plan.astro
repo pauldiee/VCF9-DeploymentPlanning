@@ -224,14 +224,18 @@ const epics = selectedEpics(sel);
   function esc(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  const DOCS_BASE = `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/docs/`;
   function linkify(s: string): string {
     // Trailing sentence punctuation stays outside the anchor so the href works.
-    return esc(s).replace(/https?:\/\/[^\s)]+/g, (url) => {
-      const m = url.match(/^(.*?)([.,;:]+)$/);
-      const clean = m ? m[1] : url;
-      const tail = m ? m[2] : '';
-      return `<a href="${clean}">${clean}</a>${tail}`;
-    });
+    return esc(s)
+      .replace(/https?:\/\/[^\s)]+/g, (url) => {
+        const m = url.match(/^(.*?)([.,;:]+)$/);
+        const clean = m ? m[1] : url;
+        const tail = m ? m[2] : '';
+        return `<a href="${clean}">${clean}</a>${tail}`;
+      })
+      // Doc-file mentions (e.g. 05-day2-deployments.md) link to the rendered doc pages.
+      .replace(/(^|[\s(])([\w][\w-]*)\.md\b/g, (_m, pre, name) => `${pre}<a href="${DOCS_BASE}${name}/">${name}.md</a>`);
   }
 
   function renderWlds() {
@@ -270,12 +274,12 @@ const epics = selectedEpics(sel);
           .map((s) => {
             const tasks = s.tasks.map((t) => `<li>${linkify(t)}</li>`).join('');
             const accept = s.acceptance
-              ? `<li class="planx__accept"><em>Acceptance:</em> ${esc(s.acceptance)}</li>`
+              ? `<li class="planx__accept"><em>Acceptance:</em> ${linkify(s.acceptance)}</li>`
               : '';
             return `<li><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></li>`;
           })
           .join('');
-        const ref = e.ref ? `<p class="planx__ref">Ref: ${esc(e.ref)}</p>` : '';
+        const ref = e.ref ? `<p class="planx__ref">Ref: ${linkify(e.ref)}</p>` : '';
         return `<div class="planx__epic"><h2>${esc(e.id)} — ${esc(e.title)} <span class="planx__owner">Owner: ${esc(e.owner)}</span></h2>${ref}<ul>${stories}</ul></div>`;
       })
       .join('');

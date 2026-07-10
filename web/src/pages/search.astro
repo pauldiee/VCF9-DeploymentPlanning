@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/path';
+
+// Pagefind's bundle (/pagefind/*) is generated from the built HTML by the
+// `pagefind --site dist` step in `npm run build`, so search only works on a
+// built site (npm run build + preview) - `astro dev` shows the hint below.
+---
+
+<BaseLayout
+  title="Search | VCF 9.1 Planning"
+  description="Search the VCF 9.1 deployment-planning docs, samples, and tools."
+>
+  <article class="search" data-pagefind-ignore>
+    <header>
+      <p class="itq-eyebrow">Search</p>
+      <h1>Search the site</h1>
+      <p class="search__lede">
+        Full-text search across the docs, samples, and tool pages. Everything runs in your
+        browser; no queries leave this page.
+      </p>
+    </header>
+    <div id="search">
+      <pagefind-config instance="site" bundle-path={withBase('pagefind/')}></pagefind-config>
+      <pagefind-input instance="site"></pagefind-input>
+      <pagefind-results instance="site"></pagefind-results>
+    </div>
+    <noscript><p>Search needs JavaScript enabled.</p></noscript>
+    <p class="search__fallback" id="searchFallback" hidden>
+      The search index is generated at build time and is not available on the dev server.
+      Run <code>npm run build &amp;&amp; npm run preview</code> to try it locally.
+    </p>
+  </article>
+</BaseLayout>
+
+<link rel="stylesheet" href={withBase('pagefind/pagefind-component-ui.css')} />
+<script is:inline type="module" src={withBase('pagefind/pagefind-component-ui.js')}></script>
+<script is:inline>
+  // On `astro dev` the pagefind bundle doesn't exist; surface the hint instead
+  // of a silently dead input.
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      if (!customElements.get('pagefind-input')) {
+        document.getElementById('searchFallback').hidden = false;
+      }
+    }, 300);
+  });
+</script>
+
+<style>
+  .search header {
+    margin-bottom: 1.25rem;
+  }
+  .search__lede {
+    color: var(--itq-royal-60, inherit);
+    max-width: 60ch;
+  }
+  .search__fallback {
+    padding: 0.75rem 1rem;
+    background: var(--itq-mist);
+    border-left: 3px solid var(--itq-orange);
+    border-radius: 4px;
+  }
+  /* The ITQ tokens (base.css) draw a brand square on every ul > li::before;
+     Pagefind renders its result list in light DOM, so opt its items out. */
+  #search :global(li::before) {
+    display: none;
+  }
+  /* Pagefind UI on ITQ chrome */
+  #search {
+    --pagefind-ui-primary: var(--itq-royal-blue);
+    --pagefind-ui-text: inherit;
+    --pagefind-ui-background: transparent;
+    --pagefind-ui-border: var(--itq-light-blue);
+    --pagefind-ui-tag: var(--itq-mist);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: 6px;
+    --pagefind-ui-font: inherit;
+    display: block;
+    max-width: 46rem;
+  }
+</style>
