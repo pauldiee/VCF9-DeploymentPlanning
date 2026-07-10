@@ -61,6 +61,11 @@ import { withBase } from '../lib/path';
     border-left: 3px solid var(--itq-orange);
     border-radius: 4px;
   }
+  /* The ITQ tokens (base.css) draw a brand square on every ul > li::before;
+     Pagefind renders its result list in light DOM, so opt its items out. */
+  #search :global(li::before) {
+    display: none;
+  }
   /* Pagefind UI on ITQ chrome */
   #search {
     --pagefind-ui-primary: var(--itq-royal-blue);

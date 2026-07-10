@@ -19,6 +19,10 @@
 - **Docs/samples: back-to-top link on every H2 section** (#133). Appended at
   render time (rehype), styled as a small right-aligned "↑ Top" affordance,
   excluded from the search index.
+- **Stray ITQ bullet squares fixed** (spotted while reviewing #133): the ITQ
+  token stylesheet draws a brand square on every `ul > li::before`, which
+  leaked into the inline chip lists — the docs' "On this page" TOC and the
+  new search results. Both now opt out.
 
 ## v1.5.9 — 2026-07-10
 - **docs 03: witness-appliance deploy gotchas** (#130, field-verified on a

@@ -93,6 +93,11 @@ const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 
     padding: 0;
     list-style: none;
   }
+  /* The ITQ tokens (base.css) draw a brand square on every ul > li::before;
+     in this inline chip list it lands at the end of the previous chip. */
+  .doc-toc__list li::before {
+    display: none;
+  }
   .doc-toc__list a {
     display: inline-block;
     padding: 0.15rem 0.6rem;
