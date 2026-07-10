@@ -1,6 +1,13 @@
 # Changelog
 
 ## v1.6.0 — 2026-07-10
+- **Site search** (#132). New `/search/` page (linked in the header) with
+  full-text search across docs, samples, and tool pages — powered by
+  Pagefind: the index is generated from the built HTML at build time
+  (`pagefind --site dist` appended to `npm run build`, so GitHub + GitLab
+  Pages both get it) and runs fully client-side; no external service, no
+  queries leave the browser. Indexing is scoped to page content
+  (`data-pagefind-body` on `<main>`; TOC/pager chrome ignored).
 - **Export tool + tracker: doc references are now links** (#131). Story
   text, acceptance criteria and the epic "Ref:" lines mentioned docs as
   plain text (`see 05-day2-deployments.md section C`); the on-page rendering

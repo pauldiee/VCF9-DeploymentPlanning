@@ -28,7 +28,7 @@ const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 
   {meta && <p class="doc-eyebrow itq-eyebrow">{meta.step}</p>}
   {
     sections.length > 2 && (
-      <nav class="doc-toc" aria-label="On this page">
+      <nav class="doc-toc" aria-label="On this page" data-pagefind-ignore>
         <span class="doc-toc__label">On this page</span>
         <ul class="doc-toc__list">
           {sections.map((h) => (
@@ -44,7 +44,7 @@ const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 
     <Content />
   </article>
 
-  <nav class="doc-pager" aria-label="Between documents">
+  <nav class="doc-pager" aria-label="Between documents" data-pagefind-ignore>
     {
       prev ? (
         <a class="doc-pager__link doc-pager__link--prev" href={href(prev.slug)}>

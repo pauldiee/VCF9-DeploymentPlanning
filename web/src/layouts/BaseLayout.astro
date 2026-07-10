@@ -48,6 +48,7 @@ const feedbackUrl =
           <span class="site-header__product">VCF 9.1 Deployment Planning</span>
         </a>
         <nav class="site-header__nav">
+          <a href={asset('search/')}><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search</a>
           <a href={asset('docs/prerequisites/')}>Docs</a>
           <a
             class="site-header__blog"
@@ -71,7 +72,7 @@ const feedbackUrl =
 
     <div class:list={['layout', { 'layout--full': fullWidth }]}>
       {!fullWidth && <Sidebar active={active} />}
-      <main id="main" class:list={['content', { 'content--full': fullWidth }]}>
+      <main id="main" class:list={['content', { 'content--full': fullWidth }]} data-pagefind-body>
         <slot />
       </main>
     </div>
