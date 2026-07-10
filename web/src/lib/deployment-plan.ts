@@ -285,7 +285,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.4',
         title: 'Verify VCF Management Services, License Server & Cloud Proxy',
         tasks: [
-          'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only.)',
+          'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, identity broker, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only.)',
           'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.4) — within the 90-day evaluation period that starts at bring-up.',
         ],
         acceptance: 'VCF Management Services + License Server up and healthy after bring-up; the License Server FQDN resolves to an IP outside the services-runtime range; the Cloud Proxy is collecting.',
@@ -312,14 +312,14 @@ function coreEpics(sel: Selection): Epic[] {
             id: '6.3',
             title: 'Identity & roles (optional, not recommended here)',
             tasks: [
-              'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker (a Day-2 component; see E8 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
+              'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker — already deployed at bring-up with the management services, configured Day-2 (see E8 8.4 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
             ],
           }
         : {
             id: '6.3',
             title: 'Identity & roles (vCenter SSO)',
             tasks: [
-              `Bind vCenter SSO to AD/LDAP and map the admin/operator/viewer groups. (The fleet-wide VCF Identity Broker is not in this scope — add it under the Day-2 fleet if you want federated fleet SSO instead. TechDocs: ${TECHDOCS.identityProvider})`,
+              `Bind vCenter SSO to AD/LDAP and map the admin/operator/viewer groups. (The Identity Broker itself is deployed at bring-up regardless, but broker-based fleet SSO is not in this scope — tick it under the Day-2 fleet if you want federated fleet SSO configured instead. TechDocs: ${TECHDOCS.identityProvider})`,
             ],
             acceptance: 'vCenter SSO bound to AD/LDAP; admin/operator/viewer groups mapped and tested with an AD login.',
           },
@@ -418,7 +418,6 @@ function day2Epic(sel: Selection): Epic {
   const compNames = [
     c.logs ? 'Log Management' : null,
     c.networks ? 'VCF Operations for Networks' : null,
-    c.identityBroker ? 'Identity Broker' : null,
   ].filter(Boolean) as string[];
   const compList =
     compNames.length > 1 ? `${compNames.slice(0, -1).join(', ')} & ${compNames[compNames.length - 1]}` : compNames[0];
@@ -440,8 +439,8 @@ function day2Epic(sel: Selection): Epic {
     title: 'Certificates, identity & licensing (full fleet)',
     tasks: [
       c.identityBroker
-        ? `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations). TechDocs: configure a CA — ${TECHDOCS.configureCa} ; configure an identity provider — ${TECHDOCS.identityProvider}`
-        : `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass and apply licensing across the fleet (via VCF Operations). Identity stays on the direct vCenter SSO AD/LDAP binding from E6 6.3 (the Identity Broker is not in this scope). TechDocs: configure a CA — ${TECHDOCS.configureCa}`,
+        ? `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass, complete fleet SSO via the VCF Identity Broker (configuration, not deployment — the broker has been running since bring-up; this is the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: see prerequisites.md, Identity source for the VCF Identity Broker), and apply licensing across the fleet (via VCF Operations). TechDocs: configure a CA — ${TECHDOCS.configureCa} ; configure an identity provider — ${TECHDOCS.identityProvider}`
+        : `Now that all components exist, do the full CA-signed certificate replacement across the whole fleet in one pass and apply licensing across the fleet (via VCF Operations). Identity stays on the direct vCenter SSO AD/LDAP binding from E6 6.3 (broker-based fleet SSO is not in this scope — the bring-up Identity Broker stays unconfigured). TechDocs: configure a CA — ${TECHDOCS.configureCa}`,
     ],
     acceptance: c.identityBroker
       ? 'Every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.'

@@ -81,7 +81,7 @@ workbook.
 | B20 | `input_mgmt_az1_dtgw_{vlan,gateway_cidr}` |
 | B22 | — (no named range; extra Tier-0 BGP neighbor) |
 | C1/C2 | `input_region_ad_parent_{fqdn,netbios}`, `input_region_ad_child_{fqdn,netbios}` |
-| C3 | — no mgmt range; DC FQDNs only for the Identity Broker Day-N component: `input_flt_vidb_{primary,secondary}_domain_controller{,_port}` |
+| C3 | — no mgmt range; DC FQDNs only for the Identity Broker (deployed at bring-up, AD binding configured Day-N): `input_flt_vidb_{primary,secondary}_domain_controller{,_port}` |
 | C5 | `input_child_svc_vsphere_ad_{user,password}`, `input_child_svc_nsx_ad_{user,password}` |
 | C6 | `input_gg_vcf_{admins,operators,viewers}_group` (+ `input_gg_{vc,nsx}_*_group`) |
 | C7 | `input_region_dns{1,2}_ip` |

@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.5.8 — 2026-07-10
+- **Identity Broker is a bring-up component, not Day-2** (#129,
+  field-verified on a real 9.1 deployment): the broker deploys automatically
+  with the VCF Management Services — no opt-in; only its **configuration**
+  (AD binding / fleet SSO) and additional instances are Day-2. Framing fixed
+  across: `docs/05` (D1 answer + deployable-set table), `docs/06` (Day-2
+  scope block, E8 intro, stories 5.4 / 6.3 / 8.3 / 8.4),
+  `docs/prerequisites.md` (identity-source intro), `workbook-cell-mapping.md`
+  (C3), and the **export tool** — story 8.3 no longer "deploys" the broker,
+  8.4 says configuration-not-deployment, and the scope checkbox is now
+  "Fleet SSO via the Identity Broker (configure the bring-up broker)" tagged
+  E8.4. (`docs/04-sizing.md` already said "additional-instance only".)
+
 ## v1.5.7 — 2026-07-10
 - **ntp-ad-ca-plan template: CA enrollment service account row added** (#128).
   The CA block captured type / server / template / signing approach but not
