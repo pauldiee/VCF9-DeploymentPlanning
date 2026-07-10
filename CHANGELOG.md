@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.6 — 2026-07-10
+- **docs 08: Windows OpenSSH SFTP-target subsection** (#127). A.3 named
+  "Windows Server with OpenSSH Server" as a valid backup target but only
+  detailed the Linux chroot build. New *Windows Server variant* subsection:
+  capability install + `sshd` service to Automatic (install alone doesn't
+  survive a reboot), firewall-rule check, non-admin service account with
+  password auth, the `/C:/vcf-backups` Unix-style path gotcha, the stock
+  `Match Group administrators` / `administrators_authorized_keys` quirk,
+  chroot via `ForceCommand internal-sftp`, host-key re-confirmation after a
+  rebuild, and pre-registration validation steps.
+
 ## v1.5.5 — 2026-07-10
 - **ip-dns-plan template: *Provided by* teams aligned with the VLAN-plan flow**
   (#125). The column mixed Network (ESXi hosts), Architect (appliances) and

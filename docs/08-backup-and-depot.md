@@ -78,6 +78,44 @@ Match Group sftpbackup
   minimal OS builds (e.g. Photon OS) drop ICMP by default; allow ping and
   TCP 22 from the management network or the wizard fails before saving.
 
+#### Windows Server variant (built-in OpenSSH Server)
+
+The same pattern works on Windows Server with the in-box OpenSSH Server:
+
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Set-Service sshd -StartupType Automatic
+Start-Service sshd
+Get-NetFirewallRule -Name OpenSSH-Server-In-TCP   # confirm the TCP 22 inbound rule exists
+```
+
+- **Service gotcha:** installing the capability does **not** enable the
+  service — without the `Set-Service` line, `sshd` stays *Manual* and is gone
+  after the first reboot.
+- Create a dedicated **local, non-admin** account (e.g. `svc-vcf-bck`) and keep
+  `PasswordAuthentication yes` (the default) in
+  `C:\ProgramData\ssh\sshd_config` — VCF authenticates with username +
+  password. Grant the account NTFS *Modify* on the backup folder only.
+- **Path gotcha (Windows edition):** VCF expects an absolute Unix-style backup
+  directory. On Windows OpenSSH that is `/C:/vcf-backups` — leading slash,
+  drive letter, forward slashes; `C:\vcf-backups` fails validation.
+- The stock Windows `sshd_config` ends with a `Match Group administrators`
+  block that points **all administrators at one shared**
+  `__PROGRAMDATA__/ssh/administrators_authorized_keys` file. Harmless for
+  password auth with a non-admin account, but it is the classic
+  Windows-specific surprise if the service account is an administrator or you
+  switch to key auth — one more reason for the dedicated non-admin account.
+- An SFTP-only lockdown works like on Linux: a `Match User svc-vcf-bck` block
+  with `ForceCommand internal-sftp` (plus `ChrootDirectory`, which must be
+  owned by Administrators/SYSTEM and not writable by the account). Restart
+  after any config edit: `Restart-Service sshd`.
+- **Host-key gotcha:** VCF pins the server's SSH fingerprint when you register
+  the target. Reinstalling OpenSSH or rebuilding the VM regenerates the host
+  keys — backups then fail until the target is re-confirmed.
+- Validate from the management network **before** registering:
+  `Test-NetConnection <fqdn> -Port 22`, then a real `sftp` login and a `put`
+  of a test file into the backup directory.
+
 ### A.4 References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
