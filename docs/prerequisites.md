@@ -144,9 +144,11 @@ front:
 
 ### Identity source for the VCF Identity Broker
 
-VCF 9 federates fleet-wide SSO through the **VCF Identity Broker** (deployed and
-configured Day-2 — deployment plan **E8**, stories **8.3** deploy / **8.4**
-fleet SSO). Prepare the AD-over-LDAP
+VCF 9 federates fleet-wide SSO through the **VCF Identity Broker**. The broker
+itself is **deployed at bring-up** with the VCF Management Services (no opt-in;
+its FQDN + services-runtime IP are part of the Step 1 plan) — what happens
+Day-2 is its **configuration** (deployment plan **E8**, story **8.4** fleet
+SSO). Prepare the AD-over-LDAP
 identity source up front; it has specific inputs and well-known gotchas.
 
 **What to prepare:**

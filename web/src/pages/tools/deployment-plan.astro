@@ -19,8 +19,9 @@ const epics = selectedEpics(sel);
       <p class="planx__lede">
         Build your deployment scope below: pick <strong>NSX connectivity</strong> (Centralized/Distributed)
         and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
-        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer, and the optional
-        components <strong>Log Management</strong>, <strong>Operations for Networks</strong>, and <strong>Identity Broker</strong> each in or out),
+        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer, the optional
+        components <strong>Log Management</strong> and <strong>Operations for Networks</strong> each in or out, and
+        <strong>fleet SSO via the Identity Broker</strong> on or off — the broker itself deploys at bring-up),
         and optionally add <strong>workload domains</strong> (zero for a management-only scope), each independently
         <strong>non-stretched or stretched</strong> (a stretched domain gets its own hosts and its own vSAN witness). The plan filters to the exact
         epics and stories, then export it: <strong>Copy as Markdown</strong> for a wiki or PR, or
@@ -47,7 +48,7 @@ const epics = selectedEpics(sel);
           </select>
         </label>
         <label class="planx__check"><input type="checkbox" id="optMgmtStretched" /> Stretch the management domain <span class="planx__tag">E7</span></label>
-        <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Automation / Logs / Networks / Identity Broker) <span class="planx__tag">E8</span></label>
+        <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Automation / Logs / Networks / fleet SSO) <span class="planx__tag">E8</span></label>
         <div class="planx__sub" id="autoBlock">
           <label class="planx__check"><input type="checkbox" id="optAutoDeploy" checked /> Deploy VCF Automation <span class="planx__tag">E8.2</span></label>
           <label class="planx__sublabel">Deployment model
@@ -63,7 +64,7 @@ const epics = selectedEpics(sel);
           <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Load-balance with Avi (management domain)</label>
           <label class="planx__check"><input type="checkbox" id="optD2Logs" checked /> Log Management <span class="planx__tag">E8.3</span></label>
           <label class="planx__check"><input type="checkbox" id="optD2Networks" checked /> Operations for Networks <span class="planx__tag">E8.3</span></label>
-          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Identity Broker (fleet SSO) <span class="planx__tag">E8.3</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Fleet SSO via the Identity Broker (configure the bring-up broker) <span class="planx__tag">E8.4</span></label>
         </div>
       </fieldset>
 
