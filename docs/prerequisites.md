@@ -16,8 +16,8 @@ IP/DNS template's **Intake ID** column maps back to
 [`workbook-cell-mapping.md`](workbook-cell-mapping.md) (the other templates
 reference intake IDs in their notes where relevant).
 
-- [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
-- [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU per traffic type
+- [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP, assigned by the architect from the network team's subnets in the VLAN plan (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
+- [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU + minimum IP count per traffic type
 - [NTP / AD / CA](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
 - [BGP peering](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
 - [Firewall request](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv) — deployment-critical flows (source / destination / port / purpose) for the security team; see [`07-firewall-ports.md`](07-firewall-ports.md)
