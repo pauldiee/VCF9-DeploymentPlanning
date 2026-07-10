@@ -158,14 +158,18 @@ const exportHref = withBase('tools/deployment-plan/');
   function esc(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  const DOCS_BASE = `${import.meta.env.BASE_URL.replace(/\/+$/, '')}/docs/`;
   function linkify(s: string): string {
     // Trailing sentence punctuation stays outside the anchor so the href works.
-    return esc(s).replace(/https?:\/\/[^\s)]+/g, (url) => {
-      const m = url.match(/^(.*?)([.,;:]+)$/);
-      const clean = m ? m[1] : url;
-      const tail = m ? m[2] : '';
-      return `<a href="${clean}">${clean}</a>${tail}`;
-    });
+    return esc(s)
+      .replace(/https?:\/\/[^\s)]+/g, (url) => {
+        const m = url.match(/^(.*?)([.,;:]+)$/);
+        const clean = m ? m[1] : url;
+        const tail = m ? m[2] : '';
+        return `<a href="${clean}">${clean}</a>${tail}`;
+      })
+      // Doc-file mentions (e.g. 05-day2-deployments.md) link to the rendered doc pages.
+      .replace(/(^|[\s(])([\w][\w-]*)\.md\b/g, (_m, pre, name) => `${pre}<a href="${DOCS_BASE}${name}/">${name}.md</a>`);
   }
   function bar(done: number, total: number): string {
     const pct = total ? Math.round((done / total) * 100) : 0;
@@ -188,7 +192,7 @@ const exportHref = withBase('tools/deployment-plan/');
             const doneAt = progress[key];
             const tasks = s.tasks.map((t) => `<li>${linkify(t)}</li>`).join('');
             const accept = s.acceptance
-              ? `<li class="plant__accept"><em>Acceptance:</em> ${esc(s.acceptance)}</li>`
+              ? `<li class="plant__accept"><em>Acceptance:</em> ${linkify(s.acceptance)}</li>`
               : '';
             const check = `<label class="plant__storycheck" title="${doneAt ? `Done on ${esc(doneAt)}` : 'Mark story done'}"><input type="checkbox" class="plant__done" data-key="${esc(key)}"${doneAt ? ' checked' : ''} aria-label="Mark story ${esc(s.id)} done" /></label>`;
             return `<li class="plant__story${doneAt ? ' plant__story--done' : ''}">${check}<div class="plant__storybody"><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></div></li>`;

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.0 — 2026-07-10
+- **Export tool + tracker: doc references are now links** (#131). Story
+  text, acceptance criteria and the epic "Ref:" lines mentioned docs as
+  plain text (`see 05-day2-deployments.md section C`); the on-page rendering
+  now links every `*.md` mention to the rendered doc page on the site. The
+  Markdown/CSV exports keep plain filenames (presentation-only change).
+
 ## v1.5.9 — 2026-07-10
 - **docs 03: witness-appliance deploy gotchas** (#130, field-verified on a
   real 9.1 stretched deployment). The witness OVA cannot be deployed via the
