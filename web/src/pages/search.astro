@@ -21,6 +21,7 @@ import { withBase } from '../lib/path';
       </p>
     </header>
     <div id="search">
+      <pagefind-config instance="site" bundle-path={withBase('pagefind/')}></pagefind-config>
       <pagefind-input instance="site"></pagefind-input>
       <pagefind-results instance="site"></pagefind-results>
     </div>
