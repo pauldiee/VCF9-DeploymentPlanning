@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.5.5 — 2026-07-10
+- **ip-dns-plan template: *Provided by* teams aligned with the VLAN-plan flow**
+  (#125). The column mixed Network (ESXi hosts), Architect (appliances) and
+  Platform (Day-2 fleet) even though every FQDN + IP on the sheet is assigned
+  the same way: the network team provides the subnets/ranges (captured in
+  `vlan-subnet-plan.csv`), the architect assigns each address from them. All
+  rows now read *Architect* and the column header spells out that flow (and
+  that the AD/DNS team creates the A + PTR records). `docs/prerequisites.md`
+  now lists the hand-off order explicitly: Network team fills the VLAN plan →
+  Architect assigns FQDNs/IPs from it → AD/DNS team creates the records.
+- **vlan-subnet-plan template: *Minimum IPs needed* column added** (#126).
+  The per-network sizing guidance from `docs/01-network-dns-plan.md` (1 per
+  host for mgmt/vMotion/vSAN, hosts x pNICs for host overlay, 2 per edge
+  node for edge overlay, ~30-48 + a /28-/27 services-runtime block for VM
+  Management) now travels with the CSV itself, so a downloaded template is
+  self-explanatory. Template descriptions in `docs/prerequisites.md` synced.
+  Both changes from field feedback by Jeroen Buren.
+
 ## v1.5.4 — 2026-07-09
 - **Tracker: export buttons fixed** (#124). Copy Markdown / Download .md /
   Download CSV on the Deployment Tracker rendered but did nothing — their
