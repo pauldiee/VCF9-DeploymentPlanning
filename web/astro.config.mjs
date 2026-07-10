@@ -93,6 +93,9 @@ function rehypeBackToTop() {
       if (!node.children) return;
       for (const child of node.children) {
         if (child.type === 'element' && child.tagName === 'h2') {
+          // No text children: Astro extracts the TOC heading text AFTER custom
+          // rehype plugins run, so any text here would leak into "On this page".
+          // The visible label is drawn by CSS (::before); aria-label covers AT.
           child.children.push({
             type: 'element',
             tagName: 'a',
@@ -102,7 +105,7 @@ function rehypeBackToTop() {
               ariaLabel: 'Back to top',
               dataPagefindIgnore: true,
             },
-            children: [{ type: 'text', value: '↑ Top' }],
+            children: [],
           });
         } else {
           visit(child);

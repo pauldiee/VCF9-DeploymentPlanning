@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node -e \"require('fs').rmSync('.astro/collections',{recursive:true,force:true})\"",
+    "prebuild": "node -e \"for (const p of ['.astro','node_modules/.astro']) require('fs').rmSync(p,{recursive:true,force:true})\"",
     "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "check": "astro check"

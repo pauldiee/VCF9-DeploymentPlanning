@@ -200,7 +200,20 @@ body {
   padding-top: var(--space-5);
   border-top: var(--border-width) solid var(--border-default);
 }
-/* "Back to top" affordance appended to each H2 by the rehype plugin. */
+/* "Back to top" affordance appended to each H2 by the rehype plugin.
+   The label lives in CSS (the anchor is text-free so Astro's TOC heading-text
+   extraction doesn't pick it up); aria-label carries the accessible name.
+   The arrow is a Font Awesome glyph - the ITQ webfont lacks U+2191. */
+.prose h2 .back-to-top::before {
+  content: "\f062";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 0.85em;
+  margin-right: 0.4em;
+}
+.prose h2 .back-to-top::after {
+  content: "Top";
+}
 .prose h2 .back-to-top {
   float: right;
   font-size: 0.72rem;
