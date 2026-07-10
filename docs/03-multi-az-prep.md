@@ -85,6 +85,27 @@ VCF management-network design doesn't). What you need instead:
 - vSAN witness traffic is **unicast** on modern vSAN — no multicast on the routed
   path. Ensure the required vSAN ports are permitted end-to-end.
 
+**Deploying the witness appliance — field-verified gotchas.**
+
+- **Don't deploy the OVA via the ESXi Host Client** — it fails at step 1 with
+  `Invalid qualifier: ValueMap{"Management", "Secondary"}`. The witness OVA
+  carries a deployment-option section (Tiny/Medium/Large) and network properties
+  with ValueMap qualifiers, and standalone-host deploys don't support OVF
+  properties (the Host Client rejects the qualifier). This bites exactly at the
+  witness site, where there is often a lone host without vCenter. Working paths:
+  deploy **through any vCenter** that reaches the witness host, or use
+  [`ovftool`](https://williamlam.com/2013/08/flexible-ovf-deployments-using.html)
+  (`--deploymentOption`, `--prop:`) /
+  [`govc`](https://williamlam.com/2016/04/slick-way-of-deploying-ovfova-directly-to-esxi-vcenter-server-using-govc-cli.html)
+  against the host directly.
+- **Verify the VMkernel gateways after the deploy — whatever the method.** Even
+  on the vCenter path with the OVF properties filled, the 9.1 witness OVA came
+  up with wrong management and witness/vSAN VMkernel gateways and they had to be
+  fixed by hand (DCUI / Host Client on the nested witness ESXi: per-VMkernel
+  gateway override, or static routes). Check them before wiring the witness into
+  the stretch — the witness must route back to **both** AZ management subnets
+  (the routing requirement above).
+
 ---
 
 ## C. AZ1 ↔ AZ2 fabric

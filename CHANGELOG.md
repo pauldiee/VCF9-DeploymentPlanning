@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.9 — 2026-07-10
+- **docs 03: witness-appliance deploy gotchas** (#130, field-verified on a
+  real 9.1 stretched deployment). The witness OVA cannot be deployed via the
+  ESXi Host Client (`Invalid qualifier: ValueMap{"Management", "Secondary"}`
+  — standalone-host deploys don't support the OVA's deployment options / OVF
+  properties); use a vCenter, `ovftool` or `govc`. And **whatever the deploy
+  method** — even via vCenter with properties filled — verify the witness's
+  management + witness/vSAN VMkernel gateways afterwards; the 9.1 OVA came up
+  with wrong gateways and they had to be fixed by hand.
+
 ## v1.5.8 — 2026-07-10
 - **Identity Broker is a bring-up component, not Day-2** (#129,
   field-verified on a real 9.1 deployment): the broker deploys automatically
