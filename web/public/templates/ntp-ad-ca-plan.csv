@@ -14,6 +14,7 @@ Identity Broker,LDAPS root CA (PEM),Root CA cert for encrypted LDAP,ca-root.pem,
 Identity Broker,Login UPN suffix,Users sign in as user@suffix (not email),@example.io,,AD team,KB 393150 - domain UPN not email address
 Identity Broker,Admin group DN,AD group mapped to the admin role,"CN=vcf-admins,OU=Groups,DC=example,DC=io",,AD team,Must be a UNIVERSAL group if using Global Catalog
 CA,CA type,Which certificate authority signs the certs,Microsoft Enterprise CA,,PKI team,Microsoft CA or OpenSSL (fleet cert management); external CA is CSR-based only - VCF won't import a private key
-CA,CA server or URL,Where the CA is reached,ca01.example.io,,PKI team,Reachable from the management components
+CA,CA server or URL,Where the CA is reached,https://ca01.example.io/certsrv,,PKI team,Web Enrollment URL with Basic authentication enabled (Microsoft CA); reachable from the management components
+CA,CA enrollment service account,Least-privileged account the Configure-CA wizard authenticates with (Microsoft CA only),svc-vcf-ca@example.io,,PKI team,Needs enroll rights on the certificate template; not needed for the OpenSSL CA type
 CA,Certificate template,The template used to issue SDDC certs,VMware,,PKI team,Validate with a test issuance
 CA,Signing approach,When/how CA-signed certs are applied,CA-signed (whole fleet Day-2),,Architect,Full replacement is a Day-2 step
