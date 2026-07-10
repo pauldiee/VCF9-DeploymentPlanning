@@ -7,7 +7,9 @@
   the same way: the network team provides the subnets/ranges (captured in
   `vlan-subnet-plan.csv`), the architect assigns each address from them. All
   rows now read *Architect* and the column header spells out that flow (and
-  that the AD/DNS team creates the A + PTR records).
+  that the AD/DNS team creates the A + PTR records). `docs/prerequisites.md`
+  now lists the hand-off order explicitly: Network team fills the VLAN plan →
+  Architect assigns FQDNs/IPs from it → AD/DNS team creates the records.
 - **vlan-subnet-plan template: *Minimum IPs needed* column added** (#126).
   The per-network sizing guidance from `docs/01-network-dns-plan.md` (1 per
   host for mgmt/vMotion/vSAN, hosts x pNICs for host overlay, 2 per edge

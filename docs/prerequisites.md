@@ -16,6 +16,17 @@ IP/DNS template's **Intake ID** column maps back to
 [`workbook-cell-mapping.md`](workbook-cell-mapping.md) (the other templates
 reference intake IDs in their notes where relevant).
 
+The IP/VLAN sheets hand off in a fixed order:
+
+1. **Network team** fills the **VLAN / subnet plan** — VLANs, subnets, gateways,
+   MTU, and the usable range inside each subnet.
+2. **Architect** fills the **IP allocation + DNS plan**, assigning each FQDN + IP
+   from those ranges (if the organization runs a central IPAM, request the
+   addresses there instead of self-picking — the architect still compiles the
+   sheet).
+3. **AD/DNS team** creates the forward **A** and reverse **PTR** records from the
+   filled IP/DNS plan.
+
 - [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP, assigned by the architect from the network team's subnets in the VLAN plan (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
 - [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU + minimum IP count per traffic type
 - [NTP / AD / CA](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
