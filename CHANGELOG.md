@@ -8,11 +8,17 @@
   Pages both get it) and runs fully client-side; no external service, no
   queries leave the browser. Indexing is scoped to page content
   (`data-pagefind-body` on `<main>`; TOC/pager chrome ignored).
-- **Export tool + tracker: doc references are now links** (#131). Story
-  text, acceptance criteria and the epic "Ref:" lines mentioned docs as
-  plain text (`see 05-day2-deployments.md section C`); the on-page rendering
-  now links every `*.md` mention to the rendered doc page on the site. The
+- **Doc references are now links everywhere on the site** (#131). Two gaps:
+  the export tool + tracker rendered doc mentions in story text, acceptance
+  criteria and epic "Ref:" lines as plain text, and the doc/sample pages
+  showed code-span references (`` `01-network-dns-plan.md` ``, ~85 of them)
+  as unclickable code. Both now link to the rendered doc pages — the tools
+  via their linkify, the markdown pages via a new rehype transform that
+  wraps known doc filenames (skips code blocks and existing links). The
   Markdown/CSV exports keep plain filenames (presentation-only change).
+- **Docs/samples: back-to-top link on every H2 section** (#133). Appended at
+  render time (rehype), styled as a small right-aligned "↑ Top" affordance,
+  excluded from the search index.
 
 ## v1.5.9 — 2026-07-10
 - **docs 03: witness-appliance deploy gotchas** (#130, field-verified on a
