@@ -129,7 +129,7 @@ Get-NetFirewallRule -Name OpenSSH-Server-In-TCP   # confirm the TCP 22 inbound r
 
 ## B. Binary depot — offline depot & the VCF Download Tool
 
-Two ways to feed binaries to VCF 9.1 (intake `G1`):
+Three ways to feed binaries to VCF 9.1 (intake `G1`):
 
 - **Online depot** — VCF Installer (and later the fleet) connect to the
   Broadcom depot directly using the **Download Service ID + Activation Code**
@@ -144,6 +144,11 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
   Installer and the fleet. The tool replaced the old Offline Bundle Transfer
   Utility (OBTU) and wraps **UMDS** for ESX patch data. TechDocs:
   [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html).
+- **Manual transfer** — no depot at all: run the **VCF Download Tool** on any
+  internet-connected machine, copy the depot store onto the **VCF Installer
+  appliance itself** and import it there. No web server to build — best for a
+  one-off install; see B.2 for the steps and the Day-N caveat. TechDocs:
+  [Manually Transfer Binaries to VCF Installer](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/use-the-vmware-download-tool-to-download-binaries.html).
 
 ### B.1 Setting up an offline depot
 
@@ -151,7 +156,7 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
    IP** (DNS record recommended), a dedicated disk of **≥ 1 TB**, and any web
    server (Apache, NGINX) serving **HTTPS with TLS 1.2/1.3**. Give it a
    certificate with the FQDN *and* IP as SANs — signed by your CA, or
-   self-signed if you accept the trust-import step in B.3.
+   self-signed if you accept the trust-import step (step 7 below).
 2. **Auth split** — protect `PROD/COMP` and `PROD/metadata` with **basic
    auth** (`htpasswd`); leave `PROD/vsan/hcl` and `umds-patch-store` open.
    The `umds-patch-store` directory name is **hardcoded** — don't rename it.
@@ -231,7 +236,51 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
    see the vTam walkthrough below). Day-N, the fleet connects under **VCF
    Operations → Depot Configuration** (fleet-level *and* per-instance).
 
-### B.2 Using the Download Tool standalone
+### B.2 Manual transfer — feeding the VCF Installer without a depot server
+
+For a one-off installation (lab, PoC, or a small air-gapped site) you can skip
+building the depot web server entirely: download the depot store with the VCF
+Download Tool on any internet-connected machine, copy it onto the VCF
+Installer appliance, and import it locally. **"Manual" means no depot server —
+not hand-picked downloads:** the binaries still come exclusively through the
+**VCF Download Tool + activation code** (B.1 steps 3–4 apply unchanged);
+pulling OVAs/ISOs by hand from the support portal is not a supported
+substitute in 9.1.
+
+1. **Download** the install set on the internet-connected machine — B.1
+   step 5's `binaries download --type INSTALL` command, with `--depot-store`
+   pointing at a local staging directory. Metadata comes with it; plan the
+   same order of disk space.
+2. **Copy to the Installer** — put the Download Tool itself on the appliance
+   (extract the `.tar.gz` under `/nfs/vmware/vcf/nfs-mount/vcfdt`) and
+   transfer the staged store:
+
+   ```console
+   rsync -aP /path/to/binaries vcf@installer-fqdn:/nfs/vmware/vcf/nfs-mount/depot
+   ```
+3. **Import on the appliance** — save the `admin@local` password to a text
+   file, then:
+
+   ```console
+   ./vcf-download-tool binaries upload --depot-store /nfs/vmware/vcf/nfs-mount/depot \
+     --sddc-manager-fqdn installer-fqdn --sddc-manager-user admin@local \
+     --sddc-manager-user-password-file /path/to/password.txt
+   ```
+
+   Once the upload finishes, the Installer shows the binaries as available
+   and deployment proceeds as normal — no depot configured anywhere.
+
+> **Day-N caveat (new in 9.1).** After bring-up the fleet runs its own **Depot
+> Service**, and with no depot connected, patch/upgrade binaries must be
+> **side-loaded there too** — a second upload per cycle
+> (`vcf-download-tool depot binaries upload --ops-fqdn <vcf-ops-fqdn>
+> --depot-fqdn <fleet-depot-fqdn>`, optionally per `--component`). In 9.0 this
+> extra step didn't exist. Manual copies at every patch cycle get tedious
+> fast — beyond a lab or one-off, the offline depot (B.1) is the smoother
+> long-term setup. Walkthrough incl. the Fleet Depot Service step: William
+> Lam's [Side-loading VCF binaries into VCF Installer & Fleet Depot Service](https://williamlam.com/2026/06/vcf-9-1-side-loading-vcf-binaries-into-vcf-installer-fleet-depot-service-for-air-gapped-environments.html).
+
+### B.3 Using the Download Tool standalone
 
 You don't need to be air-gapped to use the tool. Run it on any
 internet-connected machine with the same activation-code file to **pre-stage
@@ -241,11 +290,13 @@ the VCF appliances out to the internet. Whatever machine runs it needs
 outbound 443 to the [Public URLs](prerequisites.md#public-urls-online-functionality)
 — plan that host's egress (or proxy allowlist) as part of the prereq gate.
 
-### B.3 References
+### B.4 References
 
 - TechDocs: [Set Up an Offline Depot Web Server for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-offline-depot-to-download-binaries/set-up-an-offline-depot-web-server-for-vmware-cloud-foundation.html)
-  (full Apache walk-through incl. certificate + basic-auth config) and
-  [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html).
+  (full Apache walk-through incl. certificate + basic-auth config),
+  [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html)
+  and [Manually Transfer Binaries to VCF Installer](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/use-the-vmware-download-tool-to-download-binaries.html)
+  (the no-depot-server path in B.2).
 - Registration / credentials: [Software Depot Registration in the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/business-services/home/depot-service-authentication-in-the-vcf-business-services-console.html)
   (authoritative 9.1 registration procedures per component). Broadcom KBs:
   [VCF authenticated downloads configuration update instructions](https://knowledge.broadcom.com/external/article/390098)

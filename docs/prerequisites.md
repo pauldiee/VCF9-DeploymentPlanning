@@ -336,8 +336,9 @@ the cluster being built (or on storage that depends on it).
 | `VCF-SDDC-Manager-Appliance-9.1.x.0.xxxxxxxx.iso`   | support.broadcom.com                            |
 | `VMware-VirtualSAN-Witness-x.x.x-xxxxxxxx.ova`      | support.broadcom.com (only if multi-AZ / vSAN stretched) |
 
-Everything else comes through the **depot** — decide online vs offline early
-(intake `G1`), because the offline path means building infrastructure:
+Everything else comes through the **depot** — decide online, offline, or
+manual transfer early (intake `G1`), because the offline path means building
+infrastructure:
 
 - **Online depot** — VCF Installer and the fleet talk to the Broadcom depot
   directly; have the **Download Service ID + Activation Code** ready (intake
@@ -350,6 +351,11 @@ Everything else comes through the **depot** — decide online vs offline early
   supported method in 9.1; you also need a web server (**≥ 1 TB** disk,
   HTTPS) to serve the downloaded depot store. TechDocs:
   [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html).
+- **Manual transfer** (one-off installs) — VCF Download Tool on any
+  internet-connected machine, then copy + import the depot store on the VCF
+  Installer appliance itself; no depot server, but Day-N patching needs
+  repeat side-loads into the fleet Depot Service. TechDocs:
+  [Manually Transfer Binaries to VCF Installer](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/use-the-vmware-download-tool-to-download-binaries.html).
 
 > Build guidance (depot web server setup, Download Tool commands, transfer +
 > connect steps, using the tool standalone to pre-stage binaries) + references:

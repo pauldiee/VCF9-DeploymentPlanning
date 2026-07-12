@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.6.3 — 2026-07-12
+- **Manual transfer (no depot server) documented** (#137). VCF 9.1 supports a
+  third way to feed binaries besides online/offline depot: run the VCF
+  Download Tool on any internet-connected machine, `rsync` the depot store to
+  the VCF Installer appliance and import it there with
+  `vcf-download-tool binaries upload` — no web server to build. New
+  `docs/08-backup-and-depot.md` §B.2 with the steps, the
+  "manual ≠ hand-picked portal downloads" clarification, and the 9.1 Day-N
+  caveat (patch binaries must additionally be side-loaded into the fleet
+  Depot Service — beyond a lab/one-off, the offline depot stays the smoother
+  setup). §B intro now lists three ways; old §B.2/§B.3 renumbered to
+  §B.3/§B.4. Intake `G1` and the `prerequisites.md` depot bullets extended
+  with the third option. Refs: TechDocs *Manually Transfer Binaries to VCF
+  Installer*, William Lam's side-loading walkthrough.
+
 ## v1.6.2 — 2026-07-12
 - **NSX Edge needs no separate depot binary — noted** (#136). New callout in
   `docs/08-backup-and-depot.md` §B: the depot has no NSX Edge bundle; the

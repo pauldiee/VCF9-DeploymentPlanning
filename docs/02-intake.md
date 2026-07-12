@@ -192,15 +192,16 @@ avoid `<` `>` `&` `'` `"`, which some appliance fields reject.
 
 | # | Question                                                       | Sheet     |
 |---|----------------------------------------------------------------|-----------|
-|G1 | Online or offline depot?                                       | `[MGMT]`  |
+|G1 | Online depot, offline depot, or manual transfer (no depot — one-off installs; see `08-backup-and-depot.md` §B.2)? | `[MGMT]`  |
 |G2 | Download Service ID (online only)                              | `[MGMT]`  |
 |G3 | Activation Code (online only)                                  | `[MGMT]`  |
 |G4 | Offline depot FQDN + port (offline only)                       | `[MGMT]`  |
 |G5 | Proxy required? (FQDN, port, auth)                             | `[MGMT]`  |
 
-> If `G1` = online — or the offline flow uses the **VCF Download Tool** — the
-> egress firewall / proxy (`G5`) must allow the **Public URLs** table in
-> `prerequisites.md` (all outbound 443).
+> If `G1` = online — or the offline / manual-transfer flow runs the
+> **VCF Download Tool** — the egress firewall / proxy (`G5`) must allow the
+> **Public URLs** table in `prerequisites.md` (all outbound 443) on whichever
+> machine connects.
 
 ---
 
