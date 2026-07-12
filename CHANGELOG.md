@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6.2 — 2026-07-12
+- **NSX Edge needs no separate depot binary — noted** (#136). New callout in
+  `docs/08-backup-and-depot.md` §B: the depot has no NSX Edge bundle; the
+  edge node OVA ships inside the NSX Manager appliance (`NSX_T_MANAGER`,
+  part of the `--type INSTALL` set) and NSX Manager deploys the edge VMs
+  itself, so an offline depot loaded per the guide already covers a later
+  edge-cluster deployment. Day-N edge upgrades ride the NSX upgrade bundle
+  (`--type UPGRADE`). Verified against the Broadcom edge-cluster
+  prerequisites and William Lam's depot structure deep-dive.
+
 ## v1.6.1 — 2026-07-10
 - **Coscia's VCF 9.1 Network Planner referenced** (#134). Leonardo Coscia
   published a new, separate tool:

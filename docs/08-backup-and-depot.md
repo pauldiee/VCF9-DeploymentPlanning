@@ -206,6 +206,19 @@ Two ways to feed binaries to VCF 9.1 (intake `G1`):
 
    `binaries list` (same flags) previews what a run will pull; `--type
    UPGRADE` fetches lifecycle bundles for Day-N patching.
+
+   > **NSX Edge nodes need no extra binary.** There is no separate NSX Edge
+   > bundle in the depot — the edge node OVA ships inside the **NSX Manager**
+   > appliance (`NSX_T_MANAGER`, already part of the `--type INSTALL` set),
+   > and NSX Manager deploys the edge VMs itself when you create an edge
+   > cluster after bring-up. The Broadcom
+   > [edge-cluster prerequisites](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html)
+   > are network/resource-only (Edge TEPs, uplinks, DNS, BGP) and never
+   > mention the depot, and the depot component list confirms it (see William
+   > Lam's [depot structure deep-dive](https://williamlam.com/2025/10/vcf-software-depot-structure-deep-dive-for-install-upgrade.html)).
+   > An air-gapped depot loaded per this section therefore already covers a
+   > later edge-cluster deployment; Day-N, edge nodes are upgraded through
+   > the NSX upgrade bundle (`--type UPGRADE`), not a separate download.
 6. **Transfer** the depot store to the air-gapped web server if the download
    host is a separate machine — the directory tree
    (`PROD/COMP`, `PROD/metadata`, `PROD/vsan/hcl`, `umds-patch-store`) must
