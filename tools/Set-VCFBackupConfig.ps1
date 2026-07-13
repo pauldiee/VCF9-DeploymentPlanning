@@ -47,13 +47,21 @@
 
 .NOTES
     Script  : Set-VCFBackupConfig.ps1
-    Version : 1.0.0
+    Version : 1.0.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.0.1  2026-07-13  PD  -ShowThumbprint: stop swallowing the real error and stop blaming
+                            reachability (#147). The in-box Windows OpenSSH client advertises the
+                            sntrup761x25519-sha512 key exchange and then cannot perform it, so
+                            ssh-keyscan dies during key exchange against a modern server and prints
+                            nothing -- a client bug that says nothing about the target. The helper now
+                            checks the PATH explicitly, prints what ssh-keyscan actually said, names
+                            the Windows bug when it sees it, and always offers the server-side read
+                            (ssh-keygen -lf /etc/ssh/ssh_host_*.pub), which needs no SSH client.
     v1.0.0  2026-07-13  PD  Initial release -- PATCH backup location via Fleet LCM (#145)
 
 .PARAMETER VCFOps
@@ -141,7 +149,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.0.1'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -159,20 +167,57 @@ Write-Host ('=' * 62) -ForegroundColor DarkCyan
 # The platform pins the SFTP server's SSH host key. Scanning it here means the
 # operator can see every key type the server offers and pick the right one,
 # instead of guessing.
+function Show-ServerSideFallback {
+    param([string]$TargetHost)
+    Write-Host "`n  Read the fingerprint on $TargetHost itself instead -- this needs no" -ForegroundColor DarkGray
+    Write-Host "  SSH client and is authoritative:" -ForegroundColor DarkGray
+    Write-Host "    ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub" -ForegroundColor White
+    Write-Host "    ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub" -ForegroundColor White
+    Write-Host "    ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub" -ForegroundColor White
+    Write-Host "  Take the SHA256:... field. VCF's own Fetch Fingerprint button in the" -ForegroundColor DarkGray
+    Write-Host "  Add Backup Location dialog is equally authoritative." -ForegroundColor DarkGray
+}
+
 if ($ShowThumbprint) {
     Write-Host "`nScanning SSH host keys on $SftpHost ..." -ForegroundColor Cyan
-    try {
-        $scan = & ssh-keyscan -t ed25519,ecdsa,rsa -p $SftpPort $SftpHost 2>$null
-        if (-not $scan) { throw "ssh-keyscan returned nothing. Is $SftpHost reachable on port $SftpPort ?" }
-        $scan | & ssh-keygen -lf - | ForEach-Object { Write-Host "  $_" -ForegroundColor White }
+
+    $keyscan = Get-Command ssh-keyscan -ErrorAction SilentlyContinue
+    $keygen  = Get-Command ssh-keygen  -ErrorAction SilentlyContinue
+    if (-not $keyscan -or -not $keygen) {
+        Write-Host "`n  ssh-keyscan / ssh-keygen are not on the PATH." -ForegroundColor Yellow
+        Write-Host "  On Windows they ship with the OpenSSH client feature." -ForegroundColor DarkGray
+        Show-ServerSideFallback -TargetHost $SftpHost
+        exit 1
+    }
+
+    # Keep stderr: it carries the reason when the scan produces nothing.
+    $raw    = & ssh-keyscan -t ed25519,ecdsa,rsa -p $SftpPort $SftpHost 2>&1
+    $keys   = @($raw | Where-Object { $_ -notmatch '^\s*#' -and $_ -notmatch 'choose_kex|^\s*$' -and $_ -match '\s(ssh|ecdsa)-' })
+    $stderr = @($raw | Where-Object { $_ -match 'choose_kex|refused|timed out|No route|Connection closed' })
+
+    if ($keys.Count -gt 0) {
+        $keys | & ssh-keygen -lf - | ForEach-Object { Write-Host "  $_" -ForegroundColor White }
         Write-Host "`nUse the SHA256:... field of the key type the server negotiates." -ForegroundColor DarkGray
         Write-Host "If the platform rejects one, try another type." -ForegroundColor DarkGray
+        exit 0
     }
-    catch {
-        Write-Host "  Could not scan the host keys: $($_.Exception.Message)" -ForegroundColor Yellow
-        Write-Host "  ssh-keyscan and ssh-keygen must be on the PATH (Windows OpenSSH)." -ForegroundColor DarkGray
+
+    Write-Host "`n  The scan returned no host keys. What ssh-keyscan actually said:" -ForegroundColor Yellow
+    foreach ($line in @($raw | Select-Object -First 6)) { Write-Host "    $line" -ForegroundColor DarkGray }
+
+    # The in-box Windows client (OpenSSH_for_Windows 9.x) advertises the
+    # post-quantum sntrup761x25519 key exchange and then cannot perform it, so
+    # the scan dies during key exchange against a modern server and prints
+    # nothing. That is a client bug -- it says nothing about the target.
+    if ($stderr -match 'choose_kex') {
+        Write-Host "`n  This is a known bug in the Windows OpenSSH client, NOT a problem with" -ForegroundColor Yellow
+        Write-Host "  $SftpHost. It offers the sntrup761x25519-sha512 key exchange, the server" -ForegroundColor Yellow
+        Write-Host "  selects it, and the Windows binary cannot complete it. Your target is" -ForegroundColor Yellow
+        Write-Host "  almost certainly fine." -ForegroundColor Yellow
     }
-    exit 0
+
+    Show-ServerSideFallback -TargetHost $SftpHost
+    exit 1
 }
 
 # --- Prompt for anything not supplied ----------------------------------------

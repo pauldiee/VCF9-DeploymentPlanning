@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.7.0 — 2026-07-13
+- **`Set-VCFBackupConfig.ps1 -ShowThumbprint` stops lying about why it failed**
+  (#147, script v1.0.1). It reported *"ssh-keyscan returned nothing. Is the host
+  reachable on port 22? ssh-keyscan and ssh-keygen must be on the PATH"* — and
+  both claims were false: the target was reachable and both binaries were on the
+  PATH. The real error was being swallowed by `2>$null`:
+  `choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com`. The
+  **in-box Windows OpenSSH client** (9.5p2) advertises the post-quantum
+  `sntrup761x25519` key exchange and then **cannot perform it**, so `ssh-keyscan`
+  dies during key exchange against any modern server and prints nothing. That is a
+  **client** bug and says nothing about the backup target. The helper now checks
+  the PATH before blaming it, prints **what `ssh-keyscan` actually said**, names
+  the Windows bug when it sees that signature, and always offers the authoritative
+  fallback that needs no SSH client at all — read the fingerprint **on the SFTP
+  server**: `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` (and the `ecdsa` /
+  `rsa` pubkeys). Verified against a live 9.1 lab target.
+
 ## v1.6.9 — 2026-07-13
 - **`08-backup-and-depot.md` is navigable** (#146). It had grown into two long
   sections you could only scroll: it is now the page people open mid-build with a
