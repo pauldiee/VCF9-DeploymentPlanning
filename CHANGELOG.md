@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.7.1 — 2026-07-13
+- **`Set-VCFBackupConfig.ps1` could not find the VCF instance** (#148, script
+  v1.0.2). It failed with *"The property 'id' cannot be found on this object"*.
+  Root cause, and the thing worth remembering: **the two endpoints are not
+  interchangeable.** The **VCF Operations proxy**
+  (`/vcf-operations/plug/fleet-lcm/…`) serves the **write** — it is the path the
+  product's own UI calls for the PATCH — but a **GET** against it falls through to
+  the VCF Operations **web application and returns HTML**, which the script was
+  then treating as an instance object. The **instance list lives on the fleet
+  appliance** (`https://<FleetLCM>/fleet-lcm/v1/sddc-lcms`), which is what
+  `Get-VCFBackupConfig.ps1` already used. Discovery now runs there (new
+  **`-FleetLCM`** parameter) while the write still goes through the proxy — each
+  endpoint used only where it is known to work. `-SddcLcmId` still skips discovery
+  entirely. Verified end to end against a live 9.1 lab: the instance resolves and
+  the `-WhatIf` payload matches the request the UI itself sends.
+
 ## v1.7.0 — 2026-07-13
 - **`Set-VCFBackupConfig.ps1 -ShowThumbprint` stops lying about why it failed**
   (#147, script v1.0.1). It reported *"ssh-keyscan returned nothing. Is the host
