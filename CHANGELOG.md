@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.6.7 — 2026-07-13
+- **`tools/` — read and set the 9.1 backup configuration over the API** (#145).
+  Configuring the centralized 9.1 backup (VCF Operations → Build → Lifecycle →
+  VCF Management → Backup & Restore) can fail with nothing usable in the UI: the
+  task detail bottoms out at *"check the errors in the next sub-task(s)"* with no
+  next sub-task, while the SFTP server's `sshd` log shows the platform presenting
+  a **UUID as the SSH username** instead of the service account that was typed
+  into the wizard. Two scripts, both against the Fleet lifecycle API:
+  - **`Get-VCFBackupConfig.ps1`** (read-only) — prints the backup target, **the
+    stored username**, directory, schedule, retention and history that the
+    platform *actually holds*, which is not always what was entered. Flags an
+    empty username and a username that is an identifier rather than an account.
+  - **`Set-VCFBackupConfig.ps1`** — performs the same `PATCH` the *Add Backup
+    Location* dialog makes, for when the dialog will not take it. `-WhatIf`
+    prints the payload with the secrets masked; `-ShowThumbprint` lists every SSH
+    host-key fingerprint the target offers (the platform pins one, and different
+    fleet services negotiate different key types).
+
+  Endpoints, captured from the product: `GET /fleet-lcm/v1/sddc-lcms` carries
+  `backupConfig.storage.sftp { host, port, username, directory }` inline, and the
+  write is `PATCH /vcf-operations/plug/fleet-lcm/v1/sddc-lcms/{id}` with a
+  `backupConfigSpec` wrapper (**note:** it reads back as `backupConfig`, `port` is
+  a **string**, and a `thumbprint` is required). Auth is the three-call chain
+  through VCF Operations. Both scripts run on Windows PowerShell 5.1 and 7+.
+
 ## v1.6.6 — 2026-07-13
 - **Verify your SFTP backup target — and FIPS is on by default in 9.x** (#144).
   `08-backup-and-depot.md` explained how to *build* a target but never how to

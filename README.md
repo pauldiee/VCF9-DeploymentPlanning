@@ -40,6 +40,8 @@ This repo flips the order:
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request) — downloadable from the site; feed the workbook / Coscia planner |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
+| `tools/Get-VCFBackupConfig.ps1`     | Read-only check of the VCF 9.1 *VCF Management* backup configuration via the Fleet LCM API — shows the target / **username** / schedule / retention the platform actually stored |
+| `tools/Set-VCFBackupConfig.ps1`     | Sets that backup location through the API (`-WhatIf`, `-ShowThumbprint`) — for when the wizard fails without a usable error |
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 
 ## Web version
