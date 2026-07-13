@@ -19,7 +19,7 @@ const epics = selectedEpics(sel);
       <p class="planx__lede">
         Build your deployment scope below: pick <strong>NSX connectivity</strong> (Centralized/Distributed)
         and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
-        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer, the optional
+        (with <strong>VCF Automation</strong>'s network placement + an optional <strong>Avi</strong> load balancer in front as its own story, the optional
         components <strong>Log Management</strong> and <strong>Operations for Networks</strong> each in or out, and
         <strong>fleet SSO via the Identity Broker</strong> on or off — the broker itself deploys at bring-up),
         and optionally add <strong>workload domains</strong> (zero for a management-only scope), each independently
@@ -37,7 +37,7 @@ const epics = selectedEpics(sel);
         <legend>Scope</legend>
         <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.
           Stretching requires <strong>vSAN</strong> principal storage (an NFS / FC cluster cannot be vSAN-stretched).</p>
-        <label class="planx__sublabel">NSX connectivity
+        <label class="planx__sublabel">NSX connectivity — management domain
           <select id="selConnectivity">
             {NSX_CONNECTIVITY.map((c) => <option value={c.value}>{c.label}</option>)}
           </select>
@@ -61,16 +61,16 @@ const epics = selectedEpics(sel);
               {AUTOMATION_PLACEMENTS.map((p) => <option value={p.value}>{p.label}</option>)}
             </select>
           </label>
-          <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Load-balance with Avi (management domain)</label>
-          <label class="planx__check"><input type="checkbox" id="optD2Logs" checked /> Log Management <span class="planx__tag">E8.3</span></label>
-          <label class="planx__check"><input type="checkbox" id="optD2Networks" checked /> Operations for Networks <span class="planx__tag">E8.3</span></label>
-          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Fleet SSO via the Identity Broker (configure the bring-up broker) <span class="planx__tag">E8.4</span></label>
+          <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Avi Load Balancer in front (optional: the built-in LB serves the cluster VIP without it) <span class="planx__tag">E8.3</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Logs" checked /> Log Management <span class="planx__tag">E8.4</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Networks" checked /> Operations for Networks <span class="planx__tag">E8.4</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Fleet SSO via the Identity Broker (configure the bring-up broker) <span class="planx__tag">E8.5</span></label>
         </div>
       </fieldset>
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story (needs connectivity + a load balancer first; Avi is one LB option).</p>
+        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…) and picks its own <em>NSX connectivity</em>, independent of the management domain's (intake H4). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story. Activation <strong>requires that domain's north-south connectivity to be in place first</strong>, so its connectivity story becomes an explicit prerequisite (Centralized: Edge cluster + Tier-0 + BGP, plus the Supervisor ingress/egress CIDRs; Distributed: Distributed Transit Gateway + VNA, plus the external IP block and the /16 private transit-gateway block). Then pick the Supervisor <em>load balancer</em>: the built-in NSX/VPC LB (default, no extra appliance), the Foundation Load Balancer (platform-packaged L4 pair for VDS networking), or Avi (adds its own story: controller cluster into the domain + cloud connector + Service Engine/VIP networks, all before activation).</p>
         <div id="wldList"></div>
         <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
           <select id="selSuperSize">
@@ -148,12 +148,15 @@ const epics = selectedEpics(sel);
     buildCsv,
     coerceSelection,
     SELECTION_STORE_KEY,
+    SUPERVISOR_LBS,
+    NSX_CONNECTIVITY,
     type Selection,
     type Wld,
     type AutomationPlacement,
     type AutomationModel,
     type NsxConnectivity,
     type SupervisorSize,
+    type SupervisorLb,
     type StorageType,
   } from '../../lib/deployment-plan';
 
@@ -249,8 +252,14 @@ const epics = selectedEpics(sel);
         (w, i) => `
         <div class="planx__wld" data-i="${i}">
           <input class="planx__wldname" type="text" value="${esc(w.name)}" placeholder="wld${i + 1}" aria-label="Workload domain name" />
+          <select class="planx__wldconn" aria-label="NSX connectivity for this workload domain" title="${w.supervisor ? 'NSX connectivity: a prerequisite for Supervisor activation' : 'NSX connectivity for this workload domain'}">
+            ${NSX_CONNECTIVITY.map((c) => `<option value="${c.value}"${w.connectivity === c.value ? ' selected' : ''}>${c.label}</option>`).join('')}
+          </select>
           <label class="planx__check"${vsan ? '' : ' title="Stretching requires vSAN principal storage"'}><input type="checkbox" class="planx__wldstretch" ${w.stretched ? 'checked' : ''}${vsan ? '' : ' disabled'} /> Stretched</label>
           <label class="planx__check"><input type="checkbox" class="planx__wldsuper" ${w.supervisor ? 'checked' : ''} /> Supervisor</label>
+          <select class="planx__wldsuperlb" aria-label="Supervisor load balancer" title="Supervisor load balancer"${w.supervisor ? '' : ' disabled'}>
+            ${SUPERVISOR_LBS.map((l) => `<option value="${l.value}"${w.supervisorLb === l.value ? ' selected' : ''}>${l.label}</option>`).join('')}
+          </select>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain">×</button>
         </div>`
       )
@@ -310,7 +319,14 @@ const epics = selectedEpics(sel);
   let wldSeq = wlds.length;
   $('btnAddWld').addEventListener('click', () => {
     wldSeq += 1;
-    wlds.push({ name: `wld${String(wldSeq).padStart(2, '0')}`, stretched: false, supervisor: false });
+    wlds.push({
+      name: `wld${String(wldSeq).padStart(2, '0')}`,
+      stretched: false,
+      // Seed from the management domain's choice — most fleets keep them aligned.
+      connectivity: (<HTMLSelectElement>$('selConnectivity')).value as NsxConnectivity,
+      supervisor: false,
+      supervisorLb: 'builtin',
+    });
     renderWlds();
     render();
   });
@@ -327,7 +343,14 @@ const epics = selectedEpics(sel);
         mgmtEl.checked = true;
         toolbarMsg('Management-domain stretch (E7) added: a stretched workload domain requires it');
       }
-    } else if (t.classList.contains('planx__wldsuper')) wlds[i].supervisor = (<HTMLInputElement>t).checked;
+    } else if (t.classList.contains('planx__wldconn')) {
+      wlds[i].connectivity = (<HTMLSelectElement>t).value as NsxConnectivity;
+    } else if (t.classList.contains('planx__wldsuper')) {
+      wlds[i].supervisor = (<HTMLInputElement>t).checked;
+      renderWlds(); // refresh the row so the LB select follows the Supervisor toggle
+    } else if (t.classList.contains('planx__wldsuperlb')) {
+      wlds[i].supervisorLb = (<HTMLSelectElement>t).value as SupervisorLb;
+    }
     render();
   });
   $('wldList').addEventListener('click', (e) => {
@@ -447,15 +470,21 @@ const epics = selectedEpics(sel);
   .planx__sublabel select:disabled, .planx__sub input:disabled { cursor: not-allowed; }
 
   .planx__wld {
-    display: flex; align-items: center; gap: 0.6rem;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem;
     background: var(--itq-mist); border: var(--border-width) solid var(--border-default);
     border-radius: var(--radius-sm); padding: 0.45rem 0.55rem; margin-bottom: 0.45rem;
   }
   .planx__wldname {
-    flex: 1; font: inherit; font-size: 0.85rem; padding: 0.35rem 0.5rem;
+    flex: 1 1 8rem; min-width: 6rem; font: inherit; font-size: 0.85rem; padding: 0.35rem 0.5rem;
     border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
     background: var(--itq-white);
   }
+  .planx__wldconn, .planx__wldsuperlb {
+    flex: none; font: inherit; font-size: 0.85rem; padding: 0.3rem 0.4rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white);
+  }
+  .planx__wldsuperlb:disabled { opacity: 0.45; cursor: not-allowed; }
   .planx__wld .planx__check { margin: 0; flex: none; }
   .planx__wlddel {
     flex: none; width: 1.7rem; height: 1.7rem; line-height: 1; font-size: 1rem; cursor: pointer;

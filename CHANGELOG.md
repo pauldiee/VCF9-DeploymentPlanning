@@ -1,5 +1,67 @@
 # Changelog
 
+## v1.6.4 — 2026-07-13
+- **NSX connectivity is now per workload domain, and a Supervisor
+  prerequisite** (#141). The export tool had one global connectivity select,
+  but connectivity is a per-WLD choice (intake `H4`) — each WLD row now picks
+  its own **Centralized** or **Distributed** model (seeded from the
+  management domain's, which the top-level select now explicitly labels).
+  With Supervisor enabled, that domain's connectivity story becomes its
+  **explicit prerequisite** — the story spells out the concrete build
+  (Centralized: Edge cluster + Tier-0 + BGP; Distributed: Distributed Transit
+  Gateway + VNA) plus the Supervisor reservations (ingress/egress CIDRs, or
+  the external IP block + the `/16` private transit-gateway block), and the
+  enablement story points back at it by number. Intake `H5` no longer claims
+  Supervisor "requires centralized edge gateway" (Distributed/VPC is a
+  supported path); `prerequisites.md` leads its Supervisor checklist with the
+  connectivity prerequisite. Scopes saved before this release load unchanged
+  (each WLD inherits the old global value).
+- **vSphere Supervisor prerequisites section** (#140). New
+  `prerequisites.md` → *vSphere Supervisor (only if in scope)* — nothing in
+  it is needed at bring-up, but activation asks for all of it at once and the
+  workbook carries only three Supervisor fields. The checklist: **5
+  consecutive control-plane IPs** (3 nodes + floating + upgrade spare),
+  **API FQDN + DNS** (FQDN login required — new optional row in the Step 1
+  DNS table), Service CIDR, the LB choice, per-networking-path inputs
+  (**9.1 gotcha:** the VPC **private transit-gateway IP block must be a
+  `/16`** — a `/24` worked in 9.0 but never completes in 9.1), DRS/HA +
+  storage policies, Kubernetes content (air-gapped: offline content
+  library), the routing matrix, and the 100 ms three-zone latency bound.
+  Intake `H5`, the E9 docs section and the generated Supervisor story now
+  point at it.
+- **Per-WLD Supervisor load-balancer choice, with an Avi story** (#139). Each
+  Supervisor-enabled workload domain in the export tool now picks its LB:
+  **built-in NSX/VPC LB** (default), **Foundation Load Balancer**
+  (platform-packaged L4 active/passive pair for VDS networking — adds a
+  deploy step to the enablement story), or **Avi** — which generates its own
+  story ahead of enablement: controller cluster **into that WLD** via VCF
+  Operations (Avi **32.1.1+ binaries from the depot**, content library for
+  Service Engine images), cloud connector per networking path (NSX Cloud
+  with **VPC mode** under Distributed — SE mgmt overlay segment behind a
+  Tier-1 with DHCP, VIPs from the VPC external IP blocks; NSX/vCenter cloud
+  + VIP network/IPAM otherwise) and **min 2 Service Engines**, all **before
+  Supervisor activation** per the Avi-for-VCF 9.1 requirements.
+  `prerequisites.md`'s Avi section now carries the depot/content-library/SE
+  bullets and the corrected placement (management domain for fronting
+  Automation, the WLD for Supervisor); intake `H5` captures the choice.
+- **VCF Automation HA does not require Avi/an external LB — fixed, and Avi is
+  now its own story** (#138). The TechDocs design library (*VCF Automation
+  Load Balancing Design*) is explicit: the **native load balancer** is
+  automatically configured for **both** the single-node and HA models; an
+  external LB is an **optional post-deployment addition** whose pool points
+  at the native VIP (L4-only, so Avi in front adds SSL termination / keeps
+  user access off the management network — Tom Fojta's *Load Balancing VCF
+  Automation with Avi* confirms). The export tool/tracker's warning that an
+  HA cluster "needs a load balancer — enable the Avi LB option" was wrong and
+  is gone; the Avi choice now generates its own **Story 8.3 — Avi Load
+  Balancer in front of VCF Automation** (controller cluster deploy + virtual
+  service) instead of extra tasks inside 8.2. E8 renumbered: optional fleet
+  components 8.3 → **8.4**, certificates/identity/licensing 8.4 → **8.5**
+  (all cross-references updated; tracker progress files saved before this
+  release may show E8 ticks one story off — re-tick after loading). Same
+  correction in `06-deployment-plan.md`, intake `E16`, `prerequisites.md`
+  (Avi section) and the Step 1 IP-count table.
+
 ## v1.6.3 — 2026-07-12
 - **Manual transfer (no depot server) documented** (#137). VCF 9.1 supports a
   third way to feed binaries besides online/offline depot: run the VCF

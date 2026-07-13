@@ -133,7 +133,7 @@ Legend:
 |E13| Any VI Workload Domains at GA? → capture each in **section H** below | `[WLD]`   |
 |E14| VCF fleet/services FQDNs new in 9.x — Cloud Proxy, License Server, Identity Broker, VCF services runtime (the **fleet** management-services runtime — **not** Automation's same-named runtime in `E10`), fleet components + instance components (each needs A+PTR+IP; services-runtime / fleet-services FQDNs **lowercase only** — TechDocs). Ops for Networks platform + collector need **IPs only** — no FQDNs (TechDocs marks them N/A; the workbook asks VM name + IP). Several may be Day-2 → `05-day2-deployments.md` | `[MGMT]`  |
 |E15| VCF Automation Day-2 deployment: **method** (SDDC Manager API vs. via VCF Operations) + **network placement** (Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) → `05-day2-deployments.md` | `[DAYN]`  |
-|E16| **Avi Load Balancer** (only if Avi is the chosen LB — e.g. for Supervisor, the Automation-HA VIP, or tenant LB; Supervisor also runs without Avi): controller size (Small / Large / XLarge), 3 controller node **IPs** + cluster VIP IP + **one cluster FQDN** (VM Mgmt subnet; only the cluster FQDN needs A+PTR — the workbook's Avi section asks node IPs only) → `prerequisites.md` | Prereq    |
+|E16| **Avi Load Balancer** (only if Avi is the chosen LB — e.g. for Supervisor, optionally in front of VCF Automation, or tenant LB; Supervisor also runs without Avi, and Automation's built-in LB serves its cluster VIP without one): controller size (Small / Large / XLarge), 3 controller node **IPs** + cluster VIP IP + **one cluster FQDN** (VM Mgmt subnet; only the cluster FQDN needs A+PTR — the workbook's Avi section asks node IPs only) → `prerequisites.md` | Prereq    |
 
 ---
 
@@ -225,7 +225,7 @@ WLD-level:
 |H2 | WLD vCenter FQDN + IP, SSO domain (e.g. `sfo-w01.local`). vCenter IP is on the **mgmt VM Mgmt** subnet | `[WLD]` |
 |H3 | NSX Manager: new instance or shared? If new — 3 node FQDNs+IPs + cluster VIP FQDN+IP (all on the **mgmt VM Mgmt** subnet) | `[WLD]` |
 |H4 | NSX connectivity: **Centralized** or **Distributed**? If Distributed — external VLAN + gateway CIDR + 2 Virtual Network Appliance FQDNs/IPs (on the ESX Mgmt network) | `[WLD]` |
-|H5 | Enable **vSphere Supervisor**? (requires centralized edge gateway; needs Service CIDR + control-plane IP range) | `[WLD]` |
+|H5 | Enable **vSphere Supervisor**? Its **north-south connectivity (`H4`) is a prerequisite** and must be up **before activation** — **Centralized:** Edge cluster + Tier-0 + the Supervisor **ingress/egress CIDRs**; **Distributed/VPC:** Transit Gateway + VNA + the routable **external IP block** and the **`/16` private transit-gateway block** (9.1). Needs Service CIDR + control-plane IP range (**5 consecutive IPs**: 3 nodes + floating + upgrade spare) plus an **API FQDN** with a DNS record. If yes: **load-balancer choice** — built-in NSX/VPC LB / Foundation Load Balancer / **Avi** (Avi → `E16`/`F11`, controller cluster **before activation**). Full checklist: `prerequisites.md` → vSphere Supervisor | `[WLD]` |
 |H6 | Principal storage: vSAN-ESA / vSAN-OSA / VMFS-on-FC / NFS / vVols; storage-policy FTT      | `[WLD]` |
 
 Cluster-level (repeat per cluster):

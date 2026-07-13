@@ -33,13 +33,17 @@ export interface Epic {
 export interface Wld {
   name: string;
   stretched: boolean;
+  /** NSX connectivity for THIS domain (intake H4) — independent of the management domain's. */
+  connectivity: NsxConnectivity;
   supervisor: boolean;
+  supervisorLb: SupervisorLb;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
 export type AutomationModel = 'single' | 'ha';
 export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
+export type SupervisorLb = 'builtin' | 'flb' | 'avi';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
 
 export interface AutomationChoice {
@@ -57,6 +61,7 @@ export interface Day2Components {
 }
 
 export interface Selection {
+  /** Management-domain NSX connectivity (E6 6.1 + the Day-2 fleet's overlay placement). Each WLD carries its own. */
   connectivity: NsxConnectivity;
   storage: StorageType;
   supervisorSize: SupervisorSize;
@@ -106,7 +111,7 @@ export function defaultSelection(): Selection {
     day2: true,
     automation: { deploy: true, model: 'single', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
-    wlds: [{ name: 'wld01', stretched: false, supervisor: false }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
   };
 }
 
@@ -118,6 +123,19 @@ export const NSX_CONNECTIVITY: { value: NsxConnectivity; label: string }[] = [
 
 /** vSphere Supervisor control-plane sizes. */
 export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
+
+/**
+ * Supervisor load-balancer options. The NSX / VPC networking paths bring a
+ * built-in LB; the Foundation Load Balancer (platform-packaged L4 pair) covers
+ * VDS networking; Avi is the premium option on every networking stack and, per
+ * the Avi-for-VCF 9.1 requirements, must be fully deployed before Supervisor
+ * activation — so choosing it generates its own story.
+ */
+export const SUPERVISOR_LBS: { value: SupervisorLb; label: string }[] = [
+  { value: 'builtin', label: 'Built-in NSX/VPC LB' },
+  { value: 'flb', label: 'Foundation Load Balancer' },
+  { value: 'avi', label: 'Avi Load Balancer' },
+];
 
 /** Principal storage types (mirrors the workbook's Storage Type). */
 export const STORAGE_TYPES: { value: StorageType; label: string; prereq: string; bringup: string }[] = [
@@ -135,7 +153,7 @@ export const AUTOMATION_PLACEMENTS: { value: AutomationPlacement; label: string;
   { value: 'vlan', label: 'NSX VLAN Segment', text: 'deploy on an NSX VLAN-backed segment (no overlay / Edge routing)' },
 ];
 
-/** VCF Automation deployment models — an HA cluster needs a load balancer. */
+/** VCF Automation deployment models — HA is a three-node cluster behind the built-in cluster VIP. */
 export const AUTOMATION_MODELS: { value: AutomationModel; label: string }[] = [
   { value: 'single', label: 'Single-node' },
   { value: 'ha', label: 'HA cluster' },
@@ -286,7 +304,7 @@ function coreEpics(sel: Selection): Epic[] {
         title: 'Verify VCF Management Services, License Server & Cloud Proxy',
         tasks: [
           'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, identity broker, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only.)',
-          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.4) — within the 90-day evaluation period that starts at bring-up.',
+          'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.5) — within the 90-day evaluation period that starts at bring-up.',
         ],
         acceptance: 'VCF Management Services + License Server up and healthy after bring-up; the License Server FQDN resolves to an IP outside the services-runtime range; the Cloud Proxy is collecting.',
       },
@@ -304,7 +322,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '6.2',
         title: 'Certificates (optional / partial here)',
         tasks: [
-          'Optional here: you can replace certificates for the components deployed so far, but the full CA-signed replacement is usually done once all components exist — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.4).',
+          'Optional here: you can replace certificates for the components deployed so far, but the full CA-signed replacement is usually done once all components exist — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.5).',
         ],
       },
       sel.day2 && sel.day2Components.identityBroker
@@ -312,7 +330,7 @@ function coreEpics(sel: Selection): Epic[] {
             id: '6.3',
             title: 'Identity & roles (optional, not recommended here)',
             tasks: [
-              'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker — already deployed at bring-up with the management services, configured Day-2 (see E8 8.4 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
+              'Optional and not recommended at this stage: you can bind vCenter SSO directly to AD/LDAP for early management access, but the recommended approach is fleet-wide SSO via the VCF Identity Broker — already deployed at bring-up with the management services, configured Day-2 (see E8 8.5 / 05-day2-deployments.md). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, then map admin/operator/viewer groups.',
             ],
           }
         : {
@@ -327,7 +345,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '6.4',
         title: 'Backup & lifecycle',
         tasks: [`Configure SFTP backups — including each vCenter's file-based backup, set manually in that vCenter's management interface (VAMI); VCF does not configure it for you. Connect the depot for fleet lifecycle (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do). TechDocs: ${TECHDOCS.backups}`],
-        acceptance: 'A test SFTP backup completes — for SDDC Manager AND for every vCenter (VAMI schedule set); fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.4.)',
+        acceptance: 'A test SFTP backup completes — for SDDC Manager AND for every vCenter (VAMI schedule set); fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.5.)',
       },
     ],
   },
@@ -379,10 +397,15 @@ const E7_MGMT_STRETCH: Epic = {
 // ---- Day-2 fleet (E8) ------------------------------------------------------
 
 // Day-2 fleet epic — the VCF Automation story (8.2) is generated from the
-// selection's automation choices (deploy? / network placement / Avi LB).
+// selection's automation choices (deploy? / network placement), and the Avi LB
+// choice adds its own story (8.3). Both the single-node and HA models ship a
+// built-in (native) L4 load balancer that serves the cluster VIP — an external
+// LB in front is an optional post-deployment addition, never a requirement
+// (TechDocs design library: VCF Automation Load Balancing Design).
 function day2Epic(sel: Selection): Epic {
   const a = sel.automation;
   let automationStory: Story;
+  let aviStory: Story | null = null;
   if (!a.deploy) {
     automationStory = {
       id: '8.2',
@@ -392,27 +415,32 @@ function day2Epic(sel: Selection): Epic {
   } else {
     const p = AUTOMATION_PLACEMENTS.find((x) => x.value === a.placement) ?? AUTOMATION_PLACEMENTS[0];
     const ha = a.model === 'ha';
-    const modelText = ha ? 'HA cluster (nodes behind a load-balancer VIP)' : 'single-node (no load balancer needed)';
+    const modelText = ha
+      ? 'HA cluster (three nodes behind the cluster VIP of VCF Automation\'s built-in load balancer — no external load balancer required)'
+      : 'single-node (no load balancer needed)';
     const tasks = [
       `Deploy via SDDC Manager API or via VCF Operations as a ${modelText}. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C). Set the services-runtime cluster CIDR.`,
     ];
-    if (ha && !a.aviLb) {
-      tasks.push('An HA-cluster VCF Automation needs a load balancer for its cluster VIP — enable the Avi LB option (or provide an external LB).');
-    }
     if (a.placement === 'overlay' && sel.connectivity === 'distributed') {
       tasks.push('This fleet uses Distributed connectivity (no centralized Edge cluster), but the NSX Overlay Segment placement needs an NSX Edge cluster + Tier-0 + Tier-1 for the fleet segment — deploy that Edge cluster first, or pick the Dedicated Management / NSX VLAN Segment placement instead (see 05-day2-deployments.md section C).');
     }
-    if (a.aviLb) {
-      tasks.push(
-        `Load-balance VCF Automation with an Avi Load Balancer deployed in the management domain (lifecycle-managed via VCF Operations); deploy the Avi controller cluster first — its IPs/FQDNs/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`
-      );
-    }
     automationStory = {
       id: '8.2',
-      title: `VCF Automation (${p.label}${ha ? ', HA' : ''}${a.aviLb ? ' + Avi LB' : ''})`,
+      title: `VCF Automation (${p.label}${ha ? ', HA' : ''})`,
       tasks,
-      acceptance: `VCF Automation deployed and healthy (${ha ? 'HA cluster' : 'single-node'}) on the ${p.label}; services-runtime cluster CIDR set and non-overlapping${a.aviLb ? '; Avi LB fronting the cluster' : ''}.`,
+      acceptance: `VCF Automation deployed and healthy (${ha ? 'HA cluster reachable on its cluster VIP' : 'single-node'}) on the ${p.label}; services-runtime cluster CIDR set and non-overlapping.`,
     };
+    if (a.aviLb) {
+      aviStory = {
+        id: '8.3',
+        title: 'Avi Load Balancer in front of VCF Automation',
+        tasks: [
+          `Deploy the Avi controller cluster in the management domain via VCF Operations (lifecycle-managed) — its IPs/FQDNs/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11. See Broadcom Deploy Avi Load Balancer from VCF Operations: ${AVI_LB_URL}`,
+          'Configure the virtual service in front of VCF Automation: an external LB is an optional post-deployment addition — its pool points at the cluster VIP of Automation\'s built-in load balancer, which stays the ingress. The built-in LB is L4-only, so Avi in front is what adds SSL termination and keeps user/tenant access off the management network.',
+        ],
+        acceptance: 'Avi controller cluster healthy; the virtual service fronts VCF Automation and its published FQDN resolves to the Avi VIP.',
+      };
+    }
   }
   const c = sel.day2Components;
   const compNames = [
@@ -426,16 +454,17 @@ function day2Epic(sel: Selection): Epic {
     { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
     automationStory,
   ];
+  if (aviStory) stories.push(aviStory);
   if (compNames.length) {
     stories.push({
-      id: '8.3',
+      id: '8.4',
       title: `Optional fleet components: ${compList}`,
       tasks: [`Deploy the selected optional fleet components: ${compList}. Each needs its FQDN + reserved IP with forward/reverse DNS in place (see 05-day2-deployments.md section B).`],
       acceptance: 'Each selected Day-2 component healthy; the fleet-management health (synthetic) check passes.',
     });
   }
   stories.push({
-    id: '8.4',
+    id: '8.5',
     title: 'Certificates, identity & licensing (full fleet)',
     tasks: [
       c.identityBroker
@@ -475,21 +504,32 @@ function wldEpicId(index: number): string {
   return index === 0 ? 'E9' : `E9-${index + 1}`;
 }
 
-function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, supervisorSize: SupervisorSize): Epic {
+function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
   const name = (w.name || `wld${index + 1}`).trim();
   const id = wldEpicId(index);
+  const connectivity = w.connectivity;
+  const distributed = connectivity === 'distributed';
   const hostPrep = `see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly`;
-  const connText =
-    connectivity === 'distributed'
-      ? 'Distributed connectivity — Distributed Transit Gateway + VNA cluster (stateful services / NAT)'
-      : 'Centralized connectivity — NSX Edges / uplinks (Tier-0 + BGP)';
-  // Supervisor no longer floats in the connectivity story — it becomes its own
-  // story below when enabled for this WLD.
+  // North-south connectivity is this domain's own choice (intake H4) and — when
+  // Supervisor is enabled — a hard prerequisite for activation, so the story
+  // spells out the concrete build rather than naming the model.
   const connStory = (sid: string): Story => ({
     id: sid,
-    title: 'WLD connectivity',
-    tasks: [`${connText}.`],
-    acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.',
+    title: `WLD connectivity (${distributed ? 'Distributed' : 'Centralized'})`,
+    tasks: [
+      distributed
+        ? `Distributed connectivity — build the Distributed Transit Gateway + the VNA cluster (stateful services / NAT); no centralized Edge cluster. TechDocs: ${TECHDOCS.distributed}`
+        : `Centralized connectivity — deploy this domain's NSX Edge cluster + Tier-0 gateway, peer BGP to the ToRs, and verify north-south routes. TechDocs: ${TECHDOCS.centralized}`,
+      ...(w.supervisor
+        ? [
+            'This story is a prerequisite for vSphere Supervisor: activation requires the north-south connectivity above to be up first (see prerequisites.md, vSphere Supervisor).' +
+              (distributed
+                ? ' Under VPC networking, also reserve the external IP block (routable, BGP-advertised) and the private transit-gateway block — in 9.1 that block must be a /16.'
+                : ' Under NSX segment networking, also reserve the Supervisor ingress and egress CIDRs.'),
+          ]
+        : []),
+    ],
+    acceptance: `WLD healthy in SDDC Manager; north-south reachable; workloads can be placed${w.supervisor ? ' — and the Supervisor prerequisites from this story are met' : ''}.`,
   });
 
   const stories: Story[] = w.stretched
@@ -531,15 +571,40 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       ];
 
   if (w.supervisor) {
-    const connPrereq =
-      connectivity === 'distributed'
-        ? 'Distributed — the NSX VPC workflow + VNA cluster'
-        : 'Centralized — the Edge cluster + Tier-0 gateway';
+    // The connectivity story is the last one built above — name it, so the
+    // Supervisor stories point at the exact prerequisite in this epic.
+    const connStoryId = `9.${stories.length}`;
+    const connPrereq = distributed
+      ? `Distributed — the Distributed Transit Gateway + VNA cluster from story ${connStoryId}, plus the VPC external IP block and the /16 private transit-gateway block`
+      : `Centralized — the Edge cluster + Tier-0 gateway from story ${connStoryId}, plus the Supervisor ingress/egress CIDRs`;
+    // Supervisor activation requires a load balancer; which one is a per-WLD
+    // choice. Avi must be fully deployed BEFORE activation (Avi-for-VCF 9.1
+    // requirements), so it gets its own story ahead of the enablement story.
+    if (w.supervisorLb === 'avi') {
+      const cloudText = distributed
+        ? 'create the NSX Cloud connector with VPC mode enabled — Service Engine management on an overlay segment behind a Tier-1 with DHCP; VIPs come from the VPC external IP blocks'
+        : 'create the cloud connector (NSX Cloud; a vCenter cloud if the Supervisor uses VDS networking) — Service Engine management on a dedicated VLAN or overlay segment (DHCP or a static IP pool in the controller); VIP/data network + IPAM profile';
+      stories.push({
+        id: `9.${stories.length + 1}`,
+        title: 'Avi Load Balancer for Supervisor',
+        tasks: [
+          `Deploy the Avi controller cluster into THIS workload domain via VCF Operations (lifecycle-managed; Avi 32.1.1+ binaries must be available from the depot). Controller IPs/FQDN/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11; create a local content library in the WLD vCenter for the Service Engine images. TechDocs: ${AVI_LB_URL}`,
+          `Integrate Avi with the WLD networking: ${cloudText}. Plan a minimum of 2 Service Engines for HA. All of this must be in place before Supervisor activation.`,
+        ],
+        acceptance: 'Avi controller cluster healthy in the workload domain; cloud connector connected; Service Engine management + VIP networks ready, so Supervisor activation can select Avi.',
+      });
+    }
+    const lbPrereq =
+      w.supervisorLb === 'avi'
+        ? 'the Avi Load Balancer from the previous story is deployed and its cloud connector + Service Engine/VIP networks are ready'
+        : w.supervisorLb === 'flb'
+          ? 'deploy the Foundation Load Balancer first — the platform-packaged lightweight L4 load balancer (one or two VMs in an active/passive pair) that covers Supervisors on VDS networking without an external appliance'
+          : "the NSX / VPC networking path's built-in load balancer serves the Supervisor — no extra load-balancer appliance to deploy";
     stories.push({
       id: `9.${stories.length + 1}`,
       title: 'Enable vSphere Supervisor',
       tasks: [
-        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Avi is one option (deploy its controller cluster first — see prerequisites.md, Avi Load Balancer); the NSX / VPC networking paths' built-in load balancer and the Foundation Load Balancer work without Avi.`,
+        `Prerequisites first: this WLD's north-south connectivity must already be in place (${connPrereq}) and a load balancer is available — Supervisor activation requires both. Load balancer chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
@@ -548,7 +613,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
 
   return {
     id,
-    title: `Workload domain: ${name}${w.stretched ? ' (stretched)' : ''}${w.supervisor ? ' + Supervisor' : ''}`,
+    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     ref: w.stretched ? '02-intake.md section H, 03-multi-az-prep.md' : '02-intake.md section H',
     stories,
@@ -563,7 +628,7 @@ export function selectedEpics(sel: Selection): Epic[] {
   const out: Epic[] = coreEpics(sel);
   if (sel.mgmtStretched) out.push(E7_MGMT_STRETCH);
   if (sel.day2) out.push(day2Epic(sel));
-  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.connectivity, sel.supervisorSize)));
+  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize)));
   out.push(E10_HANDOVER);
   return out;
 }
@@ -614,17 +679,22 @@ export function coerceSelection(data: unknown): Selection | null {
   const bool = (v: unknown, fb: boolean): boolean => (typeof v === 'boolean' ? v : fb);
   const auto = (d.automation && typeof d.automation === 'object' ? d.automation : {}) as Record<string, unknown>;
   const comps = (d.day2Components && typeof d.day2Components === 'object' ? d.day2Components : {}) as Record<string, unknown>;
+  const conn = oneOf<NsxConnectivity>(d.connectivity, NSX_CONNECTIVITY.map((c) => c.value), base.connectivity);
   const wlds: Wld[] = Array.isArray(d.wlds)
     ? d.wlds
         .filter((w): w is Record<string, unknown> => !!w && typeof w === 'object')
         .map((w, i) => ({
           name: typeof w.name === 'string' ? w.name : `wld${i + 1}`,
           stretched: bool(w.stretched, false),
+          // Scopes saved before per-WLD connectivity carry only the top-level
+          // value — fall back to it so an older plan reloads unchanged.
+          connectivity: oneOf<NsxConnectivity>(w.connectivity, NSX_CONNECTIVITY.map((c) => c.value), conn),
           supervisor: bool(w.supervisor, false),
+          supervisorLb: oneOf<SupervisorLb>(w.supervisorLb, SUPERVISOR_LBS.map((l) => l.value), 'builtin'),
         }))
     : base.wlds;
   return normalizeSelection({
-    connectivity: oneOf(d.connectivity, NSX_CONNECTIVITY.map((c) => c.value), base.connectivity),
+    connectivity: conn,
     storage: oneOf(d.storage, STORAGE_TYPES.map((s) => s.value), base.storage),
     supervisorSize: oneOf(d.supervisorSize, SUPERVISOR_SIZES, base.supervisorSize),
     mgmtStretched: bool(d.mgmtStretched, base.mgmtStretched),

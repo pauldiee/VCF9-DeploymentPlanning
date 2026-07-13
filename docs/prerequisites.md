@@ -102,10 +102,17 @@ Needed when **Avi is the chosen load balancer** for any of these: **vSphere
 Supervisor** on a workload domain (then the controller cluster must exist
 **before activation** — but Supervisor also runs **without Avi**, via the
 NSX / VPC networking paths' built-in load balancer or the **Foundation Load
-Balancer**), a **VCF Automation HA cluster** VIP (an external LB also works),
-or tenant/workload load balancing. Deployed **Day-2 from VCF Operations** into
-the management domain — vCenter and NSX must already be configured. Prepare up
-front:
+Balancer**), optionally **in front of VCF Automation** (never required — both
+the single-node and HA models ship a **built-in L4 load balancer** that serves
+the cluster VIP; Avi in front is a post-deployment addition for SSL
+termination / keeping user access off the management network),
+or tenant/workload load balancing. Deployed **Day-2 from VCF Operations**
+(lifecycle-managed) into the domain it serves — the **management domain** when
+fronting VCF Automation, **into the workload domain** for a Supervisor — with
+that domain's vCenter and NSX already configured. Per the
+[Avi-for-VCF 9.1 requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html),
+for Supervisor use the controller cluster **must be deployed before Supervisor
+activation**. Prepare up front:
 
 - **4 IPs + FQDNs on the VM Management network**: 3 controller nodes + the
   **cluster VIP**. The VIP FQDN must be **registered in DNS and resolve to the
@@ -115,6 +122,15 @@ front:
   NSX ALB controller ladder.
 - **Two strong passwords** (password manager, owners in intake `F11`): the
   controller **admin** and the **VCF Ops admin** (break-glass) accounts.
+- **Avi binaries in the depot** — 32.1.1 or higher must be available from the
+  (online or offline) depot before VCF Operations can deploy the controller
+  (see [`08-backup-and-depot.md`](08-backup-and-depot.md) §B).
+- **A local content library** in the target vCenter for the **Service Engine**
+  images, and a **Service Engine management network** (dedicated VLAN or
+  overlay segment; SE management IPs via DHCP or a static IP pool in the
+  controller). Plan a **minimum of 2 Service Engines** for HA; the VIP source
+  depends on the networking path (VDS: VIP/data network + IPAM profile;
+  VPC: the VPC external IP blocks).
 - Firewall: admin access to the controller UI/API (443) and the Service
   Engine ↔ controller secure channel — see [`07-firewall-ports.md`](07-firewall-ports.md) §E.
 
@@ -124,6 +140,63 @@ front:
 > [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
 > The P&P workbook has **no Avi input fields** — only sizing rows — so capture
 > these values in the Step 1 plan / intake instead.
+
+## vSphere Supervisor (only if in scope)
+
+Nothing here is needed at bring-up — the Supervisor is enabled **per workload
+domain, Day-N** (intake `H5`, deployment plan E9). But activation asks for all
+of it at once, and the workbook carries only **three** Supervisor fields
+(name, Service CIDR, control-plane IP range), so collect the rest up front:
+
+- **5 consecutive static IPs** for the Supervisor control plane on the
+  management network — 3 control-plane VMs + 1 floating IP + 1 reserved for
+  rolling updates. The workbook's "Control Plane IP Range" is this block.
+- **Supervisor API FQDN + DNS record** — logging in by FQDN is required to
+  avoid certificate issues; point the record at the **floating IP** (no load
+  balancer) or the **load-balancer VIP**. Add it to the Step 1 DNS table.
+- **Service CIDR** — private, unique per Supervisor (the default usually
+  works; it must not overlap other Supervisors or the fleet networks).
+- **Load balancer** — Supervisor activation requires one; pick per WLD
+  (intake `H5`): the **built-in NSX/VPC LB** (no extra appliance), the
+  **Foundation Load Balancer** (platform-packaged L4 active/passive pair, for
+  VDS networking), or **Avi** — then the whole [Avi section above](#avi-load-balancer-only-if-in-scope)
+  applies and must be **complete before activation**.
+- **North-south connectivity — the hard prerequisite.** The workload domain's
+  own NSX connectivity model (intake `H4`, chosen **per WLD**, independent of
+  the management domain's) must be **built and up before activation**, along
+  with its Supervisor-specific reservations:
+  - **VCF Networking with VPC** (Distributed connectivity): the Distributed
+    Transit Gateway + VNA cluster, a routable **external IP block**
+    (north-south NAT / load-balancer VIPs, advertised upstream via BGP) and a
+    **private transit gateway IP block** — in **9.1 this block must be a
+    `/16`** (9.0 accepted a `/24`; with a `/24` in 9.1 the deployment never
+    completes — see the references below).
+  - **NSX segment networking** (Centralized connectivity): the Edge cluster +
+    Tier-0 first, plus **ingress and egress CIDRs** for the Supervisor.
+  - **VDS networking**: distributed port groups for the **workload
+    network(s)** (one designated primary), on a **different subnet** than the
+    Supervisor management network, plus the FLB or Avi from the LB bullet
+    (a VDS-networking Supervisor has no built-in NSX load balancer).
+- **Cluster readiness** — vSphere **DRS (fully automated) and HA** enabled on
+  the target cluster(s); **storage policies** chosen for the control-plane
+  VMs, ephemeral disks, and image cache.
+- **Kubernetes content** — Supervisor services / VKS release binaries come
+  from `projects.packages.broadcom.com` (already in the Public URLs table
+  below); air-gapped sites must plan the offline content-library path.
+- **Routing** — the Supervisor management network must reach vCenter and the
+  ESX hosts' management vmkernel (Spherelet), and the workload network must
+  reach the load-balancer VIPs.
+- **Zones** — a three-zone Supervisor needs **≤ 100 ms** latency between the
+  zone clusters (see [`03-multi-az-prep.md`](03-multi-az-prep.md) for the
+  stretch/AZ groundwork).
+
+> TechDocs: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html)
+> (per-networking-path requirements pages) and
+> [Requirements for Simplified Supervisor Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor/requirements-for-simplified-supervisor-deployment.html)
+> (routing + FQDN-login requirements). The 9.1 `/16` transit-gateway change is
+> lab-documented in
+> [VCF 9.1 Home Lab Series Part 9 — Deploy Supervisor](https://vstellar.com/2026/06/vcf-9-1-home-lab-series-part-9-deploy-supervisor/)
+> and the [VCF 9.1.x Ultimate Deployment Guide](https://blog.leaha.co.uk/2026/05/06/vcf-9-1-x-ultimate-deployment-guide/).
 
 ## Active Directory
 
@@ -147,7 +220,7 @@ front:
 VCF 9 federates fleet-wide SSO through the **VCF Identity Broker**. The broker
 itself is **deployed at bring-up** with the VCF Management Services (no opt-in;
 its FQDN + services-runtime IP are part of the Step 1 plan) — what happens
-Day-2 is its **configuration** (deployment plan **E8**, story **8.4** fleet
+Day-2 is its **configuration** (deployment plan **E8**, story **8.5** fleet
 SSO). Prepare the AD-over-LDAP
 identity source up front; it has specific inputs and well-known gotchas.
 

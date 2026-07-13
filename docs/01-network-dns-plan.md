@@ -103,7 +103,7 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | NSX Edge nodes (if deployed)    | 2          |             | Mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below    |
 | VCF Automation                  | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below) |
-| Avi Controller cluster (optional)| 4         |             | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / Automation HA / tenant LB); see `prerequisites.md` |
+| Avi Controller cluster (optional)| 4         |             | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / optionally fronting VCF Automation / tenant LB); see `prerequisites.md` |
 | VCF Operations for Networks (optional) | 2 (+2 if Large) |  | Platform node + collector node — lands here when the Day-2 placement is the **Shared Management Network** (a **Large** platform is a 3-node cluster: +2); see `05-day2-deployments.md` |
 | Log Management (optional)       | — (from runtime block) | | Day-N: 1 FQDN + 6 IPs, +2 per additional replica — **allocated from the services-runtime block above**, not extra subnet IPs (TechDocs FQDN/IP list); size the block `/27` if Log Management is planned. See `05-day2-deployments.md` |
 | Real-time metrics (optional)    | — (from runtime block) | | Day-N: 6 IPs, **also allocated from the services-runtime block** (TechDocs FQDN/IP list) |
@@ -193,6 +193,7 @@ same shape.
 | NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
 | NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
 | Avi Controller cluster FQDN (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet — the 3 controller nodes are **IP-only** (no DNS records) |
+| Supervisor API FQDN (optional — per Supervisor-enabled WLD) | `sfo-w01-super01.sfo.example.io` | WLD mgmt network — points at the control plane's **floating IP** (or the LB VIP); FQDN login is required, see `prerequisites.md` → vSphere Supervisor |
 | Log Management VIP (optional) | `sfo-vcflogs01.sfo.example.io` | services-runtime block (integrated LB; the 6+ worker nodes need IPs, not FQDNs) |
 
 ### DNS settings checklist
