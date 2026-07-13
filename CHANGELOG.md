@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.6.9 — 2026-07-13
+- **`08-backup-and-depot.md` is navigable** (#146). It had grown into two long
+  sections you could only scroll: it is now the page people open mid-build with a
+  specific question ("how do I verify the target?", "how do I feed the Installer
+  without a depot server?"), so it should let them jump straight there. Adds a
+  **Contents index** (with a *use it when* column, not just section names) and
+  **finer-grained headings** to land on: A.3 splits into the **Linux (chroot jail)**
+  and **Windows Server** variants; A.4 into **the check** (force the FIPS
+  negotiation), **three traps this catches**, and **Windows targets: a word of
+  caution**; section B gains **B.0 — three ways to feed binaries** (the
+  online/offline/manual decision, previously an unnamed preamble); and **B.1's
+  seven steps become seven headings** (*Step 1 — Depot web server* … *Step 7 —
+  Connect VCF to it*), so "the activation code needs the Product Administrator
+  role and takes days" is findable without reading the section top to bottom. All
+  24 index anchors verified against the rendered site.
+
 ## v1.6.8 — 2026-07-13
 - **Distributed connectivity is planned to the field level, like Centralized was**
   (#142). The Centralized path had concrete inputs at every step and the

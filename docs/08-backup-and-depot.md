@@ -6,6 +6,40 @@ to, and the **binary depot** the platform installs and patches from. The
 [prerequisites gate](prerequisites.md) states *what* must exist; this page
 covers *how to build it* and the gotchas that cost redo time.
 
+## Contents
+
+**[A. SFTP backup target](#a-sftp-backup-target)**
+
+| # | Section | Use it when |
+| - | ------- | ----------- |
+| A.1 | [What backs up to it (and how often)](#a1-what-backs-up-to-it-and-how-often) | Sizing the target and setting the schedule |
+| A.2 | [Requirements and placement](#a2-requirements-and-placement) | Deciding where it lives and what it must support (**FIPS is the 9.x baseline**) |
+| A.3 | [Building one (chrooted OpenSSH example)](#a3-building-one-chrooted-openssh-example) | Building the box |
+| | ↳ [Linux variant (chroot jail)](#linux-variant-chroot-jail) | The common case — SFTP-only account in a jail |
+| | ↳ [Windows Server variant](#windows-server-variant-built-in-openssh-server) | In-box OpenSSH, and the traps unique to it |
+| A.4 | [Verify the target before you register it](#a4-verify-the-target-before-you-register-it) | **Before** you touch the VCF wizard |
+| | ↳ [The check: force the FIPS negotiation](#the-check-force-the-fips-negotiation) | The ten-minute test that predicts whether VCF will connect |
+| | ↳ [Three traps this catches](#three-traps-this-catches) | ETM MACs, legacy `ssh-rsa`, the path format |
+| | ↳ [Windows targets: a word of caution](#windows-targets-a-word-of-caution) | Deciding whether to run the target on Windows at all |
+| A.5 | [References](#a5-references) | The TechDocs and KBs behind the above |
+
+**[B. Binary depot](#b-binary-depot--offline-depot--the-vcf-download-tool)**
+
+| # | Section | Use it when |
+| - | ------- | ----------- |
+| B.0 | [Three ways to feed binaries](#b0-three-ways-to-feed-binaries) | Choosing: online depot, offline depot, or manual transfer |
+| B.1 | [Setting up an offline depot](#b1-setting-up-an-offline-depot) | The site has no internet path to Broadcom |
+| | ↳ [Step 1 — Depot web server](#step-1--depot-web-server) | Sizing and certifying the box |
+| | ↳ [Step 2 — Auth split](#step-2--auth-split) | What to protect with basic auth, and what must stay open |
+| | ↳ [Step 3 — VCF Download Tool](#step-3--vcf-download-tool) | Getting the tool |
+| | ↳ [Step 4 — Activation code](#step-4--activation-code) | **Start here early** — the Product Administrator role takes days |
+| | ↳ [Step 5 — Download the binaries](#step-5--download-the-binaries) | The actual `binaries download` / `esx download` runs |
+| | ↳ [Step 6 — Transfer to the air-gapped server](#step-6--transfer-to-the-air-gapped-server) | Moving the store across the gap intact |
+| | ↳ [Step 7 — Connect VCF to it](#step-7--connect-vcf-to-it) | Pointing the Installer (and later the fleet) at the depot |
+| B.2 | [Manual transfer — feeding the VCF Installer without a depot server](#b2-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | You have no depot server at all and need bits on the Installer |
+| B.3 | [Using the Download Tool standalone](#b3-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
+| B.4 | [References](#b4-references) | The TechDocs behind the above |
+
 ---
 
 ## A. SFTP backup target
@@ -64,8 +98,11 @@ component lands on it.
 ### A.3 Building one (chrooted OpenSSH example)
 
 Anything that speaks SFTP over SSH qualifies — a NAS, Windows Server with
-OpenSSH Server, or (most common) a small Linux VM. The hardened pattern is an
-SFTP-only account locked in a chroot jail:
+OpenSSH Server, or (most common) a small Linux VM.
+
+#### Linux variant (chroot jail)
+
+The hardened pattern is an SFTP-only account locked in a chroot jail:
 
 ```text
 # /etc/ssh/sshd_config
@@ -129,9 +166,13 @@ Get-NetFirewallRule -Name OpenSSH-Server-In-TCP   # confirm the TCP 22 inbound r
 ### A.4 Verify the target before you register it
 
 Whether you built the target or were handed one, prove the SSH handshake VCF
-needs actually completes. Don't audit `sshd_config` — **force the negotiation
-down to the FIPS-approved algorithms and see if it connects.** If these two
-logins succeed from the management network, SDDC Manager's will too:
+needs actually completes.
+
+#### The check: force the FIPS negotiation
+
+Don't audit `sshd_config` — **force the negotiation down to the FIPS-approved
+algorithms and see if it connects.** If these two logins succeed from the
+management network, SDDC Manager's will too:
 
 ```console
 # ECDSA host-key path
@@ -160,7 +201,7 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
 **VCF Operations**, use **Fetch Fingerprint** and confirm it matches the
 `ssh-keygen -lf` output above.
 
-**Three traps this catches:**
+#### Three traps this catches
 
 - **`hmac-sha2-256` vs `hmac-sha2-256-etm@openssh.com`** — different algorithm
   names. Hardened servers often offer only the **ETM** variant, which passes a
@@ -173,6 +214,8 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
 - **The path format** — see the Windows gotcha in A.3: `sftp` shows
   `/C:/vcf-backups`, and anything else fails with *"Invalid parameter:
   validation failed for directory path"*.
+
+#### Windows targets: a word of caution
 
 > **A word on Windows targets.** Broadcom's own KBs don't say Windows is
 > unsupported, but a Dell/VxRail KB reports that SDDC Manager backups to
@@ -208,7 +251,9 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
 
 ## B. Binary depot — offline depot & the VCF Download Tool
 
-Three ways to feed binaries to VCF 9.1 (intake `G1`):
+### B.0 Three ways to feed binaries
+
+Pick one (intake `G1`):
 
 - **Online depot** — VCF Installer (and later the fleet) connect to the
   Broadcom depot directly using the **Download Service ID + Activation Code**
@@ -231,89 +276,106 @@ Three ways to feed binaries to VCF 9.1 (intake `G1`):
 
 ### B.1 Setting up an offline depot
 
-1. **Depot web server** — a Linux or Windows VM (any distribution), **static
-   IP** (DNS record recommended), a dedicated disk of **≥ 1 TB**, and any web
-   server (Apache, NGINX) serving **HTTPS with TLS 1.2/1.3**. Give it a
-   certificate with the FQDN *and* IP as SANs — signed by your CA, or
-   self-signed if you accept the trust-import step (step 7 below).
-2. **Auth split** — protect `PROD/COMP` and `PROD/metadata` with **basic
-   auth** (`htpasswd`); leave `PROD/vsan/hcl` and `umds-patch-store` open.
-   The `umds-patch-store` directory name is **hardcoded** — don't rename it.
-3. **VCF Download Tool** — download from the Broadcom Support Portal (*My
-   Downloads → VMware Cloud Foundation → your version → Drivers & Tools*) and
-   extract it on an internet-connected host — the depot server itself if it's
-   allowed out, otherwise any staging machine.
-4. **Activation code** — from 9.1, whatever connects to Broadcom for binaries
-   (VCF Installer, a software depot, the Download Tool) must be **registered
-   in the VCF Business Services console** — the authoritative how-to is
-   [Software Depot Registration in the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/business-services/home/depot-service-authentication-in-the-vcf-business-services-console.html)
-   (per-component registration sub-pages). For the Download Tool: generate a
-   **software depot ID** with the tool
-   (`./vcf-download-tool configuration generate --software-depot-id`), then
-   log in to the console, select the tenant + site ID that map to your VCF
-   entitlement, and generate the **activation code** against that depot ID.
-   Save the code to a text file for the
-   `--depot-download-activation-code-file` flag. (Code not appearing? —
-   [KB 399124](https://knowledge.broadcom.com/external/article/399124/activation-code-not-generated-in-connect.html).)
+#### Step 1 — Depot web server
 
-   > **Token vs. activation code:** Broadcom is mid-transition. The older
-   > **download token** (support portal → *My Dashboard → Generate Download
-   > Token*, see [KB 390098](https://knowledge.broadcom.com/external/article/390098))
-   > still works for 9.1 downloads — the 9.0-era tool took it as a
-   > download-*token* file — but the **activation code is the go-forward
-   > mechanism** that replaces the token workflow.
-   >
-   > **Get the credential early:** generating either requires the **Product
-   > Administrator** role on the Broadcom support-portal site. If your named
-   > contact doesn't have it, the site's User Administrator must assign it
-   > first — plan days for this, not minutes.
-   >
-   > **Don't confuse it with the *licensing* activation code.** VCF 9 also
-   > uses an activation code to register **VCF Operations** with the licensing
-   > service (`vcf.broadcom.com`) for the single fleet license file — a
-   > separate credential from the depot-download one, generated in its own
-   > registration wizard. The activation/registration model is explained in
-   > the VMware blog [Licensing in VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2025/06/24/licensing-in-vmware-cloud-foundation-9-0/)
-   > (Sehjung Hah & Kyle Gleed).
-5. **Download the binaries** into the depot store (the web server's document
-   root, or a staging directory):
+A Linux or Windows VM (any distribution), **static IP** (DNS record
+recommended), a dedicated disk of **≥ 1 TB**, and any web server (Apache,
+NGINX) serving **HTTPS with TLS 1.2/1.3**. Give it a certificate with the FQDN
+*and* IP as SANs — signed by your CA, or self-signed if you accept the
+trust-import step (step 7 below).
 
-   ```console
-   ./vcf-download-tool binaries download --sku VCF --vcf-version 9.1.x \
-     --depot-download-activation-code-file /path/activation-code.txt \
-     --type INSTALL --depot-store /var/www/offline_depot
+#### Step 2 — Auth split
 
-   ./vcf-download-tool esx download \
-     --depot-download-activation-code-file /path/activation-code.txt \
-     --depot-store /var/www/offline_depot
-   ```
+Protect `PROD/COMP` and `PROD/metadata` with **basic auth** (`htpasswd`); leave
+`PROD/vsan/hcl` and `umds-patch-store` open. The `umds-patch-store` directory
+name is **hardcoded** — don't rename it.
 
-   `binaries list` (same flags) previews what a run will pull; `--type
-   UPGRADE` fetches lifecycle bundles for Day-N patching.
+#### Step 3 — VCF Download Tool
 
-   > **NSX Edge nodes need no extra binary.** There is no separate NSX Edge
-   > bundle in the depot — the edge node OVA ships inside the **NSX Manager**
-   > appliance (`NSX_T_MANAGER`, already part of the `--type INSTALL` set),
-   > and NSX Manager deploys the edge VMs itself when you create an edge
-   > cluster after bring-up. The Broadcom
-   > [edge-cluster prerequisites](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html)
-   > are network/resource-only (Edge TEPs, uplinks, DNS, BGP) and never
-   > mention the depot, and the depot component list confirms it (see William
-   > Lam's [depot structure deep-dive](https://williamlam.com/2025/10/vcf-software-depot-structure-deep-dive-for-install-upgrade.html)).
-   > An air-gapped depot loaded per this section therefore already covers a
-   > later edge-cluster deployment; Day-N, edge nodes are upgraded through
-   > the NSX upgrade bundle (`--type UPGRADE`), not a separate download.
-6. **Transfer** the depot store to the air-gapped web server if the download
-   host is a separate machine — the directory tree
-   (`PROD/COMP`, `PROD/metadata`, `PROD/vsan/hcl`, `umds-patch-store`) must
-   arrive intact under the document root.
-7. **Connect VCF to it** (intake `G4`) — point the **VCF Installer** at the
-   depot URL (e.g. `https://depot.sfo.rainpole.io/`) with the basic-auth
-   user. The Installer must **trust the depot's TLS certificate** — with a
-   self-signed or internal-CA cert, plan the certificate import (in 9.0 there
-   was no accept-certificate prompt; the cert had to be imported over SSH —
-   see the vTam walkthrough below). Day-N, the fleet connects under **VCF
-   Operations → Depot Configuration** (fleet-level *and* per-instance).
+Download it from the Broadcom Support Portal (*My Downloads → VMware Cloud
+Foundation → your version → Drivers & Tools*) and extract it on an
+internet-connected host — the depot server itself if it's allowed out,
+otherwise any staging machine.
+
+#### Step 4 — Activation code
+
+From 9.1, whatever connects to Broadcom for binaries (VCF Installer, a software
+depot, the Download Tool) must be **registered in the VCF Business Services
+console** — the authoritative how-to is
+[Software Depot Registration in the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/business-services/home/depot-service-authentication-in-the-vcf-business-services-console.html)
+(per-component registration sub-pages). For the Download Tool: generate a
+**software depot ID** with the tool
+(`./vcf-download-tool configuration generate --software-depot-id`), then log in
+to the console, select the tenant + site ID that map to your VCF entitlement,
+and generate the **activation code** against that depot ID. Save the code to a
+text file for the `--depot-download-activation-code-file` flag. (Code not
+appearing? — [KB 399124](https://knowledge.broadcom.com/external/article/399124/activation-code-not-generated-in-connect.html).)
+
+> **Token vs. activation code:** Broadcom is mid-transition. The older
+> **download token** (support portal → *My Dashboard → Generate Download
+> Token*, see [KB 390098](https://knowledge.broadcom.com/external/article/390098))
+> still works for 9.1 downloads — the 9.0-era tool took it as a
+> download-*token* file — but the **activation code is the go-forward
+> mechanism** that replaces the token workflow.
+>
+> **Get the credential early:** generating either requires the **Product
+> Administrator** role on the Broadcom support-portal site. If your named
+> contact doesn't have it, the site's User Administrator must assign it
+> first — plan days for this, not minutes.
+>
+> **Don't confuse it with the *licensing* activation code.** VCF 9 also
+> uses an activation code to register **VCF Operations** with the licensing
+> service (`vcf.broadcom.com`) for the single fleet license file — a
+> separate credential from the depot-download one, generated in its own
+> registration wizard. The activation/registration model is explained in
+> the VMware blog [Licensing in VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2025/06/24/licensing-in-vmware-cloud-foundation-9-0/)
+> (Sehjung Hah & Kyle Gleed).
+
+#### Step 5 — Download the binaries
+
+Into the depot store (the web server's document root, or a staging directory):
+
+```console
+./vcf-download-tool binaries download --sku VCF --vcf-version 9.1.x \
+  --depot-download-activation-code-file /path/activation-code.txt \
+  --type INSTALL --depot-store /var/www/offline_depot
+
+./vcf-download-tool esx download \
+  --depot-download-activation-code-file /path/activation-code.txt \
+  --depot-store /var/www/offline_depot
+```
+
+`binaries list` (same flags) previews what a run will pull; `--type UPGRADE`
+fetches lifecycle bundles for Day-N patching.
+
+> **NSX Edge nodes need no extra binary.** There is no separate NSX Edge
+> bundle in the depot — the edge node OVA ships inside the **NSX Manager**
+> appliance (`NSX_T_MANAGER`, already part of the `--type INSTALL` set),
+> and NSX Manager deploys the edge VMs itself when you create an edge
+> cluster after bring-up. The Broadcom
+> [edge-cluster prerequisites](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html)
+> are network/resource-only (Edge TEPs, uplinks, DNS, BGP) and never
+> mention the depot, and the depot component list confirms it (see William
+> Lam's [depot structure deep-dive](https://williamlam.com/2025/10/vcf-software-depot-structure-deep-dive-for-install-upgrade.html)).
+> An air-gapped depot loaded per this section therefore already covers a
+> later edge-cluster deployment; Day-N, edge nodes are upgraded through
+> the NSX upgrade bundle (`--type UPGRADE`), not a separate download.
+
+#### Step 6 — Transfer to the air-gapped server
+
+Move the depot store to the air-gapped web server if the download host is a
+separate machine — the directory tree (`PROD/COMP`, `PROD/metadata`,
+`PROD/vsan/hcl`, `umds-patch-store`) must arrive intact under the document root.
+
+#### Step 7 — Connect VCF to it
+
+Point the **VCF Installer** at the depot URL (e.g.
+`https://depot.sfo.rainpole.io/`) with the basic-auth user (intake `G4`). The
+Installer must **trust the depot's TLS certificate** — with a self-signed or
+internal-CA cert, plan the certificate import (in 9.0 there was no
+accept-certificate prompt; the cert had to be imported over SSH — see the vTam
+walkthrough below). Day-N, the fleet connects under **VCF Operations → Depot
+Configuration** (fleet-level *and* per-instance).
 
 ### B.2 Manual transfer — feeding the VCF Installer without a depot server
 
