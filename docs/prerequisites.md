@@ -8,6 +8,41 @@ meeting on the rest of the workbook — every later answer depends on these.
 > doc set (the workbook's TechDocs companion). Sections below link the specific
 > pages where they exist.
 
+## When is each item needed?
+
+Not everything here blocks bring-up. Every section below — and every row of the
+[planning templates](#fillable-planning-templates-download), in their **When
+needed** column — carries one of these four markers, using the same words in
+both places so a filled template can be checked straight against this doc:
+
+| Marker                     | Meaning                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| **Bring-up**               | Must be true **before the VCF Installer runs**. A miss here stops the deployment.            |
+| **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the public URLs when anything is online). |
+| **Day-N**                  | Needed **after** bring-up, when you configure or deploy that piece. Collect the inputs early anyway — a missing value doesn't stop bring-up, it stops the day you need it. |
+| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
+
+**The bring-up gate, at a glance** — the subset that must be green before the
+Installer starts:
+
+- [ ] **Management-domain hardware** — host count/spec, vSAN disks with **no
+      existing partitions**, single hardware vendor
+- [ ] **VLANs + MTU** — every traffic type, jumbo where required (overlay ≥ 1600)
+- [ ] **Host Overlay TEP addressing** — static IP pool (recommended) or DHCP
+- [ ] **BGP / ECMP to the ToRs** — *Centralized connectivity only*
+- [ ] **DNS** — forward **A** *and* reverse **PTR** for every bring-up FQDN,
+      lowercase, each resolving to a unique unassigned IP
+- [ ] **NTP** — two sources, reachable and in sync
+- [ ] **Binaries** — depot decision made (online / offline / manual transfer),
+      credentials in hand, SDDC Manager ISO downloaded
+- [ ] **Jump host** — routed access + OVF Tool
+- [ ] **Active Directory** — reachable, accounts and groups pre-created
+- [ ] **Public URLs / proxy allowlist** — if anything is online
+
+Everything else in this document (workload-domain hardware, SMTP, the
+Certificate Authority, the SFTP backup target, Avi, vSphere Supervisor, fleet
+SSO) is **Day-N**: plan it now, but it will not hold up bring-up.
+
 ## Fillable planning templates (download)
 
 Blank CSV sheets to capture the prereq plan, then transfer into the P&P workbook
@@ -15,6 +50,11 @@ or [Coscia's planner](https://vcfplanning.lcoscia.fr/). Each opens in Excel; the
 IP/DNS template's **Intake ID** column maps back to
 [`workbook-cell-mapping.md`](workbook-cell-mapping.md) (the other templates
 reference intake IDs in their notes where relevant).
+
+Every template carries a **When needed** column using the same four markers as
+this document ([above](#when-is-each-item-needed)) — filter or sort on it to
+see exactly what must be ready before the Installer runs, and hand the rest to
+the teams that own it without holding up bring-up.
 
 The IP/VLAN sheets hand off in a fixed order:
 
@@ -40,6 +80,8 @@ The IP/VLAN sheets hand off in a fixed order:
 ## Hardware
 
 ### Management Domain
+
+*When needed: **Bring-up.*** The Installer validates the hosts it is given.
 
 | Item              | Minimum                                                                       | Notes                                                  |
 | ----------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
@@ -69,6 +111,10 @@ The IP/VLAN sheets hand off in a fixed order:
 
 ### Workload Domain
 
+*When needed: **Day-N.*** Workload domains are built after bring-up (deployment
+plan **E9**) — but order the hardware on the same lead time as the management
+hosts.
+
 Same shape as Management Domain. Minimum **3 hosts**, 4+ recommended for prod.
 VI workload domains support up to **64 pNICs per host**.
 
@@ -80,15 +126,15 @@ VI workload domains support up to **64 pNICs per host**.
 
 ## Network
 
-| Requirement                         | Why                                                                  |
-| ----------------------------------- | -------------------------------------------------------------------- |
-| **Jumbo frames** (MTU 9000)         | Required on vSAN, vMotion, ESX Host Overlay, NSX Edge Overlay, NFS. Overlay (GENEVE) needs MTU **≥ 1600** minimum, **1700 recommended** (headroom for GENEVE header growth), ≥ 9000 for optimal throughput — [MTU guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/mtu-guidance.html) |
-| **BGP** adjacency + AS numbers      | Dynamic routing NSX Edge ↔ ToR — **only with NSX Centralized Connectivity / Edge clusters** (intake `A10`); the Distributed model needs no BGP peering. [Set up Centralized Connectivity with Edge Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html) |
-| **ECMP** on Edge↔ToR uplinks        | NSX Edge multipath — same scope as BGP: **Centralized Connectivity only** |
-| **vDS teaming**                     | vSphere Distributed Switch teaming for uplink load-balancing + failover — profiles + algorithms are chosen in the [Installer wizard](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html) |
-| **VLANs** per traffic type          | See `01-network-dns-plan.md`                                         |
-| **External load balancer** (only if fronting VCF Operations with a VIP) | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and you reach the cluster via the node FQDNs directly (no built-in cluster/floating IP). See `05-day2-deployments.md` B.1 |
-| **Stretched networks** (multi-AZ)   | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. See `03-multi-az-prep.md` |
+| Requirement                         | When needed                | Why                                                                  |
+| ----------------------------------- | -------------------------- | -------------------------------------------------------------------- |
+| **Jumbo frames** (MTU 9000)         | **Bring-up**               | Required on vSAN, vMotion, ESX Host Overlay, NSX Edge Overlay, NFS. Overlay (GENEVE) needs MTU **≥ 1600** minimum, **1700 recommended** (headroom for GENEVE header growth), ≥ 9000 for optimal throughput — [MTU guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/mtu-guidance.html) |
+| **BGP** adjacency + AS numbers      | **Bring-up (if in scope)** | Dynamic routing NSX Edge ↔ ToR — **only with NSX Centralized Connectivity / Edge clusters** (intake `A10`); the Distributed model needs no BGP peering. [Set up Centralized Connectivity with Edge Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html) |
+| **ECMP** on Edge↔ToR uplinks        | **Bring-up (if in scope)** | NSX Edge multipath — same scope as BGP: **Centralized Connectivity only** |
+| **vDS teaming**                     | **Bring-up**               | vSphere Distributed Switch teaming for uplink load-balancing + failover — profiles + algorithms are chosen in the [Installer wizard](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html) |
+| **VLANs** per traffic type          | **Bring-up**               | See `01-network-dns-plan.md`                                         |
+| **External load balancer** (only if fronting VCF Operations with a VIP) | **Day-N (if in scope)** | VCF **never** provides the LB for VCF Operations — bring your own (F5, standalone Avi/NSX ALB, …). Skip it and you reach the cluster via the node FQDNs directly (no built-in cluster/floating IP). See `05-day2-deployments.md` B.1 |
+| **Stretched networks** (multi-AZ)   | **Bring-up (if in scope)** | VM-mgmt stretched across AZ1↔AZ2; Uplink01/02 + Edge Overlay stretched **only when NSX Centralized connectivity**; routing between AZ1/AZ2 ESXi-mgmt subnets. The networks must exist before the **stretch** step (deployment plan **E7**, after bring-up). See `03-multi-az-prep.md` |
 
 > Source: the workbook's *Prerequisite Checklist* → *Network Requirements*
 > block — every row above mirrors it except the VLAN and load-balancer rows,
@@ -97,6 +143,8 @@ VI workload domains support up to **64 pNICs per host**.
 > anchored on the workbook itself.
 
 ## Avi Load Balancer (only if in scope)
+
+*When needed: **Day-N (if in scope)**.* Nothing here blocks bring-up.
 
 Needed when **Avi is the chosen load balancer** for any of these: **vSphere
 Supervisor** on a workload domain (then the controller cluster must exist
@@ -142,6 +190,8 @@ activation**. Prepare up front:
 > these values in the Step 1 plan / intake instead.
 
 ## vSphere Supervisor (only if in scope)
+
+*When needed: **Day-N (if in scope)**.*
 
 Nothing here is needed at bring-up — the Supervisor is enabled **per workload
 domain, Day-N** (intake `H5`, deployment plan E9). But activation asks for all
@@ -200,6 +250,10 @@ of it at once, and the workbook carries only **three** Supervisor fields
 
 ## Active Directory
 
+*When needed: **Bring-up.*** The domain must be reachable and the accounts and
+groups must exist before the deployment starts (deployment plan **E4** story
+4.3). *Using* them for fleet SSO is Day-N — see the next section.
+
 - Supported OS: Windows Server 2019 or 2022.
 - Parent domain (forest root) reachable from SDDC components.
 - Bind / service accounts and admin groups pre-created **before** install: the
@@ -216,6 +270,10 @@ of it at once, and the workbook carries only **three** Supervisor fields
 > convention** only; the actual 9.1 account set is the short list above.
 
 ### Identity source for the VCF Identity Broker
+
+*When needed: **Day-N.*** The broker ships at bring-up but is **configured**
+Day-2 (deployment plan **E8** story 8.5) — collect these inputs early so that
+day isn't spent chasing AD.
 
 VCF 9 federates fleet-wide SSO through the **VCF Identity Broker**. The broker
 itself is **deployed at bring-up** with the VCF Management Services (no opt-in;
@@ -264,6 +322,9 @@ identity source up front; it has specific inputs and well-known gotchas.
 
 ## Host Overlay TEP addressing (static IP pool recommended)
 
+*When needed: **Bring-up.*** The Installer asks for the pool (or expects DHCP)
+while deploying the management domain.
+
 How each host gets its GENEVE tunnel-endpoint (TEP) IPs on the **ESX Host
 Overlay** VLAN. Either way, size for at least `nodes × pNICs` IPs plus growth —
 e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
@@ -286,6 +347,9 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 ## DNS
 
+*When needed: **Bring-up.*** The single most common cause of a failed bring-up
+— **A *and* PTR must both resolve before the Installer runs**.
+
 - Forward + reverse zones for every FQDN in the *Deploy Management Domain*,
   *Deploy Workload Domain* and *Deploy Cluster* sheets. **All A and PTR records
   present *before* deploy.**
@@ -305,6 +369,9 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 ## NTP
 
+*When needed: **Bring-up.*** Hosts and appliances must be **in sync** before
+deployment — skew breaks certificate validation and cluster formation.
+
 - Two external time sources per site (radio/GPS, upstream NTP, or NTP served
   by the ToR switches / physical routers).
 - Two A-records pointing at the two sources.
@@ -322,6 +389,9 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 ## SMTP
 
+*When needed: **Day-N.*** Alerting is configured in VCF Operations after
+bring-up.
+
 - Mail relay reachable from each SDDC component (alerting).
 - Restrict relay to SDDC management IP range(s).
 - The consumer is **VCF Operations' outbound Standard Email plug-in** (alert
@@ -329,6 +399,12 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
   [Configure Email Alert Plug-in Settings](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vvs/9-X/configure-email-alert-plugin-settings-for-vrealize-operations-manager.html).
 
 ## Certificate Authority
+
+*When needed: **Day-N.*** Bring-up runs on self-signed certificates; the
+CA-signed replacement is done once the fleet exists (deployment plan **E6** 6.2
+partial / **E8** 8.5 full). Have the CA **reachable and its template validated
+before bring-up** anyway — the environment gate (E4 story 4.3) checks it, and a
+missing template blocks the entire Day-2 certificate pass.
 
 - VCF 9.1 fleet certificate management (**VCF Operations → Fleet Management →
   Certificates → Configure CA for Fleet**) offers two CA types: **Microsoft CA**
@@ -357,13 +433,24 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 
 ## SFTP backup target
 
+*When needed: **Day-N.*** The fleet-wide backup target is configured in VCF
+Operations right after bring-up (deployment plan **E6** story 6.3) — build it
+in parallel with the deployment, not after go-live.
+
 - SFTP target (TCP **22**) reachable from the VCF management network — SDDC
   Manager, NSX Manager, vCenter **and** the fleet components — VCF Automation
   plus the VCF management services (Log Management, Identity Broker, Software
   Depot, fleet/SDDC lifecycle, real-time metrics, Salt) — all back up to it.
 - Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
 - The external SFTP server must support **256-bit ECDSA and 2048-bit RSA SSH
-  keys**.
+  keys**, with host key algorithms including one of `rsa-sha2-512` /
+  `rsa-sha2-256` **and** one of `ecdsa-sha2-nistp256` / `nistp384` / `nistp521`.
+- **FIPS is on by default in 9.x SDDC Manager and cannot be turned off**, so the
+  FIPS-mode SSH requirements always apply: the server must also offer a KEX from
+  `diffie-hellman-group-exchange-sha256` / `ecdh-sha2-nistp256` / `nistp384` /
+  `nistp521`, and the MAC `hmac-sha2-256` (**not** only the
+  `-etm@openssh.com` variant — a common hardening trap). Verify the handshake
+  before registering the target: [`08-backup-and-depot.md`](08-backup-and-depot.md) §A.4.
 - A **backup encryption passphrase** chosen and stored in a password manager
   with a named owner — it is **required during restore**; a lost passphrase
   makes every backup on the target useless.
@@ -380,6 +467,8 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 > set in **VCF Operations** and covers the components listed above.
 
 ## Jump host
+
+*When needed: **Bring-up.*** Nothing starts without it.
 
 The machine the whole deployment is driven from. It must exist **before** day
 one and survive independently of the platform it deploys — don't place it on
@@ -403,6 +492,9 @@ the cluster being built (or on storage that depends on it).
   network vantage point the appliances will use.
 
 ## Binaries
+
+*When needed: **Bring-up.*** The depot decision (`G1`) drives infrastructure —
+an offline depot is a web server you have to build, so decide it early.
 
 | File                                                | Source                                          |
 | --------------------------------------------------- | ----------------------------------------------- |
@@ -436,6 +528,9 @@ infrastructure:
 
 ## Public URLs (online functionality)
 
+*When needed: **Bring-up (if in scope)**.* Only if something goes online — the
+platform, or (air-gapped) the machine running the VCF Download Tool.
+
 Everything online in VCF 9.1 — depot downloads, licensing, compatibility /
 vSAN HCL data, CEIP — talks to a short list of public URLs, all **outbound
 TCP 443**. Hand this table to the firewall team as-is, and if egress goes
@@ -461,5 +556,7 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 ## Sign-off
 
 Confirm in writing that **all** items above are green before the
-intake meeting (Step 2). If anything is amber/red, capture the owner, target
-date, and risk before starting the workbook.
+intake meeting (Step 2) — the **Bring-up** ones because they stop the
+deployment, the **Day-N** ones because a gap found on the day you need them
+costs the same time, just later. If anything is amber/red, capture the owner,
+target date, and risk before starting the workbook.

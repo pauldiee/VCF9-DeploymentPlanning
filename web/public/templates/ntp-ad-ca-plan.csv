@@ -1,20 +1,20 @@
-Category,Setting,What it is,Example,Your value,Provided by,Notes
-NTP,NTP server 1,Time source every appliance syncs to,ntp1.example.io,,Network team,Must resolve and be reachable
-NTP,NTP server 2,Second time source (recommended),ntp2.example.io,,Network team,
-AD,AD domain (FQDN),The Active Directory domain the SDDC integrates with,example.io,,AD team,Forest root reachable from the SDDC
-AD,Domain bind / join account,Service account used to join / bind to AD,svc-vcf@example.io,,AD team,Provide the account DN
-AD,Computer / service OU,Where SDDC computer/service objects are created,"OU=VCF,DC=example,DC=io",,AD team,
-AD,SDDC admin group,AD group mapped to the admin role,gg-vcf-admins,,AD team,
-AD,SDDC operator group,AD group mapped to the operator role,gg-vcf-operators,,AD team,
-AD,SDDC viewer group,AD group mapped to the viewer role,gg-vcf-viewers,,AD team,
-Identity Broker,Bind / service account,AD account the broker binds with (read on base DN),svc-idb@example.io,,AD team,Needs TGGAU read if using Global Catalog
-Identity Broker,Base DN,Top of the directory tree queries start from,"dc=example,dc=io",,AD team,
-Identity Broker,Base Group DN,Where the groups to sync live,"OU=Groups,DC=example,DC=io",,AD team,Set high enough to cover ALL sync groups (single DN)
-Identity Broker,LDAPS root CA (PEM),Root CA cert for encrypted LDAP,ca-root.pem,,PKI team,PEM with BEGIN/END CERTIFICATE lines
-Identity Broker,Login UPN suffix,Users sign in as user@suffix (not email),@example.io,,AD team,KB 393150 - domain UPN not email address
-Identity Broker,Admin group DN,AD group mapped to the admin role,"CN=vcf-admins,OU=Groups,DC=example,DC=io",,AD team,Must be a UNIVERSAL group if using Global Catalog
-CA,CA type,Which certificate authority signs the certs,Microsoft Enterprise CA,,PKI team,Microsoft CA or OpenSSL (fleet cert management); external CA is CSR-based only - VCF won't import a private key
-CA,CA server or URL,Where the CA is reached,https://ca01.example.io/certsrv,,PKI team,Web Enrollment URL with Basic authentication enabled (Microsoft CA); reachable from the management components
-CA,CA enrollment service account,Least-privileged account the Configure-CA wizard authenticates with (Microsoft CA only),svc-vcf-ca@example.io,,PKI team,Needs enroll rights on the certificate template; not needed for the OpenSSL CA type
-CA,Certificate template,The template used to issue SDDC certs,VMware,,PKI team,Validate with a test issuance
-CA,Signing approach,When/how CA-signed certs are applied,CA-signed (whole fleet Day-2),,Architect,Full replacement is a Day-2 step
+Category,Setting,What it is,When needed (Bring-up / Bring-up (if in scope) / Day-N / Day-N (if in scope) - see prerequisites.md),Example,Your value,Provided by,Notes
+NTP,NTP server 1,Time source every appliance syncs to,Bring-up,ntp1.example.io,,Network team,Must resolve and be reachable
+NTP,NTP server 2,Second time source (recommended),Bring-up,ntp2.example.io,,Network team,
+AD,AD domain (FQDN),The Active Directory domain the SDDC integrates with,Bring-up,example.io,,AD team,Forest root reachable from the SDDC
+AD,Domain bind / join account,Service account used to join / bind to AD,Bring-up,svc-vcf@example.io,,AD team,Provide the account DN
+AD,Computer / service OU,Where SDDC computer/service objects are created,Bring-up,"OU=VCF,DC=example,DC=io",,AD team,
+AD,SDDC admin group,AD group mapped to the admin role,Bring-up,gg-vcf-admins,,AD team,
+AD,SDDC operator group,AD group mapped to the operator role,Bring-up,gg-vcf-operators,,AD team,
+AD,SDDC viewer group,AD group mapped to the viewer role,Bring-up,gg-vcf-viewers,,AD team,
+Identity Broker,Bind / service account,AD account the broker binds with (read on base DN),Day-N,svc-idb@example.io,,AD team,Broker ships at bring-up; fleet SSO is configured Day-2. Needs TGGAU read if using Global Catalog
+Identity Broker,Base DN,Top of the directory tree queries start from,Day-N,"dc=example,dc=io",,AD team,
+Identity Broker,Base Group DN,Where the groups to sync live,Day-N,"OU=Groups,DC=example,DC=io",,AD team,Set high enough to cover ALL sync groups (single DN)
+Identity Broker,LDAPS root CA (PEM),Root CA cert for encrypted LDAP,Day-N,ca-root.pem,,PKI team,PEM with BEGIN/END CERTIFICATE lines
+Identity Broker,Login UPN suffix,Users sign in as user@suffix (not email),Day-N,@example.io,,AD team,KB 393150 - domain UPN not email address
+Identity Broker,Admin group DN,AD group mapped to the admin role,Day-N,"CN=vcf-admins,OU=Groups,DC=example,DC=io",,AD team,Must be a UNIVERSAL group if using Global Catalog
+CA,CA type,Which certificate authority signs the certs,Day-N,Microsoft Enterprise CA,,PKI team,Bring-up runs on self-signed certs; CA-signed replacement is Day-2. Microsoft CA or OpenSSL; external CA is CSR-based only - VCF won't import a private key
+CA,CA server or URL,Where the CA is reached,Day-N,https://ca01.example.io/certsrv,,PKI team,Web Enrollment URL with Basic authentication enabled (Microsoft CA); reachable from the management components. The prereq gate checks reachability BEFORE bring-up
+CA,CA enrollment service account,Least-privileged account the Configure-CA wizard authenticates with (Microsoft CA only),Day-N,svc-vcf-ca@example.io,,PKI team,Needs enroll rights on the certificate template; not needed for the OpenSSL CA type
+CA,Certificate template,The template used to issue SDDC certs,Day-N,VMware,,PKI team,Validate with a test issuance BEFORE bring-up - a missing template blocks the whole Day-2 cert pass
+CA,Signing approach,When/how CA-signed certs are applied,Day-N,CA-signed (whole fleet Day-2),,Architect,Full replacement is a Day-2 step

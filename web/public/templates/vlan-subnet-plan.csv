@@ -1,13 +1,13 @@
-Network (traffic type),What it is,Example (VLAN / subnet / gateway / MTU / IP range),Minimum IPs needed,VLAN ID,Subnet (CIDR),Gateway,MTU,IP range (from - to),DHCP (Y/N),Provided by
-ESX Management,Host management (vmk0),1611 / 10.11.10.0/24 / 10.11.10.1 / 1500 / n/a - discrete host IPs (ip-dns plan),1 per host,,,,,,N,Network
-VM Management,SDDC Manager / Installer / mgmt appliances,1612 / 10.11.11.0/24 / 10.11.11.1 / 1500 / n/a - discrete appliance IPs + mgmt-services and Automation blocks,~30-48 discrete IPs + a /28-/27 services-runtime block - size the subnet /24,,,,,,N,Network
-vMotion,Live-migration traffic,1613 / 10.11.12.0/24 / 10.11.12.1 / 9000 / 10.11.12.101-.116 (1 IP per host),1 per host,,,,,,,Network
-vSAN,vSAN storage traffic,1614 / 10.11.13.0/24 / 10.11.13.1 / 9000 / 10.11.13.101-.116 (1 IP per host),1 per host,,,,,,,Network
-Host Overlay (TEP),Host GENEVE tunnel endpoints,1615 / 10.11.14.0/24 / 10.11.14.1 / 9000 / 10.11.14.101-.132 (nodes x pNICs; IP Pool recommended or DHCP),hosts x pNICs (e.g. 16 hosts x 2 pNICs = 32),,,,,,,Network
-Edge Overlay (TEP),Edge GENEVE tunnel endpoints,1616 / 10.11.15.0/24 / 10.11.15.1 / 9000 / 10.11.15.101-.104 (2 TEPs per edge node; IP Pool or per-node static list - no DHCP),2 per edge node,,,,,,,Network
-Uplink 01 (Edge to ToR-A),North-south uplink 1,1317 / 10.13.17.0/24 / 10.13.17.1 / 9000 / n/a - edge IPs in the BGP plan,1 per edge node + 1 ToR SVI (see bgp-peering-plan.csv),,,,,,,Network
-Uplink 02 (Edge to ToR-B),North-south uplink 2,1318 / 10.13.18.0/24 / 10.13.18.1 / 9000 / n/a - edge IPs in the BGP plan,1 per edge node + 1 ToR SVI (see bgp-peering-plan.csv),,,,,,,Network
-ESX Management AZ2,AZ2 host management (stretched only),1621 / 10.12.10.0/24 / 10.12.10.1 / 1500 / n/a - discrete host IPs,1 per AZ2 host,,,,,,N,Network
-vMotion AZ2,AZ2 live-migration (stretched only),1623 / 10.12.12.0/24 / 10.12.12.1 / 9000 / 10.12.12.101-.116,1 per AZ2 host,,,,,,,Network
-vSAN AZ2,AZ2 vSAN storage (stretched only),1624 / 10.12.13.0/24 / 10.12.13.1 / 9000 / 10.12.13.101-.116,1 per AZ2 host,,,,,,,Network
-Host Overlay AZ2,AZ2 host TEP (stretched only),1625 / 10.12.14.0/24 / 10.12.14.1 / 9000 / 10.12.14.101-.132,AZ2 hosts x pNICs,,,,,,,Network
+Network (traffic type),What it is,When needed (Bring-up / Bring-up (if in scope) / Day-N / Day-N (if in scope) - see prerequisites.md),Example (VLAN / subnet / gateway / MTU / IP range),Minimum IPs needed,VLAN ID,Subnet (CIDR),Gateway,MTU,IP range (from - to),DHCP (Y/N),Provided by
+ESX Management,Host management (vmk0),Bring-up,1611 / 10.11.10.0/24 / 10.11.10.1 / 1500 / n/a - discrete host IPs (ip-dns plan),1 per host,,,,,,N,Network
+VM Management,SDDC Manager / Installer / mgmt appliances,Bring-up,1612 / 10.11.11.0/24 / 10.11.11.1 / 1500 / n/a - discrete appliance IPs + mgmt-services and Automation blocks,~30-48 discrete IPs + a /28-/27 services-runtime block - size the subnet /24,,,,,,N,Network
+vMotion,Live-migration traffic,Bring-up,1613 / 10.11.12.0/24 / 10.11.12.1 / 9000 / 10.11.12.101-.116 (1 IP per host),1 per host,,,,,,,Network
+vSAN,vSAN storage traffic,Bring-up,1614 / 10.11.13.0/24 / 10.11.13.1 / 9000 / 10.11.13.101-.116 (1 IP per host),1 per host,,,,,,,Network
+Host Overlay (TEP),Host GENEVE tunnel endpoints,Bring-up,1615 / 10.11.14.0/24 / 10.11.14.1 / 9000 / 10.11.14.101-.132 (nodes x pNICs; IP Pool recommended or DHCP),hosts x pNICs (e.g. 16 hosts x 2 pNICs = 32),,,,,,,Network
+Edge Overlay (TEP),Edge GENEVE tunnel endpoints (Centralized connectivity only),Bring-up (if in scope),1616 / 10.11.15.0/24 / 10.11.15.1 / 9000 / 10.11.15.101-.104 (2 TEPs per edge node; IP Pool or per-node static list - no DHCP),2 per edge node,,,,,,,Network
+Uplink 01 (Edge to ToR-A),North-south uplink 1 (Centralized connectivity only),Bring-up (if in scope),1317 / 10.13.17.0/24 / 10.13.17.1 / 9000 / n/a - edge IPs in the BGP plan,1 per edge node + 1 ToR SVI (see bgp-peering-plan.csv),,,,,,,Network
+Uplink 02 (Edge to ToR-B),North-south uplink 2 (Centralized connectivity only),Bring-up (if in scope),1318 / 10.13.18.0/24 / 10.13.18.1 / 9000 / n/a - edge IPs in the BGP plan,1 per edge node + 1 ToR SVI (see bgp-peering-plan.csv),,,,,,,Network
+ESX Management AZ2,AZ2 host management (stretched only),Bring-up (if in scope),1621 / 10.12.10.0/24 / 10.12.10.1 / 1500 / n/a - discrete host IPs,1 per AZ2 host,,,,,,N,Network
+vMotion AZ2,AZ2 live-migration (stretched only),Bring-up (if in scope),1623 / 10.12.12.0/24 / 10.12.12.1 / 9000 / 10.12.12.101-.116,1 per AZ2 host,,,,,,,Network
+vSAN AZ2,AZ2 vSAN storage (stretched only),Bring-up (if in scope),1624 / 10.12.13.0/24 / 10.12.13.1 / 9000 / 10.12.13.101-.116,1 per AZ2 host,,,,,,,Network
+Host Overlay AZ2,AZ2 host TEP (stretched only),Bring-up (if in scope),1625 / 10.12.14.0/24 / 10.12.14.1 / 9000 / 10.12.14.101-.132,AZ2 hosts x pNICs,,,,,,,Network

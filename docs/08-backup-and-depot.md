@@ -43,7 +43,17 @@ component lands on it.
 ### A.2 Requirements and placement
 
 - SFTP over SSH, TCP **22**, reachable from the VCF management network.
-- The server must support **256-bit ECDSA and 2048-bit RSA SSH keys**.
+- The server must support **256-bit ECDSA and 2048-bit RSA SSH keys**, and its
+  **host key algorithms** must include at least one of `rsa-sha2-512` /
+  `rsa-sha2-256` **and** one of `ecdsa-sha2-nistp256` / `nistp384` / `nistp521`.
+- **FIPS raises the bar — and in 9.x you don't get a choice.** In new VCF 9.0+
+  deployments *"FIPS compliance in SDDC Manager is on by default and cannot be
+  turned off"* (only an SDDC Manager **upgraded** from 5.x with FIPS off keeps
+  it off). So the FIPS-mode SFTP requirements are the **baseline** on any fresh
+  9.1 build, not an optional extra: the SFTP server must additionally offer a
+  **KEX** algorithm from `diffie-hellman-group-exchange-sha256`,
+  `ecdh-sha2-nistp256`, `ecdh-sha2-nistp384`, `ecdh-sha2-nistp521` — and the
+  **MAC** `hmac-sha2-256`. Verify it with A.4 below.
 - Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
 - Put it **outside the management domain it protects** — a backup target that
   dies with the platform is not a backup. A VM on separate infrastructure, a
@@ -116,10 +126,79 @@ Get-NetFirewallRule -Name OpenSSH-Server-In-TCP   # confirm the TCP 22 inbound r
   `Test-NetConnection <fqdn> -Port 22`, then a real `sftp` login and a `put`
   of a test file into the backup directory.
 
-### A.4 References
+### A.4 Verify the target before you register it
+
+Whether you built the target or were handed one, prove the SSH handshake VCF
+needs actually completes. Don't audit `sshd_config` — **force the negotiation
+down to the FIPS-approved algorithms and see if it connects.** If these two
+logins succeed from the management network, SDDC Manager's will too:
+
+```console
+# ECDSA host-key path
+ssh -o KexAlgorithms=ecdh-sha2-nistp256 \
+    -o MACs=hmac-sha2-256 \
+    -o HostKeyAlgorithms=ecdsa-sha2-nistp256 \
+    -o Ciphers=aes256-ctr \
+    svc-vcf-bck@sftp01.sfo.example.io
+
+# RSA host-key path (rsa-sha2-*, never legacy ssh-rsa)
+ssh -o KexAlgorithms=ecdh-sha2-nistp256 \
+    -o MACs=hmac-sha2-256 \
+    -o HostKeyAlgorithms=rsa-sha2-512,rsa-sha2-256 \
+    -o Ciphers=aes256-ctr \
+    svc-vcf-bck@sftp01.sfo.example.io
+```
+
+To see everything the server advertises in one shot:
+`nmap --script ssh2-enum-algos -p 22 sftp01.sfo.example.io`. To confirm the key
+sizes: `ssh-keyscan -t ecdsa,rsa sftp01.sfo.example.io | ssh-keygen -lf -` —
+expect a **256**-bit ECDSA and a **≥ 2048**-bit RSA line.
+
+Then exercise SFTP itself as the service account (`sftp svc-vcf-bck@…`, `cd`
+to the backup directory, `put` a test file) and note **the path the server
+reports** — that, not the OS path, is what goes into the wizard. Finally, in
+**VCF Operations**, use **Fetch Fingerprint** and confirm it matches the
+`ssh-keygen -lf` output above.
+
+**Three traps this catches:**
+
+- **`hmac-sha2-256` vs `hmac-sha2-256-etm@openssh.com`** — different algorithm
+  names. Hardened servers often offer only the **ETM** variant, which passes a
+  hardening scan and **fails VCF**. The `-o MACs=hmac-sha2-256` test above is
+  the precise check.
+- **Legacy `ssh-rsa` (SHA-1) is gone** — OpenSSH **8.8+** disables it by
+  default, which is exactly what broke SFTP backup validation on older VCF
+  ([KB 372839](https://knowledge.broadcom.com/external/article/372839/backup-configuration-fails-during-backup.html);
+  fixed from VCF 5.1.1, so 9.1 is fine — it's why everything leans on ECDSA).
+- **The path format** — see the Windows gotcha in A.3: `sftp` shows
+  `/C:/vcf-backups`, and anything else fails with *"Invalid parameter:
+  validation failed for directory path"*.
+
+> **A word on Windows targets.** Broadcom's own KBs don't say Windows is
+> unsupported, but a Dell/VxRail KB reports that SDDC Manager backups to
+> Windows were only ever tested with **Cygwin**, and that native OpenSSH on
+> Windows Server 2019 produced failures — recommending a Linux target instead.
+> Treat that as a field report, not policy: the checks above will tell you in
+> ten minutes whether a given Windows box works. But this is the one
+> requirement where *"it validated"* and *"the restore works"* are the same
+> question, so if there's no strong reason to run it on Windows, the Linux
+> pattern in A.3 is the better-trodden path.
+
+> The `Ciphers` list on Broadcom's SFTP prerequisites page is written as **TLS**
+> cipher-suite names (`TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, …), which are
+> not SSH cipher names and don't apply to this handshake — a doc quirk. For
+> SFTP, make sure the server offers **AES-CTR / AES-GCM** and doesn't depend on
+> `chacha20-poly1305` (not FIPS-approved).
+
+### A.5 References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
   and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
+- The SSH key / algorithm requirements (incl. the FIPS KEX + MAC lists) are
+  spelled out in [Reconfigure SFTP Backups for SDDC Manager and NSX Manager](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/map-for-administering-vcf-5-2/backup-and-restore-of-cloud-foundation-admin/reconfigure-sftp-backups-for-sddc-manager-and-nsx-manager-admin.html)
+  — a **5.2** page, but the 9.x *Configure SFTP Backup Target* page doesn't
+  restate them, and they still apply.
+- FIPS-by-default in 9.x: [FIPS Configuration for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/fips-compliance-for-vcf-components.html).
 - Community walkthroughs: [SFTP server on Photon OS for VCF 9.1 backups](https://topvcf.com/2026/05/19/5685/)
   (chroot jail, end to end) and [SFTP on Ubuntu Server](https://www.velements.net/2024/10/12/setup-sftp-on-ubuntu-server/)
   (includes re-enabling `ssh-rsa` host-key algorithms for older VMware
