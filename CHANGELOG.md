@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.7.2 — 2026-07-13
+- **`Set-VCFBackupConfig.ps1` now actually writes** (#150, #149, script v1.0.3).
+  The PATCH was aimed at the URL captured from the browser
+  (`/vcf-operations/plug/fleet-lcm/…`) and came back **405 Method Not Allowed**.
+  That path is the **user interface's session-authenticated route** — the
+  browser's call works because it carries a logged-in Ops session's `JSESSIONID`
+  cookie. A token client gets **405 on a PATCH and HTML on a GET** (#148): one
+  cause, two symptoms. The error was copying the browser's request *wholesale* —
+  URL, method and payload — when only the **payload** was portable. Both the
+  lookup and the write now go straight to the **fleet appliance**
+  (`https://<FleetLCM>/fleet-lcm/v1/sddc-lcms/{id}`), where the Bearer token is
+  already accepted. **Verified live on 9.1:** 202 Accepted, and the platform
+  starts a real `ConfigureBackupLocation` workflow.
+- Because `-FleetLCM` is now needed for the write itself, the script **prompts**
+  for it when it is missing instead of erroring out, and says where to find it:
+  *VCF Operations → Build → Lifecycle → VCF Management → Components*, the **Fleet
+  lifecycle** row. It already prompted for everything else it needs, so failing
+  there was the odd one out. `-SddcLcmId` is deliberately **not** prompted for —
+  looking up a GUID by hand is a chore; it stays the bypass for anyone who has it.
+
 ## v1.7.1 — 2026-07-13
 - **`Set-VCFBackupConfig.ps1` could not find the VCF instance** (#148, script
   v1.0.2). It failed with *"The property 'id' cannot be found on this object"*.

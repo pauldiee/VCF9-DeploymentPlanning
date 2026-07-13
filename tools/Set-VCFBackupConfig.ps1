@@ -10,11 +10,11 @@
     management, identity broker, Salt master, VCF Automation and the software
     depot.
 
-    This script performs the same call the Add Backup Location dialog makes,
-    so the backup target can be configured when the interface fails or gives
-    no usable error:
+    This script sends the same payload the Add Backup Location dialog sends, so
+    the backup target can be configured when the interface fails or gives no
+    usable error:
 
-        PATCH https://<VCFOps>/vcf-operations/plug/fleet-lcm/v1/sddc-lcms/{sddcLcmId}
+        PATCH https://<FleetLCM>/fleet-lcm/v1/sddc-lcms/{sddcLcmId}
 
         {
           "backupConfigSpec": {
@@ -32,10 +32,21 @@
           }
         }
 
-    Note the call goes through VCF Operations, which reverse-proxies the Fleet
-    lifecycle service (/vcf-operations/plug/fleet-lcm/...). That is the path the
-    product itself uses. Note also that the write wrapper is backupConfigSpec,
-    while the same data reads back as backupConfig, and that port is a string.
+    Two things about that request are worth knowing, because both cost time to
+    discover:
+
+    - The write wrapper is backupConfigSpec, while the same data reads back as
+      backupConfig, and port is a string, not a number.
+
+    - The browser sends this to https://<VCFOps>/vcf-operations/plug/fleet-lcm/...
+      but that path is the user interface's SESSION-authenticated route: it works
+      because the browser holds a JSESSIONID cookie. A token client gets 405 on a
+      PATCH there, and HTML on a GET. The payload copied across from the browser;
+      the URL did not. Both the lookup and the write therefore go straight to the
+      fleet appliance, where the Bearer token is accepted.
+
+    Authentication is still minted through VCF Operations (below) -- it is the
+    only issuer the Fleet lifecycle service trusts.
 
     The service answers 202 Accepted and does the work asynchronously. Verify
     with Get-VCFBackupConfig.ps1 afterwards -- it shows what was actually
@@ -47,13 +58,28 @@
 
 .NOTES
     Script  : Set-VCFBackupConfig.ps1
-    Version : 1.0.2
+    Version : 1.0.3
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.0.3  2026-07-13  PD  The write now goes to the fleet appliance, not the VCF Operations proxy
+                            (#150). PATCH on /vcf-operations/plug/fleet-lcm/... returned 405: that path
+                            is the UI's session-authenticated route and only works with the JSESSIONID
+                            cookie of a logged-in Ops session -- the same reason a GET there returns the
+                            Ops web application's HTML (#148). Copying the browser's request wholesale
+                            was the error; only the PAYLOAD was portable, not the URL. The Bearer token
+                            already works against https://<FleetLCM>/fleet-lcm/v1/, so both the lookup
+                            and the write go there. Verified live: 202 Accepted, and the platform starts
+                            a ConfigureBackupLocation workflow.
+                            -FleetLCM is therefore needed for the write itself, so it is prompted for
+                            when missing (#149), with where to find it: VCF Operations > Build >
+                            Lifecycle > VCF Management > Components, the "Fleet lifecycle" row. The
+                            script already prompted for everything else it needs, so failing here was
+                            the odd one out. -SddcLcmId is deliberately not prompted for -- looking up a
+                            GUID by hand is a chore; it stays the bypass for anyone who already has it.
     v1.0.2  2026-07-13  PD  Instance discovery threw "The property 'id' cannot be found on this
                             object" (#148). Root cause: the VCF Operations proxy does NOT serve the
                             instance list -- a GET on /vcf-operations/plug/fleet-lcm/v1/sddc-lcms falls
@@ -87,7 +113,12 @@
 
 .PARAMETER FleetLCM
     Fully qualified domain name of the Fleet lifecycle appliance (fleet-*). Used
-    only to look up the VCF instance when -SddcLcmId is not supplied.
+    only to look up the VCF instance when -SddcLcmId is not supplied. If neither is
+    given, you are prompted for it. Find it in VCF Operations under
+
+        Build > Lifecycle > VCF Management > Components
+
+    in the "Fleet lifecycle" row, FQDN column (e.g. fleet-01a.site-a.vcf.two).
 
     Discovery and the write deliberately use different endpoints, each where it is
     known to work: the instance list comes from the fleet appliance, while the
@@ -173,7 +204,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.2'
+$scriptVersion = '1.0.3'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -316,7 +347,6 @@ catch {
 }
 
 $headers = @{ Authorization = "Bearer $jwt"; Accept = 'application/json' }
-$baseUri = "https://$VCFOps/vcf-operations/plug/fleet-lcm/v1"
 
 # --- Resolve the instance -----------------------------------------------------
 # StrictMode-safe property read: a missing property is $null, not an exception.
@@ -326,33 +356,37 @@ function Get-Prop {
     return $null
 }
 
-if (-not $SddcLcmId) {
-
-    # Discovery and the write live on different endpoints, and each is used here
-    # only where it is known to work:
-    #
-    #   list  -> the fleet appliance directly (https://<FleetLCM>/fleet-lcm/v1/...)
-    #   write -> the VCF Operations proxy, which is what the product's own UI calls
-    #
-    # The proxy does NOT serve the instance list: a GET on
-    # /vcf-operations/plug/fleet-lcm/v1/sddc-lcms falls through to the VCF
-    # Operations web application and returns its HTML, not JSON.
+# Everything -- the lookup and the write -- talks to the fleet appliance.
+#
+# The browser calls the write through the VCF Operations proxy
+# (/vcf-operations/plug/fleet-lcm/...), but that path is the UI's
+# session-authenticated route: it depends on the JSESSIONID cookie of a logged-in
+# Ops session. A token client gets no routing to the fleet-lcm backend there -- a
+# GET falls through to the VCF Operations web application (HTML) and a PATCH is
+# refused with 405. The payload shape was worth copying from the browser; the
+# transport was not.
+if (-not $FleetLCM) {
+    Write-Host "`nThe backup configuration lives on the Fleet lifecycle appliance." -ForegroundColor Cyan
+    Write-Host "Find its FQDN in VCF Operations:" -ForegroundColor DarkGray
+    Write-Host "  Build > Lifecycle > VCF Management > Components" -ForegroundColor White
+    Write-Host "  -> the 'Fleet lifecycle' row, FQDN column (e.g. fleet-01a.site-a.vcf.two)" -ForegroundColor White
+    $FleetLCM = (Read-Host "`nFleet lifecycle FQDN").Trim()
     if (-not $FleetLCM) {
-        Write-Host "`nTo look up the VCF instance, supply -FleetLCM <fleet appliance FQDN>," -ForegroundColor Yellow
-        Write-Host "or skip discovery with -SddcLcmId <guid>." -ForegroundColor Yellow
-        Write-Host "`n  The instance list is served by the fleet appliance, not by the VCF" -ForegroundColor DarkGray
-        Write-Host "  Operations proxy that the write goes through." -ForegroundColor DarkGray
-        Write-Host "  The identifier is also shown by Get-VCFBackupConfig.ps1, and appears in" -ForegroundColor DarkGray
-        Write-Host "  the failing task detail in VCF Operations as 'SDDC lifecycle with ID ...'." -ForegroundColor DarkGray
+        Write-Host "`nNo FQDN given. Re-run with -FleetLCM <fqdn>." -ForegroundColor Yellow
         exit 1
     }
+}
 
+$baseUri = "https://$FleetLCM/fleet-lcm/v1"
+
+# --- Resolve the instance -----------------------------------------------------
+if (-not $SddcLcmId) {
     try {
-        $lcms = Invoke-RestMethod -Uri "https://$FleetLCM/fleet-lcm/v1/sddc-lcms" -Headers $headers @restArgs
+        $lcms = Invoke-RestMethod -Uri "$baseUri/sddc-lcms" -Headers $headers @restArgs
     }
     catch {
         Write-Host "`nCould not list the VCF instances from $FleetLCM : $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "  Re-run with -SddcLcmId <guid> to skip discovery." -ForegroundColor DarkGray
+        Write-Host "  Re-run with -SddcLcmId <guid> to skip the lookup." -ForegroundColor DarkGray
         exit 1
     }
 
@@ -372,8 +406,8 @@ if (-not $SddcLcmId) {
 
     if ($instances.Count -eq 0) {
         Write-Host "`nNo VCF instance found in the response from" -ForegroundColor Red
-        Write-Host "  GET https://$FleetLCM/fleet-lcm/v1/sddc-lcms" -ForegroundColor DarkGray
-        Write-Host "`n  Re-run with -SddcLcmId <guid> to skip discovery entirely." -ForegroundColor Yellow
+        Write-Host "  GET $baseUri/sddc-lcms" -ForegroundColor DarkGray
+        Write-Host "`n  Re-run with -SddcLcmId <guid> to skip the lookup entirely." -ForegroundColor Yellow
         exit 1
     }
 
