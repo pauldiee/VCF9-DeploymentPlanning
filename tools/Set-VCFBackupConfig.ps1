@@ -47,13 +47,23 @@
 
 .NOTES
     Script  : Set-VCFBackupConfig.ps1
-    Version : 1.0.1
+    Version : 1.0.2
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.0.2  2026-07-13  PD  Instance discovery threw "The property 'id' cannot be found on this
+                            object" (#148). Root cause: the VCF Operations proxy does NOT serve the
+                            instance list -- a GET on /vcf-operations/plug/fleet-lcm/v1/sddc-lcms falls
+                            through to the VCF Operations web application and returns its HTML, which
+                            the script then treated as an instance object. Discovery now runs against
+                            the fleet appliance (new -FleetLCM parameter), which is where the list
+                            actually lives, while the write still goes through the proxy -- each
+                            endpoint used only where it is known to work. Also uses StrictMode-safe
+                            property reads and, when no instance is found, says what came back instead
+                            of throwing.
     v1.0.1  2026-07-13  PD  -ShowThumbprint: stop swallowing the real error and stop blaming
                             reachability (#147). The in-box Windows OpenSSH client advertises the
                             sntrup761x25519-sha512 key exchange and then cannot perform it, so
@@ -69,10 +79,21 @@
     and the API call go through it.
 
 .PARAMETER SddcLcmId
-    Identifier of the VCF instance to configure. If omitted, the script lists the
-    instances and uses the only one; with more than one it stops and asks you to
-    name it. The identifier also appears in the failing task detail in the user
+    Identifier of the VCF instance to configure. If omitted, the script looks the
+    instance up on the fleet appliance (-FleetLCM) and uses the only one; with
+    more than one it stops and asks you to name it. The identifier is also shown
+    by Get-VCFBackupConfig.ps1, and appears in the failing task detail in the user
     interface ("SDDC lifecycle with ID ...").
+
+.PARAMETER FleetLCM
+    Fully qualified domain name of the Fleet lifecycle appliance (fleet-*). Used
+    only to look up the VCF instance when -SddcLcmId is not supplied.
+
+    Discovery and the write deliberately use different endpoints, each where it is
+    known to work: the instance list comes from the fleet appliance, while the
+    write goes through the VCF Operations proxy (the path the product's own user
+    interface calls). The proxy does not serve the list -- a GET against it falls
+    through to the VCF Operations web application and returns HTML.
 
 .PARAMETER SftpHost
     FQDN or IP address of the SFTP backup server.
@@ -94,13 +115,15 @@
 
 .PARAMETER Thumbprint
     SSH host key fingerprint of the SFTP server, in the form SHA256:<base64>.
-    Obtain it with -ShowThumbprint, or by hand:
+    Obtain it with -ShowThumbprint, or -- more reliably -- read it on the SFTP
+    server itself, which needs no SSH client:
 
-        ssh-keyscan -t ed25519 sftp01.sfo.example.io | ssh-keygen -lf -
+        ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 
-    and take the SHA256:... field. If the platform rejects the fingerprint, the
-    server offered a different host key type than the one you scanned -- try the
-    other types (ecdsa, rsa).
+    and take the SHA256:... field. VCF's own Fetch Fingerprint button in the Add
+    Backup Location dialog is equally authoritative. If the platform rejects the
+    fingerprint, the server offered a different host key type than the one you
+    read -- try the others (ecdsa, rsa).
 
 .PARAMETER EncryptionPassphrase
     Passphrase that encrypts the backups, as a SecureString. Store it in a
@@ -138,6 +161,7 @@ param(
     [Parameter(Mandatory)] [string]$VCFOps,
     [Parameter(Mandatory)] [string]$SftpHost,
     [string]$SddcLcmId,
+    [string]$FleetLCM,
     [string]$SftpPort = '22',
     [string]$SftpUsername,
     [System.Security.SecureString]$SftpPassword,
@@ -149,7 +173,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.1'
+$scriptVersion = '1.0.2'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -295,33 +319,78 @@ $headers = @{ Authorization = "Bearer $jwt"; Accept = 'application/json' }
 $baseUri = "https://$VCFOps/vcf-operations/plug/fleet-lcm/v1"
 
 # --- Resolve the instance -----------------------------------------------------
+# StrictMode-safe property read: a missing property is $null, not an exception.
+function Get-Prop {
+    param($Object, [string]$Name)
+    if ($null -ne $Object -and $Object.PSObject.Properties[$Name]) { return $Object.$Name }
+    return $null
+}
+
 if (-not $SddcLcmId) {
+
+    # Discovery and the write live on different endpoints, and each is used here
+    # only where it is known to work:
+    #
+    #   list  -> the fleet appliance directly (https://<FleetLCM>/fleet-lcm/v1/...)
+    #   write -> the VCF Operations proxy, which is what the product's own UI calls
+    #
+    # The proxy does NOT serve the instance list: a GET on
+    # /vcf-operations/plug/fleet-lcm/v1/sddc-lcms falls through to the VCF
+    # Operations web application and returns its HTML, not JSON.
+    if (-not $FleetLCM) {
+        Write-Host "`nTo look up the VCF instance, supply -FleetLCM <fleet appliance FQDN>," -ForegroundColor Yellow
+        Write-Host "or skip discovery with -SddcLcmId <guid>." -ForegroundColor Yellow
+        Write-Host "`n  The instance list is served by the fleet appliance, not by the VCF" -ForegroundColor DarkGray
+        Write-Host "  Operations proxy that the write goes through." -ForegroundColor DarkGray
+        Write-Host "  The identifier is also shown by Get-VCFBackupConfig.ps1, and appears in" -ForegroundColor DarkGray
+        Write-Host "  the failing task detail in VCF Operations as 'SDDC lifecycle with ID ...'." -ForegroundColor DarkGray
+        exit 1
+    }
+
     try {
-        $lcms = Invoke-RestMethod -Uri "$baseUri/sddc-lcms" -Headers $headers @restArgs
+        $lcms = Invoke-RestMethod -Uri "https://$FleetLCM/fleet-lcm/v1/sddc-lcms" -Headers $headers @restArgs
     }
     catch {
-        Write-Host "`nCould not list the VCF instances: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "`nCould not list the VCF instances from $FleetLCM : $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  Re-run with -SddcLcmId <guid> to skip discovery." -ForegroundColor DarkGray
         exit 1
     }
 
-    $instances = @()
-    if     ($lcms.PSObject.Properties['sddcLcms'] -and $lcms.sddcLcms) { $instances = @($lcms.sddcLcms) }
-    elseif ($lcms.PSObject.Properties['elements'] -and $lcms.elements) { $instances = @($lcms.elements) }
-    elseif ($lcms -is [array])                                          { $instances = @($lcms) }
-    else                                                                { $instances = @($lcms) }
+    $candidates = @()
+    if ($lcms -is [array]) {
+        $candidates = @($lcms)
+    }
+    else {
+        foreach ($key in 'sddcLcms', 'elements', 'content', 'data', 'items', 'results') {
+            $value = Get-Prop $lcms $key
+            if ($value) { $candidates = @($value); break }
+        }
+        if (-not $candidates) { $candidates = @($lcms) }
+    }
+
+    $instances = @($candidates | Where-Object { Get-Prop $_ 'id' })
 
     if ($instances.Count -eq 0) {
-        Write-Host "`nNo VCF instances returned." -ForegroundColor Red
-        exit 1
-    }
-    if ($instances.Count -gt 1) {
-        Write-Host "`nMore than one VCF instance. Re-run with -SddcLcmId:" -ForegroundColor Yellow
-        foreach ($i in $instances) { Write-Host "  $($i.id)  $($i.name)" }
+        Write-Host "`nNo VCF instance found in the response from" -ForegroundColor Red
+        Write-Host "  GET https://$FleetLCM/fleet-lcm/v1/sddc-lcms" -ForegroundColor DarkGray
+        Write-Host "`n  Re-run with -SddcLcmId <guid> to skip discovery entirely." -ForegroundColor Yellow
         exit 1
     }
 
-    $SddcLcmId = $instances[0].id
-    Write-Host "VCF instance   : $($instances[0].name)" -ForegroundColor Cyan
+    if ($instances.Count -gt 1) {
+        Write-Host "`nMore than one VCF instance. Re-run with -SddcLcmId:" -ForegroundColor Yellow
+        foreach ($i in $instances) {
+            $iName = Get-Prop $i 'name'
+            if (-not $iName) { $iName = Get-Prop $i 'fqdn' }
+            Write-Host "  $(Get-Prop $i 'id')  $iName"
+        }
+        exit 1
+    }
+
+    $SddcLcmId = Get-Prop $instances[0] 'id'
+    $name = Get-Prop $instances[0] 'name'
+    if (-not $name) { $name = Get-Prop $instances[0] 'fqdn' }
+    if ($name) { Write-Host "VCF instance   : $name" -ForegroundColor Cyan }
 }
 Write-Host "Instance ID    : $SddcLcmId" -ForegroundColor DarkGray
 
