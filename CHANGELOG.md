@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.6.5 — 2026-07-13
+- **Bring-up gates are now explicit, in the docs *and* the templates** (#143).
+  You could not tell which prerequisites stop the Installer and which can wait.
+  `prerequisites.md` gains a *When is each item needed?* section defining four
+  markers — **Bring-up**, **Bring-up (if in scope)**, **Day-N**, **Day-N (if in
+  scope)** — plus a **bring-up gate at a glance** checklist (hardware, VLANs +
+  MTU, TEP addressing, BGP/ECMP if Centralized, DNS A+PTR, NTP, binaries, jump
+  host, AD, public URLs). Every section now states when it is needed, and the
+  Network table gained a *When needed* column. The five planning CSVs
+  (`ip-dns`, `vlan-subnet`, `ntp-ad-ca`, `bgp-peering`, `firewall-request`)
+  gained the same **When needed** column with the identical vocabulary, so a
+  filled template can be checked straight against the doc — and the
+  firewall template's ad-hoc "Bring-up blocker if missing" notes are now a
+  real column.
+- Two placements corrected while marking: the **NSX Edge cluster** and the
+  **vSAN witness** are built *after* bring-up (E6 / E7), so they are Day-N, not
+  bring-up gates; the **Cloud Proxy, License Server and Identity Broker** ship
+  *at* bring-up (the Identity Broker's *configuration* is what is Day-N).
+
 ## v1.6.4 — 2026-07-13
 - **NSX connectivity is now per workload domain, and a Supervisor
   prerequisite** (#141). The export tool had one global connectivity select,

@@ -1,26 +1,28 @@
-Component,What it is,Example (FQDN -> IP),FQDN (fill in),IP (fill in),Network / VLAN,Provided by (Network supplies the subnets/ranges - see vlan-subnet-plan.csv; the Architect assigns each FQDN + IP from them; AD/DNS team creates the A + PTR records),Intake ID
-ESXi host 1,Management ESXi host,sfo-m01-esx01.sfo.example.io -> 10.11.10.101,,,ESX Management,Architect,
-ESXi host 2,Management ESXi host,sfo-m01-esx02.sfo.example.io -> 10.11.10.102,,,ESX Management,Architect,
-ESXi host 3,Management ESXi host,sfo-m01-esx03.sfo.example.io -> 10.11.10.103,,,ESX Management,Architect,
-ESXi host 4,Management ESXi host,sfo-m01-esx04.sfo.example.io -> 10.11.10.104,,,ESX Management,Architect,
-vCenter,Management vCenter Server,sfo-m01-vc01.sfo.example.io -> 10.11.11.11,,,VM Management,Architect,E6
-SDDC Manager,SDDC Manager (VCF Installer uses this IP + FQDN),sfo-m01-sddcm01.sfo.example.io -> 10.11.11.12,,,VM Management,Architect,E7
-NSX Manager VIP,NSX Manager cluster VIP,sfo-m01-nsx01.sfo.example.io -> 10.11.11.13,,,VM Management,Architect,E8
-NSX Manager node 1,NSX Manager node,sfo-m01-nsx01a.sfo.example.io -> 10.11.11.14,,,VM Management,Architect,E8
-NSX Manager node 2,NSX Manager node,sfo-m01-nsx01b.sfo.example.io -> 10.11.11.15,,,VM Management,Architect,E8
-NSX Manager node 3,NSX Manager node,sfo-m01-nsx01c.sfo.example.io -> 10.11.11.16,,,VM Management,Architect,E8
-NSX Edge node 1,NSX Edge appliance,sfo-m01-en01.sfo.example.io -> 10.11.11.17,,,Uplink / mgmt,Architect,E11
-NSX Edge node 2,NSX Edge appliance,sfo-m01-en02.sfo.example.io -> 10.11.11.18,,,Uplink / mgmt,Architect,E11
-VCF Operations node a,Operations analytics (bring-up),sfo-m01-ops01a.sfo.example.io -> 10.11.11.21,,,VM Management,Architect,E9
-VCF Operations node b,Operations analytics (bring-up),sfo-m01-ops01b.sfo.example.io -> 10.11.11.22,,,VM Management,Architect,E9
-VCF Operations node c,Operations analytics (bring-up),sfo-m01-ops01c.sfo.example.io -> 10.11.11.23,,,VM Management,Architect,E9
-VCF Operations LB VIP,Optional - only if an external LB fronts the cluster (no built-in floating/cluster IP; without an LB use the node FQDNs),sfo-m01-ops01.sfo.example.io -> 10.11.11.20,,,VM Management,Architect,E9
-Cloud Proxy,Operations collector (after bring-up),sfo-m01-cp01.sfo.example.io -> 10.11.11.24,,,VM Management,Architect,E14
-License Server,VCF Management Services (after bring-up),sfo-m01-lic01.sfo.example.io -> 10.11.11.25,,,VM Management,Architect,E14
-VCF Automation appliance,Automation (if deployed; lowercase FQDN),sfo-m01-auto01.sfo.example.io -> 10.11.11.26,,,VM Management,Architect,E10
-VCF services-runtime,Fleet management-services runtime (lowercase FQDN),sfo-m01-svcs01.sfo.example.io -> 10.11.11.27,,,VM Management,Architect,E14
-Fleet components,Hosted fleet-level components - e.g. fleet lifecycle (lowercase FQDN),sfo-m01-fc01.sfo.example.io -> 10.11.11.28,,,VM Management,Architect,E14
-Instance components,Hosted instance-level components - e.g. SDDC lifecycle + real-time metrics (lowercase FQDN),sfo-m01-ic01.sfo.example.io -> 10.11.11.29,,,VM Management,Architect,E14
-Avi Controller cluster,Avi LB cluster FQDN + VIP (only if Avi in scope; the 3 controller nodes are IP-only - no DNS records),sfo-m01-avi01.sfo.example.io -> 10.11.11.30,,,VM Management,Architect,E16
-Log Management VIP,Log Management integrated cluster VIP (Day-2; lowercase FQDN; VIP + 6 worker IPs +2 per extra replica all come from the services-runtime block - size it /27),sfo-m01-logs01.sfo.example.io -> (services-runtime block),,,VM Management,Architect,E14
-Identity Broker,Fleet identity broker (lowercase FQDN; IP comes from the services-runtime block),sfo-m01-idb01.sfo.example.io -> (services-runtime block),,,VM Management,Architect,E14
+Component,What it is,When needed (Bring-up / Bring-up (if in scope) / Day-N / Day-N (if in scope) - see prerequisites.md),Example (FQDN -> IP),FQDN (fill in),IP (fill in),Network / VLAN,Provided by (Network supplies the subnets/ranges - see vlan-subnet-plan.csv; the Architect assigns each FQDN + IP from them; AD/DNS team creates the A + PTR records),Intake ID
+ESXi host 1,Management ESXi host,Bring-up,sfo-m01-esx01.sfo.example.io -> 10.11.10.101,,,ESX Management,Architect,
+ESXi host 2,Management ESXi host,Bring-up,sfo-m01-esx02.sfo.example.io -> 10.11.10.102,,,ESX Management,Architect,
+ESXi host 3,Management ESXi host,Bring-up,sfo-m01-esx03.sfo.example.io -> 10.11.10.103,,,ESX Management,Architect,
+ESXi host 4,Management ESXi host,Bring-up,sfo-m01-esx04.sfo.example.io -> 10.11.10.104,,,ESX Management,Architect,
+vCenter,Management vCenter Server,Bring-up,sfo-m01-vc01.sfo.example.io -> 10.11.11.11,,,VM Management,Architect,E6
+SDDC Manager,SDDC Manager (VCF Installer uses this IP + FQDN),Bring-up,sfo-m01-sddcm01.sfo.example.io -> 10.11.11.12,,,VM Management,Architect,E7
+NSX Manager VIP,NSX Manager cluster VIP,Bring-up,sfo-m01-nsx01.sfo.example.io -> 10.11.11.13,,,VM Management,Architect,E8
+NSX Manager node 1,NSX Manager node,Bring-up,sfo-m01-nsx01a.sfo.example.io -> 10.11.11.14,,,VM Management,Architect,E8
+NSX Manager node 2,NSX Manager node,Bring-up,sfo-m01-nsx01b.sfo.example.io -> 10.11.11.15,,,VM Management,Architect,E8
+NSX Manager node 3,NSX Manager node,Bring-up,sfo-m01-nsx01c.sfo.example.io -> 10.11.11.16,,,VM Management,Architect,E8
+NSX Edge node 1,NSX Edge appliance (Centralized connectivity only; deployed after bring-up),Day-N (if in scope),sfo-m01-en01.sfo.example.io -> 10.11.11.17,,,Uplink / mgmt,Architect,E11
+NSX Edge node 2,NSX Edge appliance (Centralized connectivity only; deployed after bring-up),Day-N (if in scope),sfo-m01-en02.sfo.example.io -> 10.11.11.18,,,Uplink / mgmt,Architect,E11
+VCF Operations node a,Operations analytics (bring-up),Bring-up,sfo-m01-ops01a.sfo.example.io -> 10.11.11.21,,,VM Management,Architect,E9
+VCF Operations node b,Operations analytics (bring-up),Bring-up,sfo-m01-ops01b.sfo.example.io -> 10.11.11.22,,,VM Management,Architect,E9
+VCF Operations node c,Operations analytics (bring-up),Bring-up,sfo-m01-ops01c.sfo.example.io -> 10.11.11.23,,,VM Management,Architect,E9
+VCF Operations LB VIP,Optional - only if an external LB fronts the cluster (no built-in floating/cluster IP; without an LB use the node FQDNs),Day-N (if in scope),sfo-m01-ops01.sfo.example.io -> 10.11.11.20,,,VM Management,Architect,E9
+Cloud Proxy,Operations collector (deployed at bring-up),Bring-up,sfo-m01-cp01.sfo.example.io -> 10.11.11.24,,,VM Management,Architect,E14
+License Server,VCF Management Services (deployed at bring-up),Bring-up,sfo-m01-lic01.sfo.example.io -> 10.11.11.25,,,VM Management,Architect,E14
+VCF services-runtime,Fleet management-services runtime (lowercase FQDN),Bring-up,sfo-m01-svcs01.sfo.example.io -> 10.11.11.27,,,VM Management,Architect,E14
+Fleet components,Hosted fleet-level components - e.g. fleet lifecycle (lowercase FQDN),Bring-up,sfo-m01-fc01.sfo.example.io -> 10.11.11.28,,,VM Management,Architect,E14
+Instance components,Hosted instance-level components - e.g. SDDC lifecycle + real-time metrics (lowercase FQDN),Bring-up,sfo-m01-ic01.sfo.example.io -> 10.11.11.29,,,VM Management,Architect,E14
+Identity Broker,Fleet identity broker (deployed at bring-up; configured Day-N; lowercase FQDN; IP from the services-runtime block),Bring-up,sfo-m01-idb01.sfo.example.io -> (services-runtime block),,,VM Management,Architect,E14
+VCF Automation appliance,Automation (the one fleet component you can defer to Day-N; lowercase FQDN),Day-N (if in scope),sfo-m01-auto01.sfo.example.io -> 10.11.11.26,,,VM Management,Architect,E10
+Log Management VIP,Log Management integrated cluster VIP (lowercase FQDN; VIP + 6 worker IPs +2 per extra replica all come from the services-runtime block - size it /27),Day-N (if in scope),sfo-m01-logs01.sfo.example.io -> (services-runtime block),,,VM Management,Architect,E14
+Avi Controller cluster,Avi LB cluster FQDN + VIP (only if Avi in scope; the 3 controller nodes are IP-only - no DNS records),Day-N (if in scope),sfo-m01-avi01.sfo.example.io -> 10.11.11.30,,,VM Management,Architect,E16
+Supervisor API FQDN,Per Supervisor-enabled workload domain - resolves to the control-plane floating IP (or the LB VIP); FQDN login is required,Day-N (if in scope),sfo-w01-super01.sfo.example.io -> (control-plane floating IP),,,WLD mgmt,Architect,H5
+vSAN witness appliance,Third-site witness (stretched / multi-AZ only) - deployed for the stretch step after bring-up,Day-N (if in scope),sfo-wit01.sfo.example.io -> 10.14.10.11,,,Witness site mgmt,Architect,M-series
