@@ -1,6 +1,21 @@
 # Changelog
 
 ## v1.6.4 — 2026-07-13
+- **Per-WLD Supervisor load-balancer choice, with an Avi story** (#139). Each
+  Supervisor-enabled workload domain in the export tool now picks its LB:
+  **built-in NSX/VPC LB** (default), **Foundation Load Balancer**
+  (platform-packaged L4 active/passive pair for VDS networking — adds a
+  deploy step to the enablement story), or **Avi** — which generates its own
+  story ahead of enablement: controller cluster **into that WLD** via VCF
+  Operations (Avi **32.1.1+ binaries from the depot**, content library for
+  Service Engine images), cloud connector per networking path (NSX Cloud
+  with **VPC mode** under Distributed — SE mgmt overlay segment behind a
+  Tier-1 with DHCP, VIPs from the VPC external IP blocks; NSX/vCenter cloud
+  + VIP network/IPAM otherwise) and **min 2 Service Engines**, all **before
+  Supervisor activation** per the Avi-for-VCF 9.1 requirements.
+  `prerequisites.md`'s Avi section now carries the depot/content-library/SE
+  bullets and the corrected placement (management domain for fronting
+  Automation, the WLD for Supervisor); intake `H5` captures the choice.
 - **VCF Automation HA does not require Avi/an external LB — fixed, and Avi is
   now its own story** (#138). The TechDocs design library (*VCF Automation
   Load Balancing Design*) is explicit: the **native load balancer** is

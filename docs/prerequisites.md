@@ -106,9 +106,13 @@ Balancer**), optionally **in front of VCF Automation** (never required — both
 the single-node and HA models ship a **built-in L4 load balancer** that serves
 the cluster VIP; Avi in front is a post-deployment addition for SSL
 termination / keeping user access off the management network),
-or tenant/workload load balancing. Deployed **Day-2 from VCF Operations** into
-the management domain — vCenter and NSX must already be configured. Prepare up
-front:
+or tenant/workload load balancing. Deployed **Day-2 from VCF Operations**
+(lifecycle-managed) into the domain it serves — the **management domain** when
+fronting VCF Automation, **into the workload domain** for a Supervisor — with
+that domain's vCenter and NSX already configured. Per the
+[Avi-for-VCF 9.1 requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html),
+for Supervisor use the controller cluster **must be deployed before Supervisor
+activation**. Prepare up front:
 
 - **4 IPs + FQDNs on the VM Management network**: 3 controller nodes + the
   **cluster VIP**. The VIP FQDN must be **registered in DNS and resolve to the
@@ -118,6 +122,15 @@ front:
   NSX ALB controller ladder.
 - **Two strong passwords** (password manager, owners in intake `F11`): the
   controller **admin** and the **VCF Ops admin** (break-glass) accounts.
+- **Avi binaries in the depot** — 32.1.1 or higher must be available from the
+  (online or offline) depot before VCF Operations can deploy the controller
+  (see [`08-backup-and-depot.md`](08-backup-and-depot.md) §B).
+- **A local content library** in the target vCenter for the **Service Engine**
+  images, and a **Service Engine management network** (dedicated VLAN or
+  overlay segment; SE management IPs via DHCP or a static IP pool in the
+  controller). Plan a **minimum of 2 Service Engines** for HA; the VIP source
+  depends on the networking path (VDS: VIP/data network + IPAM profile;
+  VPC: the VPC external IP blocks).
 - Firewall: admin access to the controller UI/API (443) and the Service
   Engine ↔ controller secure channel — see [`07-firewall-ports.md`](07-firewall-ports.md) §E.
 

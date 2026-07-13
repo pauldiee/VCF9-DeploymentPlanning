@@ -186,11 +186,30 @@ order as the management stretch (E7). A stretched WLD also requires the
 to add an *Enable vSphere Supervisor* story to that WLD. It needs the WLD's
 north-south connectivity in place (**Centralized:** Edge cluster + Tier-0;
 **Distributed:** the NSX VPC workflow + VNA) **and a load balancer before
-activation** — **Avi is one option** (then deploy the controller cluster
-first; see `prerequisites.md`); the NSX / VPC networking paths' **built-in
-load balancer** and the **Foundation Load Balancer** work **without Avi**.
+activation**, chosen per WLD in the export tool:
+
+- **Built-in NSX/VPC LB** (default) — the NSX / VPC networking paths bring
+  their own load balancer; no extra appliance.
+- **Foundation Load Balancer** — the platform-packaged lightweight **L4** LB
+  (one or two VMs in an active/passive pair) for Supervisors on **VDS
+  networking**; adds a deploy step to the enablement story.
+- **Avi Load Balancer** — the premium option on every networking stack;
+  choosing it adds its **own story** ahead of the enablement: deploy the
+  **controller cluster into that workload domain** via VCF Operations
+  (lifecycle-managed; **Avi 32.1.1+ binaries must be in the depot**; controller
+  IPs/FQDN/passwords per [`prerequisites.md` → Avi Load Balancer](prerequisites.md)
+  and intake `E16`/`F11`; a local content library for the Service Engine
+  images), then the networking integration — the cloud connector (**NSX Cloud
+  with VPC mode** under Distributed/VPC: SE management on an overlay segment
+  behind a Tier-1 with DHCP, VIPs from the VPC external IP blocks; **NSX
+  Cloud**, or a **vCenter cloud** for VDS networking, otherwise: SE management
+  on a VLAN or overlay segment, VIP network + IPAM profile) and **minimum 2
+  Service Engines** for HA. Per the Avi-for-VCF 9.1 requirements, all of it
+  **must exist before Supervisor activation**.
+
 Plus a control-plane size (Small / Medium / Large).
-Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html).
+Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html) ·
+[Requirements for Deploying Avi Load Balancer (VCF 9.1)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html).
 
 **Non-stretched WLD:**
 - **Story 9.1 — WLD network prep.** Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.

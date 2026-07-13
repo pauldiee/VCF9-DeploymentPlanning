@@ -34,12 +34,14 @@ export interface Wld {
   name: string;
   stretched: boolean;
   supervisor: boolean;
+  supervisorLb: SupervisorLb;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
 export type AutomationModel = 'single' | 'ha';
 export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
+export type SupervisorLb = 'builtin' | 'flb' | 'avi';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
 
 export interface AutomationChoice {
@@ -106,7 +108,7 @@ export function defaultSelection(): Selection {
     day2: true,
     automation: { deploy: true, model: 'single', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
-    wlds: [{ name: 'wld01', stretched: false, supervisor: false }],
+    wlds: [{ name: 'wld01', stretched: false, supervisor: false, supervisorLb: 'builtin' }],
   };
 }
 
@@ -118,6 +120,19 @@ export const NSX_CONNECTIVITY: { value: NsxConnectivity; label: string }[] = [
 
 /** vSphere Supervisor control-plane sizes. */
 export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
+
+/**
+ * Supervisor load-balancer options. The NSX / VPC networking paths bring a
+ * built-in LB; the Foundation Load Balancer (platform-packaged L4 pair) covers
+ * VDS networking; Avi is the premium option on every networking stack and, per
+ * the Avi-for-VCF 9.1 requirements, must be fully deployed before Supervisor
+ * activation — so choosing it generates its own story.
+ */
+export const SUPERVISOR_LBS: { value: SupervisorLb; label: string }[] = [
+  { value: 'builtin', label: 'Built-in NSX/VPC LB' },
+  { value: 'flb', label: 'Foundation Load Balancer' },
+  { value: 'avi', label: 'Avi Load Balancer' },
+];
 
 /** Principal storage types (mirrors the workbook's Storage Type). */
 export const STORAGE_TYPES: { value: StorageType; label: string; prereq: string; bringup: string }[] = [
@@ -546,11 +561,35 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       connectivity === 'distributed'
         ? 'Distributed — the NSX VPC workflow + VNA cluster'
         : 'Centralized — the Edge cluster + Tier-0 gateway';
+    // Supervisor activation requires a load balancer; which one is a per-WLD
+    // choice. Avi must be fully deployed BEFORE activation (Avi-for-VCF 9.1
+    // requirements), so it gets its own story ahead of the enablement story.
+    if (w.supervisorLb === 'avi') {
+      const cloudText =
+        connectivity === 'distributed'
+          ? 'create the NSX Cloud connector with VPC mode enabled — Service Engine management on an overlay segment behind a Tier-1 with DHCP; VIPs come from the VPC external IP blocks'
+          : 'create the cloud connector (NSX Cloud; a vCenter cloud if the Supervisor uses VDS networking) — Service Engine management on a dedicated VLAN or overlay segment (DHCP or a static IP pool in the controller); VIP/data network + IPAM profile';
+      stories.push({
+        id: `9.${stories.length + 1}`,
+        title: 'Avi Load Balancer for Supervisor',
+        tasks: [
+          `Deploy the Avi controller cluster into THIS workload domain via VCF Operations (lifecycle-managed; Avi 32.1.1+ binaries must be available from the depot). Controller IPs/FQDN/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11; create a local content library in the WLD vCenter for the Service Engine images. TechDocs: ${AVI_LB_URL}`,
+          `Integrate Avi with the WLD networking: ${cloudText}. Plan a minimum of 2 Service Engines for HA. All of this must be in place before Supervisor activation.`,
+        ],
+        acceptance: 'Avi controller cluster healthy in the workload domain; cloud connector connected; Service Engine management + VIP networks ready, so Supervisor activation can select Avi.',
+      });
+    }
+    const lbPrereq =
+      w.supervisorLb === 'avi'
+        ? 'the Avi Load Balancer from the previous story is deployed and its cloud connector + Service Engine/VIP networks are ready'
+        : w.supervisorLb === 'flb'
+          ? 'deploy the Foundation Load Balancer first — the platform-packaged lightweight L4 load balancer (one or two VMs in an active/passive pair) that covers Supervisors on VDS networking without an external appliance'
+          : "the NSX / VPC networking path's built-in load balancer serves the Supervisor — no extra load-balancer appliance to deploy";
     stories.push({
       id: `9.${stories.length + 1}`,
       title: 'Enable vSphere Supervisor',
       tasks: [
-        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Avi is one option (deploy its controller cluster first — see prerequisites.md, Avi Load Balancer); the NSX / VPC networking paths' built-in load balancer and the Foundation Load Balancer work without Avi.`,
+        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Chosen here: ${lbPrereq}.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
@@ -559,7 +598,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
 
   return {
     id,
-    title: `Workload domain: ${name}${w.stretched ? ' (stretched)' : ''}${w.supervisor ? ' + Supervisor' : ''}`,
+    title: `Workload domain: ${name}${w.stretched ? ' (stretched)' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     ref: w.stretched ? '02-intake.md section H, 03-multi-az-prep.md' : '02-intake.md section H',
     stories,
@@ -632,6 +671,7 @@ export function coerceSelection(data: unknown): Selection | null {
           name: typeof w.name === 'string' ? w.name : `wld${i + 1}`,
           stretched: bool(w.stretched, false),
           supervisor: bool(w.supervisor, false),
+          supervisorLb: oneOf<SupervisorLb>(w.supervisorLb, SUPERVISOR_LBS.map((l) => l.value), 'builtin'),
         }))
     : base.wlds;
   return normalizeSelection({

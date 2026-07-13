@@ -225,7 +225,7 @@ WLD-level:
 |H2 | WLD vCenter FQDN + IP, SSO domain (e.g. `sfo-w01.local`). vCenter IP is on the **mgmt VM Mgmt** subnet | `[WLD]` |
 |H3 | NSX Manager: new instance or shared? If new — 3 node FQDNs+IPs + cluster VIP FQDN+IP (all on the **mgmt VM Mgmt** subnet) | `[WLD]` |
 |H4 | NSX connectivity: **Centralized** or **Distributed**? If Distributed — external VLAN + gateway CIDR + 2 Virtual Network Appliance FQDNs/IPs (on the ESX Mgmt network) | `[WLD]` |
-|H5 | Enable **vSphere Supervisor**? (requires centralized edge gateway; needs Service CIDR + control-plane IP range) | `[WLD]` |
+|H5 | Enable **vSphere Supervisor**? (requires centralized edge gateway; needs Service CIDR + control-plane IP range). If yes: **load-balancer choice** — built-in NSX/VPC LB / Foundation Load Balancer / **Avi** (Avi → `E16`/`F11` + `prerequisites.md`, and the controller cluster must exist **before activation**) | `[WLD]` |
 |H6 | Principal storage: vSAN-ESA / vSAN-OSA / VMFS-on-FC / NFS / vVols; storage-policy FTT      | `[WLD]` |
 
 Cluster-level (repeat per cluster):
