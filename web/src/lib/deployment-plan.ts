@@ -33,6 +33,8 @@ export interface Epic {
 export interface Wld {
   name: string;
   stretched: boolean;
+  /** NSX connectivity for THIS domain (intake H4) — independent of the management domain's. */
+  connectivity: NsxConnectivity;
   supervisor: boolean;
   supervisorLb: SupervisorLb;
 }
@@ -59,6 +61,7 @@ export interface Day2Components {
 }
 
 export interface Selection {
+  /** Management-domain NSX connectivity (E6 6.1 + the Day-2 fleet's overlay placement). Each WLD carries its own. */
   connectivity: NsxConnectivity;
   storage: StorageType;
   supervisorSize: SupervisorSize;
@@ -108,7 +111,7 @@ export function defaultSelection(): Selection {
     day2: true,
     automation: { deploy: true, model: 'single', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
-    wlds: [{ name: 'wld01', stretched: false, supervisor: false, supervisorLb: 'builtin' }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
   };
 }
 
@@ -501,21 +504,32 @@ function wldEpicId(index: number): string {
   return index === 0 ? 'E9' : `E9-${index + 1}`;
 }
 
-function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, supervisorSize: SupervisorSize): Epic {
+function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
   const name = (w.name || `wld${index + 1}`).trim();
   const id = wldEpicId(index);
+  const connectivity = w.connectivity;
+  const distributed = connectivity === 'distributed';
   const hostPrep = `see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly`;
-  const connText =
-    connectivity === 'distributed'
-      ? 'Distributed connectivity — Distributed Transit Gateway + VNA cluster (stateful services / NAT)'
-      : 'Centralized connectivity — NSX Edges / uplinks (Tier-0 + BGP)';
-  // Supervisor no longer floats in the connectivity story — it becomes its own
-  // story below when enabled for this WLD.
+  // North-south connectivity is this domain's own choice (intake H4) and — when
+  // Supervisor is enabled — a hard prerequisite for activation, so the story
+  // spells out the concrete build rather than naming the model.
   const connStory = (sid: string): Story => ({
     id: sid,
-    title: 'WLD connectivity',
-    tasks: [`${connText}.`],
-    acceptance: 'WLD healthy in SDDC Manager; north-south reachable; workloads can be placed.',
+    title: `WLD connectivity (${distributed ? 'Distributed' : 'Centralized'})`,
+    tasks: [
+      distributed
+        ? `Distributed connectivity — build the Distributed Transit Gateway + the VNA cluster (stateful services / NAT); no centralized Edge cluster. TechDocs: ${TECHDOCS.distributed}`
+        : `Centralized connectivity — deploy this domain's NSX Edge cluster + Tier-0 gateway, peer BGP to the ToRs, and verify north-south routes. TechDocs: ${TECHDOCS.centralized}`,
+      ...(w.supervisor
+        ? [
+            'This story is a prerequisite for vSphere Supervisor: activation requires the north-south connectivity above to be up first (see prerequisites.md, vSphere Supervisor).' +
+              (distributed
+                ? ' Under VPC networking, also reserve the external IP block (routable, BGP-advertised) and the private transit-gateway block — in 9.1 that block must be a /16.'
+                : ' Under NSX segment networking, also reserve the Supervisor ingress and egress CIDRs.'),
+          ]
+        : []),
+    ],
+    acceptance: `WLD healthy in SDDC Manager; north-south reachable; workloads can be placed${w.supervisor ? ' — and the Supervisor prerequisites from this story are met' : ''}.`,
   });
 
   const stories: Story[] = w.stretched
@@ -557,18 +571,19 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       ];
 
   if (w.supervisor) {
-    const connPrereq =
-      connectivity === 'distributed'
-        ? 'Distributed — the NSX VPC workflow + VNA cluster'
-        : 'Centralized — the Edge cluster + Tier-0 gateway';
+    // The connectivity story is the last one built above — name it, so the
+    // Supervisor stories point at the exact prerequisite in this epic.
+    const connStoryId = `9.${stories.length}`;
+    const connPrereq = distributed
+      ? `Distributed — the Distributed Transit Gateway + VNA cluster from story ${connStoryId}, plus the VPC external IP block and the /16 private transit-gateway block`
+      : `Centralized — the Edge cluster + Tier-0 gateway from story ${connStoryId}, plus the Supervisor ingress/egress CIDRs`;
     // Supervisor activation requires a load balancer; which one is a per-WLD
     // choice. Avi must be fully deployed BEFORE activation (Avi-for-VCF 9.1
     // requirements), so it gets its own story ahead of the enablement story.
     if (w.supervisorLb === 'avi') {
-      const cloudText =
-        connectivity === 'distributed'
-          ? 'create the NSX Cloud connector with VPC mode enabled — Service Engine management on an overlay segment behind a Tier-1 with DHCP; VIPs come from the VPC external IP blocks'
-          : 'create the cloud connector (NSX Cloud; a vCenter cloud if the Supervisor uses VDS networking) — Service Engine management on a dedicated VLAN or overlay segment (DHCP or a static IP pool in the controller); VIP/data network + IPAM profile';
+      const cloudText = distributed
+        ? 'create the NSX Cloud connector with VPC mode enabled — Service Engine management on an overlay segment behind a Tier-1 with DHCP; VIPs come from the VPC external IP blocks'
+        : 'create the cloud connector (NSX Cloud; a vCenter cloud if the Supervisor uses VDS networking) — Service Engine management on a dedicated VLAN or overlay segment (DHCP or a static IP pool in the controller); VIP/data network + IPAM profile';
       stories.push({
         id: `9.${stories.length + 1}`,
         title: 'Avi Load Balancer for Supervisor',
@@ -589,7 +604,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       id: `9.${stories.length + 1}`,
       title: 'Enable vSphere Supervisor',
       tasks: [
-        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
+        `Prerequisites first: this WLD's north-south connectivity must already be in place (${connPrereq}) and a load balancer is available — Supervisor activation requires both. Load balancer chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
@@ -598,7 +613,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
 
   return {
     id,
-    title: `Workload domain: ${name}${w.stretched ? ' (stretched)' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
+    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     ref: w.stretched ? '02-intake.md section H, 03-multi-az-prep.md' : '02-intake.md section H',
     stories,
@@ -613,7 +628,7 @@ export function selectedEpics(sel: Selection): Epic[] {
   const out: Epic[] = coreEpics(sel);
   if (sel.mgmtStretched) out.push(E7_MGMT_STRETCH);
   if (sel.day2) out.push(day2Epic(sel));
-  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.connectivity, sel.supervisorSize)));
+  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize)));
   out.push(E10_HANDOVER);
   return out;
 }
@@ -664,18 +679,22 @@ export function coerceSelection(data: unknown): Selection | null {
   const bool = (v: unknown, fb: boolean): boolean => (typeof v === 'boolean' ? v : fb);
   const auto = (d.automation && typeof d.automation === 'object' ? d.automation : {}) as Record<string, unknown>;
   const comps = (d.day2Components && typeof d.day2Components === 'object' ? d.day2Components : {}) as Record<string, unknown>;
+  const conn = oneOf<NsxConnectivity>(d.connectivity, NSX_CONNECTIVITY.map((c) => c.value), base.connectivity);
   const wlds: Wld[] = Array.isArray(d.wlds)
     ? d.wlds
         .filter((w): w is Record<string, unknown> => !!w && typeof w === 'object')
         .map((w, i) => ({
           name: typeof w.name === 'string' ? w.name : `wld${i + 1}`,
           stretched: bool(w.stretched, false),
+          // Scopes saved before per-WLD connectivity carry only the top-level
+          // value — fall back to it so an older plan reloads unchanged.
+          connectivity: oneOf<NsxConnectivity>(w.connectivity, NSX_CONNECTIVITY.map((c) => c.value), conn),
           supervisor: bool(w.supervisor, false),
           supervisorLb: oneOf<SupervisorLb>(w.supervisorLb, SUPERVISOR_LBS.map((l) => l.value), 'builtin'),
         }))
     : base.wlds;
   return normalizeSelection({
-    connectivity: oneOf(d.connectivity, NSX_CONNECTIVITY.map((c) => c.value), base.connectivity),
+    connectivity: conn,
     storage: oneOf(d.storage, STORAGE_TYPES.map((s) => s.value), base.storage),
     supervisorSize: oneOf(d.supervisorSize, SUPERVISOR_SIZES, base.supervisorSize),
     mgmtStretched: bool(d.mgmtStretched, base.mgmtStretched),

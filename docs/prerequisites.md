@@ -161,17 +161,22 @@ of it at once, and the workbook carries only **three** Supervisor fields
   **Foundation Load Balancer** (platform-packaged L4 active/passive pair, for
   VDS networking), or **Avi** — then the whole [Avi section above](#avi-load-balancer-only-if-in-scope)
   applies and must be **complete before activation**.
-- **Networking-path inputs:**
-  - **VCF Networking with VPC** (Distributed connectivity): a routable
-    **external IP block** (north-south NAT / load-balancer VIPs, advertised
-    upstream via BGP) and a **private transit gateway IP block** — in **9.1
-    this block must be a `/16`** (9.0 accepted a `/24`; with a `/24` in 9.1
-    the deployment never completes — see the references below).
+- **North-south connectivity — the hard prerequisite.** The workload domain's
+  own NSX connectivity model (intake `H4`, chosen **per WLD**, independent of
+  the management domain's) must be **built and up before activation**, along
+  with its Supervisor-specific reservations:
+  - **VCF Networking with VPC** (Distributed connectivity): the Distributed
+    Transit Gateway + VNA cluster, a routable **external IP block**
+    (north-south NAT / load-balancer VIPs, advertised upstream via BGP) and a
+    **private transit gateway IP block** — in **9.1 this block must be a
+    `/16`** (9.0 accepted a `/24`; with a `/24` in 9.1 the deployment never
+    completes — see the references below).
   - **NSX segment networking** (Centralized connectivity): the Edge cluster +
     Tier-0 first, plus **ingress and egress CIDRs** for the Supervisor.
   - **VDS networking**: distributed port groups for the **workload
     network(s)** (one designated primary), on a **different subnet** than the
-    Supervisor management network, plus the FLB or Avi from the LB bullet.
+    Supervisor management network, plus the FLB or Avi from the LB bullet
+    (a VDS-networking Supervisor has no built-in NSX load balancer).
 - **Cluster readiness** — vSphere **DRS (fully automated) and HA** enabled on
   the target cluster(s); **storage policies** chosen for the control-plane
   VMs, ephemeral disks, and image cache.

@@ -1,6 +1,21 @@
 # Changelog
 
 ## v1.6.4 — 2026-07-13
+- **NSX connectivity is now per workload domain, and a Supervisor
+  prerequisite** (#141). The export tool had one global connectivity select,
+  but connectivity is a per-WLD choice (intake `H4`) — each WLD row now picks
+  its own **Centralized** or **Distributed** model (seeded from the
+  management domain's, which the top-level select now explicitly labels).
+  With Supervisor enabled, that domain's connectivity story becomes its
+  **explicit prerequisite** — the story spells out the concrete build
+  (Centralized: Edge cluster + Tier-0 + BGP; Distributed: Distributed Transit
+  Gateway + VNA) plus the Supervisor reservations (ingress/egress CIDRs, or
+  the external IP block + the `/16` private transit-gateway block), and the
+  enablement story points back at it by number. Intake `H5` no longer claims
+  Supervisor "requires centralized edge gateway" (Distributed/VPC is a
+  supported path); `prerequisites.md` leads its Supervisor checklist with the
+  connectivity prerequisite. Scopes saved before this release load unchanged
+  (each WLD inherits the old global value).
 - **vSphere Supervisor prerequisites section** (#140). New
   `prerequisites.md` → *vSphere Supervisor (only if in scope)* — nothing in
   it is needed at bring-up, but activation asks for all of it at once and the
