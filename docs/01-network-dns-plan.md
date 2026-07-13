@@ -38,7 +38,7 @@ first WLD — duplicate it for additional WLDs / clusters.
 | 8 | NSX Edge Uplink-01             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-A; BGP peer              |
 | 9 | NSX Edge Uplink-02             |         | `/29` or `/30`    |                       | 9000 |                  | Point-to-point to ToR-B; BGP peer              |
 | 10| NFS (optional)                 |         | `/24`             |                       | 9000 |                  | Only if principal storage = NFS                |
-| 11| VPC Gateway external (optional)|         | `/24`             |                       | 9000 |                  | External / north-south network for the Distributed Transit Gateway. Only when VPC Gateway = **Distributed** (intake `A10`); the Centralized model is configured post-bringup |
+| 11| Transit Gateway external (Distributed only)|  | `/24`         |                       | 9000 |                  | External / north-south network for the **Distributed** Transit Gateway (DTGW): the VLAN + **gateway CIDR** every ESX host attaches to, replacing the Edge uplinks (rows 8–9). Only when connectivity = **Distributed** (intake `A10` / `H4`). Also plan the routable **external IP block** (north-south NAT / VIPs) advertised upstream — see §B |
 | 12| Public / upstream peering uplink (optional)| | `/29` or `/30`  |                       | 9000 |                  | Point-to-point to a public / upstream / DMZ router, **separate** from the ToR fabric. Only if you run a distinct public peering (intake `B22`); BGP session details in §B. Most fleets don't need this |
 
 > **Overlay MTU:** host and edge TEP networks carry GENEVE and need MTU **≥ 1600**;
@@ -100,7 +100,8 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | SDDC Manager                    | 1          |             |                                                                           |
 | VCF Operations                  | 5          |             | 3 analytics nodes (primary / replica / data) + cloud proxy + license server |
 | VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
-| NSX Edge nodes (if deployed)    | 2          |             | Mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below    |
+| NSX Edge nodes (if deployed)    | 2          |             | **Centralized connectivity only** — mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below |
+| Virtual Network Appliances (VNA)| 2          |             | **Distributed connectivity only** (the alternative to the Edge nodes above — a domain has one or the other). 2 appliances minimum for HA, each with an FQDN + static IP; matches `vna01`/`vna02` in the DNS table below. Intake `H4` / `A10` |
 | VCF Automation                  | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below) |
 | Avi Controller cluster (optional)| 4         |             | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / optionally fronting VCF Automation / tenant LB); see `prerequisites.md` |
@@ -121,7 +122,25 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 
 ---
 
-## B. BGP plan
+## B. North-south connectivity plan
+
+Pick **one** model per domain (intake `A10` for the management domain, `H4` per
+workload domain) and fill in **only that model's table**:
+
+- **Centralized** — a **Centralized Transit Gateway (CTGW)**: NSX **Edge
+  cluster** + **Tier-0**, BGP-peered to the ToRs. Fill in **B.1**.
+- **Distributed** — a **Distributed Transit Gateway (DTGW)**: the transit
+  gateway maps onto a **VLAN every ESX host attaches to**, no Edge VMs. Fill in
+  **B.2**.
+
+> **"Distributed" is not the same thing as "VPC".** VPCs run on **either**
+> transit-gateway type — the choice below is about *how north-south traffic
+> leaves the fabric* (Edge VMs vs. straight off the hosts), not about whether
+> you use VPCs. Likewise, a **VNA cluster is not a small Edge cluster**: it
+> gives a **DTGW stateful services** (NAT/SNAT), and **no Tier-0 or Tier-1 runs
+> on it**.
+
+### B.1 BGP plan (**Centralized** connectivity only)
 
 | Item                    | Value | Notes                                              |
 | ----------------------- | ----- | -------------------------------------------------- |
@@ -145,6 +164,32 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 > [Set up Centralized Connectivity with Edge Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html)
 > — neighbor IP + remote AS are the only required BGP settings (MD5 and BFD are
 > optional).
+
+### B.2 Distributed Transit Gateway plan (**Distributed** connectivity only)
+
+No BGP, no Edge uplinks: the DTGW attaches to **one external VLAN that every ESX
+host in the domain can reach**, and the physical gateway on that VLAN routes for
+it. Stateful services (NAT/SNAT) come from a **VNA cluster**.
+
+| Item                          | Value | Notes                                                                 |
+| ----------------------------- | ----- | --------------------------------------------------------------------- |
+| External VLAN ID              |       | The DTGW's external connection — VLAN 11 in the table above. **Every ESX host in the domain must attach to it** |
+| External gateway CIDR         |       | The subnet + gateway IP on that VLAN, routed by the physical fabric (the ToR SVI does the routing NSX would otherwise do on a Tier-0) |
+| External IP block             |       | **Routable** block for north-south — NAT/SNAT addresses and load-balancer VIPs — advertised upstream by the fabric. Sized for your workloads, not for the appliances |
+| Private transit-gateway block |       | Private IPs for the transit-gateway subnets, **not** advertised northbound. **9.1: must be a `/16`** (a `/24` worked in 9.0 and never completes in 9.1) — see `prerequisites.md` → vSphere Supervisor |
+| VNA appliance 1 — FQDN + IP   |       | ESX Mgmt subnet; needed only for **stateful services** (NAT/SNAT) on the DTGW |
+| VNA appliance 2 — FQDN + IP   |       | **2 nodes minimum for HA** |
+| Default outbound NAT          | Y/N   | Enabled on the transit gateway against the VNA cluster + external IP block |
+
+> **Routing is the fabric's job here.** Because there is no Tier-0, the physical
+> network must route the external VLAN and advertise the external IP block —
+> confirm with the network team that this is in place **before** the domain is
+> built, exactly as you would confirm BGP for the Centralized model.
+
+> TechDocs: [Configure Distributed Network Connectivity](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-private-cloud-infrastructure/managing-network-connectivity-in-vcenter/managing-distributed-network-connectivity.html)
+> and [Transit Gateways](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/virtual-private-cloud-in-nsx/transit-gateways.html)
+> (*"You can also add NAT rules for a DTGW … by creating a virtual network
+> appliance (VNA)"*).
 
 ---
 
@@ -190,8 +235,10 @@ same shape.
 | Fleet components   | `sfo-fc01.sfo.example.io`            | VM Mgmt subnet       |
 | Instance components | `sfo-ic01.sfo.example.io`           | VM Mgmt subnet       |
 | VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
-| NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
-| NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
+| NSX Edge 1 (Centralized only) | `sfo-m01-en01.sfo.example.io` | VM Mgmt subnet       |
+| NSX Edge 2 (Centralized only) | `sfo-m01-en02.sfo.example.io` | VM Mgmt subnet       |
+| Virtual Network Appliance 1 (Distributed only) | `sfo-m01-vna01.sfo.example.io` | ESX Mgmt subnet — the VNA cluster that gives a Distributed Transit Gateway its stateful services (NAT); **not** a replacement for an Edge cluster (no Tier-0/Tier-1 runs on it) |
+| Virtual Network Appliance 2 (Distributed only) | `sfo-m01-vna02.sfo.example.io` | ESX Mgmt subnet — 2 nodes minimum for HA |
 | Avi Controller cluster FQDN (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet — the 3 controller nodes are **IP-only** (no DNS records) |
 | Supervisor API FQDN (optional — per Supervisor-enabled WLD) | `sfo-w01-super01.sfo.example.io` | WLD mgmt network — points at the control plane's **floating IP** (or the LB VIP); FQDN login is required, see `prerequisites.md` → vSphere Supervisor |
 | Log Management VIP (optional) | `sfo-vcflogs01.sfo.example.io` | services-runtime block (integrated LB; the 6+ worker nodes need IPs, not FQDNs) |
