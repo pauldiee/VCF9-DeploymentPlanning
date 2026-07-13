@@ -1,5 +1,40 @@
 # Changelog
 
+## v1.7.3 — 2026-07-13
+- **Field notes for a backup target that will not configure** (#151). A day spent
+  on a 9.1 build whose backup target refused to save produced findings that are in
+  no product documentation. New **§A.5** in `08-backup-and-depot.md` (References →
+  §A.6):
+  - **Read the sshd log correctly.** A bare `Connection closed by <ip> [preauth]`
+    with **no username** is a **host-key probe, not a failure** — VCF fetching the
+    fingerprint, in bursts of three, and it appears on **working** configurations
+    too. **Only lines with a username mean anything.** `Accepted … for <account>`
+    is success; a **UUID** as the username means the platform is sending a
+    credential *identifier* instead of the account name, which is abnormal.
+  - **A failed submit stores nothing.** The submit starts a validation workflow;
+    if it fails, the configuration is not saved — an empty Backup & Restore table
+    means the task failed, not that you forgot to save. The UI's task detail
+    bottoms out at *"check the errors in the next sub-task(s)"* with no next
+    sub-task.
+  - **The clients are the whole services-runtime block**, on arbitrary pod
+    addresses, each service with its own SSH stack: open TCP 22 **from the block**,
+    not from named hosts, and **offer a superset** of algorithms — some fleet
+    services are **not** FIPS-constrained (ed25519, curve25519), so narrowing
+    `sshd_config` to satisfy one client breaks another.
+  - **Two `sshd_config` traps:** the crypto directives are **global-only and cannot
+    live in a `Match` block** — walkthroughs tell you to append their `Match` block
+    at the bottom, so appending crypto after it stops sshd from starting; and
+    changing the host keys **invalidates the pinned fingerprint**.
+  - **Windows `ssh-keyscan` is broken** against modern servers (it offers
+    `sntrup761x25519` and cannot perform it) — read the fingerprint **on the
+    server**.
+  - **The Fleet lifecycle API**, and the trap that cost the most: **reads *and*
+    writes belong on the fleet appliance**. The `/vcf-operations/plug/fleet-lcm/…`
+    path the browser uses is the **UI's session-authenticated route** — a token
+    client gets **HTML on a GET and 405 on a PATCH**. Copy the payload from the
+    browser, never the URL. Cross-references `tools/Get-VCFBackupConfig.ps1` and
+    `tools/Set-VCFBackupConfig.ps1`.
+
 ## v1.7.2 — 2026-07-13
 - **`Set-VCFBackupConfig.ps1` now actually writes** (#150, #149, script v1.0.3).
   The PATCH was aimed at the URL captured from the browser

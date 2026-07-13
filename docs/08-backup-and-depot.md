@@ -21,7 +21,14 @@ covers *how to build it* and the gotchas that cost redo time.
 | | ↳ [The check: force the FIPS negotiation](#the-check-force-the-fips-negotiation) | The ten-minute test that predicts whether VCF will connect |
 | | ↳ [Three traps this catches](#three-traps-this-catches) | ETM MACs, legacy `ssh-rsa`, the path format |
 | | ↳ [Windows targets: a word of caution](#windows-targets-a-word-of-caution) | Deciding whether to run the target on Windows at all |
-| A.5 | [References](#a5-references) | The TechDocs and KBs behind the above |
+| A.5 | [When the target will not configure (field notes)](#a5-when-the-target-will-not-configure-field-notes) | **The wizard fails and tells you nothing** |
+| | ↳ [Read the sshd log correctly](#read-the-sshd-log-correctly-or-you-will-chase-ghosts) | Most `[preauth]` lines are **probes, not failures** |
+| | ↳ [A failed submit stores nothing](#a-failed-submit-stores-nothing) | An empty Backup & Restore table means the task failed |
+| | ↳ [The clients are the whole services-runtime block](#the-clients-are-the-whole-services-runtime-block) | Firewall the **block**; offer a **superset** of algorithms |
+| | ↳ [Two `sshd_config` traps](#two-sshd_config-traps) | Crypto cannot live in a `Match` block; host-key changes break the pin |
+| | ↳ [Getting the fingerprint](#getting-the-fingerprint-not-with-windows-ssh-keyscan) | Windows `ssh-keyscan` is broken — read it on the server |
+| | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
+| A.6 | [References](#a6-references) | The TechDocs and KBs behind the above |
 
 **[B. Binary depot](#b-binary-depot--offline-depot--the-vcf-download-tool)**
 
@@ -233,7 +240,141 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
 > SFTP, make sure the server offers **AES-CTR / AES-GCM** and doesn't depend on
 > `chacha20-poly1305` (not FIPS-approved).
 
-### A.5 References
+### A.5 When the target will not configure (field notes)
+
+Everything below was learned the hard way on a 9.1 build whose backup target
+refused to configure. None of it is in the product documentation.
+
+#### Read the sshd log correctly, or you will chase ghosts
+
+Tail the SFTP server while you submit: `journalctl -u sshd -f`. Then know what
+you are looking at, because **most of what you see is not a failure**:
+
+| Log line | What it means |
+| -------- | ------------- |
+| `Connection closed by 10.x.x.x port N [preauth]` — **no username** | **A host-key probe, not a failure.** VCF fetching the fingerprint: connect, complete key exchange, read the host key, hang up. They arrive in **bursts of three** (one per key type) and appear on **working** configurations too. Ignore them |
+| `Accepted ... for svc-vcf-bck` | The real thing. This is what success looks like |
+| `Invalid user 4b6b5201-…` — a **UUID** as the username | The platform is presenting a **credential identifier** instead of the account name. Abnormal — a healthy fleet sends the username you typed. Worth a support case |
+
+**The only lines that mean anything have a username in them.** A bare
+`[preauth]` close is noise, and mistaking it for the fault costs an afternoon.
+
+#### A failed submit stores nothing
+
+Submitting the backup location starts a **validation workflow** (*Build →
+Lifecycle → VCF Management → Tasks*). If that workflow fails, **the
+configuration is not saved** — so an empty Backup & Restore table does not mean
+you forgot to press Add; it means the task failed. Worse, the UI's task detail
+bottoms out at *"check the errors in the next sub-task(s)"* with **no next
+sub-task**. Expect no useful error from the interface, and go to the sshd log
+and the API instead.
+
+#### The clients are the whole services-runtime block
+
+The connections do **not** come from a few stable appliances. They come from the
+**VCF management-services runtime** (VMSP) on **arbitrary pod addresses** across
+its block, and from several different services — each with its **own SSH client
+stack**, which is why they negotiate differently from one another.
+
+Two consequences:
+
+- **Open TCP 22 from the entire services-runtime block**, not from named hosts.
+  A rule written for three addresses works today and fails the moment a service
+  restarts onto a fourth. (Testing with WinSCP from the jump host proves nothing
+  here — the jump host is not the client.)
+- **Offer a superset of algorithms; do not narrow.** Some of these services are
+  **not** FIPS-constrained: they want **ed25519** host keys, **curve25519** key
+  exchange, and will happily offer `chacha20-poly1305` and `hmac-sha1`. Tuning
+  `sshd_config` down to only the FIPS-approved set to satisfy one client will
+  break another. Offer all three host-key types and both MAC families and let
+  each client pick — a FIPS-mode client still negotiates FIPS algorithms,
+  because that is all *it* will accept.
+
+#### Two `sshd_config` traps
+
+- **The crypto directives cannot live in a `Match` block.** `KexAlgorithms`,
+  `Ciphers`, `MACs` and `HostKeyAlgorithms` are **global-only** — they are
+  negotiated before sshd knows which user is connecting. Community walkthroughs
+  tell you to append their `Match Group sftpbackup` block **at the bottom** of
+  `sshd_config`, so appending crypto afterwards lands it **inside** that block
+  and **sshd refuses to start**:
+
+  ```text
+  /etc/ssh/sshd_config line 128: Directive 'KexAlgorithms' is not allowed within a Match block
+  sshd.service: Failed with result 'exit-code'.
+  ```
+
+  Put the crypto block **above the first `Match` line**, and run `sshd -t`
+  before restarting. Keep a root session open while you do.
+
+- **Changing the host keys invalidates the pinned fingerprint.** VCF pins the
+  fingerprint when you register the target. If you add, remove or regenerate
+  host keys afterwards, **re-fetch it** — otherwise validation fails and
+  (see above) nothing is stored.
+
+#### Getting the fingerprint: not with Windows `ssh-keyscan`
+
+The in-box Windows client (**OpenSSH_for_Windows_9.5p2**) advertises the
+post-quantum `sntrup761x25519-sha512` key exchange and then **cannot perform
+it**, so `ssh-keyscan` dies during key exchange against any modern server and
+prints nothing at all:
+
+```console
+choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com
+```
+
+That is a **client** bug and says nothing about your target. Read the fingerprint
+**on the SFTP server**, where no SSH client is involved:
+
+```console
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub
+ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
+```
+
+VCF's own **Fetch Fingerprint** button is equally authoritative.
+
+#### Ask the API what was actually stored
+
+When the interface tells you nothing, the Fleet lifecycle API tells you what the
+platform is really holding — which is not always what you typed:
+
+```text
+GET   https://<FleetLCM>/fleet-lcm/v1/sddc-lcms
+        -> backupConfig.storage.sftp { host, port, username, directory }
+           backupConfig.fullSchedule / .retention
+GET   https://<FleetLCM>/fleet-lcm/v1/sddc-lcms/{id}/backups     -> history
+PATCH https://<FleetLCM>/fleet-lcm/v1/sddc-lcms/{id}             -> set the location
+        { "backupConfigSpec": { "encryptionPassphrase": …,
+            "storage": { "sftp": { host, port, username, password, directory, thumbprint } } } }
+```
+
+Authentication is a three-call chain through VCF Operations, the only issuer the
+Fleet lifecycle service trusts: `POST /suite-api/api/auth/token/acquire` →
+`POST /suite-api/api/auth/token/exchange` with `serviceKeys=["fleet-lcm"]` →
+`Bearer` the resulting JWT.
+
+Three things about that API cost us hours:
+
+- **Reads *and* writes belong on the fleet appliance.** The browser sends the
+  PATCH to `https://<VCFOps>/vcf-operations/plug/fleet-lcm/…`, but that path is
+  the **user interface's session-authenticated route** — it works because the
+  browser holds a logged-in Ops session cookie. A token client gets **HTML on a
+  GET** and **405 on a PATCH** there. Copy the *payload* from the browser, never
+  the URL.
+- The write wrapper is **`backupConfigSpec`**, while the same data reads back as
+  **`backupConfig`**.
+- **`port` is a string** (`"22"`), and a **`thumbprint`** is required.
+
+Two scripts in this repo do all of the above:
+[`tools/Get-VCFBackupConfig.ps1`](../tools/Get-VCFBackupConfig.ps1) (read-only —
+shows the stored target, **username**, schedule, retention and history) and
+[`tools/Set-VCFBackupConfig.ps1`](../tools/Set-VCFBackupConfig.ps1) (sets the
+location, with `-WhatIf`). Setting the target through the API also **bypasses the
+interface entirely**, which is the cleanest way to prove whether a stubborn
+failure is in the UI or in the platform.
+
+### A.6 References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
   and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
