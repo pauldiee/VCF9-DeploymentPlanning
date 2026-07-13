@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.4 — 2026-07-13
+- **The backup-config scripts are downloadable from the site** (#152). They were
+  only reachable by cloning the repo. `08-backup-and-depot.md` §A.5 now links
+  **[Get-VCFBackupConfig.ps1](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFBackupConfig.ps1)**
+  and
+  **[Set-VCFBackupConfig.ps1](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFBackupConfig.ps1)**
+  directly, next to the field notes where someone debugging a target actually is.
+  Served the same way as the CSV planning templates. The files are **copied from
+  `tools/` at build time** (`prebuild`) rather than duplicated into `web/public/`:
+  `tools/` stays the single source of truth and the served copies cannot silently
+  drift behind a later fix. `web/public/scripts/` is generated, so it is
+  gitignored.
+
 ## v1.7.3 — 2026-07-13
 - **Field notes for a backup target that will not configure** (#151). A day spent
   on a 9.1 build whose backup target refused to save produced findings that are in

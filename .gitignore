@@ -11,3 +11,6 @@ customers/
 
 # Working dumps from the workbook
 _workbook_dump/
+
+# Generated at build time from tools/*.ps1 (see web/package.json prebuild)
+web/public/scripts/

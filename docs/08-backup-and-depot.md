@@ -366,13 +366,23 @@ Three things about that API cost us hours:
   **`backupConfig`**.
 - **`port` is a string** (`"22"`), and a **`thumbprint`** is required.
 
-Two scripts in this repo do all of the above:
-[`tools/Get-VCFBackupConfig.ps1`](../tools/Get-VCFBackupConfig.ps1) (read-only —
-shows the stored target, **username**, schedule, retention and history) and
-[`tools/Set-VCFBackupConfig.ps1`](../tools/Set-VCFBackupConfig.ps1) (sets the
-location, with `-WhatIf`). Setting the target through the API also **bypasses the
-interface entirely**, which is the cleanest way to prove whether a stubborn
-failure is in the UI or in the platform.
+Two PowerShell scripts do all of the above — **download them and run them**
+(Windows PowerShell 5.1 or PowerShell 7; they prompt for whatever you don't pass):
+
+| Script | What it does |
+| ------ | ------------ |
+| [**Get-VCFBackupConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFBackupConfig.ps1) | **Read-only.** Prints the backup target, the **stored username**, directory, schedule, retention and history that the platform *actually holds* — which is not always what you typed. Flags an empty username, and a username that is an identifier rather than an account name. Changes nothing |
+| [**Set-VCFBackupConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFBackupConfig.ps1) | **Sets the backup location** through the API, for when the wizard will not take it. `-WhatIf` prints the exact payload (secrets masked) without sending it; `-ShowThumbprint` helps with the fingerprint |
+
+```console
+.\Get-VCFBackupConfig.ps1 -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io -SkipCertificateValidation
+```
+
+Setting the target through the API **bypasses the interface entirely**, which is
+the cleanest way to prove whether a stubborn failure is in the UI or in the
+platform: it puts the username on the wire *explicitly*, so if the sshd log still
+shows an identifier instead of the account, the substitution is happening
+server-side and you have a defect worth reporting.
 
 ### A.6 References
 
