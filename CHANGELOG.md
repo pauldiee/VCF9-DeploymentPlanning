@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.6.6 — 2026-07-13
+- **Verify your SFTP backup target — and FIPS is on by default in 9.x** (#144).
+  `08-backup-and-depot.md` explained how to *build* a target but never how to
+  *verify* one, and never mentioned that in new VCF 9.0+ deployments *"FIPS
+  compliance in SDDC Manager is on by default and cannot be turned off"* — which
+  silently makes the FIPS-mode SSH requirements the **baseline** on every fresh
+  9.1 build. §A.2 now carries the full requirement set (host key algorithms,
+  plus the FIPS KEX list and the `hmac-sha2-256` MAC), and a new **§A.4 Verify
+  the target before you register it** gives the decisive test: force the
+  negotiation down to FIPS-approved algorithms with `ssh -o KexAlgorithms/MACs/
+  HostKeyAlgorithms/Ciphers` — if it connects, SDDC Manager will. Traps called
+  out: `hmac-sha2-256` vs the **ETM** variant (hardened servers often offer only
+  ETM — passes a hardening scan, fails VCF), OpenSSH 8.8+ dropping legacy
+  `ssh-rsa` (KB 372839), the `/C:/…` path format on Windows, and the fact that
+  Broadcom's own "Ciphers" list on that page is TLS suite names that don't apply
+  to the SSH handshake. Also flags the Dell/VxRail field report that Windows was
+  only tested with Cygwin. Old §A.4 References → §A.5; `prerequisites.md`'s SFTP
+  section points at the new check.
+
 ## v1.6.5 — 2026-07-13
 - **Bring-up gates are now explicit, in the docs *and* the templates** (#143).
   You could not tell which prerequisites stop the Installer and which can wait.

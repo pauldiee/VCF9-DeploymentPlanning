@@ -443,7 +443,14 @@ in parallel with the deployment, not after go-live.
   Depot, fleet/SDDC lifecycle, real-time metrics, Salt) — all back up to it.
 - Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
 - The external SFTP server must support **256-bit ECDSA and 2048-bit RSA SSH
-  keys**.
+  keys**, with host key algorithms including one of `rsa-sha2-512` /
+  `rsa-sha2-256` **and** one of `ecdsa-sha2-nistp256` / `nistp384` / `nistp521`.
+- **FIPS is on by default in 9.x SDDC Manager and cannot be turned off**, so the
+  FIPS-mode SSH requirements always apply: the server must also offer a KEX from
+  `diffie-hellman-group-exchange-sha256` / `ecdh-sha2-nistp256` / `nistp384` /
+  `nistp521`, and the MAC `hmac-sha2-256` (**not** only the
+  `-etm@openssh.com` variant — a common hardening trap). Verify the handshake
+  before registering the target: [`08-backup-and-depot.md`](08-backup-and-depot.md) §A.4.
 - A **backup encryption passphrase** chosen and stored in a password manager
   with a named owner — it is **required during restore**; a lost passphrase
   makes every backup on the target useless.
