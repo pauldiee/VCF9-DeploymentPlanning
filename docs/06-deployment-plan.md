@@ -207,7 +207,11 @@ activation**, chosen per WLD in the export tool:
   Service Engines** for HA. Per the Avi-for-VCF 9.1 requirements, all of it
   **must exist before Supervisor activation**.
 
-Plus a control-plane size (Small / Medium / Large).
+Plus a control-plane size (Small / Medium / Large). The full prerequisite
+checklist — 5 consecutive control-plane IPs, API FQDN + DNS, per-path IP
+blocks (9.1: VPC transit-gateway block must be a `/16`), DRS/HA, storage
+policies, Kubernetes content — is in
+[`prerequisites.md` → vSphere Supervisor](prerequisites.md).
 Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html) ·
 [Requirements for Deploying Avi Load Balancer (VCF 9.1)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html).
 

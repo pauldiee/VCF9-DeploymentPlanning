@@ -141,6 +141,58 @@ activation**. Prepare up front:
 > The P&P workbook has **no Avi input fields** — only sizing rows — so capture
 > these values in the Step 1 plan / intake instead.
 
+## vSphere Supervisor (only if in scope)
+
+Nothing here is needed at bring-up — the Supervisor is enabled **per workload
+domain, Day-N** (intake `H5`, deployment plan E9). But activation asks for all
+of it at once, and the workbook carries only **three** Supervisor fields
+(name, Service CIDR, control-plane IP range), so collect the rest up front:
+
+- **5 consecutive static IPs** for the Supervisor control plane on the
+  management network — 3 control-plane VMs + 1 floating IP + 1 reserved for
+  rolling updates. The workbook's "Control Plane IP Range" is this block.
+- **Supervisor API FQDN + DNS record** — logging in by FQDN is required to
+  avoid certificate issues; point the record at the **floating IP** (no load
+  balancer) or the **load-balancer VIP**. Add it to the Step 1 DNS table.
+- **Service CIDR** — private, unique per Supervisor (the default usually
+  works; it must not overlap other Supervisors or the fleet networks).
+- **Load balancer** — Supervisor activation requires one; pick per WLD
+  (intake `H5`): the **built-in NSX/VPC LB** (no extra appliance), the
+  **Foundation Load Balancer** (platform-packaged L4 active/passive pair, for
+  VDS networking), or **Avi** — then the whole [Avi section above](#avi-load-balancer-only-if-in-scope)
+  applies and must be **complete before activation**.
+- **Networking-path inputs:**
+  - **VCF Networking with VPC** (Distributed connectivity): a routable
+    **external IP block** (north-south NAT / load-balancer VIPs, advertised
+    upstream via BGP) and a **private transit gateway IP block** — in **9.1
+    this block must be a `/16`** (9.0 accepted a `/24`; with a `/24` in 9.1
+    the deployment never completes — see the references below).
+  - **NSX segment networking** (Centralized connectivity): the Edge cluster +
+    Tier-0 first, plus **ingress and egress CIDRs** for the Supervisor.
+  - **VDS networking**: distributed port groups for the **workload
+    network(s)** (one designated primary), on a **different subnet** than the
+    Supervisor management network, plus the FLB or Avi from the LB bullet.
+- **Cluster readiness** — vSphere **DRS (fully automated) and HA** enabled on
+  the target cluster(s); **storage policies** chosen for the control-plane
+  VMs, ephemeral disks, and image cache.
+- **Kubernetes content** — Supervisor services / VKS release binaries come
+  from `projects.packages.broadcom.com` (already in the Public URLs table
+  below); air-gapped sites must plan the offline content-library path.
+- **Routing** — the Supervisor management network must reach vCenter and the
+  ESX hosts' management vmkernel (Spherelet), and the workload network must
+  reach the load-balancer VIPs.
+- **Zones** — a three-zone Supervisor needs **≤ 100 ms** latency between the
+  zone clusters (see [`03-multi-az-prep.md`](03-multi-az-prep.md) for the
+  stretch/AZ groundwork).
+
+> TechDocs: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html)
+> (per-networking-path requirements pages) and
+> [Requirements for Simplified Supervisor Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor/requirements-for-simplified-supervisor-deployment.html)
+> (routing + FQDN-login requirements). The 9.1 `/16` transit-gateway change is
+> lab-documented in
+> [VCF 9.1 Home Lab Series Part 9 — Deploy Supervisor](https://vstellar.com/2026/06/vcf-9-1-home-lab-series-part-9-deploy-supervisor/)
+> and the [VCF 9.1.x Ultimate Deployment Guide](https://blog.leaha.co.uk/2026/05/06/vcf-9-1-x-ultimate-deployment-guide/).
+
 ## Active Directory
 
 - Supported OS: Windows Server 2019 or 2022.

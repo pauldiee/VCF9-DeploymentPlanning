@@ -193,6 +193,7 @@ same shape.
 | NSX Edge 1         | `sfo-m01-en01.sfo.example.io`        | VM Mgmt subnet       |
 | NSX Edge 2         | `sfo-m01-en02.sfo.example.io`        | VM Mgmt subnet       |
 | Avi Controller cluster FQDN (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet — the 3 controller nodes are **IP-only** (no DNS records) |
+| Supervisor API FQDN (optional — per Supervisor-enabled WLD) | `sfo-w01-super01.sfo.example.io` | WLD mgmt network — points at the control plane's **floating IP** (or the LB VIP); FQDN login is required, see `prerequisites.md` → vSphere Supervisor |
 | Log Management VIP (optional) | `sfo-vcflogs01.sfo.example.io` | services-runtime block (integrated LB; the 6+ worker nodes need IPs, not FQDNs) |
 
 ### DNS settings checklist

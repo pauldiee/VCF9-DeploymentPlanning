@@ -1,6 +1,19 @@
 # Changelog
 
 ## v1.6.4 — 2026-07-13
+- **vSphere Supervisor prerequisites section** (#140). New
+  `prerequisites.md` → *vSphere Supervisor (only if in scope)* — nothing in
+  it is needed at bring-up, but activation asks for all of it at once and the
+  workbook carries only three Supervisor fields. The checklist: **5
+  consecutive control-plane IPs** (3 nodes + floating + upgrade spare),
+  **API FQDN + DNS** (FQDN login required — new optional row in the Step 1
+  DNS table), Service CIDR, the LB choice, per-networking-path inputs
+  (**9.1 gotcha:** the VPC **private transit-gateway IP block must be a
+  `/16`** — a `/24` worked in 9.0 but never completes in 9.1), DRS/HA +
+  storage policies, Kubernetes content (air-gapped: offline content
+  library), the routing matrix, and the 100 ms three-zone latency bound.
+  Intake `H5`, the E9 docs section and the generated Supervisor story now
+  point at it.
 - **Per-WLD Supervisor load-balancer choice, with an Avi story** (#139). Each
   Supervisor-enabled workload domain in the export tool now picks its LB:
   **built-in NSX/VPC LB** (default), **Foundation Load Balancer**

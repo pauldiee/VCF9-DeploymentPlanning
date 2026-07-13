@@ -589,7 +589,7 @@ function wldEpic(w: Wld, index: number, connectivity: NsxConnectivity, superviso
       id: `9.${stories.length + 1}`,
       title: 'Enable vSphere Supervisor',
       tasks: [
-        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Chosen here: ${lbPrereq}.`,
+        `Prerequisites first: the WLD north-south connectivity is in place (${connPrereq}) and a load balancer is available — Supervisor activation requires one. Chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
