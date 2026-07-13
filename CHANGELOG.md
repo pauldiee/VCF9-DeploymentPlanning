@@ -1,5 +1,47 @@
 # Changelog
 
+## v1.6.9 — 2026-07-13
+- **`08-backup-and-depot.md` is navigable** (#146). It had grown into two long
+  sections you could only scroll: it is now the page people open mid-build with a
+  specific question ("how do I verify the target?", "how do I feed the Installer
+  without a depot server?"), so it should let them jump straight there. Adds a
+  **Contents index** (with a *use it when* column, not just section names) and
+  **finer-grained headings** to land on: A.3 splits into the **Linux (chroot jail)**
+  and **Windows Server** variants; A.4 into **the check** (force the FIPS
+  negotiation), **three traps this catches**, and **Windows targets: a word of
+  caution**; section B gains **B.0 — three ways to feed binaries** (the
+  online/offline/manual decision, previously an unnamed preamble); and **B.1's
+  seven steps become seven headings** (*Step 1 — Depot web server* … *Step 7 —
+  Connect VCF to it*), so "the activation code needs the Product Administrator
+  role and takes days" is findable without reading the section top to bottom. All
+  24 index anchors verified against the rendered site.
+
+## v1.6.8 — 2026-07-13
+- **Distributed connectivity is planned to the field level, like Centralized was**
+  (#142). The Centralized path had concrete inputs at every step and the
+  Distributed path had none, so a Distributed fleet still left gaps after Step 1.
+  `01-network-dns-plan.md` §B is now split: **B.1 BGP plan (Centralized)** and a
+  new **B.2 Distributed Transit Gateway plan** — external VLAN + **gateway CIDR**
+  (the VLAN **every ESX host** attaches to, replacing the Edge uplinks), the
+  routable **external IP block**, the **private transit-gateway block** (**9.1:
+  must be a `/16`**), the **VNA appliance FQDNs + IPs** (2 minimum for HA) and
+  default outbound NAT. VLAN row 11 and the IP-count and DNS tables gained their
+  VNA rows; Edge rows are marked **Centralized only**. Two clarifications that
+  cost people time: **"Distributed" is not a synonym for "VPC"** (VPCs run on
+  either transit-gateway type), and a **VNA cluster is not a small Edge cluster**
+  (it gives a DTGW **stateful services**; no Tier-0/Tier-1 runs on it).
+- **The deployment plan says so too** (#142). `06-deployment-plan.md` +
+  `web/src/lib/deployment-plan.ts`: story **1.2** is now a choice (*BGP plan* **or**
+  *Distributed Transit Gateway plan*) instead of BGP-only; **4.2** asks for the
+  external VLAN on **every host** + the fabric gateway SVI instead of a ToR BGP
+  fabric; **4.3**'s DNS acceptance lists the **VNA appliances** where the model has
+  no Edge nodes; **6.1 / 9.4** carry the real build inputs, and 9.4 spells out that
+  they are **per-domain** (a second Distributed WLD needs its own external VLAN, IP
+  block and VNA cluster). Under Distributed, the fabric — not a Tier-0 — does the
+  routing, so its sign-off is the same hard gate BGP gets. Also fixes a real error:
+  the Supervisor task described the external IP block as **"BGP-advertised"** under
+  Distributed connectivity, where **there is no BGP**.
+
 ## v1.6.7 — 2026-07-13
 - **`tools/` — read and set the 9.1 backup configuration over the API** (#145).
   Configuring the centralized 9.1 backup (VCF Operations → Build → Lifecycle →

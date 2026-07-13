@@ -205,7 +205,9 @@ function coreEpics(sel: Selection): Epic[] {
     ref: '01-network-dns-plan.md',
     stories: [
       { id: '1.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
-      { id: '1.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, BFD, advertised/received routes — plus an optional MD5 password only if you enable BGP authentication.'], acceptance: 'Edge AS, ToR AS, peer IPs, BFD, and advertised/received routes agreed and documented with the fabric team. (BGP MD5 is optional — capture a password only if authentication is enabled; VCF/NSX requires just the neighbor IP + remote AS.)' },
+      distributed
+        ? { id: '1.2', title: 'Distributed Transit Gateway plan', tasks: ['No BGP and no Edge uplinks. Plan the external VLAN — every ESX host in the domain must attach to it — and its gateway CIDR, routed by the physical fabric.', 'Plan the routable external IP block for north-south (NAT/SNAT addresses and load-balancer VIPs), advertised upstream by the fabric.', 'Plan the private transit-gateway block. In 9.1 this must be a /16 — a /24 worked in 9.0 and never completes in 9.1.', 'Plan the VNA appliance FQDNs + static IPs (2 minimum for HA, on the ESX Management subnet) and whether default outbound NAT is enabled. A VNA cluster gives the Distributed Transit Gateway its stateful services (NAT/SNAT) — it is not a small Edge cluster, and no Tier-0 or Tier-1 runs on it.'], acceptance: 'External VLAN + gateway CIDR, external IP block, private transit block (/16), and the VNA FQDNs/IPs agreed with the fabric team — with written confirmation that the physical network routes the external VLAN and advertises the external IP block. Because there is no Tier-0, the fabric does the routing NSX would otherwise do: this is the same hard gate BGP gets under Centralized connectivity.' }
+        : { id: '1.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, BFD, advertised/received routes — plus an optional MD5 password only if you enable BGP authentication.'], acceptance: 'Edge AS, ToR AS, peer IPs, BFD, and advertised/received routes agreed and documented with the fabric team. (BGP MD5 is optional — capture a password only if authentication is enabled; VCF/NSX requires just the neighbor IP + remote AS.)' },
       { id: '1.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.' },
       { id: '1.4', title: 'Certificates', tasks: ['CA type (Microsoft CA or OpenSSL; external CA is CSR-based only — VCF will not import an externally-created cert+key), template, and signing approach decided.'], acceptance: 'CA reachable; signing method and certificate template chosen, with a test issuance succeeding.' },
     ],
@@ -247,15 +249,19 @@ function coreEpics(sel: Selection): Epic[] {
         title: 'Physical network ready',
         tasks: [
           'Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.',
-          'Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.',
+          distributed
+            ? 'Trunk the external VLAN to EVERY ESX host in the domain (not just to an edge pair — there are no Edge VMs), configure its gateway SVI on the ToRs, and advertise the external IP block upstream. Because there is no Tier-0, the physical fabric performs the routing NSX would otherwise do — so this is a hard gate, not a follow-up.'
+            : 'Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.',
         ],
-        acceptance: 'Required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the network plan (E1).',
+        acceptance: distributed
+          ? 'Required VLANs trunked with MTU 9000 on the jumbo networks; the external VLAN reaches every host in the domain, its gateway answers, and the external IP block is reachable from upstream; all verified against the network plan (E1).'
+          : 'Required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the network plan (E1).',
       },
       {
         id: '4.3',
         title: 'Core services ready',
         tasks: ['AD, DNS, NTP, CA, depot reachable (open the firewall flows — see 07-firewall-ports.md).'],
-        acceptance: 'Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, NSX Edge nodes, VCF Operations nodes (+ optional external LB VIP), Cloud Proxy, License Server, and the VCF Management Services FQDNs (fleet components, instance components, identity broker, services runtime — all deployed at bring-up), and any Day-2 fleet appliances (Automation, Log Management; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.',
+        acceptance: `Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, ${distributed ? 'the VNA appliances (2+, on the ESX Management subnet — Distributed connectivity has no Edge nodes)' : 'NSX Edge nodes'}, VCF Operations nodes (+ optional external LB VIP), Cloud Proxy, License Server, and the VCF Management Services FQDNs (fleet components, instance components, identity broker, services runtime — all deployed at bring-up), and any Day-2 fleet appliances (Automation, Log Management; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.`,
       },
       {
         id: '4.4',
@@ -316,7 +322,12 @@ function coreEpics(sel: Selection): Epic[] {
     owner: 'Platform + Network + Security',
     stories: [
       distributed
-        ? { id: '6.1', title: 'NSX north-south (Distributed connectivity)', tasks: [`Configure Distributed connectivity: the Distributed Transit Gateway distributes routing to the hypervisors (no centralized Edge cluster). Deploy the Virtual Network Appliance (VNA) cluster for stateful services (NAT etc.) and the external network for the Distributed Transit Gateway. TechDocs: ${TECHDOCS.distributed}`], acceptance: 'Distributed Transit Gateway up; VNA cluster healthy; north-south (incl. stateful services) reachable.' }
+        ? { id: '6.1', title: 'NSX north-south (Distributed connectivity)', tasks: [
+            'The Distributed Transit Gateway (DTGW) distributes routing to the hypervisors — no centralized Edge cluster, no Tier-0, no BGP.',
+            'Attach the DTGW to the external VLAN planned in story 1.2 — the VLAN every ESX host in the domain reaches — with its gateway CIDR routed by the physical fabric and the routable external IP block advertised upstream.',
+            'Configure the private transit-gateway block (in 9.1 it must be a /16).',
+            `Deploy the Virtual Network Appliance (VNA) cluster — 2 appliances minimum for HA, each with an FQDN + static IP on the ESX Management subnet — which gives the DTGW its stateful services (NAT/SNAT); enable default outbound NAT against it if planned. A VNA cluster is not a small Edge cluster: no Tier-0 or Tier-1 runs on it. TechDocs: ${TECHDOCS.distributed}`,
+          ], acceptance: 'DTGW up on the external VLAN; the fabric routes its gateway CIDR and advertises the external IP block; the VNA cluster is healthy on 2+ nodes; north-south including stateful services (NAT/SNAT) reachable end to end.' }
         : { id: '6.1', title: 'NSX north-south (Centralized connectivity)', tasks: [`Deploy the NSX Edge cluster + Tier-0 gateway; establish BGP peering to the ToRs; verify north-south routes. (A stretched Edge is only possible under Centralized connectivity — see 03-multi-az-prep.md section D.) TechDocs: ${TECHDOCS.centralized}`], acceptance: 'Edge cluster + Tier-0 deployed; BGP peering to the ToRs established; north-south routes advertised and reachable.' },
       {
         id: '6.2',
@@ -517,19 +528,26 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
     id: sid,
     title: `WLD connectivity (${distributed ? 'Distributed' : 'Centralized'})`,
     tasks: [
-      distributed
-        ? `Distributed connectivity — build the Distributed Transit Gateway + the VNA cluster (stateful services / NAT); no centralized Edge cluster. TechDocs: ${TECHDOCS.distributed}`
-        : `Centralized connectivity — deploy this domain's NSX Edge cluster + Tier-0 gateway, peer BGP to the ToRs, and verify north-south routes. TechDocs: ${TECHDOCS.centralized}`,
+      ...(distributed
+        ? [
+            "Distributed connectivity — build the Distributed Transit Gateway (DTGW) on THIS domain's external VLAN: every ESX host in this domain must attach to it, with its gateway CIDR routed by the physical fabric and a routable external IP block advertised upstream. No Edge cluster, no Tier-0, no BGP.",
+            'Configure this domain\'s private transit-gateway block (in 9.1 it must be a /16).',
+            `Deploy this domain's VNA cluster — 2 appliances minimum for HA, each with an FQDN + static IP on the ESX Management subnet — for stateful services (NAT/SNAT). TechDocs: ${TECHDOCS.distributed}`,
+            'These inputs are per-domain: a second Distributed workload domain needs its own external VLAN, external IP block and VNA cluster — not a share of the management domain\'s.',
+          ]
+        : [
+            `Centralized connectivity — deploy this domain's NSX Edge cluster + Tier-0 gateway, peer BGP to the ToRs (Edge AS, ToR AS, peer IPs, BFD), and verify north-south routes. TechDocs: ${TECHDOCS.centralized}`,
+          ]),
       ...(w.supervisor
         ? [
             'This story is a prerequisite for vSphere Supervisor: activation requires the north-south connectivity above to be up first (see prerequisites.md, vSphere Supervisor).' +
               (distributed
-                ? ' Under VPC networking, also reserve the external IP block (routable, BGP-advertised) and the private transit-gateway block — in 9.1 that block must be a /16.'
+                ? ' Under VPC networking, also reserve the external IP block (routable, advertised upstream by the fabric — there is no BGP under Distributed connectivity) and the private transit-gateway block — in 9.1 that block must be a /16.'
                 : ' Under NSX segment networking, also reserve the Supervisor ingress and egress CIDRs.'),
           ]
         : []),
     ],
-    acceptance: `WLD healthy in SDDC Manager; north-south reachable; workloads can be placed${w.supervisor ? ' — and the Supervisor prerequisites from this story are met' : ''}.`,
+    acceptance: `WLD healthy in SDDC Manager; north-south reachable — ${distributed ? 'DTGW up on the external VLAN, fabric routing confirmed, VNA cluster healthy on 2+ nodes, NAT/SNAT working' : 'Tier-0 + BGP routes advertised and reachable'}; workloads can be placed${w.supervisor ? ' — and the Supervisor prerequisites from this story are met' : ''}.`,
   });
 
   const stories: Story[] = w.stretched
