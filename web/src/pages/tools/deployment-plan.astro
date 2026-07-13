@@ -19,7 +19,7 @@ const epics = selectedEpics(sel);
       <p class="planx__lede">
         Build your deployment scope below: pick <strong>NSX connectivity</strong> (Centralized/Distributed)
         and <strong>storage</strong> (vSAN ESA/OSA, NFS, FC), stretch the management domain or not, add the Day-2 fleet
-        (with <strong>VCF Automation</strong>'s network placement + optional <strong>Avi</strong> load balancer, the optional
+        (with <strong>VCF Automation</strong>'s network placement + an optional <strong>Avi</strong> load balancer in front as its own story, the optional
         components <strong>Log Management</strong> and <strong>Operations for Networks</strong> each in or out, and
         <strong>fleet SSO via the Identity Broker</strong> on or off — the broker itself deploys at bring-up),
         and optionally add <strong>workload domains</strong> (zero for a management-only scope), each independently
@@ -61,10 +61,10 @@ const epics = selectedEpics(sel);
               {AUTOMATION_PLACEMENTS.map((p) => <option value={p.value}>{p.label}</option>)}
             </select>
           </label>
-          <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Load-balance with Avi (management domain)</label>
-          <label class="planx__check"><input type="checkbox" id="optD2Logs" checked /> Log Management <span class="planx__tag">E8.3</span></label>
-          <label class="planx__check"><input type="checkbox" id="optD2Networks" checked /> Operations for Networks <span class="planx__tag">E8.3</span></label>
-          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Fleet SSO via the Identity Broker (configure the bring-up broker) <span class="planx__tag">E8.4</span></label>
+          <label class="planx__check"><input type="checkbox" id="optAutoAvi" /> Avi Load Balancer in front (optional: the built-in LB serves the cluster VIP without it) <span class="planx__tag">E8.3</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Logs" checked /> Log Management <span class="planx__tag">E8.4</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Networks" checked /> Operations for Networks <span class="planx__tag">E8.4</span></label>
+          <label class="planx__check"><input type="checkbox" id="optD2Broker" checked /> Fleet SSO via the Identity Broker (configure the bring-up broker) <span class="planx__tag">E8.5</span></label>
         </div>
       </fieldset>
 

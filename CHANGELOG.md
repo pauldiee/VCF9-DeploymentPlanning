@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.6.4 — 2026-07-13
+- **VCF Automation HA does not require Avi/an external LB — fixed, and Avi is
+  now its own story** (#138). The TechDocs design library (*VCF Automation
+  Load Balancing Design*) is explicit: the **native load balancer** is
+  automatically configured for **both** the single-node and HA models; an
+  external LB is an **optional post-deployment addition** whose pool points
+  at the native VIP (L4-only, so Avi in front adds SSL termination / keeps
+  user access off the management network — Tom Fojta's *Load Balancing VCF
+  Automation with Avi* confirms). The export tool/tracker's warning that an
+  HA cluster "needs a load balancer — enable the Avi LB option" was wrong and
+  is gone; the Avi choice now generates its own **Story 8.3 — Avi Load
+  Balancer in front of VCF Automation** (controller cluster deploy + virtual
+  service) instead of extra tasks inside 8.2. E8 renumbered: optional fleet
+  components 8.3 → **8.4**, certificates/identity/licensing 8.4 → **8.5**
+  (all cross-references updated; tracker progress files saved before this
+  release may show E8 ticks one story off — re-tick after loading). Same
+  correction in `06-deployment-plan.md`, intake `E16`, `prerequisites.md`
+  (Avi section) and the Step 1 IP-count table.
+
 ## v1.6.3 — 2026-07-12
 - **Manual transfer (no depot server) documented** (#137). VCF 9.1 supports a
   third way to feed binaries besides online/offline depot: run the VCF

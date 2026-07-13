@@ -102,7 +102,10 @@ Needed when **Avi is the chosen load balancer** for any of these: **vSphere
 Supervisor** on a workload domain (then the controller cluster must exist
 **before activation** — but Supervisor also runs **without Avi**, via the
 NSX / VPC networking paths' built-in load balancer or the **Foundation Load
-Balancer**), a **VCF Automation HA cluster** VIP (an external LB also works),
+Balancer**), optionally **in front of VCF Automation** (never required — both
+the single-node and HA models ship a **built-in L4 load balancer** that serves
+the cluster VIP; Avi in front is a post-deployment addition for SSL
+termination / keeping user access off the management network),
 or tenant/workload load balancing. Deployed **Day-2 from VCF Operations** into
 the management domain — vCenter and NSX must already be configured. Prepare up
 front:
@@ -147,7 +150,7 @@ front:
 VCF 9 federates fleet-wide SSO through the **VCF Identity Broker**. The broker
 itself is **deployed at bring-up** with the VCF Management Services (no opt-in;
 its FQDN + services-runtime IP are part of the Step 1 plan) — what happens
-Day-2 is its **configuration** (deployment plan **E8**, story **8.4** fleet
+Day-2 is its **configuration** (deployment plan **E8**, story **8.5** fleet
 SSO). Prepare the AD-over-LDAP
 identity source up front; it has specific inputs and well-known gotchas.
 
