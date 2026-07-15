@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.9.0 — 2026-07-15
+- **(Re)apply the Step 2 security after the download** (#163). Field-verified: the
+  `binaries download` creates/refreshes the depot's `PROD/…` tree, so the Step 2
+  auth split must be applied **after** the store is populated (not before), and
+  re-checked after every Day-N `--type UPGRADE` refresh. Added a note at the end of
+  `08-backup-and-depot.md` §B.1 Step 5 with the curl re-verify.
+
 ## v1.8.9 — 2026-07-15
 - **VCF Download Tool proxy flags + the HCL-endpoint gotcha** (#162). Field-
   verified in a proxied site. `08-backup-and-depot.md` §B.1 Step 5:

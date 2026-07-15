@@ -754,6 +754,15 @@ the proxy filter.)
 > then retry.
 > [Broadcom KB 438222](https://knowledge.broadcom.com/external/article/438222/vmware-cloud-foundation-download-tool-fa.html).
 
+> **(Re)apply the Step 2 security *after* the download.** The `binaries download`
+> creates and refreshes the depot's `PROD/…` tree, so the
+> [Step 2 auth split](#step-2--auth-split) has to be applied **once the store is
+> populated** — not before — protecting `PROD/COMP` and `PROD/metadata` while
+> leaving `PROD/vsan/hcl` and `umds-patch-store` open. Do it again after every
+> Day-N `--type UPGRADE` refresh, since each run rewrites the tree. Re-verify with
+> the curl checks (open paths return 200, protected paths prompt) and confirm the
+> web-server user can still read the newly written files.
+
 #### Step 6 — Transfer to the air-gapped server
 
 Move the depot store to the air-gapped web server if the download host is a
