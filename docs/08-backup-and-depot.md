@@ -27,6 +27,7 @@ covers *how to build it* and the gotchas that cost redo time.
 | | ↳ [The clients are the whole services-runtime block](#the-clients-are-the-whole-services-runtime-block) | Firewall the **block**; offer a **superset** of algorithms |
 | | ↳ [Two `sshd_config` traps](#two-sshd_config-traps) | Crypto cannot live in a `Match` block; host-key changes break the pin |
 | | ↳ [Getting the fingerprint](#getting-the-fingerprint-not-with-windows-ssh-keyscan) | Windows `ssh-keyscan` is broken — read it on the server |
+| | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
 | A.6 | [Cold backup / cold maintenance](#a6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
 | A.7 | [References](#a7-references) | The TechDocs and KBs behind the above |
@@ -337,6 +338,37 @@ ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
 ```
 
 VCF's own **Fetch Fingerprint** button is equally authoritative.
+
+#### `knownhosts: key is unknown`? Point the target at the IP, not an FQDN
+
+A precheck failure of
+
+```console
+ssh: handshake failed: knownhosts: key is unknown
+```
+
+with the SSH **banner already received** (so TCP and the server are fine) is not
+what it looks like. It is tempting to chase the host-**key type** — ed25519 vs
+RSA, the server's `HostKeyAlgorithms`, forcing RSA-only — and every one of those
+is a rabbit hole (forcing RSA-only just trades it for `no known hostkey`, because
+a modern server won't do legacy SHA-1 `ssh-rsa`).
+
+The real cause is usually the **target FQDN**. If the FQDN fronts more than one
+host — a load balancer, a round-robin `A` record, or simply a name that resolves
+to a different box than the one **Fetch Fingerprint** read — then the fingerprint
+that gets pinned and the key the precheck's connection receives come from
+**different servers**, and the pin can never match.
+
+**Fix: address the backup target by the single host's IP** (or a name that
+resolves to exactly one backend). Field-verified: a target that failed by FQDN
+went in **flawlessly** by IP. Confirm the FQDN is the problem first — no `dig`/
+`nslookup` needed, `getent` is on every Linux:
+
+```console
+getent ahosts <backup-fqdn>      # more than one address, or not the box you expect? that's it
+```
+
+Only if the **IP** also fails is it worth looking at host-key types at all.
 
 #### Ask the API what was actually stored
 

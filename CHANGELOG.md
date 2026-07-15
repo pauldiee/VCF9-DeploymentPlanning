@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.9.7 — 2026-07-15
+- **A.5 note: backup `knownhosts: key is unknown` via FQDN, fixed by IP** (#169).
+  Field-verified. When the backup precheck fails the SSH host-key check (banner
+  received, so TCP is fine), the cause is usually the target **FQDN** fronting more
+  than one host / resolving to a different box than *Fetch Fingerprint* read — the
+  pinned key and the precheck's key come from different servers. Address the target
+  by the single host's **IP** (a target that failed by FQDN went in flawlessly by
+  IP). The ed25519-vs-RSA / `HostKeyAlgorithms` chase is a rabbit hole. New §A.5
+  subsection (+ contents row) with the `getent ahosts` check.
+
 ## v1.9.6 — 2026-07-15
 - **Proxy exclusions note** (#168). `08-backup-and-depot.md` §B.4: a bare
   `peerProxy` (host/port only) forces *all* services-runtime HTTP egress through
