@@ -122,6 +122,10 @@ body {
   position: sticky;
   top: calc(var(--header-h) + var(--space-5));
   padding: var(--space-6) 0;
+  /* Cap to the viewport below the sticky offset and scroll internally, so a
+     sidebar taller than the screen never hides its lower items. */
+  max-height: calc(100vh - var(--header-h) - var(--space-5) - var(--space-4));
+  overflow-y: auto;
 }
 .sidebar__eyebrow { margin-bottom: var(--space-4); }
 .sidebar__eyebrow--spaced {
@@ -549,6 +553,8 @@ body {
   .sidebar {
     position: static;
     padding: var(--space-5) 0 0;
+    max-height: none;
+    overflow: visible;
   }
   .sidebar__list {
     display: flex;

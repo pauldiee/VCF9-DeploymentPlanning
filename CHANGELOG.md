@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.5 — 2026-07-15
+- **Fix: the sidebar (planning flow) scrolls when taller than the viewport**
+  (#167). The desktop `.sidebar` was `position: sticky` with no height cap, so on a
+  short screen the lower nav items (Tools, Example) were cut off and unreachable.
+  Capped it to `calc(100vh - header - offset)` with `overflow-y: auto`; the ≤860px
+  mobile rule (already `static`) resets that. Verified the sidebar scrolls and the
+  last item ("Worked Step 1 plan") is reachable.
+
 ## v1.9.4 — 2026-07-15
 - **`-Remove` now actually clears the proxy** (#164, script v1.0.3). Field test
   showed `peerProxy: null` was a **silent no-op** — the Fleet LCM PATCH is a
