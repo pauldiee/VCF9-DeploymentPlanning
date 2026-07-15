@@ -42,6 +42,8 @@ This repo flips the order:
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
 | `tools/Get-VCFBackupConfig.ps1`     | Read-only check of the VCF 9.1 *VCF Management* backup configuration via the Fleet LCM API — shows the target / **username** / schedule / retention the platform actually stored |
 | `tools/Set-VCFBackupConfig.ps1`     | Sets that backup location through the API (`-WhatIf`, `-ShowThumbprint`) — for when the wizard fails without a usable error |
+| `tools/Get-VCFProxyConfig.ps1`      | Read-only check of the proxy (`peerProxy`) stored on the VCF services runtime (VSP) via the Fleet LCM API |
+| `tools/Set-VCFProxyConfig.ps1`      | Sets that proxy through the API (`-WhatIf`, authenticating / TLS proxy, exclude lists) — so the fleet can download bundles without direct internet |
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 
 ## Web version

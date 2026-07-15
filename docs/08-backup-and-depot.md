@@ -45,7 +45,8 @@ covers *how to build it* and the gotchas that cost redo time.
 | | ↳ [Step 7 — Connect VCF to it](#step-7--connect-vcf-to-it) | Pointing the Installer (and later the fleet) at the depot |
 | B.2 | [Manual transfer — feeding the VCF Installer without a depot server](#b2-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | You have no depot server at all and need bits on the Installer |
 | B.3 | [Using the Download Tool standalone](#b3-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
-| B.4 | [References](#b4-references) | The TechDocs behind the above |
+| B.4 | [Proxy for the VCF services runtime](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
+| B.5 | [References](#b5-references) | The TechDocs behind the above |
 
 ---
 
@@ -411,7 +412,8 @@ Pick one (intake `G1`):
   (intake `G2`/`G3`; how to obtain them — and the Product-Administrator-role
   gotcha — is in B.1 step 4). Needs outbound
   443 to the [Public URLs table](prerequisites.md#public-urls-online-functionality)
-  (via the proxy from intake `G5` if there is one). TechDocs:
+  (via the proxy from intake `G5` if there is one — for the **fleet's** own proxy,
+  set on the VCF services runtime, see [B.4](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)). TechDocs:
   [Connect VCF Installer to Broadcom or an Offline Depot and Download Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html).
 - **Offline depot** — for air-gapped sites the **VCF Download Tool** is the
   only supported method in 9.1. It downloads a **depot store** on an
@@ -582,7 +584,83 @@ the VCF appliances out to the internet. Whatever machine runs it needs
 outbound 443 to the [Public URLs](prerequisites.md#public-urls-online-functionality)
 — plan that host's egress (or proxy allowlist) as part of the prereq gate.
 
-### B.4 References
+### B.4 Proxy for the VCF services runtime (via the Fleet LCM API)
+
+When the VCF Management Services components have **no direct route to the
+internet**, the fleet reaches the online depot (and everything else it downloads)
+through a **proxy set on the VCF services runtime** — the `VSP` component in Fleet
+lifecycle. This is the `G5` proxy referenced in B.0, applied to the fleet rather
+than the Installer. TechDocs:
+[Configure a Proxy Server for VCF Management Services Components and VCF Automation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/configuring-management-components/configure-a-proxy-server-to-download-bundles-from-sddc-manager.html).
+
+The TechDocs procedure reads as a wall of `curl`/`jq` token-juggling; underneath
+it is short. It's the **same Fleet LCM API pattern as the backup config in A.5**,
+so the field notes there apply here too.
+
+**The flow, distilled:**
+
+1. **Authenticate** through VCF Operations (the only issuer the Fleet lifecycle
+   service trusts):
+   - `POST https://<VCFOps>/suite-api/api/auth/token/acquire` (username/password)
+     → an `OpsToken`
+   - `POST https://<VCFOps>/suite-api/api/auth/token/exchange` with header
+     `Authorization: OpsToken <token>` and body `{"serviceKeys":["fleet-lcm"]}`
+     → the Fleet LCM **Bearer JWT**
+2. **Find the runtime:** `GET https://<FleetLCM>/fleet-lcm/v1/components` → the
+   component whose `componentType` is `VSP`, take its `id`.
+3. **Set the proxy:**
+   `PATCH https://<FleetLCM>/fleet-lcm/v1/components/<vspId>/config`
+
+   ```json
+   {
+     "type": "VspClusterConfigSpec",
+     "peerProxy": {
+       "host": "10.11.10.250",
+       "port": 3128,
+       "tlsEnabled": false,
+       "credentialsEnabled": false
+     }
+   }
+   ```
+
+   Returns a task `id`.
+4. **Watch / verify:** `GET .../fleet-lcm/v1/tasks/<taskId>`, then
+   `GET .../fleet-lcm/v1/components/<vspId>/config`.
+
+Optional `peerProxy` fields: `username` + `password` (with
+`credentialsEnabled: true` for an authenticating proxy), `encodedCertificate`
+(base64 PEM, with `tlsEnabled: true` for an HTTPS proxy), and `excludeDomains` /
+`excludeIpAddresses` for no-proxy bypasses.
+
+**Three traps worth knowing** (all cost time to discover):
+
+- **Go straight to the fleet appliance, not the VCF Operations proxy route.**
+  The browser sends this to `https://<VCFOps>/vcf-operations/plug/fleet-lcm/...`,
+  but that path is the user interface's **session-authenticated** route (it works
+  because the browser holds a `JSESSIONID` cookie). A Bearer-token client gets
+  **405** on a `PATCH` there and HTML on a `GET`. Both the lookup and the write go
+  to `https://<FleetLCM>/fleet-lcm/v1/...`, where the token is accepted — the same
+  lesson as the backup write (A.5, and issue #150).
+- **Skip the `/casa/services` service-key lookup.** The TechDocs procedure fetches
+  a service key from `<VCFOps>/casa/services` with a hard-coded Basic-auth header;
+  you don't need it. The fleet-lcm service key is just the literal string
+  **`"fleet-lcm"`** in the exchange body (proven live by the backup scripts).
+- **`port` is a number here.** In `VspClusterConfigSpec` the proxy `port` is a
+  JSON **number** (`3128`), unlike the SFTP backup payload where `port` is a
+  **string**. Send the wrong type and validation rejects it.
+
+**The two scripts in `tools/`** do exactly this, reusing the backup scripts'
+auth chain:
+
+- **`Get-VCFProxyConfig.ps1`** (read-only) — shows the `peerProxy` the platform
+  actually stored on each `VSP` component.
+- **`Set-VCFProxyConfig.ps1`** — `PATCH`es the proxy. Supports `-WhatIf` (prints
+  the exact payload with secrets masked and sends nothing), an authenticating
+  proxy (`-ProxyUsername` / password prompt), a TLS proxy (`-CertificateFile`),
+  and `-ExcludeDomains` / `-ExcludeIpAddresses`. Verify with
+  `Get-VCFProxyConfig.ps1` afterwards.
+
+### B.5 References
 
 - TechDocs: [Set Up an Offline Depot Web Server for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-offline-depot-to-download-binaries/set-up-an-offline-depot-web-server-for-vmware-cloud-foundation.html)
   (full Apache walk-through incl. certificate + basic-auth config),

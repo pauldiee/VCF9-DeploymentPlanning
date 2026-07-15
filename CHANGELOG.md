@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.8.0 — 2026-07-15
+- **Proxy config for the VCF services runtime, via the Fleet LCM API** (#154).
+  When the VCF Management Services components have no direct internet path, the
+  fleet downloads bundles through a proxy set on the **VCF services runtime** (the
+  `VSP` component). The Broadcom procedure is a wall of `curl`/`jq`; underneath
+  it is the same Fleet LCM API pattern as the backup config. Two new `tools/`
+  scripts, reusing the backup scripts' proven auth chain (token acquire → exchange
+  for the `fleet-lcm` bearer → talk to the fleet appliance directly, **not** the
+  `/vcf-operations/plug` UI route that 405s a token client, #150):
+  - **`Get-VCFProxyConfig.ps1`** — read-only; shows the `peerProxy` actually
+    stored on each `VSP` component.
+  - **`Set-VCFProxyConfig.ps1`** — `PATCH`es the proxy (`-WhatIf`, masked secrets,
+    authenticating proxy, TLS proxy via `-CertificateFile`, exclude lists).
+  New **§B.4** in `08-backup-and-depot.md` (References → §B.5) with the distilled
+  flow and three traps: go straight to the fleet appliance; skip the
+  `/casa/services` service-key lookup (the key is the literal `"fleet-lcm"`); and
+  the proxy `port` is a JSON **number**, unlike the string port in the backup
+  payload. The scripts are served from the site automatically (the `prebuild`
+  copies every `tools/*.ps1`).
+
 ## v1.7.5 — 2026-07-15
 - **Reference the VCFJsonSpecCreators sister repo** (#153). Paul's public
   `pauldiee/VCFJsonSpecCreators` — interactive PowerShell that builds, validates,
