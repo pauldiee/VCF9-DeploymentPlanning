@@ -650,15 +650,12 @@ Optional `peerProxy` fields: `username` + `password` (with
   **string**. Send the wrong type and validation rejects it.
 
 **The two scripts in `tools/`** do exactly this, reusing the backup scripts'
-auth chain:
+auth chain — download them straight from the site:
 
-- **`Get-VCFProxyConfig.ps1`** (read-only) — shows the `peerProxy` the platform
-  actually stored on each `VSP` component.
-- **`Set-VCFProxyConfig.ps1`** — `PATCH`es the proxy. Supports `-WhatIf` (prints
-  the exact payload with secrets masked and sends nothing), an authenticating
-  proxy (`-ProxyUsername` / password prompt), a TLS proxy (`-CertificateFile`),
-  and `-ExcludeDomains` / `-ExcludeIpAddresses`. Verify with
-  `Get-VCFProxyConfig.ps1` afterwards.
+| Script | What it does |
+| ------ | ------------ |
+| [**Get-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFProxyConfig.ps1) | **Read-only.** Shows the `peerProxy` the platform *actually* stored on each `VSP` (VCF services runtime) component. Changes nothing |
+| [**Set-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFProxyConfig.ps1) | **Sets the proxy** through the API. `-WhatIf` prints the exact payload (secrets masked) without sending it; supports an authenticating proxy (`-ProxyUsername`), a TLS proxy (`-CertificateFile`), and `-ExcludeDomains` / `-ExcludeIpAddresses`. Verify with `Get-VCFProxyConfig.ps1` afterwards |
 
 ### B.5 References
 

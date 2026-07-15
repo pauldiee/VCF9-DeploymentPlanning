@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.1 — 2026-07-15
+- **Make the proxy scripts downloadable from §B.4** (#154). They were listed as
+  plain inline code; now they are a clickable download table linking
+  **[Get-VCFProxyConfig.ps1](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFProxyConfig.ps1)**
+  and
+  **[Set-VCFProxyConfig.ps1](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFProxyConfig.ps1)**
+  straight from the site, exactly like the backup scripts in §A.5.
+
 ## v1.8.0 — 2026-07-15
 - **Proxy config for the VCF services runtime, via the Fleet LCM API** (#154).
   When the VCF Management Services components have no direct internet path, the
