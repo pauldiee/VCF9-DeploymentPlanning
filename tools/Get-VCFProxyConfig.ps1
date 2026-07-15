@@ -41,13 +41,14 @@
 
 .NOTES
     Script  : Get-VCFProxyConfig.ps1
-    Version : 1.0.0
+    Version : 1.0.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.0.1  2026-07-15  PD  Auth failure now hints -SkipCertificateValidation on a TLS trust error (#166)
     v1.0.0  2026-07-15  PD  Initial release -- read-only Fleet LCM proxy (peerProxy) check (#154)
 
 .PARAMETER VCFOps
@@ -93,7 +94,7 @@ param(
     [switch]$Raw
 )
 
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.0.1'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -159,6 +160,10 @@ try {
 catch {
     Write-Host "`nAuthentication failed against $VCFOps" -ForegroundColor Red
     Write-Host "  $($_.Exception.Message)" -ForegroundColor DarkYellow
+    if (-not $SkipCertificateValidation -and $_.Exception.Message -match 'SSL|certificate|trust|could not be established') {
+        Write-Host "`n  This looks like a TLS trust error -- VCF Operations likely presents a" -ForegroundColor DarkGray
+        Write-Host "  self-signed certificate. Re-run with -SkipCertificateValidation." -ForegroundColor DarkGray
+    }
     Write-Host "`n  Check: the VCF Operations FQDN, the credentials, and whether" -ForegroundColor DarkGray
     Write-Host "  VCF Operations is registered (an unregistered appliance shows a" -ForegroundColor DarkGray
     Write-Host "  banner on its home page and may refuse to issue service tokens)." -ForegroundColor DarkGray

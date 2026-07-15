@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.9.3 — 2026-07-15
+- **Proxy scripts hint `-SkipCertificateValidation` on a TLS trust error** (#166).
+  A `-Remove` run failed with *"The SSL connection could not be established"* — a
+  self-signed-cert trust error (the flag was omitted), but it read like a `-Remove`
+  bug. `Set-VCFProxyConfig.ps1` (v1.0.2) and `Get-VCFProxyConfig.ps1` (v1.0.1) now
+  detect SSL/certificate/trust errors in the auth step and suggest re-running with
+  `-SkipCertificateValidation`. (The two backup scripts share the same catch and
+  can follow.)
+
 ## v1.9.2 — 2026-07-15
 - **HTTP offline depot option (9.1)** (#165). `08-backup-and-depot.md` §B.1 Step 1:
   9.1 supports an offline depot over plain **HTTP** (VCF Installer + Fleet Depot
