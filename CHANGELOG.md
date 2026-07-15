@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.8.7 — 2026-07-15
+- **Photon depot variant expanded into a full offline build** (#160). The `tdnf
+  install nginx` one-liner (#159) assumed internet on the one box most likely to
+  be air-gapped. `08-backup-and-depot.md` §B.1 now has a *Photon OS variant
+  (offline build)* subsection (+ contents row) covering it end to end: **install
+  nginx offline** — the preconfigured `photon-iso` repo off the mounted full ISO
+  (`tdnf --disablerepo=* --enablerepo=photon-iso nginx`) or `--downloadonly`
+  RPMs from an online same-version box; **serve the store** — nginx server block,
+  HTTPS, doc-root at `--depot-store`, `autoindex`, `nginx`-user perms (no SELinux
+  on Photon); the **auth split** in nginx with an `openssl passwd -apr1` htpasswd
+  entry (no `httpd-tools` on minimal); **open 443** in iptables; start + verify
+  with `curl`. Photon specifics verified against the Photon admin docs.
+
 ## v1.8.6 — 2026-07-15
 - **Photon OS variant for the depot web server** (#159). `08-backup-and-depot.md`
   §B.1 Step 1: the parts that differ on a minimal Photon image — `tdnf install`
