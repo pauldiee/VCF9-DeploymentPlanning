@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.4 — 2026-07-15
+- **`-Remove` now actually clears the proxy** (#164, script v1.0.3). Field test
+  showed `peerProxy: null` was a **silent no-op** — the Fleet LCM PATCH is a
+  merge, so null (and an empty object) change nothing while the task still reports
+  success. Clearing requires **explicit empty values**; verified live that a blank
+  host + port 0 + false flags blanks the stored proxy. `Set-VCFProxyConfig.ps1
+  -Remove` now sends that, and §B.4 notes the no-op gotcha.
+
 ## v1.9.3 — 2026-07-15
 - **Proxy scripts hint `-SkipCertificateValidation` on a TLS trust error** (#166).
   A `-Remove` run failed with *"The SSL connection could not be established"* — a

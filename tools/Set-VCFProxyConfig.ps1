@@ -44,13 +44,14 @@
 
 .NOTES
     Script  : Set-VCFProxyConfig.ps1
-    Version : 1.0.2
+    Version : 1.0.3
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.0.3  2026-07-15  PD  -Remove now sends explicit empty values (blank host, port 0); peerProxy: null was a silent no-op -- verified live (#164)
     v1.0.2  2026-07-15  PD  Auth failure now hints -SkipCertificateValidation on a TLS trust error (#166)
     v1.0.1  2026-07-15  PD  -Remove clears the proxy (PATCH peerProxy: null) (#164)
     v1.0.0  2026-07-15  PD  Initial release -- PATCH peerProxy on the VCF services runtime via Fleet LCM (#154)
@@ -74,9 +75,10 @@
     FQDN or IP address of the proxy server. Required unless -Remove is given.
 
 .PARAMETER Remove
-    Clear the configured proxy instead of setting one -- PATCHes peerProxy as
-    null. -ProxyHost is not required with -Remove, and the other proxy inputs are
-    ignored. Verify with Get-VCFProxyConfig.ps1 afterwards.
+    Clear the configured proxy instead of setting one. The Fleet LCM PATCH is a
+    merge, so it sends explicit empty values (blank host, port 0, flags false) --
+    a null peerProxy is a silent no-op. -ProxyHost is not required with -Remove,
+    and the other proxy inputs are ignored. Verify with Get-VCFProxyConfig.ps1.
 
 .PARAMETER ProxyPort
     TCP port of the proxy server. Defaults to 3128. Sent as a number.
@@ -129,7 +131,7 @@
     .\Set-VCFProxyConfig.ps1 -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io `
         -Remove -SkipCertificateValidation -WhatIf
 
-    Prints the clear payload (peerProxy: null) that would remove the proxy, and
+    Prints the clear payload (blank host, port 0) that would remove the proxy, and
     sends nothing. Drop -WhatIf to apply, then confirm with Get-VCFProxyConfig.ps1.
 #>
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
@@ -150,7 +152,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.2'
+$scriptVersion = '1.0.3'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -321,9 +323,18 @@ Write-Host "Component ID   : $VspComponentId" -ForegroundColor DarkGray
 
 # --- Build the payload --------------------------------------------------------
 if ($Remove) {
-    # Clear the proxy: peerProxy as null. (If the API rejects null, try an empty
-    # object -- @{} -- instead; verify the result with Get-VCFProxyConfig.ps1.)
-    $spec   = [ordered]@{ type = 'VspClusterConfigSpec'; peerProxy = $null }
+    # Clear the proxy. The Fleet LCM PATCH is a MERGE, so peerProxy = null (and an
+    # empty object {}) are SILENT NO-OPS -- the task completes but nothing changes.
+    # Clearing requires EXPLICIT EMPTY VALUES. Verified against a live fleet: a
+    # blank host + port 0 + false flags blanks the stored proxy (Get then shows an
+    # empty host). Do not "simplify" this back to null.
+    $peerProxy = [ordered]@{
+        host               = ''
+        port               = 0
+        tlsEnabled         = $false
+        credentialsEnabled = $false
+    }
+    $spec   = [ordered]@{ type = 'VspClusterConfigSpec'; peerProxy = $peerProxy }
     $masked = $spec
 }
 else {

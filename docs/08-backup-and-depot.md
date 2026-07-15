@@ -917,7 +917,7 @@ auth chain — download them straight from the site:
 | Script | What it does |
 | ------ | ------------ |
 | [**Get-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFProxyConfig.ps1) | **Read-only.** Shows the `peerProxy` the platform *actually* stored on each `VSP` (VCF services runtime) component. Changes nothing |
-| [**Set-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFProxyConfig.ps1) | **Sets the proxy** through the API. `-WhatIf` prints the exact payload (secrets masked) without sending it; supports an authenticating proxy (`-ProxyUsername`), a TLS proxy (`-CertificateFile`), and `-ExcludeDomains` / `-ExcludeIpAddresses`; **`-Remove`** clears the proxy. Verify with `Get-VCFProxyConfig.ps1` afterwards |
+| [**Set-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFProxyConfig.ps1) | **Sets the proxy** through the API. `-WhatIf` prints the exact payload (secrets masked) without sending it; supports an authenticating proxy (`-ProxyUsername`), a TLS proxy (`-CertificateFile`), and `-ExcludeDomains` / `-ExcludeIpAddresses`; **`-Remove`** clears it by sending **explicit empty values** (blank host, port 0) — the Fleet LCM PATCH is a merge, so a `null` peerProxy is a *silent no-op* (task completes, nothing changes). Verify with `Get-VCFProxyConfig.ps1` afterwards |
 
 #### Gotcha: the precheck is a netcat test from the *whole* node block — even when the documented access is in place
 
