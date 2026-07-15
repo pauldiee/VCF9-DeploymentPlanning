@@ -549,6 +549,17 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 | `vcf.broadcom.com`              | Licensing                                      | VCF Operations                                                     |
 | `auth.esp.vmware.com`           | Update Manager Download Service (UMDS)         | SDDC Manager, VCF Download Tool                                    |
 
+> **Proxying these? The proxy must be reachable from the whole
+> services-runtime node block, not just the depot/Ops IPs.** Allowlisting these
+> URLs *on* the proxy is only half of it: the fleet also has to *reach* the
+> proxy, and a fleet-side proxy precheck does a plain TCP (netcat) connect from a
+> pod that can land on **any** VCF services-runtime node. Broadcom's documented
+> access doesn't call this out, so the proxy port often gets opened only for the
+> depot + VCF Operations IPs and the proxy config then fails to apply. Firewall
+> the **whole node block** to the proxy port. Full writeup + how to read the
+> precheck logs:
+> [08-backup-and-depot.md §B.4](08-backup-and-depot.md#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place).
+
 > **Air-gapped?** The platform itself then needs none of these — but the
 > machine running the **VCF Download Tool** still does, from wherever it runs.
 > Plan that host's outbound access (or proxy allowlist) as part of this gate.

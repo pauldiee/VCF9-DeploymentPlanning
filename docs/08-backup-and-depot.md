@@ -28,7 +28,8 @@ covers *how to build it* and the gotchas that cost redo time.
 | | ↳ [Two `sshd_config` traps](#two-sshd_config-traps) | Crypto cannot live in a `Match` block; host-key changes break the pin |
 | | ↳ [Getting the fingerprint](#getting-the-fingerprint-not-with-windows-ssh-keyscan) | Windows `ssh-keyscan` is broken — read it on the server |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
-| A.6 | [References](#a6-references) | The TechDocs and KBs behind the above |
+| A.6 | [Cold backup / cold maintenance](#a6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
+| A.7 | [References](#a7-references) | The TechDocs and KBs behind the above |
 
 **[B. Binary depot](#b-binary-depot--offline-depot--the-vcf-download-tool)**
 
@@ -46,6 +47,7 @@ covers *how to build it* and the gotchas that cost redo time.
 | B.2 | [Manual transfer — feeding the VCF Installer without a depot server](#b2-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | You have no depot server at all and need bits on the Installer |
 | B.3 | [Using the Download Tool standalone](#b3-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
 | B.4 | [Proxy for the VCF services runtime](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
+| | ↳ [Gotcha: precheck is a netcat test from the whole node block](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place) | **Precheck times out even with the documented access** — firewall the whole services-runtime block |
 | B.5 | [References](#b5-references) | The TechDocs behind the above |
 
 ---
@@ -385,7 +387,71 @@ platform: it puts the username on the wire *explicitly*, so if the sshd log stil
 shows an identifier instead of the account, the substitution is happening
 server-side and you have a defect worth reporting.
 
-### A.6 References
+### A.6 Cold backup / cold maintenance: safely shutting down the management services
+
+The SFTP target above is the platform's *online* backup. Some operations instead
+need the management plane **fully down** first: a **cold backup or VM-level
+snapshot** of the appliances, **planned vSphere maintenance** under them, a
+**datacenter power event**, or a **decommission**. For those you must safely shut
+down the **VCF services runtime** — the same `VSP` cluster the proxy in
+[B.4](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) configures.
+Broadcom KB: [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
+(covers both the Fleet cluster and Instance clusters).
+
+**Do not hand-stop the components.** The runtime has an internal shutdown order,
+and Broadcom ships the automation for it: **`vcf_services_runtime_shutdown.sh`**,
+which drives the sequence through the runtime API (**port 5480**) on the
+**control-plane node**. The KB warns the procedure "stops all VCF management
+components running on the platform" (KB 440874) — Log Management, Realtime
+Metrics, VCF Operations Lifecycle and Configuration Management, and the rest. This
+is the whole plane going dark, on purpose.
+
+**Prep (on the machine you run the script from):**
+
+- Install `curl`, `jq` and **`govc`** (the last is what powers the VMs off).
+- Find the **control-plane node** and get onto it (recipe below).
+- Copy that node's **kubeconfig** (`/etc/kubernetes/admin.conf`) to pass with
+  `--kubeconfig`.
+
+**Getting a `kubectl` session on the control-plane node.** You need this here for
+the kubeconfig, and again in
+[B.4](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place)
+to read the proxy precheck logs:
+
+1. In VCF Operations — **Build > Lifecycle > Components**, click **VCF Services
+   Runtime**, scroll to **Nodes** — note the **control-plane** node's IP / FQDN.
+2. **SSH to it as `root`** (the shell prompt reads `root@<node>`); the node's root
+   credential is the one set for the services runtime at deployment.
+3. `kubectl` is already on the node and wired to the cluster —
+   **`kubectl get nodes`** should list them. If it does not, point it at the admin
+   config first: **`export KUBECONFIG=/etc/kubernetes/admin.conf`**.
+4. To run a tool (like the shutdown script) from *another* machine instead, copy
+   `/etc/kubernetes/admin.conf` off the node and pass it with `--kubeconfig`.
+
+**Run it (three modes, safest first):**
+
+| Mode | Command | Effect |
+| ---- | ------- | ------ |
+| **Dry run** (do this first) | `./vcf_services_runtime_shutdown.sh --node-ip <NODE_IP> --dry-run --kubeconfig <file>` | Prints the plan, changes nothing |
+| **Stop services, leave VMs up** | `./vcf_services_runtime_shutdown.sh --node-ip <NODE_IP> --skip-poweroff --kubeconfig <file>` | Quiesces the components; appliances stay powered on |
+| **Full (also power off VMs)** | `export VCENTER_USERNAME=administrator@vsphere.local; export VCENTER_PASSWORD=<pwd>; ./vcf_services_runtime_shutdown.sh --node-ip <NODE_IP> --kubeconfig <file>` | Stops the components **and** powers off the VMs |
+
+The **vCenter URL is auto-discovered from the `vsp` component config** (the same
+component the proxy scripts read); override with `export GOVC_URL=https://<vcenter>`.
+
+**Notes worth keeping:**
+
+- **Always `--dry-run` first.** It exercises the whole path and prints each phase
+  without touching anything.
+- **`--skip-poweroff` decouples the two halves.** Stop the services with the
+  script, then take the VM snapshot / do the maintenance / power off in vSphere on
+  your own terms — useful when the shutdown host has no `govc` or no vCenter
+  credentials to hand.
+- **Power-on** is not scripted here: bring the VMs back up in vSphere and the
+  runtime restarts its components. KB 440874 documents the *shutdown*; verify
+  recovery **in-product** rather than assuming an order.
+
+### A.7 References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
   and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
@@ -394,6 +460,8 @@ server-side and you have a defect worth reporting.
   — a **5.2** page, but the 9.x *Configure SFTP Backup Target* page doesn't
   restate them, and they still apply.
 - FIPS-by-default in 9.x: [FIPS Configuration for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/fips-compliance-for-vcf-components.html).
+- Cold shutdown of the management plane (A.6): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
+  (Broadcom KB 440874 — the `vcf_services_runtime_shutdown.sh` script and its modes).
 - Community walkthroughs: [SFTP server on Photon OS for VCF 9.1 backups](https://topvcf.com/2026/05/19/5685/)
   (chroot jail, end to end) and [SFTP on Ubuntu Server](https://www.velements.net/2024/10/12/setup-sftp-on-ubuntu-server/)
   (includes re-enabling `ssh-rsa` host-key algorithms for older VMware
@@ -432,10 +500,18 @@ Pick one (intake `G1`):
 #### Step 1 — Depot web server
 
 A Linux or Windows VM (any distribution), **static IP** (DNS record
-recommended), a dedicated disk of **≥ 1 TB**, and any web server (Apache,
-NGINX) serving **HTTPS with TLS 1.2/1.3**. Give it a certificate with the FQDN
-*and* IP as SANs — signed by your CA, or self-signed if you accept the
-trust-import step (step 7 below).
+recommended), a **dedicated disk** for the depot store (sizing below), and any
+web server (Apache, NGINX) serving **HTTPS with TLS 1.2/1.3**. Give it a
+certificate with the FQDN *and* IP as SANs — signed by your CA, or self-signed
+if you accept the trust-import step (step 7 below).
+
+> **Disk sizing.** **Start around 300 GB** for the initial INSTALL depot (the
+> bring-up bundles + component OVAs + ESX ISO). Broadcom's own recommendation is
+> to provision **≥ 1 TB**, and that headroom is real rather than padding: the
+> store **grows every Day-N patch cycle** — the fleet Depot Service side-loads
+> too (see the [B.2 Day-N caveat](#b2-manual-transfer--feeding-the-vcf-installer-without-a-depot-server)) — on the order of a few GB per ESX patch pull. So
+> **build on ~300 GB, provision the 1 TB.** No authoritative *content* footprint
+> is published; 300 GB is a field starting point, not a hard minimum.
 
 #### Step 2 — Auth split
 
@@ -656,6 +732,56 @@ auth chain — download them straight from the site:
 | ------ | ------------ |
 | [**Get-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFProxyConfig.ps1) | **Read-only.** Shows the `peerProxy` the platform *actually* stored on each `VSP` (VCF services runtime) component. Changes nothing |
 | [**Set-VCFProxyConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFProxyConfig.ps1) | **Sets the proxy** through the API. `-WhatIf` prints the exact payload (secrets masked) without sending it; supports an authenticating proxy (`-ProxyUsername`), a TLS proxy (`-CertificateFile`), and `-ExcludeDomains` / `-ExcludeIpAddresses`. Verify with `Get-VCFProxyConfig.ps1` afterwards |
+
+#### Gotcha: the precheck is a netcat test from the *whole* node block — even when the documented access is in place
+
+Setting the proxy is not the end of it. The `PATCH` is **accepted** (you get a task
+ID), and the platform then runs a **`peer-proxy-precheck`** workflow on the VCF
+services runtime. **If that precheck fails, the proxy is never applied** — the
+config submit stores nothing, exactly like the backup submit in
+[A.5](#a-failed-submit-stores-nothing). And the failure the platform surfaces is
+misleading: *"the proxy server may be slow, overloaded, or network latency is too
+high."*
+
+What the precheck actually does — read it yourself. Get a `kubectl` session on the
+control-plane node ([recipe in A.6](#a6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
+— SSH in as `root`, `kubectl` is already wired up), then:
+
+```bash
+kubectl -n vmsp-platform get pods | grep peer-proxy-precheck        # the failing Error pods
+kubectl -n vmsp-platform logs <peer-proxy-precheck-...-main-pod> -c main --tail=200
+```
+
+The log shows it is a **plain L4 `nc` (netcat) TCP connect** to the proxy
+`host:port` — no auth, no TLS, pure reachability:
+
+```
+Testing TCP port connectivity/reachability using nc (netcat)
+nc: connect to 10.11.10.250 port 3128 (tcp) failed: Connection timed out
+Proxy connectivity test failed: 10.11.10.250:3128
+```
+
+**The gotcha:** that `nc` runs from a **pod that can be scheduled on any VCF
+services-runtime node**, and its egress **SNATs to that node's IP**. So the source
+of the proxy connection is the **entire services-runtime node block** — *not* the
+depot or VCF Operations IPs. Broadcom's documented access for the proxy does **not**
+call this out, so the firewall gets opened only for the depot + Ops IPs (the hosts
+you'd *expect* to use a download proxy), the precheck lands on a node that isn't
+permitted, and it **times out**. This is the same trap as the backup target in
+[A.5](#the-clients-are-the-whole-services-runtime-block): **firewall the block, not
+the named hosts you think talk to it.**
+
+**Fix:** allow the **whole services-runtime node block** outbound to the proxy on
+its port (e.g. TCP 3128). List the exact source IPs to hand the network team with:
+
+```bash
+kubectl get nodes -o wide      # the INTERNAL-IP column = the source IPs to allow
+```
+
+Then re-submit (`Set-VCFProxyConfig.ps1` again, or let the platform retry) and the
+`nc` check passes. Because it is L4-only, an authenticating (`credentialsEnabled`)
+or TLS (`tlsEnabled`) proxy still has to clear this reachability gate **first** —
+fix the firewall before chasing credentials or certificates.
 
 ### B.5 References
 

@@ -1,5 +1,43 @@
 # Changelog
 
+## v1.8.4 — 2026-07-15
+- **Offline depot disk sizing** (#157). `08-backup-and-depot.md` §B.1 Step 1 now
+  distinguishes the actual footprint from the provisioning target: **start around
+  300 GB** for the initial INSTALL depot (bundles + OVAs + ESX ISO), and provision
+  Broadcom's recommended **≥ 1 TB** because the store grows every Day-N patch cycle
+  (the fleet Depot Service side-loads too), a few GB per ESX patch pull. Field
+  guidance — no authoritative content footprint is published.
+
+## v1.8.3 — 2026-07-15
+- **Gotcha: the peer-proxy precheck is a netcat test from the whole node block**
+  (#156). Field-verified on a live 9.1 fleet. Setting the proxy is accepted, then
+  a `peer-proxy-precheck` workflow runs on the VCF services runtime and does a
+  plain L4 `nc` TCP connect to the proxy from a pod that can land on **any** node
+  (egress SNATs to the node IP). If it times out the proxy is never applied, and
+  the surfaced error is misleading ("proxy may be slow, overloaded..."). The catch:
+  Broadcom's documented access doesn't list the whole services-runtime node block
+  as a source, so firewalls get opened only for the depot + VCF Ops IPs and the
+  precheck fails. New gotcha in `08-backup-and-depot.md` §B.4 (+ contents sub-row)
+  with the `kubectl -n vmsp-platform logs ... -c main` recipe, `kubectl get nodes
+  -o wide` for the source IPs, and the fix: **firewall the whole block** — the
+  same lesson as the backup target in §A.5. Also flagged on the **Public URLs**
+  list in `prerequisites.md` (where proxy egress is planned), linking the full
+  §B.4 writeup.
+
+## v1.8.2 — 2026-07-15
+- **Field notes: safely shutting down the VCF services runtime** (#155). New
+  **§A.6** in `08-backup-and-depot.md` (References → §A.7) for the cases that need
+  the management plane fully down first — cold backup / VM snapshot, planned
+  vSphere maintenance, a power event, or decommission. It documents Broadcom's own
+  **`vcf_services_runtime_shutdown.sh`** (KB 440874) rather than reimplementing it:
+  the runtime has an internal shutdown order, driven through the API (port 5480)
+  on the control-plane node. Covers the prep (`curl`/`jq`/`govc`, control-plane
+  node + kubeconfig) and the three modes — `--dry-run` (first), `--skip-poweroff`,
+  and full with vCenter creds. Same `VSP` cluster as the §B.4 proxy. Includes a
+  **"getting a `kubectl` session on the control-plane node"** recipe (SSH in as
+  `root`, `kubectl` is already wired to the cluster) that the §B.4 precheck
+  troubleshooting reuses.
+
 ## v1.8.1 — 2026-07-15
 - **Make the proxy scripts downloadable from §B.4** (#154). They were listed as
   plain inline code; now they are a clickable download table linking
