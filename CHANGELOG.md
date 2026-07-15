@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.2 — 2026-07-15
+- **HTTP offline depot option (9.1)** (#165). `08-backup-and-depot.md` §B.1 Step 1:
+  9.1 supports an offline depot over plain **HTTP** (VCF Installer + Fleet Depot
+  Service), which skips the cert — but **has no authentication** (the Step 2 auth
+  split is HTTPS-only; the Installer UI says so) and the **UI won't register it,
+  only the VCF Installer API will**. nginx: `listen 80`, no `ssl_*`/`auth_basic`,
+  open 80. HTTPS + self-signed + step 7 import stays the recommended path.
+
 ## v1.9.1 — 2026-07-15
 - **`Set-VCFProxyConfig.ps1 -Remove` clears the proxy** (#164, script v1.0.1).
   The script was set-only (`-ProxyHost` mandatory); `-Remove` now makes

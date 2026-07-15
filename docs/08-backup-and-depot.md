@@ -527,6 +527,19 @@ place and referenced in the server block, load it with **`nginx -t && systemctl
 reload nginx`** (a running nginx re-reads its certs on reload; `restart` works
 too). A self-signed cert means the VCF Installer must trust it — see step 7.
 
+> **HTTP depot (9.1) — skips the cert, but drops auth *and* the UI.** VCF 9.1
+> added support for an offline depot served over **plain HTTP** (the VCF Installer
+> and the Fleet Depot Service). It avoids the certificate entirely, but two things
+> change: **there is no authentication** — an HTTP depot is anonymous (the Step 2
+> auth split exists only on HTTPS, as the Installer UI itself notes: *"Authentication
+> is supported only with an HTTPS offline depot"*) — and the **Installer UI will
+> not register an HTTP depot; you must use the VCF Installer API**. On nginx it is
+> just `listen 80;` with no `ssl_*` and no `auth_basic` (open **80** instead of 443
+> in iptables). Only worth it on a locked-down segment where an unauthenticated
+> depot is acceptable; otherwise stay on HTTPS + a self-signed cert + the step 7
+> trust-import. Ref: William Lam,
+> [New HTTP Offline Depot Support for VCF Installer & Fleet Depot Service](https://williamlam.com/2026/05/vcf-9-1-new-http-offline-depot-support-for-vcf-installer-fleet-depot-service.html).
+
 > **Disk sizing.** **Start around 300 GB** for the initial INSTALL depot (the
 > bring-up bundles + component OVAs + ESX ISO). Broadcom's own recommendation is
 > to provision **≥ 1 TB**, and that headroom is real rather than padding: the
