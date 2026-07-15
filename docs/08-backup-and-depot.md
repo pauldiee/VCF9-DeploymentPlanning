@@ -506,6 +506,27 @@ web server (Apache, NGINX) serving **HTTPS with TLS 1.2/1.3**. Give it a
 certificate with the FQDN *and* IP as SANs — signed by your CA, or self-signed
 if you accept the trust-import step (step 7 below).
 
+**Generating the cert (self-signed).** The gotcha: modern clients — the VCF
+Installer included — **ignore the CN and read only the `subjectAltName`**, so a
+cert with just a CN is rejected even though it looks valid. Put the FQDN *and* the
+IP in the SANs:
+
+```bash
+mkdir -p /etc/nginx/ssl
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+  -keyout /etc/nginx/ssl/depot.key -out /etc/nginx/ssl/depot.crt \
+  -subj "/CN=depot01.sfo.example.io" \
+  -addext "subjectAltName=DNS:depot01.sfo.example.io,IP:10.11.10.20"
+chmod 600 /etc/nginx/ssl/depot.key
+```
+
+`-addext` needs OpenSSL 1.1.1+ (Photon 4/5 both have it). For a **CA-signed** cert
+instead, swap `-x509 … -out depot.crt` for `-new … -out depot.csr`, hand the CSR
+to your CA, and drop the returned cert in as `depot.crt`. Once the cert is in
+place and referenced in the server block, load it with **`nginx -t && systemctl
+reload nginx`** (a running nginx re-reads its certs on reload; `restart` works
+too). A self-signed cert means the VCF Installer must trust it — see step 7.
+
 > **Disk sizing.** **Start around 300 GB** for the initial INSTALL depot (the
 > bring-up bundles + component OVAs + ESX ISO). Broadcom's own recommendation is
 > to provision **≥ 1 TB**, and that headroom is real rather than padding: the

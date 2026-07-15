@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.8 — 2026-07-15
+- **openssl recipe for the depot TLS cert** (#161). `08-backup-and-depot.md` §B.1
+  Step 1 said "give it a cert with FQDN+IP SANs" but showed no command. Added the
+  self-signed `openssl req -x509 … -addext subjectAltName=DNS:…,IP:…` recipe (825
+  days, key perms) with the gotcha that clients **ignore the CN and read only the
+  SAN**, a CA-signed CSR alternative, and the reload step (`nginx -t && systemctl
+  reload nginx` — a running nginx re-reads certs on reload).
+
 ## v1.8.7 — 2026-07-15
 - **Photon depot variant expanded into a full offline build** (#160). The `tdnf
   install nginx` one-liner (#159) assumed internet on the one box most likely to
