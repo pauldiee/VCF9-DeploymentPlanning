@@ -10,6 +10,14 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 "lock it first" idea as the Step 1 network plan. It maps to the workbook's
 *Deploy Fleet Management Day-N* sheet.
 
+> **Scope.** This page is the *fleet-management* components (VCF Automation, Log
+> Management, Operations for Networks). The **other** kind of Day-N expansion —
+> **adding workload domains and clusters** after bring-up, and **stretching**
+> them — is covered in [`06-deployment-plan.md`](06-deployment-plan.md) (E9).
+> Those SDDC Manager API specs (network pool, workload domain, cluster, vSAN
+> stretch) can optionally be built, validated, and submitted with
+> [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators).
+
 > Placeholders below use Rainpole-style values (`sfo.example.io`,
 > `10.11.x.x`). Replace consistently. This is a planning checklist, not a
 > step-by-step deployment guide — follow the Broadcom deployment guidance for

@@ -105,6 +105,16 @@ deployment JSON for the VCF Installer — see *Related tools* below.
   helper for quickly **imaging and commissioning ESXi hosts** before bring-up
   (management, workload-domain, and second-AZ hosts). Referenced from the
   deployment plan's host-prep stories (E5 bring-up / E7 mgmt stretch / E9 workload domains).
+- **[VCFJsonSpecCreators](https://github.com/pauldiee/VCFJsonSpecCreators)** —
+  optional interactive PowerShell that **builds, validates, and submits SDDC
+  Manager API JSON** for **post-bring-up (Day-N) expansion**: network pools, workload
+  domains, added clusters, and vSAN cluster **stretch**. The step *after*
+  VCFHostPreparation — commission the hosts there, feed their SDDC Manager UUIDs
+  to these scripts; each spec is validated against the live `/validations`
+  endpoint before submit. Distinct from VCF.JSONGenerator above, which builds
+  the *initial* management-domain bring-up JSON from the workbook — this one
+  drives the ongoing domain/cluster lifecycle. Referenced from the deployment
+  plan's E7 (mgmt stretch) and E9 (workload domain) stories.
 
 **ITQ Consulting Services** (professional services, not public tools):
 

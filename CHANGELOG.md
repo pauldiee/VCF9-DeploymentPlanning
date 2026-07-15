@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.5 — 2026-07-15
+- **Reference the VCFJsonSpecCreators sister repo** (#153). Paul's public
+  `pauldiee/VCFJsonSpecCreators` — interactive PowerShell that builds, validates,
+  and submits the SDDC Manager API JSON for **Day-N expansion** (network pools,
+  workload domains, added clusters, vSAN stretch), the step *after*
+  VCFHostPreparation commissions the hosts. New bullet in the README **Related
+  tools** section (paired with VCFHostPreparation, and distinguished from
+  VCF.JSONGenerator, which builds the *initial* bring-up JSON). Threaded into the
+  `06-deployment-plan.md` build stories where those specs are actually assembled
+  — **7.4** (mgmt stretch), **9.3** (create WLD + network pool), **9.5** (stretch
+  WLD) — and a scope pointer in `05-day2-deployments.md` separating
+  fleet-component Day-N (that page) from domain/cluster Day-N (E9). More to come.
+
 ## v1.7.4 — 2026-07-13
 - **The backup-config scripts are downloadable from the site** (#152). They were
   only reachable by cloning the repo. `08-backup-and-depot.md` §A.5 now links
