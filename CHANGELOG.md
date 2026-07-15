@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.6 — 2026-07-15
+- **Proxy exclusions note** (#168). `08-backup-and-depot.md` §B.4: a bare
+  `peerProxy` (host/port only) forces *all* services-runtime HTTP egress through
+  the proxy — including internal VCF appliances and the on-prem offline depot. Set
+  `excludeDomains` (internal DNS suffix) and `excludeIpAddresses` (mgmt /
+  services-runtime CIDRs + the depot IP/subnet) so only internet-bound traffic is
+  proxied; `Get-VCFProxyConfig.ps1` shows whether they're set.
+
 ## v1.9.5 — 2026-07-15
 - **Fix: the sidebar (planning flow) scrolls when taller than the viewport**
   (#167). The desktop `.sidebar` was `position: sticky` with no height cap, so on a

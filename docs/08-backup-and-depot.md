@@ -894,6 +894,24 @@ Optional `peerProxy` fields: `username` + `password` (with
 (base64 PEM, with `tlsEnabled: true` for an HTTPS proxy), and `excludeDomains` /
 `excludeIpAddresses` for no-proxy bypasses.
 
+> **Set the exclusions — a bare proxy sends *everything* out.** With only a host
+> and port, **all** of the services runtime's HTTP egress is forced through the
+> proxy, including traffic that must stay on the management network: the other VCF
+> appliances (vCenter, NSX, SDDC Manager, VCF Operations) and — the one that bites
+> in an air-gapped build — your **on-prem offline depot**. At best that adds a hop;
+> at worst the proxy refuses to route the internal/RFC1918 destination and the
+> connection fails. So set:
+> - **`excludeDomains`** — your internal DNS suffix(es), e.g. `sfo.example.io`, so
+>   every internal FQDN bypasses the proxy.
+> - **`excludeIpAddresses`** — the management / services-runtime CIDRs and the
+>   subnets holding vCenter/NSX/SDDC Manager/VCF Operations, plus the **offline
+>   depot's IP or subnet** so bundle pulls stay internal.
+>
+> With the scripts: `-ExcludeDomains 'sfo.example.io' -ExcludeIpAddresses
+> '10.11.0.0/16','<depot-ip>'`. They ride the same merge PATCH, so re-running
+> `Set-VCFProxyConfig.ps1` adds them alongside the existing host/port; confirm with
+> `Get-VCFProxyConfig.ps1` (empty exclude lines mean *everything* is being proxied).
+
 **Three traps worth knowing** (all cost time to discover):
 
 - **Go straight to the fleet appliance, not the VCF Operations proxy route.**
