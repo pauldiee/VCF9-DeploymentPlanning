@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.9.1 — 2026-07-15
+- **`Set-VCFProxyConfig.ps1 -Remove` clears the proxy** (#164, script v1.0.1).
+  The script was set-only (`-ProxyHost` mandatory); `-Remove` now makes
+  `-ProxyHost` optional and PATCHes `peerProxy: null` to clear the configured
+  proxy, keeping `-WhatIf` and the confirmation prompt. Verify with
+  `Get-VCFProxyConfig.ps1`. The clear payload (`null`) is unverified against the
+  API — if it wants an empty object instead, that's a one-line change (noted in
+  the script). README + §B.4 scripts table updated.
+
 ## v1.9.0 — 2026-07-15
 - **(Re)apply the Step 2 security after the download** (#163). Field-verified: the
   `binaries download` creates/refreshes the depot's `PROD/…` tree, so the Step 2

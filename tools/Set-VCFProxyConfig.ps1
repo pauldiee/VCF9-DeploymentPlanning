@@ -44,13 +44,14 @@
 
 .NOTES
     Script  : Set-VCFProxyConfig.ps1
-    Version : 1.0.0
+    Version : 1.0.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.0.1  2026-07-15  PD  -Remove clears the proxy (PATCH peerProxy: null) (#164)
     v1.0.0  2026-07-15  PD  Initial release -- PATCH peerProxy on the VCF services runtime via Fleet LCM (#154)
 
 .PARAMETER VCFOps
@@ -69,7 +70,12 @@
     component; with more than one it stops and asks you to name it.
 
 .PARAMETER ProxyHost
-    FQDN or IP address of the proxy server.
+    FQDN or IP address of the proxy server. Required unless -Remove is given.
+
+.PARAMETER Remove
+    Clear the configured proxy instead of setting one -- PATCHes peerProxy as
+    null. -ProxyHost is not required with -Remove, and the other proxy inputs are
+    ignored. Verify with Get-VCFProxyConfig.ps1 afterwards.
 
 .PARAMETER ProxyPort
     TCP port of the proxy server. Defaults to 3128. Sent as a number.
@@ -117,11 +123,19 @@
 
     Configures an authenticating proxy (prompts for the password) that bypasses
     the local domain and management network.
+
+.EXAMPLE
+    .\Set-VCFProxyConfig.ps1 -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io `
+        -Remove -SkipCertificateValidation -WhatIf
+
+    Prints the clear payload (peerProxy: null) that would remove the proxy, and
+    sends nothing. Drop -WhatIf to apply, then confirm with Get-VCFProxyConfig.ps1.
 #>
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter(Mandatory)] [string]$VCFOps,
-    [Parameter(Mandatory)] [string]$ProxyHost,
+    [string]$ProxyHost,
+    [switch]$Remove,
     [string]$FleetLCM,
     [string]$VspComponentId,
     [int]$ProxyPort = 3128,
@@ -135,18 +149,25 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.0.1'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+if (-not $Remove -and -not $ProxyHost) {
+    Write-Host "Provide -ProxyHost to set a proxy, or -Remove to clear it." -ForegroundColor Red
+    exit 1
+}
+
+$proxyLabel = if ($Remove) { '(removing)' } else { "$ProxyHost`:$ProxyPort" }
+
 Write-Host ('=' * 62) -ForegroundColor DarkCyan
 Write-Host "  Set-VCFProxyConfig v$scriptVersion" -ForegroundColor Cyan
 Write-Host "  $scriptAuthor - $scriptBlogUrl" -ForegroundColor DarkCyan
 Write-Host "  VCF Operations : $VCFOps" -ForegroundColor Cyan
-Write-Host "  Proxy          : $ProxyHost`:$ProxyPort" -ForegroundColor Cyan
+Write-Host "  Proxy          : $proxyLabel" -ForegroundColor Cyan
 Write-Host ('=' * 62) -ForegroundColor DarkCyan
 
 function ConvertFrom-SecureStringPlain {
@@ -165,7 +186,7 @@ function Get-Prop {
 
 # --- Gather proxy inputs ------------------------------------------------------
 $credentialsEnabled = $false
-if ($ProxyUsername) {
+if ($ProxyUsername -and -not $Remove) {
     $credentialsEnabled = $true
     if (-not $ProxyPassword) {
         $ProxyPassword = Read-Host "Password for proxy user $ProxyUsername" -AsSecureString
@@ -173,7 +194,7 @@ if ($ProxyUsername) {
 }
 
 $encodedCertificate = $null
-if ($CertificateFile) {
+if ($CertificateFile -and -not $Remove) {
     if (-not (Test-Path -LiteralPath $CertificateFile)) {
         Write-Host "`nCertificate file not found: $CertificateFile" -ForegroundColor Red
         exit 1
@@ -294,32 +315,40 @@ if (-not $VspComponentId) {
 Write-Host "Component ID   : $VspComponentId" -ForegroundColor DarkGray
 
 # --- Build the payload --------------------------------------------------------
-# port is a NUMBER here (VspClusterConfigSpec), not a string.
-$peerProxy = [ordered]@{
-    host               = $ProxyHost
-    port               = [int]$ProxyPort
-    tlsEnabled         = [bool]$TlsEnabled
-    credentialsEnabled = $credentialsEnabled
+if ($Remove) {
+    # Clear the proxy: peerProxy as null. (If the API rejects null, try an empty
+    # object -- @{} -- instead; verify the result with Get-VCFProxyConfig.ps1.)
+    $spec   = [ordered]@{ type = 'VspClusterConfigSpec'; peerProxy = $null }
+    $masked = $spec
 }
-if ($credentialsEnabled) {
-    $peerProxy.username = $ProxyUsername
-    $peerProxy.password = (ConvertFrom-SecureStringPlain $ProxyPassword)
-}
-if ($encodedCertificate) { $peerProxy.encodedCertificate = $encodedCertificate }
-if ($ExcludeDomains)     { $peerProxy.excludeDomains      = @($ExcludeDomains) }
-if ($ExcludeIpAddresses) { $peerProxy.excludeIpAddresses  = @($ExcludeIpAddresses) }
+else {
+    # port is a NUMBER here (VspClusterConfigSpec), not a string.
+    $peerProxy = [ordered]@{
+        host               = $ProxyHost
+        port               = [int]$ProxyPort
+        tlsEnabled         = [bool]$TlsEnabled
+        credentialsEnabled = $credentialsEnabled
+    }
+    if ($credentialsEnabled) {
+        $peerProxy.username = $ProxyUsername
+        $peerProxy.password = (ConvertFrom-SecureStringPlain $ProxyPassword)
+    }
+    if ($encodedCertificate) { $peerProxy.encodedCertificate = $encodedCertificate }
+    if ($ExcludeDomains)     { $peerProxy.excludeDomains      = @($ExcludeDomains) }
+    if ($ExcludeIpAddresses) { $peerProxy.excludeIpAddresses  = @($ExcludeIpAddresses) }
 
-$spec = [ordered]@{
-    type      = 'VspClusterConfigSpec'
-    peerProxy = $peerProxy
-}
+    $spec = [ordered]@{
+        type      = 'VspClusterConfigSpec'
+        peerProxy = $peerProxy
+    }
 
-# The same shape with the secrets masked, for display.
-$maskedProxy = [ordered]@{}
-foreach ($k in $peerProxy.Keys) { $maskedProxy[$k] = $peerProxy[$k] }
-if ($maskedProxy.Contains('password'))           { $maskedProxy['password'] = '********' }
-if ($maskedProxy.Contains('encodedCertificate')) { $maskedProxy['encodedCertificate'] = '<base64 certificate, ' + $encodedCertificate.Length + ' chars>' }
-$masked = [ordered]@{ type = 'VspClusterConfigSpec'; peerProxy = $maskedProxy }
+    # The same shape with the secrets masked, for display.
+    $maskedProxy = [ordered]@{}
+    foreach ($k in $peerProxy.Keys) { $maskedProxy[$k] = $peerProxy[$k] }
+    if ($maskedProxy.Contains('password'))           { $maskedProxy['password'] = '********' }
+    if ($maskedProxy.Contains('encodedCertificate')) { $maskedProxy['encodedCertificate'] = '<base64 certificate, ' + $encodedCertificate.Length + ' chars>' }
+    $masked = [ordered]@{ type = 'VspClusterConfigSpec'; peerProxy = $maskedProxy }
+}
 
 Write-Host "`nPayload to be sent:" -ForegroundColor White
 Write-Host ($masked | ConvertTo-Json -Depth 6) -ForegroundColor DarkGray
@@ -327,7 +356,7 @@ Write-Host "`nPATCH $baseUri/components/$VspComponentId/config" -ForegroundColor
 
 # --- Write --------------------------------------------------------------------
 $target = "VCF services runtime $VspComponentId on $FleetLCM"
-$action = "Set the proxy to $ProxyHost`:$ProxyPort"
+$action = if ($Remove) { "Remove the proxy" } else { "Set the proxy to $ProxyHost`:$ProxyPort" }
 
 if (-not $PSCmdlet.ShouldProcess($target, $action)) {
     Write-Host "`nNothing was sent." -ForegroundColor Yellow
