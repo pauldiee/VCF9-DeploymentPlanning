@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.8.5 — 2026-07-15
+- **Ports for the offline depot server** (#158). `08-backup-and-depot.md` §B.1
+  Step 1: the only listening port the platform needs is **inbound TCP 443
+  (HTTPS)** — from the VCF Installer (bring-up) and the SDDC Manager / VCF
+  Operations depot services runtime / vCenter (Day-N), the same "Needed by" set as
+  the Public URLs table pointed at the depot. Open it from the management network
+  **and the whole services-runtime block** (the fleet Depot Service pulls from
+  there). No inbound 80; outbound only if the box also runs the VCF Download Tool.
+
 ## v1.8.4 — 2026-07-15
 - **Offline depot disk sizing** (#157). `08-backup-and-depot.md` §B.1 Step 1 now
   distinguishes the actual footprint from the provisioning target: **start around

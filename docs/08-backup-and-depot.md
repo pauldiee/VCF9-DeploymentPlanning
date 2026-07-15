@@ -513,6 +513,21 @@ if you accept the trust-import step (step 7 below).
 > **build on ~300 GB, provision the 1 TB.** No authoritative *content* footprint
 > is published; 300 GB is a field starting point, not a hard minimum.
 
+> **Ports.** The only listening port the platform needs on the depot server is
+> **inbound TCP 443 (HTTPS)** — the web server. The clients that pull from it are
+> the same "Needed by" set as the [Public URLs table](prerequisites.md#public-urls-online-functionality),
+> just pointed at *your* depot instead of Broadcom: the **VCF Installer** at
+> bring-up, then the **SDDC Manager / VCF Operations depot services runtime /
+> vCenter** for Day-N patching. Open 443 to the depot from the management network
+> **and the whole services-runtime block** — the fleet Depot Service pulls from
+> there, the same "firewall the block" lesson as the proxy in
+> [B.4](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api). No inbound
+> 80 is required; serve HTTPS only (an 80 → 443 redirect is optional convenience,
+> not a requirement). **Outbound:** the depot box needs none — *unless* it is also
+> the internet-connected host running the VCF Download Tool, in which case it
+> needs outbound TCP 443 to the Broadcom Public URLs. An air-gapped depot (store
+> copied in) makes no outbound connections.
+
 #### Step 2 — Auth split
 
 Protect `PROD/COMP` and `PROD/metadata` with **basic auth** (`htpasswd`); leave
