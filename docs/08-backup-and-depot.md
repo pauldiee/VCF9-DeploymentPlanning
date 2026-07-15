@@ -724,6 +724,36 @@ fetches lifecycle bundles for Day-N patching.
 > later edge-cluster deployment; Day-N, edge nodes are upgraded through
 > the NSX upgrade bundle (`--type UPGRADE`), not a separate download.
 
+**Behind a proxy? Use the tool's own flags — the shell env vars are ignored.**
+`http_proxy`/`https_proxy` have no effect; the Download Tool reads only its
+[own options](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/what-is-the-vcf-download-tool-/vcf-download-tool-general-options.html).
+Add **`--proxy-server <FQDN:Port>`** (`-s`, no `http://` scheme). The symptom
+*without* it is `Fail to obtain access token from Broadcom OAuth Authorization
+server` plus **name-resolution errors** — because with a proxy the *proxy*
+resolves the Broadcom names, not the depot box:
+
+```console
+./vcf-download-tool binaries download --sku VCF --vcf-version 9.1.x \
+  --depot-download-activation-code-file /path/activation-code.txt \
+  --type INSTALL --depot-store /var/www/offline_depot \
+  --proxy-server proxy01.sfo.example.io:3128
+```
+
+If the proxy is an **HTTPS** proxy, add `--proxy-https` — which first requires the
+proxy's certificate imported into the tool's **JRE default trust store**. If it
+authenticates, add `--proxy-user <user>` (`-r`) and
+`--proxy-user-password-file <path>`. (The `depot …` upload subcommands cannot use
+the proxy filter.)
+
+> **Gotcha — `Failed to get last updated time for HCL`.** Even once the proxy
+> works the download can fail here: the tool queries `vsanhealth.vmware.com` for
+> the vSAN HCL and chokes. Fix is an endpoint swap — change
+> `vsan.hcl.client.endpoint=vsanhealth.vmware.com` to
+> `vsan.hcl.client.endpoint=eapi.broadcom.com` in **both**
+> `conf/application-prod.properties` and `conf/application-prodV2.properties`,
+> then retry.
+> [Broadcom KB 438222](https://knowledge.broadcom.com/external/article/438222/vmware-cloud-foundation-download-tool-fa.html).
+
 #### Step 6 — Transfer to the air-gapped server
 
 Move the depot store to the air-gapped web server if the download host is a

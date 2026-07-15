@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.8.9 — 2026-07-15
+- **VCF Download Tool proxy flags + the HCL-endpoint gotcha** (#162). Field-
+  verified in a proxied site. `08-backup-and-depot.md` §B.1 Step 5:
+  - **The shell proxy env vars are ignored** — the tool honors only its own
+    flags. Use **`--proxy-server <FQDN:Port>`** (`-s`, no scheme), `--proxy-https`
+    for an HTTPS proxy (needs the proxy cert in the tool's JRE trust store), and
+    `--proxy-user`/`--proxy-user-password-file` for auth. Without it the symptom is
+    `Fail to obtain access token from Broadcom OAuth Authorization server` +
+    name-resolution errors (with a proxy, the proxy does the DNS).
+  - **Gotcha (KB 438222):** after the proxy works, `Failed to get last updated
+    time for HCL` — swap `vsan.hcl.client.endpoint` from `vsanhealth.vmware.com`
+    to `eapi.broadcom.com` in both `conf/application-prod.properties` and
+    `application-prodV2.properties`.
+
 ## v1.8.8 — 2026-07-15
 - **openssl recipe for the depot TLS cert** (#161). `08-backup-and-depot.md` §B.1
   Step 1 said "give it a cert with FQDN+IP SANs" but showed no command. Added the
