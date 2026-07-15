@@ -528,6 +528,39 @@ if you accept the trust-import step (step 7 below).
 > needs outbound TCP 443 to the Broadcom Public URLs. An air-gapped depot (store
 > copied in) makes no outbound connections.
 
+**Photon OS variant (`tdnf` + iptables).** Photon is a natural pick for the depot
+box — lightweight and VMware-native — but it is a *minimal* image, so two things
+differ from an Ubuntu/Apache build:
+
+1. **Install a web server** — nothing serves HTTP by default:
+
+   ```bash
+   tdnf install -y nginx           # or: tdnf install -y httpd
+   systemctl enable --now nginx
+   ```
+
+   Point the document root (`/etc/nginx/nginx.conf`, default `/usr/share/nginx/html`)
+   at the depot store — the directory you pass the Download Tool as
+   `--depot-store` — and wire in the HTTPS cert from Step 1 (`ssl_certificate` /
+   `ssl_certificate_key`). The Step 2 auth split still applies: `htpasswd` on
+   `PROD/COMP` and `PROD/metadata`, open on `PROD/vsan/hcl` and `umds-patch-store`.
+
+2. **Open inbound 443 in iptables** — Photon's default firewall allows only SSH
+   (22) inbound and **drops ICMP**, so 443 has to be added *and persisted*, or it
+   is lost on reboot:
+
+   ```bash
+   iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+   iptables-save > /etc/systemd/scripts/ip4save   # Photon's iptables persistence file
+   systemctl restart iptables
+   ```
+
+   (Add `iptables -A INPUT -p icmp -j ACCEPT` before saving if you also want the
+   box to answer ping for reachability tests — see the ICMP note in A.3.)
+
+Everything else — the cert SANs, the auth split, and connecting VCF in Step 7 —
+is the same as the generic build.
+
 #### Step 2 — Auth split
 
 Protect `PROD/COMP` and `PROD/metadata` with **basic auth** (`htpasswd`); leave

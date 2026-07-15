@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.6 — 2026-07-15
+- **Photon OS variant for the depot web server** (#159). `08-backup-and-depot.md`
+  §B.1 Step 1: the parts that differ on a minimal Photon image — `tdnf install`
+  the web server (`nginx`/`httpd`, nothing preinstalled), point the doc root at
+  the depot store + wire the Step 1 cert, and open **inbound 443 in iptables**
+  persisted to Photon's `/etc/systemd/scripts/ip4save` (default firewall allows
+  only SSH and drops ICMP). Auth split, cert SANs and Step 7 are unchanged.
+
 ## v1.8.5 — 2026-07-15
 - **Ports for the offline depot server** (#158). `08-backup-and-depot.md` §B.1
   Step 1: the only listening port the platform needs is **inbound TCP 443
