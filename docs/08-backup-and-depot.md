@@ -73,6 +73,16 @@ credentials before saving — wrong values propagate to the fleet components and
 fail there. Monitor free space on the target: a full retention window of every
 component lands on it.
 
+> **Two central backup configs, in two different menus** — set *both*, it's easy
+> to configure one and assume the rest followed:
+> - **SDDC Manager** — *Operate → Administration → SDDC Manager*.
+> - **Management services** (log management, identity broker, Salt master, VCF
+>   Automation, the depot) — *Build → Lifecycle → Backup & Restore*. This is the
+>   Fleet LCM config the `tools/` scripts read and write.
+>
+> Both are under VCF Operations but on separate screens, and each **vCenter** is
+> separate again (VAMI, below).
+
 > **vCenter backup is NOT configured by VCF.** Setting the fleet SFTP target
 > covers SDDC Manager, NSX and the fleet components — but each vCenter's
 > file-based backup must be set up **manually** in that vCenter's own

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.8 — 2026-07-15
+- **A.1 note: SDDC Manager and management-services backups live in two menus**
+  (#170). In VCF 9.1 the central backup isn't one screen — **SDDC Manager** is
+  *Operate → Administration → SDDC Manager*, **management services** (log mgmt,
+  identity broker, Salt master, VCF Automation, depot — the Fleet LCM config the
+  `tools/` scripts target) is *Build → Lifecycle → Backup & Restore*, and each
+  vCenter is separate again (VAMI). Added so people set all of them.
+
 ## v1.9.7 — 2026-07-15
 - **A.5 note: backup `knownhosts: key is unknown` via FQDN, fixed by IP** (#169).
   Field-verified. When the backup precheck fails the SSH host-key check (banner
