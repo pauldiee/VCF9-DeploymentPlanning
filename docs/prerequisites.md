@@ -155,16 +155,31 @@ the single-node and HA models ship a **built-in L4 load balancer** that serves
 the cluster VIP; Avi in front is a post-deployment addition for SSL
 termination / keeping user access off the management network),
 or tenant/workload load balancing. Deployed **Day-2 from VCF Operations**
-(lifecycle-managed) into the domain it serves — the **management domain** when
-fronting VCF Automation, **into the workload domain** for a Supervisor — with
-that domain's vCenter and NSX already configured. Per the
+(lifecycle-managed), with the served domain's vCenter and NSX already
+configured. Per the
 [Avi-for-VCF 9.1 requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html),
 for Supervisor use the controller cluster **must be deployed before Supervisor
-activation**. Prepare up front:
+activation**.
 
-- **4 IPs + FQDNs on the VM Management network**: 3 controller nodes + the
-  **cluster VIP**. The VIP FQDN must be **registered in DNS and resolve to the
-  cluster VIP** (A + PTR for all four, like every other appliance).
+> **Controllers are central, Service Engines are local.** The **Avi controllers
+> always run in the management domain** — whichever domain they serve, including
+> a Supervisor on a workload domain. That is the same pattern as a workload
+> domain's vCenter and NSX Managers, which also run in the management domain
+> (`04-sizing.md`'s workload-domain repeater). Only the **Service Engine VMs**
+> are distributed: they run **per cluster**, in the workload domain.
+>
+> **A controller set is scoped to the NSX instance, not the workload domain:**
+> workload domains that **share** an NSX instance share **one** controller set;
+> a workload domain with its **own** NSX instance gets its **own** set. Count
+> controller sets by NSX instance, and Service Engines by cluster.
+
+Prepare up front:
+
+- **4 IPs on the management domain's VM Management network, per controller set**
+  (so **per NSX instance** — multiply if the fleet runs more than one): 3
+  controller nodes + the **cluster VIP**. The VIP FQDN must be **registered in
+  DNS and resolve to the cluster VIP** (A + PTR for all four, like every other
+  appliance).
 - **Controller size**: Small / Large / XLarge (the deploy wizard's tiers). Size
   it in `04-sizing.md` — note the workbook's Avi disk figures diverge from the
   NSX ALB controller ladder.
@@ -176,9 +191,11 @@ activation**. Prepare up front:
 - **A local content library** in the target vCenter for the **Service Engine**
   images, and a **Service Engine management network** (dedicated VLAN or
   overlay segment; SE management IPs via DHCP or a static IP pool in the
-  controller). Plan a **minimum of 2 Service Engines** for HA; the VIP source
-  depends on the networking path (VDS: VIP/data network + IPAM profile;
-  VPC: the VPC external IP blocks).
+  controller). **Service Engines are always present per cluster** — every
+  cluster Avi serves runs its own, with a **minimum of 2** for HA, so budget
+  their footprint and management IPs **per cluster** in the workload domain,
+  not once per fleet. The VIP source depends on the networking path (VDS:
+  VIP/data network + IPAM profile; VPC: the VPC external IP blocks).
 - Firewall: admin access to the controller UI/API (443) and the Service
   Engine ↔ controller secure channel — see [`07-firewall-ports.md`](07-firewall-ports.md) §E.
 
@@ -188,6 +205,59 @@ activation**. Prepare up front:
 > [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
 > The P&P workbook has **no Avi input fields** — only sizing rows — so capture
 > these values in the Step 1 plan / intake instead.
+
+## License Hub (only if vDefend or Avi is in scope)
+
+*When needed: **Day-N (if in scope)**.* Nothing here blocks bring-up.
+
+**License Hub** provides *"centralized license management and reporting for
+VMware vDefend and VMware Avi subscription license files"* — it replaces the
+traditional 25-character license keys with **digitally signed subscription
+license files**. It is deployed from the **SSP Installer** (Security Services
+Platform), and it is needed **only when vDefend or Avi is in scope**. Plain VCF
+without either does not need it.
+
+> **License Hub is not the License Server — and both exist.** The **License
+> Server** is deployed **automatically at bring-up**, is tied to VCF Operations,
+> and licenses the VCF fleet (deployment plan story 5.4). **License Hub** is a
+> separate appliance set, deployed **Day-N from the SSP Installer**, licensing
+> **vDefend + Avi**. They **coexist** — a fleet running Avi has both. Two
+> similar names, two unrelated appliances: don't plan one and assume it covers
+> the other.
+
+- **~9 IPs on one subnet, in two pools** — **installer 1**, **controller +
+  worker nodes 4**, **License Hub services 4**. The **node and service pools
+  cannot be modified after deployment**, so size them for scale-out up front.
+- **Three VMs, not one appliance** — an **installer**, a **controller** node and
+  a **worker** node (it deploys as an SSP instance: one controller + one
+  worker). Footprint:
+
+  | Component | vCPU | Memory (GB) | Storage (GB) |
+  | --------- | ---- | ----------- | ------------ |
+  | Installer | 4    | 6           | 400          |
+  | Controller| 2    | 8           | 155          |
+  | Worker    | 4    | 16          | 255          |
+
+- **Scale:** *"Total Endpoints Connected to a single License Hub instance =
+  120, where Endpoints could be a mix of NSX Manager, vDefend Security Services
+  Platform, Avi Controller."* One instance covers all but the largest fleets.
+- **Connected or disconnected — decide with the depot decision (intake `G1`).**
+  **Connected** mode needs live connectivity to the **Avi Cloud Console**;
+  registration is automatic and licenses are polled **every 15 minutes**.
+  **Disconnected** (air-gapped) mode uses file-based registration and a
+  **manual license file import every six months**.
+
+> **Air-gapped: the six-month import is a recurring commitment.** If the site
+> has no internet path — the same site that needs the offline depot in
+> [`09-binary-depot.md`](09-binary-depot.md) — someone must carry a fresh
+> license file in **twice a year, forever**. Give it a named owner and a
+> calendar reminder at deployment time, not at first expiry.
+
+TechDocs:
+[License Hub for vDefend and Avi](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/security-modernization/vdefend-lateral-security/security-services-platform-for-vmware-cloud-foundation/license-hub-for-vdefend-and-avi/license-hub-for-vmware-vdefend-and-vmware-avi-load-balancer.html)
+(the VCF 9.1 design blueprint — sizing, endpoint scale, modes) ·
+[Deploying License Hub](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/deploying-license-hub.html)
+(SSP 5.1 — the deploy procedure).
 
 ## vSphere Supervisor (only if in scope)
 

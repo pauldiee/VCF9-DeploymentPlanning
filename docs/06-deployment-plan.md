@@ -167,7 +167,8 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
   - Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
   - *Acceptance:* VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.
 - **Story 8.3 — Avi Load Balancer in front of VCF Automation (optional).** Deploy the **Avi controller cluster in the management domain** via VCF Operations (lifecycle-managed; its IPs/FQDNs/passwords are captured up front in [`prerequisites.md` → Avi Load Balancer](prerequisites.md) and intake `E16`/`F11`), then configure the **virtual service** in front of VCF Automation. An external LB is an **optional post-deployment addition** — its pool points at the cluster VIP of Automation's **built-in load balancer**, which stays the ingress. The built-in LB is **L4-only**, so Avi in front is what adds **SSL termination** and keeps user/tenant access off the management network. Ref: [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
-  - *Acceptance:* Avi controller cluster healthy; the virtual service fronts VCF Automation and its published FQDN resolves to the Avi VIP.
+  - **Licensing is its own appliance.** Avi is licensed through **License Hub**, deployed from the **SSP Installer** — not the `License Server` from bring-up (story 5.4); the two **coexist**. It is three VMs and ~9 IPs, and **air-gapped sites need a manual license file import every six months**. Plan it with this story, not at first expiry: [`prerequisites.md` → License Hub](prerequisites.md), intake `E17`.
+  - *Acceptance:* Avi controller cluster healthy; **License Hub deployed and the Avi licenses registered** (and, if disconnected, the six-month re-import owner named); the virtual service fronts VCF Automation and its published FQDN resolves to the Avi VIP.
 - **Story 8.4 — Optional fleet components.** Deploy the remaining fleet components as needed: **Log Management** and VCF Operations for Networks. Each is individually selectable in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/) — the generated story lists only the selected ones. (The **Identity Broker is not deployed here** — it arrives at bring-up with the management services; whether to *use* it for fleet SSO is the 8.5 choice, and if broker-based fleet SSO is out of scope, E6 6.3 becomes the identity path.)
   - *Acceptance:* each selected Day-2 component healthy; the fleet-management health (synthetic) check passes.
 - **Story 8.5 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, complete **fleet SSO via the VCF Identity Broker** (**configuration, not deployment** — the broker has been running since bring-up; this is the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: [`prerequisites.md` → Identity source for the VCF Identity Broker](prerequisites.md#identity-source-for-the-vcf-identity-broker)), and **apply licensing** across the fleet (via VCF Operations). Ref: [Configure a Certificate Authority](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html) · [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html).
@@ -208,7 +209,10 @@ Activation also needs **a load balancer**, chosen per WLD in the export tool:
   networking**; adds a deploy step to the enablement story.
 - **Avi Load Balancer** — the premium option on every networking stack;
   choosing it adds its **own story** ahead of the enablement: deploy the
-  **controller cluster into that workload domain** via VCF Operations
+  **controller cluster into the management domain** — controllers **always**
+  live there, never in the workload domain, and a set is scoped to the **NSX
+  instance**, so a WLD sharing an existing NSX instance **reuses** that set
+  rather than getting a new one — via VCF Operations
   (lifecycle-managed; **Avi 32.1.1+ binaries must be in the depot**; controller
   IPs/FQDN/passwords per [`prerequisites.md` → Avi Load Balancer](prerequisites.md)
   and intake `E16`/`F11`; a local content library for the Service Engine
@@ -216,9 +220,12 @@ Activation also needs **a load balancer**, chosen per WLD in the export tool:
   with VPC mode** under Distributed/VPC: SE management on an overlay segment
   behind a Tier-1 with DHCP, VIPs from the VPC external IP blocks; **NSX
   Cloud**, or a **vCenter cloud** for VDS networking, otherwise: SE management
-  on a VLAN or overlay segment, VIP network + IPAM profile) and **minimum 2
-  Service Engines** for HA. Per the Avi-for-VCF 9.1 requirements, all of it
-  **must exist before Supervisor activation**.
+  on a VLAN or overlay segment, VIP network + IPAM profile) and the **Service
+  Engines**, which run **per cluster** in the workload domain (**minimum 2**
+  per cluster for HA). Avi also needs **License Hub** (SSP Installer; separate
+  from bring-up's `License Server`, they coexist — [`prerequisites.md` →
+  License Hub](prerequisites.md), intake `E17`). Per the Avi-for-VCF 9.1
+  requirements, all of it **must exist before Supervisor activation**.
 
 Plus a control-plane size (Small / Medium / Large). The full prerequisite
 checklist — 5 consecutive control-plane IPs, API FQDN + DNS, per-path IP
