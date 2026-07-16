@@ -172,7 +172,7 @@ activation**. Prepare up front:
   controller **admin** and the **VCF Ops admin** (break-glass) accounts.
 - **Avi binaries in the depot** — 32.1.1 or higher must be available from the
   (online or offline) depot before VCF Operations can deploy the controller
-  (see [`09-binary-depot.md`](09-binary-depot.md) §B).
+  (see [`09-binary-depot.md`](09-binary-depot.md)).
 - **A local content library** in the target vCenter for the **Service Engine**
   images, and a **Service Engine management network** (dedicated VLAN or
   overlay segment; SE management IPs via DHCP or a static IP pool in the
@@ -450,7 +450,7 @@ in parallel with the deployment, not after go-live.
   `diffie-hellman-group-exchange-sha256` / `ecdh-sha2-nistp256` / `nistp384` /
   `nistp521`, and the MAC `hmac-sha2-256` (**not** only the
   `-etm@openssh.com` variant — a common hardening trap). Verify the handshake
-  before registering the target: [`08-backup-target.md`](08-backup-target.md) §A.4.
+  before registering the target: [`08-backup-target.md`](08-backup-target.md) §4.
 - A **backup encryption passphrase** chosen and stored in a password manager
   with a named owner — it is **required during restore**; a lost passphrase
   makes every backup on the target useless.
@@ -459,7 +459,7 @@ in parallel with the deployment, not after go-live.
 
 > Build guidance (what backs up and how often, placement, a hardened chrooted
 > OpenSSH worked example, gotchas) + references:
-> [`08-backup-target.md`](08-backup-target.md) §A. TechDocs:
+> [`08-backup-target.md`](08-backup-target.md). TechDocs:
 > [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
 > and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
 > Note the workbook's own SFTP row is stale here — it still says NSX + SDDC
@@ -510,7 +510,7 @@ infrastructure:
   `G2`/`G3`) and outbound 443 per the Public URLs table below. Generating the
   download credential requires the **Product Administrator** role on the
   Broadcom support-portal site — arrange it early (see
-  [`09-binary-depot.md`](09-binary-depot.md) §B). TechDocs:
+  [`09-binary-depot.md`](09-binary-depot.md)). TechDocs:
   [Connect VCF Installer to Broadcom or an Offline Depot and Download Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html).
 - **Offline depot** (air-gapped) — the **VCF Download Tool** is the only
   supported method in 9.1; you also need a web server (**≥ 1 TB** disk,
@@ -524,7 +524,7 @@ infrastructure:
 
 > Build guidance (depot web server setup, Download Tool commands, transfer +
 > connect steps, using the tool standalone to pre-stage binaries) + references:
-> [`09-binary-depot.md`](09-binary-depot.md) §B.
+> [`09-binary-depot.md`](09-binary-depot.md).
 
 ## Public URLs (online functionality)
 
@@ -558,7 +558,7 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 > depot + VCF Operations IPs and the proxy config then fails to apply. Firewall
 > the **whole node block** to the proxy port. Full writeup + how to read the
 > precheck logs:
-> [09-binary-depot.md §B.4](09-binary-depot.md#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place).
+> [09-binary-depot.md §5](09-binary-depot.md#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place).
 
 > **Air-gapped?** The platform itself then needs none of these — but the
 > machine running the **VCF Download Tool** still does, from wherever it runs.

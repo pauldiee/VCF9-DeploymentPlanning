@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.0.0 — 2026-07-16
+- **Renumbered the two split pages to plain section numbers** (#172). The #171
+  split deliberately kept the old `A.`/`B.` numbering to preserve every deep-link
+  while the pages moved; now that they're standalone, `08-backup-target.md` reads
+  **§1–§7** (was A.1–A.7) and `09-binary-depot.md` reads **§1–§6** (was B.0–B.5 —
+  the unnumbered-looking `B.0` becomes a plain §1). Headings, both Contents
+  tables, intra-page cross-links and every external reference (prerequisites,
+  deployment plan, intake) moved together. Cross-page references now name the
+  page they point at (*"Backup Target §5"*, not a bare *"A.5"*), since a bare
+  number no longer says which of the two pages it means; the two prose refs that
+  crossed pages without a link (the depot's ICMP note, the proxy's Fleet LCM
+  pattern) are now real links. Whole-page refs that used to read *"§A"* / *"§B"*
+  just point at the page. Verified with a build: all **145** in-page and
+  cross-doc anchors resolve.
+- Version rolls to **2.0.0**: `1.9.9` had both the patch and the minor component
+  at `.9`, and this repo caps every component at `.9`.
+
 ## v1.9.9 — 2026-07-16
 - **Split the backup-and-depot guide into two pages** (#171). It had grown to
   ~1050 lines over two distinct topics; now **`08-backup-target.md`** (the SFTP

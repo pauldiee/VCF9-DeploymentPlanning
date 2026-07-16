@@ -12,8 +12,8 @@ backs up to.
 
 | # | Section | Use it when |
 | - | ------- | ----------- |
-| B.0 | [Three ways to feed binaries](#b0-three-ways-to-feed-binaries) | Choosing: online depot, offline depot, or manual transfer |
-| B.1 | [Setting up an offline depot](#b1-setting-up-an-offline-depot) | The site has no internet path to Broadcom |
+| 1 | [Three ways to feed binaries](#1-three-ways-to-feed-binaries) | Choosing: online depot, offline depot, or manual transfer |
+| 2 | [Setting up an offline depot](#2-setting-up-an-offline-depot) | The site has no internet path to Broadcom |
 | | ↳ [Step 1 — Depot web server](#step-1--depot-web-server) | Sizing and certifying the box |
 | | ↳ [Photon OS variant (offline build)](#photon-os-variant-offline-build) | Air-gapped nginx install (ISO/RPM), serve the store, iptables — end to end |
 | | ↳ [Step 2 — Auth split](#step-2--auth-split) | What to protect with basic auth, and what must stay open |
@@ -22,25 +22,25 @@ backs up to.
 | | ↳ [Step 5 — Download the binaries](#step-5--download-the-binaries) | The actual `binaries download` / `esx download` runs |
 | | ↳ [Step 6 — Transfer to the air-gapped server](#step-6--transfer-to-the-air-gapped-server) | Moving the store across the gap intact |
 | | ↳ [Step 7 — Connect VCF to it](#step-7--connect-vcf-to-it) | Pointing the Installer (and later the fleet) at the depot |
-| B.2 | [Manual transfer — feeding the VCF Installer without a depot server](#b2-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | You have no depot server at all and need bits on the Installer |
-| B.3 | [Using the Download Tool standalone](#b3-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
-| B.4 | [Proxy for the VCF services runtime](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
+| 3 | [Manual transfer — feeding the VCF Installer without a depot server](#3-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | You have no depot server at all and need bits on the Installer |
+| 4 | [Using the Download Tool standalone](#4-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
+| 5 | [Proxy for the VCF services runtime](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
 | | ↳ [Gotcha: precheck is a netcat test from the whole node block](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place) | **Precheck times out even with the documented access** — firewall the whole services-runtime block |
-| B.5 | [References](#b5-references) | The TechDocs behind the above |
+| 6 | [References](#6-references) | The TechDocs behind the above |
 
 ---
 
-## B.0 Three ways to feed binaries
+## 1. Three ways to feed binaries
 
 Pick one (intake `G1`):
 
 - **Online depot** — VCF Installer (and later the fleet) connect to the
   Broadcom depot directly using the **Download Service ID + Activation Code**
   (intake `G2`/`G3`; how to obtain them — and the Product-Administrator-role
-  gotcha — is in B.1 step 4). Needs outbound
+  gotcha — is in §2 step 4). Needs outbound
   443 to the [Public URLs table](prerequisites.md#public-urls-online-functionality)
   (via the proxy from intake `G5` if there is one — for the **fleet's** own proxy,
-  set on the VCF services runtime, see [B.4](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)). TechDocs:
+  set on the VCF services runtime, see [§5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)). TechDocs:
   [Connect VCF Installer to Broadcom or an Offline Depot and Download Binaries](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-online-depot-to-download-binaries.html).
 - **Offline depot** — for air-gapped sites the **VCF Download Tool** is the
   only supported method in 9.1. It downloads a **depot store** on an
@@ -51,10 +51,10 @@ Pick one (intake `G1`):
 - **Manual transfer** — no depot at all: run the **VCF Download Tool** on any
   internet-connected machine, copy the depot store onto the **VCF Installer
   appliance itself** and import it there. No web server to build — best for a
-  one-off install; see B.2 for the steps and the Day-N caveat. TechDocs:
+  one-off install; see §3 for the steps and the Day-N caveat. TechDocs:
   [Manually Transfer Binaries to VCF Installer](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/use-the-vmware-download-tool-to-download-binaries.html).
 
-## B.1 Setting up an offline depot
+## 2. Setting up an offline depot
 
 ### Step 1 — Depot web server
 
@@ -102,7 +102,7 @@ too). A self-signed cert means the VCF Installer must trust it — see step 7.
 > bring-up bundles + component OVAs + ESX ISO). Broadcom's own recommendation is
 > to provision **≥ 1 TB**, and that headroom is real rather than padding: the
 > store **grows every Day-N patch cycle** — the fleet Depot Service side-loads
-> too (see the [B.2 Day-N caveat](#b2-manual-transfer--feeding-the-vcf-installer-without-a-depot-server)) — on the order of a few GB per ESX patch pull. So
+> too (see the [§3 Day-N caveat](#3-manual-transfer--feeding-the-vcf-installer-without-a-depot-server)) — on the order of a few GB per ESX patch pull. So
 > **build on ~300 GB, provision the 1 TB.** No authoritative *content* footprint
 > is published; 300 GB is a field starting point, not a hard minimum.
 
@@ -114,7 +114,7 @@ too). A self-signed cert means the VCF Installer must trust it — see step 7.
 > vCenter** for Day-N patching. Open 443 to the depot from the management network
 > **and the whole services-runtime block** — the fleet Depot Service pulls from
 > there, the same "firewall the block" lesson as the proxy in
-> [B.4](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api). No inbound
+> [§5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api). No inbound
 > 80 is required; serve HTTPS only (an 80 → 443 redirect is optional convenience,
 > not a requirement). **Outbound:** the depot box needs none — *unless* it is also
 > the internet-connected host running the VCF Download Tool, in which case it
@@ -150,7 +150,7 @@ a local source. Two ways, no internet required either way:
   # air-gapped box:  cd /root/nginx-rpms && tdnf install ./*.rpm
   ```
 
-  (If the box can reach the [proxy from B.4](#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api),
+  (If the box can reach the [proxy from §5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api),
   set `proxy=` in `/etc/tdnf/tdnf.conf` and just `tdnf install nginx`.)
 
 **2. Create the store directory** — this *is* what you serve, and what the
@@ -205,7 +205,8 @@ systemctl restart iptables
 ```
 
 (Add `iptables -A INPUT -p icmp -j ACCEPT` before saving if you also want the box
-to answer ping for reachability tests — see the ICMP note in A.3.)
+to answer ping for reachability tests — see the ICMP note in
+[Backup Target §3](08-backup-target.md#3-building-one-chrooted-openssh-example).)
 
 **5. Start + verify:**
 
@@ -350,18 +351,18 @@ accept-certificate prompt; the cert had to be imported over SSH — see the vTam
 walkthrough below). Day-N, the fleet connects under **VCF Operations → Depot
 Configuration** (fleet-level *and* per-instance).
 
-## B.2 Manual transfer — feeding the VCF Installer without a depot server
+## 3. Manual transfer — feeding the VCF Installer without a depot server
 
 For a one-off installation (lab, PoC, or a small air-gapped site) you can skip
 building the depot web server entirely: download the depot store with the VCF
 Download Tool on any internet-connected machine, copy it onto the VCF
 Installer appliance, and import it locally. **"Manual" means no depot server —
 not hand-picked downloads:** the binaries still come exclusively through the
-**VCF Download Tool + activation code** (B.1 steps 3–4 apply unchanged);
+**VCF Download Tool + activation code** (§2 steps 3–4 apply unchanged);
 pulling OVAs/ISOs by hand from the support portal is not a supported
 substitute in 9.1.
 
-1. **Download** the install set on the internet-connected machine — B.1
+1. **Download** the install set on the internet-connected machine — §2
    step 5's `binaries download --type INSTALL` command, with `--depot-store`
    pointing at a local staging directory. Metadata comes with it; plan the
    same order of disk space.
@@ -390,11 +391,11 @@ substitute in 9.1.
 > (`vcf-download-tool depot binaries upload --ops-fqdn <vcf-ops-fqdn>
 > --depot-fqdn <fleet-depot-fqdn>`, optionally per `--component`). In 9.0 this
 > extra step didn't exist. Manual copies at every patch cycle get tedious
-> fast — beyond a lab or one-off, the offline depot (B.1) is the smoother
+> fast — beyond a lab or one-off, the offline depot (§2) is the smoother
 > long-term setup. Walkthrough incl. the Fleet Depot Service step: William
 > Lam's [Side-loading VCF binaries into VCF Installer & Fleet Depot Service](https://williamlam.com/2026/06/vcf-9-1-side-loading-vcf-binaries-into-vcf-installer-fleet-depot-service-for-air-gapped-environments.html).
 
-## B.3 Using the Download Tool standalone
+## 4. Using the Download Tool standalone
 
 You don't need to be air-gapped to use the tool. Run it on any
 internet-connected machine with the same activation-code file to **pre-stage
@@ -404,17 +405,18 @@ the VCF appliances out to the internet. Whatever machine runs it needs
 outbound 443 to the [Public URLs](prerequisites.md#public-urls-online-functionality)
 — plan that host's egress (or proxy allowlist) as part of the prereq gate.
 
-## B.4 Proxy for the VCF services runtime (via the Fleet LCM API)
+## 5. Proxy for the VCF services runtime (via the Fleet LCM API)
 
 When the VCF Management Services components have **no direct route to the
 internet**, the fleet reaches the online depot (and everything else it downloads)
 through a **proxy set on the VCF services runtime** — the `VSP` component in Fleet
-lifecycle. This is the `G5` proxy referenced in B.0, applied to the fleet rather
+lifecycle. This is the `G5` proxy referenced in §1, applied to the fleet rather
 than the Installer. TechDocs:
 [Configure a Proxy Server for VCF Management Services Components and VCF Automation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/configuring-management-components/configure-a-proxy-server-to-download-bundles-from-sddc-manager.html).
 
 The TechDocs procedure reads as a wall of `curl`/`jq` token-juggling; underneath
-it is short. It's the **same Fleet LCM API pattern as the backup config in A.5**,
+it is short. It's the **same Fleet LCM API pattern as the backup config in
+[Backup Target §5](08-backup-target.md#5-when-the-target-will-not-configure-field-notes)**,
 so the field notes there apply here too.
 
 **The flow, distilled:**
@@ -478,7 +480,8 @@ Optional `peerProxy` fields: `username` + `password` (with
   because the browser holds a `JSESSIONID` cookie). A Bearer-token client gets
   **405** on a `PATCH` there and HTML on a `GET`. Both the lookup and the write go
   to `https://<FleetLCM>/fleet-lcm/v1/...`, where the token is accepted — the same
-  lesson as the backup write (A.5, and issue #150).
+  lesson as the backup write ([Backup Target §5](08-backup-target.md#ask-the-api-what-was-actually-stored),
+  and issue #150).
 - **Skip the `/casa/services` service-key lookup.** The TechDocs procedure fetches
   a service key from `<VCFOps>/casa/services` with a hard-coded Basic-auth header;
   you don't need it. The fleet-lcm service key is just the literal string
@@ -501,12 +504,12 @@ Setting the proxy is not the end of it. The `PATCH` is **accepted** (you get a t
 ID), and the platform then runs a **`peer-proxy-precheck`** workflow on the VCF
 services runtime. **If that precheck fails, the proxy is never applied** — the
 config submit stores nothing, exactly like the backup submit in
-[A.5](08-backup-target.md#a-failed-submit-stores-nothing). And the failure the platform surfaces is
+[Backup Target §5](08-backup-target.md#a-failed-submit-stores-nothing). And the failure the platform surfaces is
 misleading: *"the proxy server may be slow, overloaded, or network latency is too
 high."*
 
 What the precheck actually does — read it yourself. Get a `kubectl` session on the
-control-plane node ([recipe in A.6](08-backup-target.md#a6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
+control-plane node ([recipe in Backup Target §6](08-backup-target.md#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
 — SSH in as `root`, `kubectl` is already wired up), then:
 
 ```bash
@@ -530,7 +533,7 @@ depot or VCF Operations IPs. Broadcom's documented access for the proxy does **n
 call this out, so the firewall gets opened only for the depot + Ops IPs (the hosts
 you'd *expect* to use a download proxy), the precheck lands on a node that isn't
 permitted, and it **times out**. This is the same trap as the backup target in
-[A.5](08-backup-target.md#the-clients-are-the-whole-services-runtime-block): **firewall the block, not
+[Backup Target §5](08-backup-target.md#the-clients-are-the-whole-services-runtime-block): **firewall the block, not
 the named hosts you think talk to it.**
 
 **Fix:** allow the **whole services-runtime node block** outbound to the proxy on
@@ -545,13 +548,13 @@ Then re-submit (`Set-VCFProxyConfig.ps1` again, or let the platform retry) and t
 or TLS (`tlsEnabled`) proxy still has to clear this reachability gate **first** —
 fix the firewall before chasing credentials or certificates.
 
-## B.5 References
+## 6. References
 
 - TechDocs: [Set Up an Offline Depot Web Server for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-offline-depot-to-download-binaries/set-up-an-offline-depot-web-server-for-vmware-cloud-foundation.html)
   (full Apache walk-through incl. certificate + basic-auth config),
   [Download Binaries to an Offline Depot by Using the VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/binary-management-for-vmware-cloud-foundation/download-bundles-to-an-offline-depot.html)
   and [Manually Transfer Binaries to VCF Installer](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/use-the-vmware-download-tool-to-download-binaries.html)
-  (the no-depot-server path in B.2).
+  (the no-depot-server path in §3).
 - Registration / credentials: [Software Depot Registration in the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/business-services/home/depot-service-authentication-in-the-vcf-business-services-console.html)
   (authoritative 9.1 registration procedures per component). Broadcom KBs:
   [VCF authenticated downloads configuration update instructions](https://knowledge.broadcom.com/external/article/390098)

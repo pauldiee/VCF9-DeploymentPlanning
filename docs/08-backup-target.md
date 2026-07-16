@@ -12,16 +12,16 @@ from.
 
 | # | Section | Use it when |
 | - | ------- | ----------- |
-| A.1 | [What backs up to it (and how often)](#a1-what-backs-up-to-it-and-how-often) | Sizing the target and setting the schedule |
-| A.2 | [Requirements and placement](#a2-requirements-and-placement) | Deciding where it lives and what it must support (**FIPS is the 9.x baseline**) |
-| A.3 | [Building one (chrooted OpenSSH example)](#a3-building-one-chrooted-openssh-example) | Building the box |
+| 1 | [What backs up to it (and how often)](#1-what-backs-up-to-it-and-how-often) | Sizing the target and setting the schedule |
+| 2 | [Requirements and placement](#2-requirements-and-placement) | Deciding where it lives and what it must support (**FIPS is the 9.x baseline**) |
+| 3 | [Building one (chrooted OpenSSH example)](#3-building-one-chrooted-openssh-example) | Building the box |
 | | ↳ [Linux variant (chroot jail)](#linux-variant-chroot-jail) | The common case — SFTP-only account in a jail |
 | | ↳ [Windows Server variant](#windows-server-variant-built-in-openssh-server) | In-box OpenSSH, and the traps unique to it |
-| A.4 | [Verify the target before you register it](#a4-verify-the-target-before-you-register-it) | **Before** you touch the VCF wizard |
+| 4 | [Verify the target before you register it](#4-verify-the-target-before-you-register-it) | **Before** you touch the VCF wizard |
 | | ↳ [The check: force the FIPS negotiation](#the-check-force-the-fips-negotiation) | The ten-minute test that predicts whether VCF will connect |
 | | ↳ [Three traps this catches](#three-traps-this-catches) | ETM MACs, legacy `ssh-rsa`, the path format |
 | | ↳ [Windows targets: a word of caution](#windows-targets-a-word-of-caution) | Deciding whether to run the target on Windows at all |
-| A.5 | [When the target will not configure (field notes)](#a5-when-the-target-will-not-configure-field-notes) | **The wizard fails and tells you nothing** |
+| 5 | [When the target will not configure (field notes)](#5-when-the-target-will-not-configure-field-notes) | **The wizard fails and tells you nothing** |
 | | ↳ [Read the sshd log correctly](#read-the-sshd-log-correctly-or-you-will-chase-ghosts) | Most `[preauth]` lines are **probes, not failures** |
 | | ↳ [A failed submit stores nothing](#a-failed-submit-stores-nothing) | An empty Backup & Restore table means the task failed |
 | | ↳ [The clients are the whole services-runtime block](#the-clients-are-the-whole-services-runtime-block) | Firewall the **block**; offer a **superset** of algorithms |
@@ -29,12 +29,12 @@ from.
 | | ↳ [Getting the fingerprint](#getting-the-fingerprint-not-with-windows-ssh-keyscan) | Windows `ssh-keyscan` is broken — read it on the server |
 | | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
-| A.6 | [Cold backup / cold maintenance](#a6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
-| A.7 | [References](#a7-references) | The TechDocs and KBs behind the above |
+| 6 | [Cold backup / cold maintenance](#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
+| 7 | [References](#7-references) | The TechDocs and KBs behind the above |
 
 ---
 
-## A.1 What backs up to it (and how often)
+## 1. What backs up to it (and how often)
 
 | Component                             | Cadence (recommended)             | Note                                                        |
 | ------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
@@ -76,7 +76,7 @@ component lands on it.
 > password manager with a named owner (intake `F11` pattern) — treat a lost
 > passphrase as having no backups at all.
 
-## A.2 Requirements and placement
+## 2. Requirements and placement
 
 - SFTP over SSH, TCP **22**, reachable from the VCF management network.
 - The server must support **256-bit ECDSA and 2048-bit RSA SSH keys**, and its
@@ -89,7 +89,7 @@ component lands on it.
   9.1 build, not an optional extra: the SFTP server must additionally offer a
   **KEX** algorithm from `diffie-hellman-group-exchange-sha256`,
   `ecdh-sha2-nistp256`, `ecdh-sha2-nistp384`, `ecdh-sha2-nistp521` — and the
-  **MAC** `hmac-sha2-256`. Verify it with A.4 below.
+  **MAC** `hmac-sha2-256`. Verify it with §4 below.
 - Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
 - Put it **outside the management domain it protects** — a backup target that
   dies with the platform is not a backup. A VM on separate infrastructure, a
@@ -97,7 +97,7 @@ component lands on it.
   different fault domain than the primary management AZ.
 - Static IP and DNS A + PTR records, like every other appliance in the plan.
 
-## A.3 Building one (chrooted OpenSSH example)
+## 3. Building one (chrooted OpenSSH example)
 
 Anything that speaks SFTP over SSH qualifies — a NAS, Windows Server with
 OpenSSH Server, or (most common) a small Linux VM.
@@ -165,7 +165,7 @@ Get-NetFirewallRule -Name OpenSSH-Server-In-TCP   # confirm the TCP 22 inbound r
   `Test-NetConnection <fqdn> -Port 22`, then a real `sftp` login and a `put`
   of a test file into the backup directory.
 
-## A.4 Verify the target before you register it
+## 4. Verify the target before you register it
 
 Whether you built the target or were handed one, prove the SSH handshake VCF
 needs actually completes.
@@ -213,7 +213,7 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
   default, which is exactly what broke SFTP backup validation on older VCF
   ([KB 372839](https://knowledge.broadcom.com/external/article/372839/backup-configuration-fails-during-backup.html);
   fixed from VCF 5.1.1, so 9.1 is fine — it's why everything leans on ECDSA).
-- **The path format** — see the Windows gotcha in A.3: `sftp` shows
+- **The path format** — see the Windows gotcha in §3: `sftp` shows
   `/C:/vcf-backups`, and anything else fails with *"Invalid parameter:
   validation failed for directory path"*.
 
@@ -227,7 +227,7 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
 > ten minutes whether a given Windows box works. But this is the one
 > requirement where *"it validated"* and *"the restore works"* are the same
 > question, so if there's no strong reason to run it on Windows, the Linux
-> pattern in A.3 is the better-trodden path.
+> pattern in §3 is the better-trodden path.
 
 > The `Ciphers` list on Broadcom's SFTP prerequisites page is written as **TLS**
 > cipher-suite names (`TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, …), which are
@@ -235,7 +235,7 @@ reports** — that, not the OS path, is what goes into the wizard. Finally, in
 > SFTP, make sure the server offers **AES-CTR / AES-GCM** and doesn't depend on
 > `chacha20-poly1305` (not FIPS-approved).
 
-## A.5 When the target will not configure (field notes)
+## 5. When the target will not configure (field notes)
 
 Everything below was learned the hard way on a 9.1 build whose backup target
 refused to configure. None of it is in the product documentation.
@@ -410,14 +410,14 @@ platform: it puts the username on the wire *explicitly*, so if the sshd log stil
 shows an identifier instead of the account, the substitution is happening
 server-side and you have a defect worth reporting.
 
-## A.6 Cold backup / cold maintenance: safely shutting down the management services
+## 6. Cold backup / cold maintenance: safely shutting down the management services
 
 The SFTP target above is the platform's *online* backup. Some operations instead
 need the management plane **fully down** first: a **cold backup or VM-level
 snapshot** of the appliances, **planned vSphere maintenance** under them, a
 **datacenter power event**, or a **decommission**. For those you must safely shut
 down the **VCF services runtime** — the same `VSP` cluster the proxy in
-[B.4](09-binary-depot.md#b4-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) configures.
+[Binary Depot §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) configures.
 Broadcom KB: [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
 (covers both the Fleet cluster and Instance clusters).
 
@@ -438,7 +438,7 @@ is the whole plane going dark, on purpose.
 
 **Getting a `kubectl` session on the control-plane node.** You need this here for
 the kubeconfig, and again in
-[B.4](09-binary-depot.md#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place)
+[Binary Depot §5](09-binary-depot.md#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place)
 to read the proxy precheck logs:
 
 1. In VCF Operations — **Build > Lifecycle > Components**, click **VCF Services
@@ -474,7 +474,7 @@ component the proxy scripts read); override with `export GOVC_URL=https://<vcent
   runtime restarts its components. KB 440874 documents the *shutdown*; verify
   recovery **in-product** rather than assuming an order.
 
-## A.7 References
+## 7. References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
   and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
@@ -483,7 +483,7 @@ component the proxy scripts read); override with `export GOVC_URL=https://<vcent
   — a **5.2** page, but the 9.x *Configure SFTP Backup Target* page doesn't
   restate them, and they still apply.
 - FIPS-by-default in 9.x: [FIPS Configuration for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/fips-compliance-for-vcf-components.html).
-- Cold shutdown of the management plane (A.6): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
+- Cold shutdown of the management plane (§6): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
   (Broadcom KB 440874 — the `vcf_services_runtime_shutdown.sh` script and its modes).
 - Community walkthroughs: [SFTP server on Photon OS for VCF 9.1 backups](https://topvcf.com/2026/05/19/5685/)
   (chroot jail, end to end) and [SFTP on Ubuntu Server](https://www.velements.net/2024/10/12/setup-sftp-on-ubuntu-server/)
