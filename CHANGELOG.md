@@ -14,6 +14,12 @@
   pattern) are now real links. Whole-page refs that used to read *"§A"* / *"§B"*
   just point at the page. Verified with a build: all **145** in-page and
   cross-doc anchors resolve.
+- **Old `/docs/08-backup-and-depot/` URL no longer 404s** (#173). The split
+  removed the page and its URL with it. Because it covered two distinct topics,
+  it's a small **landing that links both new pages** rather than a meta-refresh
+  to one — an auto-redirect would silently strand anyone who bookmarked it for
+  the depot half. Kept out of the search index, like the `02-customer-intake`
+  redirect it sits beside.
 - Version rolls to **2.0.0**: `1.9.9` had both the patch and the minor component
   at `.9`, and this repo caps every component at `.9`.
 

@@ -1,0 +1,81 @@
+---
+// Legacy URL: 08-backup-and-depot was split into 08-backup-target +
+// 09-binary-depot (#171, #173). It covered two distinct topics, so this is a
+// landing rather than a meta-refresh: an auto-redirect to one page would
+// silently strand anyone who bookmarked it for the other.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { docHref } from '../../lib/path';
+import { navBySlug } from '../../nav';
+
+const targets = ['08-backup-target', '09-binary-depot'].map((slug) => ({
+  href: docHref(slug),
+  ...navBySlug(slug)!,
+}));
+---
+
+<BaseLayout
+  title="Moved: Backup Target and Binary Depot"
+  description="The backup-and-depot guide was split into two pages: SFTP Backup Target and Binary Depot."
+>
+  <article class="prose" data-pagefind-ignore>
+    <p class="doc-eyebrow itq-eyebrow">Page moved</p>
+    <h1>This guide is now two pages</h1>
+    <p>
+      The backup-and-depot guide covered two separate topics and grew too long, so it was split.
+      Pick the one you were after:
+    </p>
+    <ul class="moved-list">
+      {
+        targets.map((t) => (
+          <li>
+            <a class="moved-card" href={t.href}>
+              <span class="moved-card__title">
+                <i class:list={['fa-solid', `fa-${t.icon}`]} aria-hidden="true" /> {t.label}
+              </span>
+              <span class="moved-card__blurb">{t.blurb}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+</BaseLayout>
+
+<style>
+  .moved-list {
+    display: grid;
+    gap: 1rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* The ITQ tokens (base.css) draw a brand square on every ul > li::before. */
+  .moved-list li::before {
+    display: none;
+  }
+  .moved-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.15rem;
+    background: var(--itq-mist);
+    border-left: 3px solid var(--itq-orange);
+    border-radius: 4px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .moved-card:hover {
+    background: var(--itq-white, #fff);
+    box-shadow: 0 1px 6px rgb(0 0 0 / 0.12);
+  }
+  .moved-card__title {
+    font-weight: 600;
+    color: var(--itq-royal-blue);
+  }
+  .moved-card:hover .moved-card__title {
+    color: var(--itq-orange);
+  }
+  .moved-card__blurb {
+    font-size: 0.9rem;
+  }
+</style>
