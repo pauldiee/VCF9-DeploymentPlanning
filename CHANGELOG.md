@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.9.9 — 2026-07-16
+- **Split the backup-and-depot guide into two pages** (#171). It had grown to
+  ~1050 lines over two distinct topics; now **`08-backup-target.md`** (the SFTP
+  backup target — build, verify, field-notes) and **`09-binary-depot.md`** (the
+  offline depot / VCF Download Tool), each with its own focused Contents and a
+  cross-link to the other. Section headings promoted to **H2** so the site's
+  sticky *On this page* nav lists every section and each gets a **back-to-top**
+  button. `nav.ts` (two sidebar entries), README, CLAUDE, and every cross-doc link
+  (intake, deployment plan, prerequisites) updated; existing anchors preserved.
+  Also refined the §A.1 two-menus note — SDDC Manager **+ NSX** live in *Operate →
+  Administration → SDDC Manager*, management services in *Build → Lifecycle →
+  Backup & Restore*.
+
 ## v1.9.8 — 2026-07-15
 - **A.1 note: SDDC Manager and management-services backups live in two menus**
   (#170). In VCF 9.1 the central backup isn't one screen — **SDDC Manager** is
