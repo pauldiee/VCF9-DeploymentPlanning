@@ -50,7 +50,13 @@ const aviDisk: SizeMap = { Small: 512, Large: 1400, 'X-Large': 1750 };
 const sspCpu: SizeMap = { Medium: 112, Large: 160, 'X-Large': 192 };
 const sspRam: SizeMap = { Medium: 414, Large: 606, 'X-Large': 734 };
 const sspDisk: SizeMap = { Medium: 4096, Large: 5120, 'X-Large': 6656 };
-const SSP_LIC = { cpu: 10, ram: 30, disk: 710 }; // vDefend + AVI licensing hub, added once
+
+// License Hub — the licensing appliance the SSP Installer deploys (installer +
+// controller + worker). It licenses vDefend AND Avi, so it is required whenever
+// EITHER is in scope, and one instance covers both (120 endpoints across NSX
+// Manager / SSP / Avi Controller). Disk is the workbook's figure; the TechDocs
+// component table sums to 810 (400 + 155 + 255) — divergence tracked in #176.
+const LICENSE_HUB = { nodes: 3, cpu: 10, ram: 30, disk: 710 };
 
 const vcfaCpu: SizeMap = { Small: 24, Medium: 24, Large: 32 };
 const vcfaRam: SizeMap = { Small: 96, Medium: 96, Large: 128 };
@@ -298,16 +304,23 @@ export function components(s: SizingState): Component[] {
     });
   }
 
-  // Management Security Services Platform (+ licensing hub)
+  // Management Security Services Platform
   if (s.sspSize !== 'Excluded') {
     const workerNodes = s.sspSize === 'Medium' ? 9 : s.sspSize === 'Large' ? 12 : 14;
     list.push({
       name: 'Security Services Platform',
       nodes: workerNodes,
-      cpu: sspCpu[s.sspSize] + SSP_LIC.cpu,
-      ram: sspRam[s.sspSize] + SSP_LIC.ram,
-      disk: sspDisk[s.sspSize] + SSP_LIC.disk,
+      cpu: sspCpu[s.sspSize],
+      ram: sspRam[s.sspSize],
+      disk: sspDisk[s.sspSize],
     });
+  }
+
+  // License Hub — needed when vDefend/SSP OR Avi is in scope, and added once
+  // when both are. It used to be folded into the SSP row above and gated on SSP
+  // alone, which silently under-sized an Avi-only fleet by its whole footprint.
+  if (s.sspSize !== 'Excluded' || s.aviSize !== 'Excluded') {
+    list.push({ name: 'License Hub (vDefend / AVI licensing)', ...LICENSE_HUB });
   }
 
   // VCF services runtime (VCFMS) — control nodes
