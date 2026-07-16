@@ -68,11 +68,18 @@ export const NAV: NavItem[] = [
     blurb: 'Deployment-critical firewall flows by zone, the 9.1 port gotchas, and links to the authoritative Ports & Protocols tools.',
   },
   {
-    slug: '08-backup-and-depot',
+    slug: '08-backup-target',
     step: 'Reference',
-    label: 'Backup & Depot',
+    label: 'Backup Target',
+    icon: 'hard-drive',
+    blurb: 'Build guide for the SFTP backup target every management component backs up to — building it, verifying it, and the field-notes gotchas.',
+  },
+  {
+    slug: '09-binary-depot',
+    step: 'Reference',
+    label: 'Binary Depot',
     icon: 'box-archive',
-    blurb: 'Build guide for the SFTP backup target and the offline depot / VCF Download Tool, with worked examples and gotchas.',
+    blurb: 'The offline depot and VCF Download Tool — build, feed, and connect the depot the platform installs and patches from.',
   },
   {
     slug: 'workbook-cell-mapping',

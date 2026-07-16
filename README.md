@@ -29,7 +29,8 @@ This repo flips the order:
 | `docs/05-day2-deployments.md`       | Day-N — fleet components added after bring-up (VCF Automation, Log Management, Operations for Networks, network placement) |
 | `docs/06-deployment-plan.md`        | Agile work breakdown (epics/stories/tasks); build a scope (stretch, Day-2, workload domains) and export it |
 | `docs/07-firewall-ports.md`         | Reference — deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
-| `docs/08-backup-and-depot.md`       | Reference — build guide for the SFTP backup target and the offline depot / VCF Download Tool |
+| `docs/08-backup-target.md`          | Reference — build guide for the SFTP backup target (building, verifying, field-notes gotchas) |
+| `docs/09-binary-depot.md`           | Reference — build guide for the offline depot / VCF Download Tool (feed the depot, connect VCF, the fleet proxy) |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |

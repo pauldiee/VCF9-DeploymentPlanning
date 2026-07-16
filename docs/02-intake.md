@@ -192,7 +192,7 @@ avoid `<` `>` `&` `'` `"`, which some appliance fields reject.
 
 | # | Question                                                       | Sheet     |
 |---|----------------------------------------------------------------|-----------|
-|G1 | Online depot, offline depot, or manual transfer (no depot — one-off installs; see `08-backup-and-depot.md` §B.2)? | `[MGMT]`  |
+|G1 | Online depot, offline depot, or manual transfer (no depot — one-off installs; see `09-binary-depot.md` §B.2)? | `[MGMT]`  |
 |G2 | Download Service ID (online only)                              | `[MGMT]`  |
 |G3 | Activation Code (online only)                                  | `[MGMT]`  |
 |G4 | Offline depot FQDN + port (offline only)                       | `[MGMT]`  |
