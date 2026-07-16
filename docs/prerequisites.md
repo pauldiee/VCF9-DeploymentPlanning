@@ -177,9 +177,13 @@ Prepare up front:
 
 - **4 IPs on the management domain's VM Management network, per controller set**
   (so **per NSX instance** — multiply if the fleet runs more than one): 3
-  controller nodes + the **cluster VIP**. The VIP FQDN must be **registered in
-  DNS and resolve to the cluster VIP** (A + PTR for all four, like every other
-  appliance).
+  controller nodes + the **cluster VIP**.
+- **One DNS record per set — the cluster FQDN**, with **A + PTR**, resolving to
+  the **cluster VIP**. The **3 controller nodes and the VIP are IP-only**: the
+  workbook's Avi section asks for them as plain IP fields and nothing resolves
+  them by name, so don't ask the AD/DNS team for records that nothing consumes
+  (`01-network-dns-plan.md` DNS table, intake `E16`, and
+  [`workbook-cell-mapping.md`](workbook-cell-mapping.md) all say the same).
 - **Controller size**: Small / Large / XLarge (the deploy wizard's tiers). Size
   it in `04-sizing.md` — note the workbook's Avi disk figures diverge from the
   NSX ALB controller ladder.

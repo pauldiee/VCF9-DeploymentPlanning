@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.0.2 — 2026-07-16
+- **Fix: the sizer under-sized Avi-only fleets by a whole License Hub** (#176).
+  The hub's footprint (10 vCPU / 30 GB / 710 GB) was folded into the *Security
+  Services Platform* row and gated behind **SSP** being selected — but License
+  Hub is required whenever **vDefend *or* Avi** is in scope. An **Avi-only**
+  fleet (the common case here: Avi as the Supervisor LB, no vDefend) therefore
+  lost the entire footprint. It is now **its own row**, added when **either** is
+  selected and **once** when both are. Verified across all four combinations;
+  the SSP-only total is **unchanged** (122/444/4806 — the hub only moved rows).
+  `04-sizing.md` updated to match. The **710 vs 810 GB** workbook-vs-TechDocs
+  divergence is documented, not silently "corrected".
+- **Fix: `prerequisites.md` asked for Avi DNS records nothing consumes** (#177).
+  It said **A + PTR for all four** controller addresses, while
+  `01-network-dns-plan.md`, intake `E16` and `workbook-cell-mapping.md` all said
+  the 3 nodes are **IP-only** and **only the cluster FQDN needs DNS** — the
+  straggler #112 missed. Now aligned: **one A + PTR per set, the cluster FQDN,
+  resolving to the cluster VIP**; nodes and VIP are IP-only workbook fields.
+
 ## v2.0.1 — 2026-07-16
 - **Fix: Avi controllers always live in the management domain** (#174).
   Field-verified. `prerequisites.md` and `06-deployment-plan.md` both said the

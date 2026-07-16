@@ -64,15 +64,13 @@ footprint manually or fall back to the workbook:
   cluster in the workload domain** (minimum 2 per cluster), and are not modelled
   at all — add them to the WLD's own capacity. See
   [`prerequisites.md` → Avi Load Balancer](prerequisites.md).
-- **License Hub** — the tool folds its footprint (**10 vCPU / 30 GB / 710 GB**)
-  into the *Security Services Platform* row, and **only when SSP is selected**.
-  But License Hub is needed whenever **vDefend *or* Avi** is in scope
-  ([`prerequisites.md` → License Hub](prerequisites.md)), so **an Avi-only fleet
-  with SSP excluded is under-sized by that amount** — add it by hand until the
-  tool asks separately (issue #176). Note the tool's **710 GB** is the
-  workbook's figure; the TechDocs component table sums to **810 GB**
-  (installer 400 + controller 155 + worker 255) — the same workbook-vs-TechDocs
-  divergence flagged for Avi below.
+- **License Hub** is modelled (its own row, **10 vCPU / 30 GB / 710 GB** across
+  installer + controller + worker) and is added whenever **vDefend/SSP *or*
+  Avi** is in scope — once, even when both are. Its **710 GB is the workbook's
+  figure**; the TechDocs component table sums to **810 GB** (installer 400 +
+  controller 155 + worker 255). vCPU and RAM match exactly, only disk differs —
+  the same workbook-vs-TechDocs divergence flagged for Avi below (#176). See
+  [`prerequisites.md` → License Hub](prerequisites.md).
 - A workload domain's Global Manager is sized the same as its local NSX Manager
   (the workbook allows a separate Global Manager size).
 
