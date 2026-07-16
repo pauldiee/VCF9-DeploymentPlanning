@@ -1,5 +1,37 @@
 # Changelog
 
+## v2.0.1 — 2026-07-16
+- **Fix: Avi controllers always live in the management domain** (#174).
+  Field-verified. `prerequisites.md` and `06-deployment-plan.md` both said the
+  controller cluster is deployed *"into the workload domain"* for a Supervisor —
+  it never is. **Controllers always run in the management domain**, whichever
+  domain they serve, the same way a workload domain's vCenter and NSX Managers
+  do. Only the **Service Engines** are distributed, and they are **always present
+  per cluster** (min 2 for HA) in the workload domain.
+  **A controller set is scoped to the NSX instance, not the WLD:** WLDs sharing
+  an NSX instance share one set; a WLD with its own NSX gets its own. Knock-ons
+  fixed in the same pass — `01-network-dns-plan.md` budgeted a flat *"+4 if Avi
+  is in scope"* (now **+4 per NSX instance**), `04-sizing.md` lumped Avi into a
+  per-WLD repeater (now split: controllers on the **management** footprint per
+  NSX instance, Service Engines per **cluster** in the WLD, unmodelled), and
+  intake `E16` implied one global cluster (now asked **per NSX instance**).
+- **New: License Hub** (#175). The **SSP (Security Services Platform) Installer**
+  deploys a licensing appliance — **License Hub** — that centrally manages
+  **vDefend + Avi** subscription license files, replacing the traditional
+  25-character keys. Needed **only when vDefend or Avi is in scope**. New
+  `prerequisites.md` section (Day-N if in scope) + intake `E17` +
+  `01-network-dns-plan.md` row + `04-sizing.md` note + mapping row. It is **three
+  VMs** (installer / controller / worker) and **~9 IPs** across two pools whose
+  **node and service pools cannot be changed after deployment**.
+  - **It is not the `License Server`, and both exist.** The License Server is
+    deployed at bring-up, tied to VCF Operations, and licenses the VCF fleet;
+    License Hub is Day-N from the SSP Installer and licenses vDefend + Avi. They
+    **coexist** — called out explicitly so the two names aren't conflated.
+  - **Air-gapped sites: a manual license file import every six months.**
+    Connected mode polls the Avi Cloud Console every 15 min; **disconnected mode
+    needs a file carried in twice a year, forever** — flagged with a named owner,
+    for the same audience as the offline depot in `09-binary-depot.md`.
+
 ## v2.0.0 — 2026-07-16
 - **Renumbered the two split pages to plain section numbers** (#172). The #171
   split deliberately kept the old `A.`/`B.` numbering to preserve every deep-link

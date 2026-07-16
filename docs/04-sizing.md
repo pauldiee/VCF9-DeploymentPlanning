@@ -54,9 +54,20 @@ protection reserve). A few edge cases are still simplified — add their
 footprint manually or fall back to the workbook:
 
 - Identity Broker (additional-instance only; served from the VCFMS cluster).
-- Per-workload-domain: Site Protection / SRM, AVI load balancer, Security
-  Services Platform. Each workload domain currently contributes only its
-  vCenter and (dedicated) NSX Managers.
+- Per-workload-domain: Site Protection / SRM, Security Services Platform. Each
+  workload domain currently contributes only its vCenter and (dedicated) NSX
+  Managers.
+- **AVI splits across two domains.** The **controllers** always run in the
+  **management domain** (the `AVI` row above), scoped **per NSX instance** — a
+  second NSX instance means a second controller set on the *management*
+  footprint, which the tool models once. The **Service Engines** run **per
+  cluster in the workload domain** (minimum 2 per cluster), and are not modelled
+  at all — add them to the WLD's own capacity. See
+  [`prerequisites.md` → Avi Load Balancer](prerequisites.md).
+- **License Hub** (only if vDefend or Avi is in scope) — installer + controller
+  + worker, in the management domain. Not modelled; add ~10 vCPU / 30 GB RAM /
+  810 GB manually per
+  [`prerequisites.md` → License Hub](prerequisites.md).
 - A workload domain's Global Manager is sized the same as its local NSX Manager
   (the workbook allows a separate Global Manager size).
 
