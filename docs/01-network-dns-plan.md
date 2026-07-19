@@ -4,7 +4,7 @@ Lock this **before** filling any other workbook page. If you only have time
 for one meeting with the network + AD/PKI teams, run it on this
 page. Everything in the workbook flows from these decisions.
 
-> **Prefer a spreadsheet?** Download the blank [fillable planning templates](https://pauldiee.github.io/VCF9-DeploymentPlanning/docs/prerequisites/#fillable-planning-templates-download)
+> **Prefer a spreadsheet?** Download the blank [fillable planning templates](https://vcf-planning.hollebollevsan.nl/docs/prerequisites/#fillable-planning-templates-download)
 > (IP/DNS, VLAN/subnet, NTP/AD/CA, BGP) — capture the plan in CSV, then transfer to the workbook or Coscia's planner.
 > For the firewall flows these networks depend on, see [Firewall & Ports](07-firewall-ports.md).
 

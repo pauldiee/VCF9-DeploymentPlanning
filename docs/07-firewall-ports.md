@@ -17,7 +17,7 @@ team thinks (by zone, not by component).
 >
 > Use those for the definitive per-component detail; use this page to make sure
 > the **deployment-critical** flows are on the firewall team's change request.
-> Grab the [firewall-request template](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv) (CSV) to hand them.
+> Grab the [firewall-request template](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv) (CSV) to hand them.
 
 Ports below are the well-known/high-confidence ones; where a flow's exact port
 varies by component, the flow is named and the specifics are left to the tools
@@ -105,7 +105,7 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 
 ## Using this with the toolkit
 
-- The [firewall-request template](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv)
+- The [firewall-request template](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv)
   turns the above into a fill-in change request (source zone / destination /
   port / protocol / direction / purpose / status) for the security team.
 - These flows are gated in `prerequisites.md` (core services reachable) and

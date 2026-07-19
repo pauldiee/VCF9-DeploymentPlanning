@@ -36,7 +36,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
 
 Size the footprint of whatever you choose here on the
-[sizing tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/mgmt-sizing/)
+[sizing tool](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)
 (`04-sizing.md`) — the Day-2 components are the same optional components the
 sizer models.
 
