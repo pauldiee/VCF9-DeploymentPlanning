@@ -57,6 +57,39 @@
       "patched": true
     },
     {
+      "key": "vcf-ops-orchestrator",
+      "name": "Orchestrator",
+      "category": "Operations",
+      "parent": "vcf-operations",
+      "version": "9.1.0.0400",
+      "build": "25545173",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/vcf-operations-orchestrator-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-ops-log-management",
+      "name": "Log Management",
+      "category": "Operations",
+      "parent": "vcf-operations",
+      "version": "9.1.0.0400",
+      "build": "25544947",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/log-management-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-ops-real-time-metrics",
+      "name": "Real-Time Metrics",
+      "category": "Operations",
+      "parent": "vcf-operations",
+      "version": "9.1.0.0400",
+      "build": "25544944",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/real-time-mertics-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
       "key": "vcf-automation",
       "name": "VCF Automation",
       "category": "Automation",
@@ -122,7 +155,7 @@
       "category": "Management",
       "version": "9.1.0.0",
       "build": "25370367",
-      "releaseDate": null,
+      "releaseDate": "2026-05-12",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
       "patched": false
     },
@@ -132,7 +165,7 @@
       "category": "Management",
       "version": "9.1.0.0",
       "build": "25181946",
-      "releaseDate": null,
+      "releaseDate": "2026-05-12",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
       "patched": false
     },
@@ -142,9 +175,39 @@
       "category": "Management",
       "version": "9.1.0.0",
       "build": "25368698",
-      "releaseDate": null,
+      "releaseDate": "2026-05-12",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
       "patched": false
+    },
+    {
+      "key": "vdefend",
+      "name": "vDefend (Firewall / IDS-IPS / ATP)",
+      "category": "Add-ons",
+      "version": "9.1",
+      "build": "25377994",
+      "releaseDate": null,
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-1/release-notes/vmware-vdefend-91-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "dsm",
+      "name": "Data Services Manager",
+      "category": "Add-ons",
+      "version": "9.1",
+      "build": "25367580",
+      "releaseDate": "2026-05-12",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/dsm/data-services-manager/9-1/release-notes/vmware-data-services-manager-91-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "avi-lb",
+      "name": "Avi Load Balancer (NSX ALB)",
+      "category": "Add-ons",
+      "version": "32.1.2",
+      "build": null,
+      "releaseDate": null,
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes/release-notes-for-avi-load-balancer-version-32-1-2.html",
+      "patched": true
     }
   ]
 }
