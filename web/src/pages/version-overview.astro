@@ -7,8 +7,8 @@ import data from '../data/vcf-versions.json';
 const { _updated, _sourceErrors, components } = data;
 
 // Group by category, preserving manifest order within each group. Rows with a `parent`
-// (the VCF Operations nodes, #180) are pulled out and rendered indented right beneath their
-// parent row rather than as separate top-level components.
+// (the VCF Operations sub-components, #180) are rendered indented beneath their parent row as a
+// visual grouping - they are independently-versioned components, not internal parts of one (#185).
 const order = ['Core', 'Operations', 'Automation', 'Management', 'Add-ons'];
 const groups = order
   .map((cat) => {
@@ -112,10 +112,11 @@ const fmtDate = (iso) =>
       <p>
         <strong>Always confirm with Broadcom before advising a build.</strong> Patch cadence is
         high and components move independently. Rows marked <span class="vo-pill">GA</span> have no
-        Express Patch yet, so they run at their general-availability build. The three indented rows
-        under VCF Operations are its internal nodes, not separately-patched products. vCenter is read
-        from its build-number KB, the core fleet from the Broadcom TechDocs patch-release tree, and
-        each add-on from its own release-notes tree.
+        Express Patch yet, so they run at their general-availability build. The rows indented under
+        VCF Operations are independently-versioned components of that product family, each with its
+        own build; they are grouped visually and currently happen to be aligned on the same Express
+        Patch. vCenter is read from its build-number KB, the core fleet from the Broadcom TechDocs
+        patch-release tree, and each add-on from its own release-notes tree.
       </p>
     </blockquote>
 
@@ -160,7 +161,7 @@ const fmtDate = (iso) =>
   .vo-ver { white-space: nowrap; }
   .vo-build { font-family: var(--font-mono); white-space: nowrap; }
 
-  /* VCF Operations nodes (#180): indented sub-rows under their parent. */
+  /* VCF Operations sub-components (#180): indented sub-rows under their parent (visual grouping). */
   .vo-child .vo-name {
     font-weight: var(--fw-regular);
     color: var(--itq-royal-40);

@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.2.1 — 2026-07-19
+- **Version Overview: correct the VCF Operations sub-component wording** (#185).
+  The footnote said the indented rows under VCF Operations were "internal nodes,
+  not separately-patched products" — which is inaccurate. Orchestrator, Log
+  Management, Real-Time Metrics (and the Salt / lifecycle / depot services) are
+  **independently-versioned components**, each with its own build; they simply
+  happen to be aligned on the same Express Patch (`9.1.0.0400`) right now because
+  none has shipped a divergent patch yet. The scraper already treats them as
+  independent (each fetches its own release-notes leaf and build). The nesting
+  stays as a **visual grouping**; only the copy (page footnote + code comments)
+  was reworded to stop implying they don't version on their own.
+
 ## v2.2.0 — 2026-07-19
 - **Version Overview: VCF Operations nodes, optional add-ons, and GA release dates**
   (#180, #181, #184).
