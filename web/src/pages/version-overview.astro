@@ -6,10 +6,21 @@ import data from '../data/vcf-versions.json';
 // commits it back to main, which rebuilds Pages). See issue #179.
 const { _updated, _sourceErrors, components } = data;
 
-// Group by category, preserving manifest order within each group.
-const order = ['Core', 'Operations', 'Automation', 'Management'];
+// Group by category, preserving manifest order within each group. Rows with a `parent`
+// (the VCF Operations nodes, #180) are pulled out and rendered indented right beneath their
+// parent row rather than as separate top-level components.
+const order = ['Core', 'Operations', 'Automation', 'Management', 'Add-ons'];
 const groups = order
-  .map((cat) => ({ cat, rows: components.filter((c) => c.category === cat) }))
+  .map((cat) => {
+    const rows = components.filter((c) => c.category === cat);
+    const childrenOf = (key) => rows.filter((c) => c.parent === key);
+    const ordered = [];
+    for (const c of rows.filter((c) => !c.parent)) {
+      ordered.push({ ...c, child: false });
+      for (const ch of childrenOf(c.key)) ordered.push({ ...ch, child: true });
+    }
+    return { cat, rows: ordered };
+  })
   .filter((g) => g.rows.length);
 
 const fmtDate = (iso) =>
@@ -53,6 +64,13 @@ const fmtDate = (iso) =>
       groups.map((g) => (
         <>
           <h2 class="vo-cat">{g.cat}</h2>
+          {g.cat === 'Add-ons' && (
+            <p class="vo-note">
+              Optional components, <strong>not part of the base VCF 9.1 BOM</strong>. Each patches on
+              its own cadence in its own release-notes tree. Avi Load Balancer publishes no build
+              number, so its Build column shows &ldquo;N/A&rdquo;.
+            </p>
+          )}
           <figure class="table-scroll vo-table">
             <table>
               <thead>
@@ -66,13 +84,13 @@ const fmtDate = (iso) =>
               </thead>
               <tbody>
                 {g.rows.map((c) => (
-                  <tr>
+                  <tr class={c.child ? 'vo-child' : undefined}>
                     <td class="vo-name">{c.name}</td>
                     <td class="vo-ver">
                       {c.version ?? ''}
                       {c.patched === false && <span class="vo-pill">GA</span>}
                     </td>
-                    <td class="vo-build">{c.build ?? 'GA build'}</td>
+                    <td class="vo-build">{c.build ?? 'N/A'}</td>
                     <td>{fmtDate(c.releaseDate)}</td>
                     <td>
                       {c.sourceUrl && (
@@ -94,8 +112,10 @@ const fmtDate = (iso) =>
       <p>
         <strong>Always confirm with Broadcom before advising a build.</strong> Patch cadence is
         high and components move independently. Rows marked <span class="vo-pill">GA</span> have no
-        Express Patch yet, so they run at their general-availability build. vCenter is read from its
-        build-number KB; every other component is read from the Broadcom TechDocs patch-release tree.
+        Express Patch yet, so they run at their general-availability build. The three indented rows
+        under VCF Operations are its internal nodes, not separately-patched products. vCenter is read
+        from its build-number KB, the core fleet from the Broadcom TechDocs patch-release tree, and
+        each add-on from its own release-notes tree.
       </p>
     </blockquote>
 
@@ -139,6 +159,30 @@ const fmtDate = (iso) =>
   .vo-name { font-weight: var(--fw-semibold); white-space: normal; }
   .vo-ver { white-space: nowrap; }
   .vo-build { font-family: var(--font-mono); white-space: nowrap; }
+
+  /* VCF Operations nodes (#180): indented sub-rows under their parent. */
+  .vo-child .vo-name {
+    font-weight: var(--fw-regular);
+    color: var(--itq-royal-40);
+    padding-left: 1.9rem;
+    position: relative;
+  }
+  .vo-child .vo-name::before {
+    content: "\21B3"; /* downwards arrow with tip rightwards */
+    position: absolute;
+    left: 0.7rem;
+    color: var(--itq-royal-40);
+  }
+  .vo-child .vo-ver, .vo-child .vo-build { color: var(--itq-royal-40); }
+
+  .vo-note {
+    padding: var(--space-3) var(--space-4);
+    background: var(--itq-mist);
+    border-left: 4px solid var(--itq-royal-40);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: var(--fs-small);
+    margin-top: var(--space-2);
+  }
 
   .vo-pill {
     display: inline-block;

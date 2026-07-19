@@ -1,5 +1,24 @@
 # Changelog
 
+## v2.2.0 — 2026-07-19
+- **Version Overview: VCF Operations nodes, optional add-ons, and GA release dates**
+  (#180, #181, #184).
+  - **VCF Operations nodes** (#180): Orchestrator (`25545173`), Log Management
+    (`25544947`) and Real-Time Metrics (`25544944`) now appear **indented beneath
+    the VCF Operations row**, so their node builds are visible without implying
+    they patch as independent products. The scraper reads their own leaves from
+    the same `vcf-operations/9-1-0-0400/` tree (the Real-Time Metrics leaf slug
+    carries Broadcom's `mertics` typo, which the regex tolerates).
+  - **Optional add-ons** (#181): a new **Add-ons** section lists vDefend
+    (`9.1`, Build `25377994`), Data Services Manager (`9.1`, Build `25367580`)
+    and Avi Load Balancer / NSX ALB (`32.1.2`), clearly marked as **not part of
+    the base VCF BOM**. Each lives in its own Broadcom release-notes tree (not the
+    VCF `9-1-0-0NNN` patch tree), so each has a dedicated scrape strategy. Avi
+    publishes no 8-digit build, so its Build column shows `N/A`.
+  - **GA release dates** (#184): the Management rows (VSP, Telemetry, Identity
+    Broker) now show the VCF 9.1.0.0 general-availability date (`12 May 2026`,
+    from the release-notes header) instead of a blank Released column.
+
 ## v2.1.2 — 2026-07-19
 - **Site now served on a custom domain: `https://vcf-planning.hollebollevsan.nl`**
   (#182). The GitHub Pages site moves off the project-path URL
