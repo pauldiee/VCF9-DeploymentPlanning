@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import data from '../data/vcf-versions.json';
 
-// Data is refreshed weekly by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
+// Data is refreshed daily by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
 // commits it back to main, which rebuilds Pages). See issue #179.
 const { _updated, _sourceErrors, components } = data;
 
@@ -30,7 +30,7 @@ const fmtDate = (iso) =>
 <BaseLayout
   title="VCF 9.1 Version Overview"
   active="version-overview"
-  description="Current latest version and build per VMware Cloud Foundation 9.1 component, refreshed weekly from Broadcom."
+  description="Current latest version and build per VMware Cloud Foundation 9.1 component, refreshed daily from Broadcom."
 >
   <article class="prose">
     <p class="doc-eyebrow itq-eyebrow">Reference</p>
@@ -47,7 +47,7 @@ const fmtDate = (iso) =>
     <p class="vo-updated">
       <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
       Last updated <strong>{fmtDate(_updated)}</strong>
-      <span class="vo-updated__note">&middot; refreshed weekly from Broadcom</span>
+      <span class="vo-updated__note">&middot; refreshed daily from Broadcom</span>
     </p>
 
     {
@@ -112,11 +112,12 @@ const fmtDate = (iso) =>
       <p>
         <strong>Always confirm with Broadcom before advising a build.</strong> Patch cadence is
         high and components move independently. Rows marked <span class="vo-pill">GA</span> have no
-        Express Patch yet, so they run at their general-availability build. The rows indented under
-        VCF Operations are independently-versioned components of that product family, each with its
-        own build; they are grouped visually and currently happen to be aligned on the same Express
-        Patch. vCenter is read from its build-number KB, the core fleet from the Broadcom TechDocs
-        patch-release tree, and each add-on from its own release-notes tree.
+        Express Patch yet, so they run at their general-availability build. The VCF Operations
+        services listed under Management &mdash; Orchestrator, Log Management, Real-Time Metrics and
+        its Store &mdash; are independently-versioned components of that product family, each with
+        its own build; they currently happen to be aligned on the same Express Patch. vCenter is
+        read from its build-number KB, the core fleet from the Broadcom TechDocs patch-release tree,
+        and each add-on from its own release-notes tree.
       </p>
     </blockquote>
 

@@ -57,10 +57,29 @@
       "patched": true
     },
     {
+      "key": "vcf-ops-for-networks",
+      "name": "VCF Operations for Networks",
+      "category": "Operations",
+      "version": "9.1.0.0200",
+      "build": "25517220",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-for-networks-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-ops-hcx",
+      "name": "VCF Operations HCX",
+      "category": "Operations",
+      "version": "9.1.0.0200",
+      "build": "25535720",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-hcx-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
       "key": "vcf-ops-orchestrator",
       "name": "Orchestrator",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25545173",
       "releaseDate": "2026-07-13",
@@ -70,8 +89,7 @@
     {
       "key": "vcf-ops-log-management",
       "name": "Log Management",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25544947",
       "releaseDate": "2026-07-13",
@@ -81,8 +99,7 @@
     {
       "key": "vcf-ops-real-time-metrics",
       "name": "Real-Time Metrics",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25544944",
       "releaseDate": "2026-07-13",
@@ -92,8 +109,7 @@
     {
       "key": "vcf-ops-real-time-metrics-store",
       "name": "Real-Time Metrics Store",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0200",
       "build": "25555874",
       "releaseDate": "2026-07-13",
@@ -158,26 +174,6 @@
       "build": "25507010",
       "releaseDate": "2026-07-13",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/software-depot-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-for-networks",
-      "name": "VCF Operations for Networks",
-      "category": "Operations",
-      "version": "9.1.0.0200",
-      "build": "25517220",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-for-networks-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-hcx",
-      "name": "VCF Operations HCX",
-      "category": "Operations",
-      "version": "9.1.0.0200",
-      "build": "25535720",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-hcx-9-1-0-0200-release-notes.html",
       "patched": true
     },
     {

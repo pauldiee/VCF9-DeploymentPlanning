@@ -17,9 +17,18 @@
     patch leaf yet, so it correctly stays at GA and will auto-upgrade when one
     ships.
   - **Three components added** that exist in the tree but weren't listed: **VCF
-    Operations for Networks** (0200 / 25517220), **VCF Operations HCX** (0200 /
-    25535720), and **Real-Time Metrics Store** (0200 / 25555874, nested under
-    VCF Operations). Table now covers 23 components.
+    Operations for Networks** (0200 / 25517220) and **VCF Operations HCX** (0200
+    / 25535720) as their own Operations rows next to VCF Operations, and
+    **Real-Time Metrics Store** (0200 / 25555874). Table now covers 23
+    components.
+  - **Regrouped the VCF Operations services under Management.** Orchestrator,
+    Log Management, Real-Time Metrics and Real-Time Metrics Store now sit in the
+    **Management** group alongside VCF Services Runtime, Telemetry and Identity
+    Broker (they run in the management plane); the VCF Operations product row
+    stays under Operations. They still version independently — only the display
+    grouping changed.
+  - **Scraper now runs daily** (was weekly) — `.github/workflows/scrape-versions.yml`
+    cron moved to `17 6 * * *`, and the page copy updated to match.
 
 ## v2.2.3 — 2026-07-19
 - **Prerequisites: add three public URLs Broadcom now lists** (#186). The

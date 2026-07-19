@@ -44,21 +44,29 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-installer.html`, leaf: /sddc-manager-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-operations', name: 'VCF Operations', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcfoperations-9-1-0-(\d{4})-release-notes\.html$/i },
-  // VCF Operations sub-components (#180): independently-versioned components of the VCF Operations
-  // family, each with its own release-notes leaf + build in the same vcf-operations/<ver>/ tree.
-  // Nesting them under VCF Operations is a VISUAL grouping only - they version on their own and
-  // currently just happen to be aligned on the same Express Patch (#185). Leaf regexes stay tight
-  // so a sub-component slug can't collide with the product leaf (`vcfoperations-`, no hyphens) or a sibling.
-  { key: 'vcf-ops-orchestrator', name: 'Orchestrator', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  // VCF Operations for Networks + HCX (#187): separate products in the VCF Operations family (not
+  // internal nodes of the appliance). Listed right after the VCF Operations product row in the
+  // Operations group. Both patch in the vcf-operations/<ver>/ tree.
+  { key: 'vcf-ops-for-networks', name: 'VCF Operations for Networks', category: 'Operations', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-for-networks-9-1-0-(\d{4})-release-notes\.html$/i },
+  { key: 'vcf-ops-hcx', name: 'VCF Operations HCX', category: 'Operations', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-hcx-9-1-0-(\d{4})-release-notes\.html$/i },
+  // VCF Operations services (#180, recategorized to Management in #187): independently-versioned
+  // components that ship in the vcf-operations/<ver>/ release-notes tree but run in the management
+  // plane, so they are listed under Management as their own rows (no longer indented under the VCF
+  // Operations product row). They still WALK the vcf-operations patch tree - only the display
+  // category changed. Leaf regexes stay tight so a service slug can't collide with the product leaf
+  // (`vcfoperations-`, no hyphens) or a sibling.
+  { key: 'vcf-ops-orchestrator', name: 'Orchestrator', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-orchestrator-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'vcf-ops-log-management', name: 'Log Management', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  { key: 'vcf-ops-log-management', name: 'Log Management', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/log-management-9-1-0-(\d{4})-release-notes\.html$/i },
   // Broadcom's leaf slug misspells "metrics" as "mertics"; tolerate both spellings so a later fix upstream won't break us.
-  { key: 'vcf-ops-real-time-metrics', name: 'Real-Time Metrics', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  { key: 'vcf-ops-real-time-metrics', name: 'Real-Time Metrics', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/real-time-me(?:rt|tr)ics-9-1-0-(\d{4})-release-notes\.html$/i },
   // Real-Time Metrics Store (#187) - a distinct leaf from Real-Time Metrics above; the `-store` segment
   // keeps the two slugs from colliding. Tolerate the same rt/tr misspelling upstream uses elsewhere.
-  { key: 'vcf-ops-real-time-metrics-store', name: 'Real-Time Metrics Store', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  { key: 'vcf-ops-real-time-metrics-store', name: 'Real-Time Metrics Store', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/real-time-me(?:rt|tr)ics-store-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-automation', name: 'VCF Automation', category: 'Automation', strategy: 'techdocs',
     index: `${PATCH}/vcf-automation.html`, leaf: /vcfautomation-9-1-0-(\d{4})-release-notes\.html$/i },
@@ -73,13 +81,6 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-raas-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'software-depot', name: 'Software Depot', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/software-depot-9-1-0-(\d{4})-release-notes\.html$/i },
-  // VCF Operations for Networks + HCX (#187): separate products in the VCF Operations family (not
-  // internal nodes of the VCF Operations appliance), so they render as their own Operations rows,
-  // not indented children. Both patch in the vcf-operations/<ver>/ tree.
-  { key: 'vcf-ops-for-networks', name: 'VCF Operations for Networks', category: 'Operations', strategy: 'techdocs',
-    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-for-networks-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'vcf-ops-hcx', name: 'VCF Operations HCX', category: 'Operations', strategy: 'techdocs',
-    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-hcx-9-1-0-(\d{4})-release-notes\.html$/i },
   // Management components (#187): these live in the vcf-operations/<ver>/ patch tree and DO patch on
   // their own cadence, but not on every Express Patch - so walk the tree, and if no leaf exists yet
   // fall back to the 9.1.0.0 Bill-of-Materials build (rendered with the GA pill). This replaces the
