@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.2.2 — 2026-07-19
+- **Docs: point live-site links at the custom domain** (#183). After the site
+  moved to `https://vcf-planning.hollebollevsan.nl` (#182), the docs still linked
+  to the old `https://pauldiee.github.io/VCF9-DeploymentPlanning/…` URLs. They kept
+  working via GitHub's auto-redirect but showed the old domain and added a redirect
+  hop. Rewrote every user-facing absolute link (README live-site URL, template
+  downloads, tool links, script links) across `README.md` and `docs/` to the new
+  domain. `CHANGELOG.md` historical entries are left untouched (dated record).
+
 ## v2.2.1 — 2026-07-19
 - **Version Overview: correct the VCF Operations sub-component wording** (#185).
   The footnote said the indented rows under VCF Operations were "internal nodes,

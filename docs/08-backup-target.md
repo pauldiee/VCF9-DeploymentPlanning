@@ -397,8 +397,8 @@ Two PowerShell scripts do all of the above — **download them and run them**
 
 | Script | What it does |
 | ------ | ------------ |
-| [**Get-VCFBackupConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Get-VCFBackupConfig.ps1) | **Read-only.** Prints the backup target, the **stored username**, directory, schedule, retention and history that the platform *actually holds* — which is not always what you typed. Flags an empty username, and a username that is an identifier rather than an account name. Changes nothing |
-| [**Set-VCFBackupConfig.ps1**](https://pauldiee.github.io/VCF9-DeploymentPlanning/scripts/Set-VCFBackupConfig.ps1) | **Sets the backup location** through the API, for when the wizard will not take it. `-WhatIf` prints the exact payload (secrets masked) without sending it; `-ShowThumbprint` helps with the fingerprint |
+| [**Get-VCFBackupConfig.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Get-VCFBackupConfig.ps1) | **Read-only.** Prints the backup target, the **stored username**, directory, schedule, retention and history that the platform *actually holds* — which is not always what you typed. Flags an empty username, and a username that is an identifier rather than an account name. Changes nothing |
+| [**Set-VCFBackupConfig.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Set-VCFBackupConfig.ps1) | **Sets the backup location** through the API, for when the wizard will not take it. `-WhatIf` prints the exact payload (secrets masked) without sending it; `-ShowThumbprint` helps with the fingerprint |
 
 ```console
 .\Get-VCFBackupConfig.ps1 -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io -SkipCertificateValidation

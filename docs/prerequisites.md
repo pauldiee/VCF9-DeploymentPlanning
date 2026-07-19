@@ -67,11 +67,11 @@ The IP/VLAN sheets hand off in a fixed order:
 3. **AD/DNS team** creates the forward **A** and reverse **PTR** records from the
    filled IP/DNS plan.
 
-- [IP allocation + DNS (A/PTR)](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ip-dns-plan.csv) — per-appliance FQDN / IP, assigned by the architect from the network team's subnets in the VLAN plan (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
-- [VLAN / subnet plan](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU + minimum IP count per traffic type
-- [NTP / AD / CA](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
-- [BGP peering](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
-- [Firewall request](https://pauldiee.github.io/VCF9-DeploymentPlanning/templates/firewall-request-plan.csv) — deployment-critical flows (source / destination / port / purpose) for the security team; see [`07-firewall-ports.md`](07-firewall-ports.md)
+- [IP allocation + DNS (A/PTR)](https://vcf-planning.hollebollevsan.nl/templates/ip-dns-plan.csv) — per-appliance FQDN / IP, assigned by the architect from the network team's subnets in the VLAN plan (create **both** forward A and reverse PTR); duplicate the block per workload domain, add AZ2 hosts if stretched
+- [VLAN / subnet plan](https://vcf-planning.hollebollevsan.nl/templates/vlan-subnet-plan.csv) — VLAN, subnet, gateway, MTU + minimum IP count per traffic type
+- [NTP / AD / CA](https://vcf-planning.hollebollevsan.nl/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
+- [BGP peering](https://vcf-planning.hollebollevsan.nl/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
+- [Firewall request](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv) — deployment-critical flows (source / destination / port / purpose) for the security team; see [`07-firewall-ports.md`](07-firewall-ports.md)
 
 > **Data hygiene:** these are **blank** templates. A **filled** copy holds
 > real, sensitive data (IPs, DNS names, AS numbers) — store it in a secure

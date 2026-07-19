@@ -52,7 +52,7 @@ This repo flips the order:
 ## Web version
 
 The planning docs are published as an ITQ-branded site via GitHub Pages:
-**<https://pauldiee.github.io/VCF9-DeploymentPlanning/>**
+**<https://vcf-planning.hollebollevsan.nl/>**
 
 The site (`web/`, built with [Astro](https://astro.build)) renders the same
 `docs/*.md` in place — the markdown stays the single source of truth, so editing

@@ -6,11 +6,11 @@ agile backlog (Jira, Azure DevOps, GitLab, …). It captures **what** and **in
 what order** and **who owns it** — deliberately **no dates or estimates**; add
 those in your own tool.
 
-> **[▶ Open the Deployment Plan export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)** —
+> **[▶ Open the Deployment Plan export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)** —
 > build your deployment scope and export this plan as **Markdown** or a **CSV** that
 > imports into Jira, Azure DevOps, or GitLab.
 >
-> **[▶ Track execution in the Deployment Tracker](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/plan-tracker/)** —
+> **[▶ Track execution in the Deployment Tracker](https://vcf-planning.hollebollevsan.nl/tools/plan-tracker/)** —
 > the same plan as a checklist: tick stories as done, watch per-epic progress, and
 > save/load the progress file to hand over between colleagues (it follows the scope
 > you set in the export tool).
@@ -33,7 +33,7 @@ Epic ids follow execution order. Mix freely — e.g. a stretched management doma
 + the Day-2 fleet + two workload domains (one stretched) = Core **+ E7 + E8 + two
 E9**. Execution order runs **core config → management stretch → Day-2 → workload
 domains → handover**. The
-[export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)
+[export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
 assembles the exact epic/story set per scope.
 
 ---
@@ -59,7 +59,7 @@ Ref: [`02-intake.md`](02-intake.md) · [`04-sizing.md`](04-sizing.md)
 
 - **Story 2.1 — Role-based intake complete.** Sections A–F answered by their owners.
   - *Acceptance:* every intake question answered or explicitly marked N/A by its owner.
-- **Story 2.2 — Sizing & host fit.** Run the [sizing calculator](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/mgmt-sizing/); confirm the fleet fits the proposed hosts at N-1.
+- **Story 2.2 — Sizing & host fit.** Run the [sizing calculator](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/); confirm the fleet fits the proposed hosts at N-1.
   - *Acceptance:* sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.
 
 ### E3 — Workbook & deployment-JSON prep  ·  Owner: Architect + Platform
@@ -78,7 +78,7 @@ plan (E1–E3) called for has actually been built. Runs in parallel with E1–E3
 
 - **Story 4.1 — Hardware ready.** Hosts on the VCG, matched spec, BOM confirmed. Ref: [Preparing ESX Hosts for VCF](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html).
   - Confirm CPU/RAM/storage per host against the sizing output (E2).
-  - **Principal storage** (choice: **vSAN ESA / vSAN OSA / NFS / VMFS-on-FC**) — pick it in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/); it adapts these prereqs and the E5 bring-up. vSAN ESA wants all-flash NVMe + 25 GbE; NFS/FC need external storage + the storage network (no local vSAN disks).
+  - **Principal storage** (choice: **vSAN ESA / vSAN OSA / NFS / VMFS-on-FC**) — pick it in the [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/); it adapts these prereqs and the E5 bring-up. vSAN ESA wants all-flash NVMe + 25 GbE; NFS/FC need external storage + the storage network (no local vSAN disks).
   - *Acceptance:* all hosts on the Broadcom compatibility guide, identical spec; host count meets the cluster minimum (with an even per-AZ split if the cluster will be stretched).
 - **Story 4.2 — Physical network ready.** VLANs, MTU, and the north-south fabric provisioned — *which* fabric work depends on the connectivity model chosen in story 1.2.
   - Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.
@@ -107,7 +107,7 @@ plan (E1–E3) called for has actually been built. Runs in parallel with E1–E3
   - *Acceptance:* VCF Management Services + License Server up and healthy after bring-up; the License Server FQDN resolves to an IP outside the services-runtime range; the Cloud Proxy is collecting.
 
 ### E6 — Management domain configuration  ·  Owner: Platform + Network + Security
-- **Story 6.1 — NSX north-south connectivity (choice: Centralized or Distributed).** Pick the model in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/); it writes the right steps.
+- **Story 6.1 — NSX north-south connectivity (choice: Centralized or Distributed).** Pick the model in the [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/); it writes the right steps.
   - **Centralized** — deploy the NSX **Edge cluster** + Tier-0 gateway; establish **BGP** peering to the ToRs; verify north-south routes. (A **stretched Edge** is only possible under Centralized — see [`03-multi-az-prep.md`](03-multi-az-prep.md) §D.) Ref: [Set up Centralized Connectivity with Edge Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/setting-up-centralized-connectivity-with-edge-clusters.html).
   - **Distributed** — the **Distributed Transit Gateway (DTGW)** distributes routing to the hypervisors (**no** centralized Edge cluster, no Tier-0, no BGP). Attach the DTGW to the **external VLAN** planned in 1.2 — the VLAN **every ESX host in the domain** reaches — with its **gateway CIDR** routed by the physical fabric, and the routable **external IP block** advertised upstream. Configure the **private transit-gateway block** (**`/16` in 9.1**). Then deploy the **Virtual Network Appliance (VNA) cluster** — **2 appliances minimum for HA**, each with an FQDN + static IP on the ESX Management subnet — which is what gives the DTGW its **stateful services** (NAT/SNAT); enable **default outbound NAT** against it if planned. A VNA cluster is **not a small Edge cluster**: no Tier-0 or Tier-1 runs on it. Ref: [Set up Distributed Network Connectivity](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/setting-up-network-connectivity/set-up-distributed-network-connectivity.html).
   - *Acceptance:* the chosen model is up — **Centralized:** Edge cluster + Tier-0 + BGP routes reachable. **Distributed:** the DTGW is up on the external VLAN, the fabric routes its gateway CIDR and advertises the external IP block, the VNA cluster is healthy on 2+ nodes, and north-south **including stateful services (NAT/SNAT)** is reachable end to end.
@@ -159,7 +159,7 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
 
 - **Story 8.1 — Network placement.** Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. Ref: [Fleet-Level Components Networking Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html) · [custom-networking deployment guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html).
   - *Acceptance:* chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.
-- **Story 8.2 — VCF Automation.** Choices (pick them in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/) and it writes the exact steps):
+- **Story 8.2 — VCF Automation.** Choices (pick them in the [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/) and it writes the exact steps):
   - **Deploy it?** — VCF Automation is the one fleet component you can **defer** from bring-up to Day-N.
   - **Deployment model** — **single-node** (no load balancer) or an **HA cluster** (three nodes behind a cluster VIP served by VCF Automation's **built-in load balancer** — **no external load balancer required**; the built-in LB is automatically configured for both models, per the TechDocs design library's *VCF Automation Load Balancing Design*).
   - **Network placement** — **Shared Management** (nodes come from the mgmt `/29`, intake `B5`; simplest, no new network), or a non-shared placement (**Dedicated Management** / **NSX Overlay Segment** / **NSX VLAN Segment**) that **builds the network first** — see [`05-day2-deployments.md`](05-day2-deployments.md) §C. The **NSX Overlay Segment** placement needs an Edge cluster + Tier-0 — under **Distributed** connectivity (no centralized Edge) deploy one for the fleet segment first, or pick a VLAN-backed placement.
@@ -169,7 +169,7 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
 - **Story 8.3 — Avi Load Balancer in front of VCF Automation (optional).** Deploy the **Avi controller cluster in the management domain** via VCF Operations (lifecycle-managed; its IPs/FQDNs/passwords are captured up front in [`prerequisites.md` → Avi Load Balancer](prerequisites.md) and intake `E16`/`F11`), then configure the **virtual service** in front of VCF Automation. An external LB is an **optional post-deployment addition** — its pool points at the cluster VIP of Automation's **built-in load balancer**, which stays the ingress. The built-in LB is **L4-only**, so Avi in front is what adds **SSL termination** and keeps user/tenant access off the management network. Ref: [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
   - **Licensing is its own appliance.** Avi is licensed through **License Hub**, deployed from the **SSP Installer** — not the `License Server` from bring-up (story 5.4); the two **coexist**. It is three VMs and ~9 IPs, and **air-gapped sites need a manual license file import every six months**. Plan it with this story, not at first expiry: [`prerequisites.md` → License Hub](prerequisites.md), intake `E17`.
   - *Acceptance:* Avi controller cluster healthy; **License Hub deployed and the Avi licenses registered** (and, if disconnected, the six-month re-import owner named); the virtual service fronts VCF Automation and its published FQDN resolves to the Avi VIP.
-- **Story 8.4 — Optional fleet components.** Deploy the remaining fleet components as needed: **Log Management** and VCF Operations for Networks. Each is individually selectable in the [export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/) — the generated story lists only the selected ones. (The **Identity Broker is not deployed here** — it arrives at bring-up with the management services; whether to *use* it for fleet SSO is the 8.5 choice, and if broker-based fleet SSO is out of scope, E6 6.3 becomes the identity path.)
+- **Story 8.4 — Optional fleet components.** Deploy the remaining fleet components as needed: **Log Management** and VCF Operations for Networks. Each is individually selectable in the [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/) — the generated story lists only the selected ones. (The **Identity Broker is not deployed here** — it arrives at bring-up with the management services; whether to *use* it for fleet SSO is the 8.5 choice, and if broker-based fleet SSO is out of scope, E6 6.3 becomes the identity path.)
   - *Acceptance:* each selected Day-2 component healthy; the fleet-management health (synthetic) check passes.
 - **Story 8.5 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet in one pass, complete **fleet SSO via the VCF Identity Broker** (**configuration, not deployment** — the broker has been running since bring-up; this is the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: [`prerequisites.md` → Identity source for the VCF Identity Broker](prerequisites.md#identity-source-for-the-vcf-identity-broker)), and **apply licensing** across the fleet (via VCF Operations). Ref: [Configure a Certificate Authority](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html) · [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html).
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
@@ -192,7 +192,7 @@ management domain's** model, so the export tool asks it per WLD. It drives the
 WLD connectivity story (9.4 / 9.6 below).
 
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
-[export tool](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/deployment-plan/)
+[export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
 to add an *Enable vSphere Supervisor* story to that WLD. Activation
 **requires that domain's north-south connectivity to already be up**, so with
 Supervisor enabled the WLD connectivity story becomes an explicit

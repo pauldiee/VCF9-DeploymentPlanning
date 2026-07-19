@@ -8,7 +8,7 @@ does that fit?"* — and the sheet can't answer it.
 
 This toolkit provides an interactive tool that does both:
 
-> **[▶ Open the Management Domain Sizing calculator](https://pauldiee.github.io/VCF9-DeploymentPlanning/tools/mgmt-sizing/)**
+> **[▶ Open the Management Domain Sizing calculator](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)**
 
 It reproduces the workbook's sizing calculation (pinned revision `v1.9.1.001`)
 and adds a **cluster fit check**: enter the hosts you intend to build and it
