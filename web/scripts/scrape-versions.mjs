@@ -22,6 +22,8 @@ const OUT = resolve(__dirname, '../src/data/vcf-versions.json');
 const TD = 'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes';
 const PATCH = `${TD}/patch-releases-9-1-0-x`;
 const GA_RN = `${TD}.html`;
+// GA Bill of Materials - source for components with no Express Patch yet (they run at GA build).
+const BOM = `${TD}/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html`;
 
 // BOM manifest. `techdocs` walks the patch tree; `kb` reads a single version+build KB table;
 // `static` is an un-patched component rendered at its GA build ("Current").
@@ -51,13 +53,13 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-raas-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'software-depot', name: 'Software Depot', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/software-depot-9-1-0-(\d{4})-release-notes\.html$/i },
-  // Un-patched in EP2 (no patch leaf) -> render at GA build ("Current"), not blank.
+  // Un-patched in EP2 (no patch leaf) -> render at GA build from the 9.1.0.0 Bill of Materials.
   { key: 'vsp', name: 'VCF Services Runtime (VSP)', category: 'Management', strategy: 'static',
-    version: '9.1', build: null, sourceUrl: GA_RN },
+    version: '9.1.0.0', build: '25370367', sourceUrl: BOM },
   { key: 'telemetry', name: 'Telemetry', category: 'Management', strategy: 'static',
-    version: '9.1', build: null, sourceUrl: GA_RN },
+    version: '9.1.0.0', build: '25181946', sourceUrl: BOM },
   { key: 'identity-broker', name: 'Identity Broker', category: 'Management', strategy: 'static',
-    version: '9.1', build: null, sourceUrl: GA_RN },
+    version: '9.1.0.0', build: '25368698', sourceUrl: BOM },
 ];
 
 const UA = 'Mozilla/5.0 (compatible; VCF9-DeploymentPlanning version scraper; +https://github.com/pauldiee/VCF9-DeploymentPlanning)';

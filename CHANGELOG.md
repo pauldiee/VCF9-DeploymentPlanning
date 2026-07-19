@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.1.1 — 2026-07-19
+- **Version Overview: real GA builds for the un-patched components** (#179).
+  VSP, Telemetry and Identity Broker previously showed a bare "GA build" label.
+  They now carry their actual general-availability build (VSP `25370367`,
+  Telemetry `25181946`, Identity Broker `25368698`, all `9.1.0.0`), sourced and
+  verified verbatim from the 9.1.0.0 Bill of Materials, with the source link
+  pointing at the BOM page. The scheduled scraper workflow was fired once via
+  `workflow_dispatch` to confirm it runs green in CI end-to-end.
+
 ## v2.1.0 — 2026-07-19
 - **New: auto-updating VCF 9.1 Version Overview page** (#179). A new
   `/version-overview` page shows the current latest version + build for every

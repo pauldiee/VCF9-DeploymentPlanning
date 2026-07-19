@@ -120,30 +120,30 @@
       "key": "vsp",
       "name": "VCF Services Runtime (VSP)",
       "category": "Management",
-      "version": "9.1",
-      "build": null,
+      "version": "9.1.0.0",
+      "build": "25370367",
       "releaseDate": null,
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
       "patched": false
     },
     {
       "key": "telemetry",
       "name": "Telemetry",
       "category": "Management",
-      "version": "9.1",
-      "build": null,
+      "version": "9.1.0.0",
+      "build": "25181946",
       "releaseDate": null,
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
       "patched": false
     },
     {
       "key": "identity-broker",
       "name": "Identity Broker",
       "category": "Management",
-      "version": "9.1",
-      "build": null,
+      "version": "9.1.0.0",
+      "build": "25368698",
       "releaseDate": null,
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
       "patched": false
     }
   ]
