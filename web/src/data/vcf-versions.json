@@ -129,7 +129,7 @@
     {
       "key": "fleet-lifecycle",
       "name": "Fleet Lifecycle Management",
-      "category": "Operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25570104",
       "releaseDate": "2026-07-13",

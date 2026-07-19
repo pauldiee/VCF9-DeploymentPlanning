@@ -70,10 +70,9 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/real-time-me(?:rt|tr)ics-store-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-automation', name: 'VCF Automation', category: 'Automation', strategy: 'techdocs',
     index: `${PATCH}/vcf-automation.html`, leaf: /vcfautomation-9-1-0-(\d{4})-release-notes\.html$/i },
-  // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/). SDDC Lifecycle,
-  // Salt Master, Salt RaaS and Software Depot are grouped under Management (#187 follow-up); Fleet
-  // Lifecycle Management stays under Operations.
-  { key: 'fleet-lifecycle', name: 'Fleet Lifecycle Management', category: 'Operations', strategy: 'techdocs',
+  // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/). Fleet + SDDC
+  // Lifecycle, Salt Master, Salt RaaS and Software Depot are grouped under Management (#187 follow-up).
+  { key: 'fleet-lifecycle', name: 'Fleet Lifecycle Management', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/fleet-lifecycle-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'sddc-lifecycle', name: 'SDDC Lifecycle Management', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/sddc-lifecycle-9-1-0-(\d{4})-release-notes\.html$/i },
