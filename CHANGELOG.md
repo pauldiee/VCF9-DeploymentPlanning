@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.1.0 — 2026-07-19
+- **New: auto-updating VCF 9.1 Version Overview page** (#179). A new
+  `/version-overview` page shows the current latest version + build for every
+  VCF 9.1 component. In 9.1 components patch per-component and asynchronously
+  (Express Patches), so any point-in-time table drifts within weeks — this one
+  is refreshed **weekly** from Broadcom and stays honest. A dependency-free Node
+  scraper (`web/scripts/scrape-versions.mjs`) reads vCenter from its build-number
+  KB and every other component from the Broadcom TechDocs patch-release tree
+  (walking hrefs, since slugs and depth vary per product), emitting
+  `web/src/data/vcf-versions.json`. A scheduled workflow
+  (`.github/workflows/scrape-versions.yml`, Mondays + manual dispatch) runs it
+  and commits the JSON back to `main`, which the existing Pages deploy picks up.
+  **Fail-safe:** on any fetch/parse miss the last-known value is kept (never
+  blanked) and the failing source is flagged on the page. Un-patched components
+  (VSP, Telemetry, Identity Broker) render at their GA build. Linked from the
+  header nav and the sidebar Reference section.
+
 ## v2.0.2 — 2026-07-16
 - **Fix: the sizer under-sized Avi-only fleets by a whole License Hub** (#176).
   The hub's footprint (10 vCPU / 30 GB / 710 GB) was folded into the *Security

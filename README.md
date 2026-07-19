@@ -35,6 +35,8 @@ This repo flips the order:
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/pages/tools/plan-tracker.astro` | Interactive deployment tracker — the plan as a checklist (story checkboxes, per-epic progress, save/load progress file); follows the scope set in the export tool |
+| `web/src/pages/version-overview.astro` | Reference — auto-updating VCF 9.1 Version Overview (latest version + build per component); data refreshed weekly from Broadcom |
+| `web/scripts/scrape-versions.mjs`   | Node scraper behind the Version Overview — reads vCenter build KB + Broadcom TechDocs patch tree, emits `web/src/data/vcf-versions.json`; run weekly by `.github/workflows/scrape-versions.yml` |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters + progress tracking |
 | `docs/prerequisites.md`             | Environment prerequisites (gate before any inputs)     |

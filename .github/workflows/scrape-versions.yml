@@ -1,0 +1,46 @@
+name: Refresh VCF version overview
+
+# Scrapes the current latest version + build per VCF 9.1 component from Broadcom and, if the
+# data changed, commits web/src/data/vcf-versions.json back to main. The existing deploy.yml
+# picks that up via its web/** path filter and rebuilds Pages. Commit-back (vs build-time fetch)
+# keeps the site building when Broadcom is unreachable and gives a git history of when each patch
+# landed. See issue #179.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape-versions
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Scrape Broadcom version data
+        run: node web/scripts/scrape-versions.mjs
+
+      - name: Commit refreshed data if changed
+        run: |
+          if git diff --quiet -- web/src/data/vcf-versions.json; then
+            echo "No version changes; nothing to commit."
+            exit 0
+          fi
+          git config user.name  "vcf9-version-bot"
+          git config user.email "actions@github.com"
+          git add web/src/data/vcf-versions.json
+          git commit -m "chore: refresh VCF 9.1 version overview data (#179)"
+          git push

@@ -1,0 +1,150 @@
+{
+  "_updated": "2026-07-19",
+  "_sourceErrors": [],
+  "_sources": {
+    "techdocs": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x",
+    "ga": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html"
+  },
+  "components": [
+    {
+      "key": "vcenter",
+      "name": "vCenter Server",
+      "category": "Core",
+      "version": "9.1.0.0200",
+      "build": "25573614",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://knowledge.broadcom.com/external/article/326316",
+      "patched": true
+    },
+    {
+      "key": "esxi",
+      "name": "ESXi",
+      "category": "Core",
+      "version": "9.1.0.0200",
+      "build": "25557999",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/esx/esx-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "nsx",
+      "name": "NSX",
+      "category": "Core",
+      "version": "9.1.0.0200",
+      "build": "25524170",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/nsx/nsx-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "sddc-manager",
+      "name": "SDDC Manager",
+      "category": "Core",
+      "version": "9.1.0.0400",
+      "build": "25570100",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-installer/sddc-manager-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-operations",
+      "name": "VCF Operations",
+      "category": "Operations",
+      "version": "9.1.0.0400",
+      "build": "25541561",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/vcfoperations-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-automation",
+      "name": "VCF Automation",
+      "category": "Automation",
+      "version": "9.1.0.0200",
+      "build": "25556825",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-automation/vcfautomation-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "fleet-lifecycle",
+      "name": "Fleet Lifecycle Management",
+      "category": "Operations",
+      "version": "9.1.0.0400",
+      "build": "25570104",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/fleet-lifecycle-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "sddc-lifecycle",
+      "name": "SDDC Lifecycle Management",
+      "category": "Operations",
+      "version": "9.1.0.0400",
+      "build": "25570103",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/sddc-lifecycle-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "salt-master",
+      "name": "Salt Master",
+      "category": "Operations",
+      "version": "9.1.0.0400",
+      "build": "25544946",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/salt-master-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "salt-raas",
+      "name": "Salt RaaS",
+      "category": "Operations",
+      "version": "9.1.0.0400",
+      "build": "25544946",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/salt-raas-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "software-depot",
+      "name": "Software Depot",
+      "category": "Operations",
+      "version": "9.1.0.0400",
+      "build": "25507010",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/software-depot-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vsp",
+      "name": "VCF Services Runtime (VSP)",
+      "category": "Management",
+      "version": "9.1",
+      "build": null,
+      "releaseDate": null,
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html",
+      "patched": false
+    },
+    {
+      "key": "telemetry",
+      "name": "Telemetry",
+      "category": "Management",
+      "version": "9.1",
+      "build": null,
+      "releaseDate": null,
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html",
+      "patched": false
+    },
+    {
+      "key": "identity-broker",
+      "name": "Identity Broker",
+      "category": "Management",
+      "version": "9.1",
+      "build": null,
+      "releaseDate": null,
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html",
+      "patched": false
+    }
+  ]
+}
