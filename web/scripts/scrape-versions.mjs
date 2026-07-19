@@ -43,9 +43,11 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-installer.html`, leaf: /sddc-manager-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-operations', name: 'VCF Operations', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcfoperations-9-1-0-(\d{4})-release-notes\.html$/i },
-  // VCF Operations nodes (#180): own leaves in the same vcf-operations/<ver>/ tree, shown nested
-  // under VCF Operations (not as independent products). Leaf regexes stay tight so a node slug
-  // can't collide with the product leaf (`vcfoperations-`, no hyphens) or a sibling node.
+  // VCF Operations sub-components (#180): independently-versioned components of the VCF Operations
+  // family, each with its own release-notes leaf + build in the same vcf-operations/<ver>/ tree.
+  // Nesting them under VCF Operations is a VISUAL grouping only - they version on their own and
+  // currently just happen to be aligned on the same Express Patch (#185). Leaf regexes stay tight
+  // so a sub-component slug can't collide with the product leaf (`vcfoperations-`, no hyphens) or a sibling.
   { key: 'vcf-ops-orchestrator', name: 'Orchestrator', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-orchestrator-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-ops-log-management', name: 'Log Management', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
