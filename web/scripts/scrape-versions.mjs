@@ -70,16 +70,18 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/real-time-me(?:rt|tr)ics-store-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-automation', name: 'VCF Automation', category: 'Automation', strategy: 'techdocs',
     index: `${PATCH}/vcf-automation.html`, leaf: /vcfautomation-9-1-0-(\d{4})-release-notes\.html$/i },
-  // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/)
+  // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/). SDDC Lifecycle,
+  // Salt Master, Salt RaaS and Software Depot are grouped under Management (#187 follow-up); Fleet
+  // Lifecycle Management stays under Operations.
   { key: 'fleet-lifecycle', name: 'Fleet Lifecycle Management', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/fleet-lifecycle-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'sddc-lifecycle', name: 'SDDC Lifecycle Management', category: 'Operations', strategy: 'techdocs',
+  { key: 'sddc-lifecycle', name: 'SDDC Lifecycle Management', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/sddc-lifecycle-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'salt-master', name: 'Salt Master', category: 'Operations', strategy: 'techdocs',
+  { key: 'salt-master', name: 'Salt Master', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-master-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'salt-raas', name: 'Salt RaaS', category: 'Operations', strategy: 'techdocs',
+  { key: 'salt-raas', name: 'Salt RaaS', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-raas-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'software-depot', name: 'Software Depot', category: 'Operations', strategy: 'techdocs',
+  { key: 'software-depot', name: 'Software Depot', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/software-depot-9-1-0-(\d{4})-release-notes\.html$/i },
   // Management components (#187): these live in the vcf-operations/<ver>/ patch tree and DO patch on
   // their own cadence, but not on every Express Patch - so walk the tree, and if no leaf exists yet

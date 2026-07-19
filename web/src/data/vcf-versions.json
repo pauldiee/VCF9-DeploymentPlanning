@@ -139,7 +139,7 @@
     {
       "key": "sddc-lifecycle",
       "name": "SDDC Lifecycle Management",
-      "category": "Operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25570103",
       "releaseDate": "2026-07-13",
@@ -149,7 +149,7 @@
     {
       "key": "salt-master",
       "name": "Salt Master",
-      "category": "Operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25544946",
       "releaseDate": "2026-07-13",
@@ -159,7 +159,7 @@
     {
       "key": "salt-raas",
       "name": "Salt RaaS",
-      "category": "Operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25544946",
       "releaseDate": "2026-07-13",
@@ -169,7 +169,7 @@
     {
       "key": "software-depot",
       "name": "Software Depot",
-      "category": "Operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25507010",
       "releaseDate": "2026-07-13",

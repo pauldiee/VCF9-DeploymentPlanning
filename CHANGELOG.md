@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.2.5 — 2026-07-19
+- **Version Overview: move SDDC Lifecycle, Salt Master, Salt RaaS and Software
+  Depot into the Management group** (#187 follow-up). Continues the regrouping
+  from v2.2.4 — these run in the management plane. Fleet Lifecycle Management
+  stays under Operations, which now holds VCF Operations, VCF Operations for
+  Networks and VCF Operations HCX. Display grouping only; versions unchanged.
+
 ## v2.2.4 — 2026-07-19
 - **Version Overview: scraper now walks the whole patch tree; fixes two silent
   under-reports and adds three components** (#187).
