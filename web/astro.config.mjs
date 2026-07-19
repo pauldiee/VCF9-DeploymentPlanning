@@ -6,8 +6,10 @@ import { readdirSync } from 'node:fs';
 // (defaults below) and GitLab Pages (the `.gitlab-ci.yml` job sets SITE_URL /
 // SITE_BASE for the ITQ GitLab instance). BASE is the URL path prefix; SITE the
 // origin. Both feed the doc-link rewriter and `import.meta.env.BASE_URL`.
-const SITE = process.env.SITE_URL || 'https://pauldiee.github.io';
-const BASE = process.env.SITE_BASE || '/VCF9-DeploymentPlanning';
+// GitHub now serves at the root of the custom domain vcf-planning.hollebollevsan.nl,
+// so BASE defaults to '' (root). GitLab still sets SITE_BASE to its project path.
+const SITE = process.env.SITE_URL || 'https://vcf-planning.hollebollevsan.nl';
+const BASE = process.env.SITE_BASE || '';
 
 /**
  * Rewrite in-repo markdown cross-links (e.g. `01-network-dns-plan.md`,
@@ -144,7 +146,7 @@ function rehypeWrapTables() {
 
 export default defineConfig({
   site: SITE,
-  base: BASE,
+  base: BASE || '/',
   trailingSlash: 'ignore',
   markdown: {
     rehypePlugins: [rehypeRewriteDocLinks, rehypeLinkCodeSpanDocRefs, rehypeBackToTop, rehypeWrapTables],

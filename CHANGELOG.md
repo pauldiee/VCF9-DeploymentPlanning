@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.1.2 — 2026-07-19
+- **Site now served on a custom domain: `https://vcf-planning.hollebollevsan.nl`**
+  (#182). The GitHub Pages site moves off the project-path URL
+  (`pauldiee.github.io/VCF9-DeploymentPlanning`) onto a clean subdomain of the
+  author's blog domain. Only `web/astro.config.mjs` changed: the GitHub `SITE`
+  default is the new origin and `BASE` defaults to `''` (root) — passed to Astro
+  as `base: BASE || '/'`. The GitLab mirror is untouched (it sets its own
+  `SITE_URL` / `SITE_BASE`). GitHub auto-redirects the old project URL, so
+  existing links keep working. Hardcoded old-domain links inside the docs are
+  left to a follow-up (#183); they resolve via the redirect in the meantime.
+
 ## v2.1.1 — 2026-07-19
 - **Version Overview: real GA builds for the un-patched components** (#179).
   VSP, Telemetry and Identity Broker previously showed a bare "GA build" label.
