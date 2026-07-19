@@ -10,7 +10,8 @@
 // HTML, so a bare fetch returns the data (no JS/Cloudflare gate) and this runs fine in CI.
 //
 // Author: Paul van Dieen  -  https://www.hollebollevsan.nl
-// Issues: #179 (page), #180 (VCF Operations nodes), #181 (optional add-ons), #184 (GA release dates)
+// Issues: #179 (page), #180 (VCF Operations nodes), #181 (optional add-ons), #184 (GA release dates),
+//         #187 (walk ALL sub-indexes; VSP/Identity Broker/Telemetry nested-with-GA-fallback; +3 Ops components)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -43,18 +44,30 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-installer.html`, leaf: /sddc-manager-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-operations', name: 'VCF Operations', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcfoperations-9-1-0-(\d{4})-release-notes\.html$/i },
-  // VCF Operations sub-components (#180): independently-versioned components of the VCF Operations
-  // family, each with its own release-notes leaf + build in the same vcf-operations/<ver>/ tree.
-  // Nesting them under VCF Operations is a VISUAL grouping only - they version on their own and
-  // currently just happen to be aligned on the same Express Patch (#185). Leaf regexes stay tight
-  // so a sub-component slug can't collide with the product leaf (`vcfoperations-`, no hyphens) or a sibling.
-  { key: 'vcf-ops-orchestrator', name: 'Orchestrator', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  // VCF Operations for Networks + HCX (#187): separate products in the VCF Operations family (not
+  // internal nodes of the appliance). Listed right after the VCF Operations product row in the
+  // Operations group. Both patch in the vcf-operations/<ver>/ tree.
+  { key: 'vcf-ops-for-networks', name: 'VCF Operations for Networks', category: 'Operations', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-for-networks-9-1-0-(\d{4})-release-notes\.html$/i },
+  { key: 'vcf-ops-hcx', name: 'VCF Operations HCX', category: 'Operations', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-hcx-9-1-0-(\d{4})-release-notes\.html$/i },
+  // VCF Operations services (#180, recategorized to Management in #187): independently-versioned
+  // components that ship in the vcf-operations/<ver>/ release-notes tree but run in the management
+  // plane, so they are listed under Management as their own rows (no longer indented under the VCF
+  // Operations product row). They still WALK the vcf-operations patch tree - only the display
+  // category changed. Leaf regexes stay tight so a service slug can't collide with the product leaf
+  // (`vcfoperations-`, no hyphens) or a sibling.
+  { key: 'vcf-ops-orchestrator', name: 'Orchestrator', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-operations-orchestrator-9-1-0-(\d{4})-release-notes\.html$/i },
-  { key: 'vcf-ops-log-management', name: 'Log Management', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  { key: 'vcf-ops-log-management', name: 'Log Management', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/log-management-9-1-0-(\d{4})-release-notes\.html$/i },
   // Broadcom's leaf slug misspells "metrics" as "mertics"; tolerate both spellings so a later fix upstream won't break us.
-  { key: 'vcf-ops-real-time-metrics', name: 'Real-Time Metrics', category: 'Operations', parent: 'vcf-operations', strategy: 'techdocs',
+  { key: 'vcf-ops-real-time-metrics', name: 'Real-Time Metrics', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/real-time-me(?:rt|tr)ics-9-1-0-(\d{4})-release-notes\.html$/i },
+  // Real-Time Metrics Store (#187) - a distinct leaf from Real-Time Metrics above; the `-store` segment
+  // keeps the two slugs from colliding. Tolerate the same rt/tr misspelling upstream uses elsewhere.
+  { key: 'vcf-ops-real-time-metrics-store', name: 'Real-Time Metrics Store', category: 'Management', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/real-time-me(?:rt|tr)ics-store-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'vcf-automation', name: 'VCF Automation', category: 'Automation', strategy: 'techdocs',
     index: `${PATCH}/vcf-automation.html`, leaf: /vcfautomation-9-1-0-(\d{4})-release-notes\.html$/i },
   // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/)
@@ -68,14 +81,20 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-raas-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'software-depot', name: 'Software Depot', category: 'Operations', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/software-depot-9-1-0-(\d{4})-release-notes\.html$/i },
-  // Un-patched in EP2 (no patch leaf) -> render at GA build from the 9.1.0.0 Bill of Materials.
+  // Management components (#187): these live in the vcf-operations/<ver>/ patch tree and DO patch on
+  // their own cadence, but not on every Express Patch - so walk the tree, and if no leaf exists yet
+  // fall back to the 9.1.0.0 Bill-of-Materials build (rendered with the GA pill). This replaces the
+  // old `static` pin, which silently masked VSP's 0200 and Identity Broker's 0100 patches.
   // GA_DATE is the VCF 9.1.0.0 general-availability date (release-notes header: "12 MAY 2026").
-  { key: 'vsp', name: 'VCF Services Runtime (VSP)', category: 'Management', strategy: 'static',
-    version: '9.1.0.0', build: '25370367', releaseDate: GA_DATE, sourceUrl: BOM },
-  { key: 'telemetry', name: 'Telemetry', category: 'Management', strategy: 'static',
-    version: '9.1.0.0', build: '25181946', releaseDate: GA_DATE, sourceUrl: BOM },
-  { key: 'identity-broker', name: 'Identity Broker', category: 'Management', strategy: 'static',
-    version: '9.1.0.0', build: '25368698', releaseDate: GA_DATE, sourceUrl: BOM },
+  { key: 'vsp', name: 'VCF Services Runtime (VSP)', category: 'Management', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/vcf-services-runtime-9-1-0-(\d{4})-release-notes\.html$/i,
+    fallback: { version: '9.1.0.0', build: '25370367', releaseDate: GA_DATE, sourceUrl: BOM } },
+  { key: 'telemetry', name: 'Telemetry', category: 'Management', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/telemetry-9-1-0-(\d{4})-release-notes\.html$/i,
+    fallback: { version: '9.1.0.0', build: '25181946', releaseDate: GA_DATE, sourceUrl: BOM } },
+  { key: 'identity-broker', name: 'Identity Broker', category: 'Management', strategy: 'techdocs',
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/identity-broker-9-1-0-(\d{4})-release-notes\.html$/i,
+    fallback: { version: '9.1.0.0', build: '25368698', releaseDate: GA_DATE, sourceUrl: BOM } },
   // Optional add-ons (#181): NOT part of the base VCF BOM. Each patches on its own cadence and
   // versioning scheme, in its own TechDocs release-notes tree (not the VCF 9-1-0-NNNN patch tree),
   // so each needs a dedicated strategy rather than the shared techdocs walker.
@@ -97,7 +116,15 @@ const COMPONENTS = [
 
 const UA = 'Mozilla/5.0 (compatible; VCF9-DeploymentPlanning version scraper; +https://github.com/pauldiee/VCF9-DeploymentPlanning)';
 
-async function fetchText(url, tries = 3) {
+// In-run cache: the all-sub-index walk (#187) re-reads the same family index + sub-indexes across
+// every nested component, so memoize by URL to keep the fetch count (and load on Broadcom) low.
+const _fetchCache = new Map();
+function fetchText(url, tries = 3) {
+  if (!_fetchCache.has(url)) _fetchCache.set(url, _fetchText(url, tries));
+  return _fetchCache.get(url);
+}
+
+async function _fetchText(url, tries = 3) {
   for (let i = 1; i <= tries; i++) {
     try {
       const ctrl = new AbortController();
@@ -159,27 +186,34 @@ async function scrapeTechdocs(c) {
 
   let leafUrl;
   if (c.nested) {
-    // newest version sub-index: .../<subtree>/9-1-0-0NNN.html
-    const subIdx = inSubtree
-      .map((h) => ({ h, m: h.match(/\/9-1-0-(\d{4})\.html$/i) }))
-      .filter((x) => x.m)
-      .sort((a, b) => verNum(b.m[1]) - verNum(a.m[1]))[0];
-    if (!subIdx) throw new Error('no version sub-index found');
-    const subHtml = await fetchText(subIdx.h);
-    leafUrl = hrefs(subHtml, subIdx.h)
-      .filter((h) => c.leaf.test(h))
-      .sort((a, b) => verNum(b.match(c.leaf)[1]) - verNum(a.match(c.leaf)[1]))[0];
+    // Gather this component's leaf across ALL version sub-indexes (.../<subtree>/9-1-0-NNNN.html),
+    // not just the newest (#187). Components patch independently, so a component's latest patch can
+    // live in an older sub-index than the family's newest (e.g. VSP tops out at 0200 while the ops
+    // bundle is at 0400). Collect every matching leaf, then take the highest version.
+    const subIdxs = inSubtree.filter((h) => /\/9-1-0-\d{4}\.html$/i.test(h));
+    if (!subIdxs.length) throw new Error('no version sub-index found');
+    const candidates = [];
+    for (const s of subIdxs) {
+      const subHtml = await fetchText(s);
+      for (const h of hrefs(subHtml, s)) if (c.leaf.test(h)) candidates.push(h);
+    }
+    leafUrl = candidates.sort((a, b) => verNum(b.match(c.leaf)[1]) - verNum(a.match(c.leaf)[1]))[0];
   } else {
     leafUrl = inSubtree
       .filter((h) => c.leaf.test(h))
       .sort((a, b) => verNum(b.match(c.leaf)[1]) - verNum(a.match(c.leaf)[1]))[0];
   }
-  if (!leafUrl) throw new Error('no matching leaf href found');
+  if (!leafUrl) {
+    // No patch leaf found. A component with a GA fallback (the Management set, #187) simply runs at
+    // its Bill-of-Materials build until Broadcom ships its first patch; anything else is a real miss.
+    if (c.fallback) return { ...c.fallback, patched: false };
+    throw new Error('no matching leaf href found');
+  }
 
   const leafHtml = await fetchText(leafUrl);
   const got = extractLeafBuild(leafHtml);
   if (!got || !got.build) throw new Error('leaf carried no build');
-  return { ...got, sourceUrl: leafUrl };
+  return { ...got, sourceUrl: leafUrl, patched: true };
 }
 
 async function scrapeKb(c) {
@@ -245,8 +279,8 @@ async function main() {
         : c.strategy === 'page' ? await scrapePage(c)
         : c.strategy === 'avi' ? await scrapeAvi(c)
         : await scrapeTechdocs(c);
-      components.push({ ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null, sourceUrl: r.sourceUrl, patched: true });
-      console.log(`OK   ${c.key.padEnd(18)} ${r.version}  Build ${r.build}`);
+      components.push({ ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null, sourceUrl: r.sourceUrl, patched: r.patched ?? true });
+      console.log(`OK   ${c.key.padEnd(18)} ${r.version}  Build ${r.build}${r.patched === false ? '  (GA fallback)' : ''}`);
     } catch (err) {
       const kept = prevByKey.get(c.key);
       errors.push({ key: c.key, source: c.url || c.index, error: String(err.message || err) });

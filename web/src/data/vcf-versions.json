@@ -57,10 +57,29 @@
       "patched": true
     },
     {
+      "key": "vcf-ops-for-networks",
+      "name": "VCF Operations for Networks",
+      "category": "Operations",
+      "version": "9.1.0.0200",
+      "build": "25517220",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-for-networks-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-ops-hcx",
+      "name": "VCF Operations HCX",
+      "category": "Operations",
+      "version": "9.1.0.0200",
+      "build": "25535720",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-hcx-9-1-0-0200-release-notes.html",
+      "patched": true
+    },
+    {
       "key": "vcf-ops-orchestrator",
       "name": "Orchestrator",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25545173",
       "releaseDate": "2026-07-13",
@@ -70,8 +89,7 @@
     {
       "key": "vcf-ops-log-management",
       "name": "Log Management",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25544947",
       "releaseDate": "2026-07-13",
@@ -81,12 +99,21 @@
     {
       "key": "vcf-ops-real-time-metrics",
       "name": "Real-Time Metrics",
-      "category": "Operations",
-      "parent": "vcf-operations",
+      "category": "Management",
       "version": "9.1.0.0400",
       "build": "25544944",
       "releaseDate": "2026-07-13",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/real-time-mertics-9-1-0-0400-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "vcf-ops-real-time-metrics-store",
+      "name": "Real-Time Metrics Store",
+      "category": "Management",
+      "version": "9.1.0.0200",
+      "build": "25555874",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/real-time-metrics-store-9-1-0-0200-release-notes.html",
       "patched": true
     },
     {
@@ -153,11 +180,11 @@
       "key": "vsp",
       "name": "VCF Services Runtime (VSP)",
       "category": "Management",
-      "version": "9.1.0.0",
-      "build": "25370367",
-      "releaseDate": "2026-05-12",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
-      "patched": false
+      "version": "9.1.0.0200",
+      "build": "25555874",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-services-runtime-9-1-0-0200-release-notes.html",
+      "patched": true
     },
     {
       "key": "telemetry",
@@ -173,11 +200,11 @@
       "key": "identity-broker",
       "name": "Identity Broker",
       "category": "Management",
-      "version": "9.1.0.0",
-      "build": "25368698",
-      "releaseDate": "2026-05-12",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
-      "patched": false
+      "version": "9.1.0.0100",
+      "build": "25522734",
+      "releaseDate": "2026-07-13",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0100/identity-broker-9-1-0-0100-release-notes.html",
+      "patched": true
     },
     {
       "key": "vdefend",

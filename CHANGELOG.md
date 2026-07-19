@@ -1,5 +1,35 @@
 # Changelog
 
+## v2.2.4 — 2026-07-19
+- **Version Overview: scraper now walks the whole patch tree; fixes two silent
+  under-reports and adds three components** (#187).
+  - **Walk every sub-index, not just the newest.** The `nested` walker only
+    searched the latest `vcf-operations/9-1-0-NNNN` sub-index, so any component
+    whose latest patch lived in an *older* sub-index was invisible. It now
+    gathers each component's release-notes leaf across **all** sub-indexes and
+    takes the highest version. (Fetches are memoized per URL so the wider walk
+    doesn't multiply load on Broadcom.)
+  - **VSP and Identity Broker were stuck at GA.** `vsp`, `telemetry` and
+    `identity-broker` were hardcoded `static` at the 9.1.0.0 Bill-of-Materials
+    build on the assumption they never patch. They now walk the tree with a GA
+    fallback: **VCF Services Runtime → 9.1.0.0200 / 25555874** and **Identity
+    Broker → 9.1.0.0100 / 25522734** (both 13 Jul 2026); **Telemetry** has no
+    patch leaf yet, so it correctly stays at GA and will auto-upgrade when one
+    ships.
+  - **Three components added** that exist in the tree but weren't listed: **VCF
+    Operations for Networks** (0200 / 25517220) and **VCF Operations HCX** (0200
+    / 25535720) as their own Operations rows next to VCF Operations, and
+    **Real-Time Metrics Store** (0200 / 25555874). Table now covers 23
+    components.
+  - **Regrouped the VCF Operations services under Management.** Orchestrator,
+    Log Management, Real-Time Metrics and Real-Time Metrics Store now sit in the
+    **Management** group alongside VCF Services Runtime, Telemetry and Identity
+    Broker (they run in the management plane); the VCF Operations product row
+    stays under Operations. They still version independently — only the display
+    grouping changed.
+  - **Scraper now runs daily** (was weekly) — `.github/workflows/scrape-versions.yml`
+    cron moved to `17 6 * * *`, and the page copy updated to match.
+
 ## v2.2.3 — 2026-07-19
 - **Prerequisites: add three public URLs Broadcom now lists** (#186). The
   **Public URLs (online functionality)** table in `docs/prerequisites.md` was
