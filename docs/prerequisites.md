@@ -620,8 +620,11 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 | `vsanhealth.vmware.com`         | Binaries, vSAN HCL data                        | VCF Installer, SDDC Manager, vCenter, VCF Download Tool, depot services runtime |
 | `projects.packages.broadcom.com`| Binaries for Supervisor services and VCF services | Depot services runtime                                            |
 | `vcsa.vmware.com`               | CEIP telemetry                                 | SDDC Manager, all VCF services runtime instances                   |
+| `vcsa.telemetry.broadcom.com`   | CEIP telemetry                                 | SDDC Manager, VCF Operations, VCF Operations HCX                   |
+| `scapi.telemetry.broadcom.com`  | CEIP telemetry                                 | SDDC Manager, all VCF services runtime instances                   |
 | `vcf.broadcom.com`              | Licensing                                      | VCF Operations                                                     |
 | `auth.esp.vmware.com`           | Update Manager Download Service (UMDS)         | SDDC Manager, VCF Download Tool                                    |
+| `api.prod.nsxti.vmware.com`     | IDS/IPS advanced threat prevention (VMware vDefend) — **only if vDefend IDS/IPS is enabled; not part of the VCF SKU** | NSX Manager |
 
 > **Proxying these? The proxy must be reachable from the whole
 > services-runtime node block, not just the depot/Ops IPs.** Allowlisting these
@@ -637,6 +640,14 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 > **Air-gapped?** The platform itself then needs none of these — but the
 > machine running the **VCF Download Tool** still does, from wherever it runs.
 > Plan that host's outbound access (or proxy allowlist) as part of this gate.
+
+> **Two notes on the newer rows.** The three **CEIP** endpoints
+> (`vcsa.vmware.com`, `vcsa.telemetry.broadcom.com`,
+> `scapi.telemetry.broadcom.com`) are **distinct destinations, not
+> alternatives** — allowlist all three if telemetry is on. The
+> `api.prod.nsxti.vmware.com` row applies **only when vDefend IDS/IPS is in
+> scope** (it is not part of the base VCF SKU); a fleet without vDefend
+> threat-prevention can drop it.
 
 ## Sign-off
 

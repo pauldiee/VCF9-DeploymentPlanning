@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.2.3 — 2026-07-19
+- **Prerequisites: add three public URLs Broadcom now lists** (#186). The
+  **Public URLs (online functionality)** table in `docs/prerequisites.md` was
+  missing three outbound-443 endpoints that Broadcom's current
+  [Public URLs Required for Online Functionalities](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/public-urls-required-for-vmware-cloud-foundation.html)
+  page carries:
+  - `vcsa.telemetry.broadcom.com` — CEIP (SDDC Manager, VCF Operations, VCF
+    Operations HCX) and `scapi.telemetry.broadcom.com` — CEIP (SDDC Manager, all
+    VCF services runtime instances). These **supplement** the existing
+    `vcsa.vmware.com` CEIP row — same program, distinct destinations — so all
+    three are allowlisted, not swapped.
+  - `api.prod.nsxti.vmware.com` — IDS/IPS advanced threat prevention (VMware
+    vDefend), from NSX Manager. Gated: **only when vDefend IDS/IPS is in scope**,
+    and it is not part of the base VCF SKU. Added a note under the table so the
+    conditional row and the three-way CEIP set both read as intentional. Rows
+    quoted verbatim from the Broadcom page.
+
 ## v2.2.2 — 2026-07-19
 - **Docs: point live-site links at the custom domain** (#183). After the site
   moved to `https://vcf-planning.hollebollevsan.nl` (#182), the docs still linked
