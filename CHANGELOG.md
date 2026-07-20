@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.2.7 — 2026-07-20
+- **New tool: `tools/Get-VCFCredentials.ps1`** (#188). Read-only retrieval of the
+  credentials SDDC Manager stores and rotates for its managed components (ESXi,
+  vCenter, NSX Manager/Edge, PSC/SSO, backup) via the documented Credentials API
+  (`POST /v1/tokens` → `GET /v1/credentials`) — the same endpoint PowerVCF's
+  `Get-VCFCredential` uses. Server-side `-ResourceType` filter plus client-side
+  `-ResourceName` / `-AccountType` / `-CredentialType`; passwords **masked on
+  screen by default** (`-ShowPasswords` reveals, `-ExportCsv` writes the full
+  inventory). Never writes. 5.1-safe (ASCII, own cert policy). Verified against a
+  live VCF 9.1 lab (22 credentials across 6 resource types). Covers the SDDC
+  Manager path; the VCF 9.1 Fleet/VCF Management credential endpoint is a
+  deliberate follow-up pending lab confirmation.
+
 ## v2.2.6 — 2026-07-19
 - **Version Overview: move Fleet Lifecycle Management into Management too**
   (#187 follow-up). Completes the lifecycle regrouping from v2.2.5 — Operations
