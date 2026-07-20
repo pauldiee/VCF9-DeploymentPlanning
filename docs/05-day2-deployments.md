@@ -197,9 +197,42 @@ On top of `01-network-dns-plan.md`, for every Day-2 appliance you deploy:
 
 ---
 
+## G. Helper scripts
+
+Once the fleet is up, SDDC Manager is the system of record for the accounts it
+provisions and rotates across each workload domain. When you need a managed
+component's *current* password — to log into an ESXi host directly, to hand an
+auditor the service-account inventory, or to confirm a rotation actually took —
+read it back from the API rather than hunting through the interface. **Download
+the script and run it** (Windows PowerShell 5.1 or PowerShell 7; it prompts for
+whatever you don't pass):
+
+| Script | What it does |
+| ------ | ------------ |
+| [**Get-VCFCredentials.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Get-VCFCredentials.ps1) | **Read-only.** Lists the credentials SDDC Manager stores and rotates for its managed components (ESXi, vCenter, NSX Manager/Edge, PSC/SSO, backup) via `GET /v1/credentials`. Filters by resource / account / credential type. Passwords are **masked on screen by default** — `-ShowPasswords` reveals them, `-ExportCsv <path>` writes the full inventory. Changes nothing |
+
+```console
+.\Get-VCFCredentials.ps1 -SDDCManager sddc01.sfo.example.io -ResourceType ESXI -SkipCertificateValidation
+```
+
+> **The VCF Management side is different — those passwords cannot be read.** The
+> management-plane accounts (VCF Operations, Automation, VCF services runtime)
+> are handled by VCF Operations' *Password Management*, which **rotates and
+> tracks expiry** but has **no reveal function** — there is no API that returns
+> those plaintext passwords. If you need one of those secrets, rotate it to a
+> known value; you cannot retrieve the existing one.
+>
+> The same script can still **inventory** those accounts (component, username,
+> account type, expiry — no secrets) with `-VCFOps`, taking a `-Credential` just
+> like the SDDC Manager mode. It reads them from an internal, unsupported VCF
+> Operations API (`/suite-api/internal/passwordmanagement`) that Broadcom may
+> change between builds.
+
+---
+
 ## Sign-off
 
-Once A–F are filled and signed, feed the results back into the single-AZ
+Once A–G are filled and signed, feed the results back into the single-AZ
 planning docs and the workbook:
 
 - Day-2 FQDNs + IPs → the DNS section of `01-network-dns-plan.md`

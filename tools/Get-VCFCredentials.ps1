@@ -1,133 +1,173 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Read-only retrieval of the credentials SDDC Manager stores and rotates for
-    its managed components (VCF 9.1). Uses the documented Credentials API -- the
-    same endpoint PowerVCF's Get-VCFCredential calls -- so an operator can read
-    back the passwords the platform manages for ESXi, vCenter, NSX, the backup
-    account and the rest, without hunting through the interface.
+    Read-only retrieval of VCF 9.1 credential information. Two modes:
+
+      -SDDCManager  : the passwords SDDC Manager stores and rotates for its
+                      managed components (ESXi, vCenter, NSX, PSC, backup) --
+                      the documented Credentials API, the same endpoint
+                      PowerVCF's Get-VCFCredential calls. Returns plaintext.
+
+      -VCFOps       : the VCF Management (VCF Operations) password *accounts*
+                      inventory -- component, username, account type and
+                      expiry. This side has NO reveal: VCF Operations manages
+                      rotation/expiry and never returns the plaintext, so this
+                      mode lists accounts only. Takes a -Credential just like
+                      SDDC Manager mode.
 
 .DESCRIPTION
-    SDDC Manager is the system of record for the accounts it provisions and
-    rotates across a workload domain. When you need the current password for a
-    managed component -- to log into an ESXi host directly, to hand an auditor
-    the service-account inventory, or to confirm a rotation actually took -- the
-    supported path is the Credentials API, not a screenshot of the wizard:
+    SDDC Manager mode (default) is the system of record for the accounts it
+    provisions and rotates across a workload domain. When you need the current
+    password for a managed component -- to log into an ESXi host directly, to
+    hand an auditor the service-account inventory, or to confirm a rotation took
+    -- read it back from the Credentials API rather than a screenshot:
 
-        POST https://<SDDCManager>/v1/tokens      { username, password }
-              -> accessToken
-
+        POST https://<SDDCManager>/v1/tokens      { username, password } -> token
         GET  https://<SDDCManager>/v1/credentials
               -> elements[] { resource { resourceName, resourceType, resourceIp,
                                          domainName },
                               accountType, credentialType, username, password }
 
-    Authentication is a single call: POST /v1/tokens with an account that holds
-    the ADMIN role (or the credentials-read privilege). The returned bearer
-    token is used for the read and then discarded -- nothing is written to disk.
+    VCF Management mode (-VCFOps) lists the management-plane password accounts
+    that VCF Operations tracks (VCF Operations, Automation, VCF services
+    runtime). The platform deliberately never returns these passwords -- the
+    Password Management UI has no "view" action, only rotate/expiry -- so this
+    mode returns the *inventory* (component / username / accountType / expiry),
+    never a secret:
 
-    This script only reads. It never rotates, updates or deletes a credential,
-    and it changes nothing on the platform.
+        POST https://<VCFOps>/suite-api/api/auth/token/acquire  { username, password }
+              -> OpsToken
 
-    Password hygiene: to keep managed passwords out of the scrollback buffer and
-    the console transcript, the on-screen table masks them by default. Pass
-    -ShowPasswords to reveal them on screen, or -ExportCsv <path> to write the
-    full inventory (passwords included) to a file you control. Treat any such
-    file as customer data -- it belongs in the engagement's OneDrive folder, not
-    in this repo.
+        POST https://<VCFOps>/suite-api/internal/passwordmanagement/passwords/query
+              ?page=0&pageSize=100    body {"searchCriteria":{"VCF_COMPONENT_TYPE":"ARIA"}}
+              headers: Authorization: OpsToken <token>
+                       X-Ops-API-use-unsupported: true
+              -> vcfPasswordAccounts[] { displayApplianceType, applianceFqdn,
+                                         userName, accountType, status, expiryDate }
+
+    That /suite-api/internal/* namespace is an *internal, unsupported* VCF
+    Operations API (the flag header opts in to it); Broadcom may change it
+    between builds. The equivalent /vcf-operations/rest/* UI path needs a live
+    browser session -- this mode avoids that by using the suite-api OpsToken, so
+    a plain -Credential is all it needs. (Recipe borrowed from VCFHealthCheck.)
+
+    This script only reads. It never rotates, updates or deletes anything.
+
+    Password hygiene (SDDC Manager mode): the on-screen table masks passwords by
+    default. Pass -ShowPasswords to reveal them, or -ExportCsv <path> to write
+    the full inventory. Treat any such file as customer data -- the engagement's
+    OneDrive folder, not this repo. (VCF Management mode has no passwords to
+    mask.)
 
 .NOTES
     Script  : Get-VCFCredentials.ps1
-    Version : 1.0.0
+    Version : 1.2.0
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
-    Tested  : VCF 9.1
+    Tested  : VCF 9.1 (both modes verified against a live lab)
 
 .CHANGELOG
+    v1.2.0  2026-07-20  PD  VCF Management mode now takes a -Credential: mints an Ops
+                            token and calls /suite-api/internal with the
+                            X-Ops-API-use-unsupported flag, so no browser session or
+                            CSRF is needed. Verified live (#188)
+    v1.1.0  2026-07-20  PD  Add VCF Management account-inventory mode (-VCFOps), no secrets (#188)
     v1.0.0  2026-07-20  PD  Initial release -- read-only SDDC Manager credentials retrieval (#188)
 
 .PARAMETER SDDCManager
-    Fully qualified domain name of the SDDC Manager appliance.
+    SDDC Manager mode. FQDN of the SDDC Manager appliance. Returns the plaintext
+    credentials of its managed components.
 
 .PARAMETER Credential
-    Credentials for SDDC Manager (an account with the ADMIN role, or the
-    credentials-read privilege). If omitted, you are prompted. Nothing is
-    written to disk.
+    Credentials for the target appliance. In SDDC Manager mode: an SDDC Manager
+    account with the ADMIN role (or the credentials-read privilege). In VCF
+    Management mode: a VCF Operations local account (e.g. admin). If omitted, you
+    are prompted. Not stored.
 
 .PARAMETER ResourceType
-    Return only credentials for this resource type (server-side filter), e.g.
-    ESXI, VCENTER, NSXT_MANAGER, NSXT_EDGE, BACKUP, PSC, VRSLCM. Case-insensitive.
+    SDDC Manager mode. Server-side filter by resource type, e.g. ESXI, VCENTER,
+    NSXT_MANAGER, NSXT_EDGE, BACKUP, PSC. Case-insensitive.
 
 .PARAMETER ResourceName
-    Return only credentials whose resource name (usually the FQDN) contains this
-    value. Client-side, case-insensitive substring match.
+    SDDC Manager mode. Client-side, case-insensitive substring match on the
+    resource name (usually the FQDN).
 
 .PARAMETER AccountType
-    Return only this account type: USER, SYSTEM or SERVICE. Client-side filter.
+    SDDC Manager mode. Client-side filter: USER, SYSTEM or SERVICE.
 
 .PARAMETER CredentialType
-    Return only this credential type, e.g. SSH, SSO, API, FTP, AUDIT.
-    Client-side, case-insensitive.
+    SDDC Manager mode. Client-side filter, e.g. SSH, SSO, API, FTP, AUDIT.
 
 .PARAMETER ShowPasswords
-    Reveal passwords in the on-screen table. Off by default so managed passwords
-    do not land in the console scrollback. -ExportCsv always writes the real
-    values regardless of this switch.
+    SDDC Manager mode. Reveal passwords in the on-screen table (off by default).
+
+.PARAMETER VCFOps
+    VCF Management mode. FQDN of the VCF Operations appliance. Lists the
+    management-plane password accounts (no secrets).
 
 .PARAMETER ExportCsv
-    Also write the full inventory -- passwords included -- to this CSV path.
-    Treat the file as customer data (OneDrive engagement folder, not the repo).
+    Also write the results to this CSV path. In SDDC Manager mode this includes
+    passwords -- treat it as customer data (OneDrive engagement folder, not the
+    repo). In VCF Management mode it is the no-secrets account inventory.
 
 .PARAMETER SkipCertificateValidation
-    Skip TLS certificate validation. Use when the appliance still presents its
-    self-signed certificate.
+    Skip TLS certificate validation (self-signed appliance certificates).
 
 .PARAMETER Raw
     Also print the full JSON returned by the API, at full depth.
 
 .EXAMPLE
-    .\Get-VCFCredentials.ps1 -SDDCManager sddc01.sfo.example.io -SkipCertificateValidation
-
-    Prompts for credentials, then prints every managed credential with the
-    passwords masked.
-
-.EXAMPLE
     .\Get-VCFCredentials.ps1 -SDDCManager sddc01.sfo.example.io -ResourceType ESXI -ShowPasswords -SkipCertificateValidation
 
-    Prints the current root/SSH credentials for every ESXi host, passwords
-    visible.
+    SDDC Manager mode: the root/SSH credentials for every ESXi host, revealed.
 
 .EXAMPLE
-    .\Get-VCFCredentials.ps1 -SDDCManager sddc01.sfo.example.io -ExportCsv "C:\Users\paul\OneDrive - ITQ\Rainpole\VCF9-Deployment\credentials.csv" -SkipCertificateValidation
+    .\Get-VCFCredentials.ps1 -VCFOps ops01.sfo.example.io -SkipCertificateValidation
 
-    Writes the full inventory, passwords included, to the engagement folder.
+    VCF Management mode: prompts for the VCF Operations credentials, then prints
+    the management-plane password-account inventory (component / username /
+    accountType / expiry). No passwords are returned -- the platform does not
+    expose them.
 #>
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName = 'SDDCManager')]
 param(
-    [Parameter(Mandatory)] [string]$SDDCManager,
+    [Parameter(ParameterSetName = 'SDDCManager', Mandatory)] [string]$SDDCManager,
+    [Parameter(ParameterSetName = 'Management', Mandatory)] [string]$VCFOps,
+
     [System.Management.Automation.PSCredential]$Credential,
-    [string]$ResourceType,
-    [string]$ResourceName,
-    [ValidateSet('USER', 'SYSTEM', 'SERVICE')] [string]$AccountType,
-    [string]$CredentialType,
-    [switch]$ShowPasswords,
+
+    [Parameter(ParameterSetName = 'SDDCManager')] [string]$ResourceType,
+    [Parameter(ParameterSetName = 'SDDCManager')] [string]$ResourceName,
+    [Parameter(ParameterSetName = 'SDDCManager')] [ValidateSet('USER', 'SYSTEM', 'SERVICE')] [string]$AccountType,
+    [Parameter(ParameterSetName = 'SDDCManager')] [string]$CredentialType,
+    [Parameter(ParameterSetName = 'SDDCManager')] [switch]$ShowPasswords,
+
     [string]$ExportCsv,
     [switch]$SkipCertificateValidation,
     [switch]$Raw
 )
 
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.2.0'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$mode = $PSCmdlet.ParameterSetName
+
 Write-Host ('=' * 62) -ForegroundColor DarkCyan
 Write-Host "  Get-VCFCredentials v$scriptVersion" -ForegroundColor Cyan
 Write-Host "  $scriptAuthor - $scriptBlogUrl" -ForegroundColor DarkCyan
-Write-Host "  SDDC Manager: $SDDCManager" -ForegroundColor Cyan
+if ($mode -eq 'SDDCManager') {
+    Write-Host "  Mode        : SDDC Manager (managed-component passwords)" -ForegroundColor Cyan
+    Write-Host "  SDDC Manager: $SDDCManager" -ForegroundColor Cyan
+}
+else {
+    Write-Host "  Mode        : VCF Management (account inventory - no secrets)" -ForegroundColor Cyan
+    Write-Host "  VCF Ops     : $VCFOps" -ForegroundColor Cyan
+}
 Write-Host ('=' * 62) -ForegroundColor DarkCyan
 
 # --- TLS handling -------------------------------------------------------------
@@ -155,6 +195,149 @@ public class VCFTrustAllCertsPolicy : ICertificatePolicy {
     }
 }
 
+function Get-Prop {
+    param($Object, [string]$Name)
+    if ($null -ne $Object -and $Object.PSObject.Properties[$Name]) { return $Object.$Name }
+    return $null
+}
+
+# =============================================================================
+#  VCF MANAGEMENT MODE  (account inventory, no secrets)
+# =============================================================================
+if ($mode -eq 'Management') {
+
+    if (-not $Credential) {
+        $Credential = Get-Credential -Message "VCF Operations credentials for $VCFOps (e.g. admin)"
+    }
+
+    # Mint an Ops token, then reach the internal password-management namespace
+    # with the X-Ops-API-use-unsupported opt-in flag. This is the scriptable path
+    # (the /vcf-operations/rest UI path would need a live browser session).
+    try {
+        $acquireBody = @{
+            username = $Credential.UserName
+            password = $Credential.GetNetworkCredential().Password
+        } | ConvertTo-Json -Compress
+
+        $opsToken = (Invoke-RestMethod -Uri "https://$VCFOps/suite-api/api/auth/token/acquire" `
+            -Method POST -Body $acquireBody `
+            -Headers @{ 'Content-Type' = 'application/json'; Accept = 'application/json' } `
+            @restArgs).token
+
+        if (-not $opsToken) { throw 'No token in the token/acquire response.' }
+
+        Write-Host "`nAuthenticated. Ops token acquired." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "`nAuthentication failed against $VCFOps" -ForegroundColor Red
+        Write-Host "  $($_.Exception.Message)" -ForegroundColor DarkYellow
+        Write-Host "`n  Check the VCF Operations FQDN and the credentials. Use a local" -ForegroundColor DarkGray
+        Write-Host "  account (e.g. admin); an SSO login may need an authSource this" -ForegroundColor DarkGray
+        Write-Host "  script does not send." -ForegroundColor DarkGray
+        exit 1
+    }
+
+    $uriBase     = "https://$VCFOps/suite-api/internal/passwordmanagement/passwords/query"
+    $mgmtHeaders = @{
+        Authorization              = "OpsToken $opsToken"
+        Accept                     = 'application/json'
+        'Content-Type'             = 'application/json'
+        'X-Ops-API-use-unsupported' = 'true'
+    }
+    $reqBody = '{"searchCriteria":{"VCF_COMPONENT_TYPE":"ARIA"}}'
+
+    $accounts = @()
+    $page     = 0
+    $pageSize = 100
+    $total    = 0
+    $lastJson = $null
+
+    do {
+        $pageUri = "$uriBase" + "?page=$page&pageSize=$pageSize"
+        try {
+            $resp = Invoke-WebRequest -Uri $pageUri -Method POST -Body $reqBody -Headers $mgmtHeaders @restArgs
+        }
+        catch {
+            Write-Host "`nRequest to the Password Management API failed on $VCFOps" -ForegroundColor Red
+            Write-Host "  $($_.Exception.Message)" -ForegroundColor DarkYellow
+            Write-Host "`n  A 401/403 here usually means the Ops token was rejected, or the" -ForegroundColor DarkGray
+            Write-Host "  internal namespace changed in this build (it is unsupported)." -ForegroundColor DarkGray
+            exit 1
+        }
+
+        # A rejected request is answered with the login page HTML, not JSON.
+        if ($resp.Content.TrimStart().StartsWith('<')) {
+            Write-Host "`nThe API returned HTML instead of data." -ForegroundColor Red
+            Write-Host "  The Ops token was not accepted on the internal namespace. Confirm" -ForegroundColor DarkYellow
+            Write-Host "  the credentials and that this build still exposes /suite-api/internal." -ForegroundColor DarkYellow
+            exit 1
+        }
+
+        $lastJson = $resp.Content | ConvertFrom-Json
+        $accounts += @(Get-Prop $lastJson 'vcfPasswordAccounts')
+        $pageInfo = Get-Prop $lastJson 'pageInfo'
+        $total    = [int](Get-Prop $pageInfo 'totalCount')
+        $page++
+    } while ($accounts.Count -lt $total -and $total -gt 0 -and $page -lt 100)
+
+    if ($Raw) {
+        Write-Host "`n--- Raw last-page response ---" -ForegroundColor Magenta
+        Write-Host ($lastJson | ConvertTo-Json -Depth 12) -ForegroundColor DarkGray
+    }
+
+    if (-not $accounts.Count) {
+        Write-Host "`nNo password accounts returned." -ForegroundColor Yellow
+        exit 0
+    }
+
+    function ConvertFrom-EpochMillis {
+        param($Millis)
+        $ms = 0L
+        if ($null -ne $Millis) { [void][long]::TryParse([string]$Millis, [ref]$ms) }
+        if ($ms -le 0) { return 'No expiry' }
+        return ([System.DateTimeOffset]::FromUnixTimeMilliseconds($ms)).UtcDateTime.ToString('yyyy-MM-dd')
+    }
+
+    $rows = foreach ($a in $accounts) {
+        [pscustomobject]@{
+            Component  = Get-Prop $a 'displayApplianceType'
+            Fqdn       = Get-Prop $a 'applianceFqdn'
+            Username   = Get-Prop $a 'userName'
+            Account    = Get-Prop $a 'accountType'
+            Status     = Get-Prop $a 'status'
+            Expiry     = ConvertFrom-EpochMillis (Get-Prop $a 'expiryDate')
+            AccountKey = Get-Prop $a 'passwordAccountKey'
+        }
+    }
+    $rows = @($rows | Sort-Object Component, Fqdn, Username)
+
+    if ($ExportCsv) {
+        try {
+            $rows | Export-Csv -Path $ExportCsv -NoTypeInformation -Encoding UTF8
+            Write-Host "`nWrote $($rows.Count) account(s) to:" -ForegroundColor Green
+            Write-Host "  $ExportCsv" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "`nCould not write the CSV: $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+
+    Write-Host "`n$($rows.Count) VCF Management password account(s):" -ForegroundColor White
+    $rows | Format-Table Component, Fqdn, Username, Account, Status, Expiry -AutoSize | Out-String -Width 4096 | Write-Host
+
+    Write-Host "No passwords are shown because this API does not expose them: VCF" -ForegroundColor DarkGray
+    Write-Host "Operations manages rotation and expiry for these accounts but never" -ForegroundColor DarkGray
+    Write-Host "returns the plaintext. To change one, rotate it (Update Password)." -ForegroundColor DarkGray
+
+    Write-Host "`n$('=' * 62)" -ForegroundColor DarkCyan
+    Write-Host "  Done. Nothing was changed." -ForegroundColor DarkCyan
+    Write-Host ('=' * 62) -ForegroundColor DarkCyan
+    return
+}
+
+# =============================================================================
+#  SDDC MANAGER MODE  (managed-component passwords, plaintext)
+# =============================================================================
 if (-not $Credential) {
     $Credential = Get-Credential -Message "SDDC Manager credentials for $SDDCManager (ADMIN role)"
 }
@@ -184,12 +367,6 @@ catch {
 }
 
 $headers = @{ Authorization = "Bearer $accessToken"; Accept = 'application/json' }
-
-function Get-Prop {
-    param($Object, [string]$Name)
-    if ($null -ne $Object -and $Object.PSObject.Properties[$Name]) { return $Object.$Name }
-    return $null
-}
 
 # --- Retrieve credentials (server-side ResourceType filter, paged) ------------
 $uri = "https://$SDDCManager/v1/credentials"

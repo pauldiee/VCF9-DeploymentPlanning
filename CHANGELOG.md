@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.2.9 — 2026-07-20
+- **`Get-VCFCredentials.ps1` v1.2.0 — VCF Management account inventory** (#188).
+  New `-VCFOps` mode lists the management-plane password *accounts* (VCF
+  Operations, Automation, VCF services runtime — component / username / account
+  type / expiry). **No secrets**: that side has no reveal, by design. Takes a
+  plain `-Credential` (VCF Operations local account) just like SDDC Manager mode:
+  it mints an Ops token and calls `/suite-api/internal/passwordmanagement/
+  passwords/query` with the `X-Ops-API-use-unsupported` flag — the scriptable
+  path (the `/vcf-operations/rest` UI path would need a live browser session).
+  Auth recipe borrowed from VCFHealthCheck. Verified live against the lab. Docs
+  (`05`) + README updated to describe both modes.
+
+## v2.2.8 — 2026-07-20
+- **`Get-VCFCredentials.ps1` is now a downloadable site tool** (#188). Added a
+  **G. Helper scripts** section to `docs/05-day2-deployments.md` linking the
+  download (`/scripts/Get-VCFCredentials.ps1`, auto-copied at build like the
+  backup/proxy tools), with an ESXi example and a callout that VCF Management
+  (VCF Operations) passwords are rotation/expiry-only and cannot be read back.
+  Sign-off scope updated A–F → A–G.
+
 ## v2.2.7 — 2026-07-20
 - **New tool: `tools/Get-VCFCredentials.ps1`** (#188). Read-only retrieval of the
   credentials SDDC Manager stores and rotates for its managed components (ESXi,
