@@ -173,11 +173,29 @@ function isoDate(s) {
 // be sub-components).
 function extractLeafBuild(html) {
   const text = plain(html);
-  // VCF build numbers are 8 digits; take the first 8 after "Build" so a stray adjacent digit
-  // (software-depot's leaf renders a spurious 9th) can't inflate the value.
-  const m = text.match(/(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*Build\s*(\d{8})/i);
+  // Capture the WHOLE digit run after "Build", never a fixed-width slice of it.
+  //
+  // This previously matched \d{8} and took the first 8 digits, on the assumption that
+  // software-depot's leaf renders a spurious trailing 9th digit. It does render 9 digits,
+  // but the extra one is inserted in the MIDDLE: 9.1.0.0400 is published as
+  // "Build 255070105" where the real build is 25570105 (confirmed against the live product
+  // inventory, and by the sequential family 25570100/103/104 of the same release). Slicing
+  // the first 8 therefore produced 25507010: a well-formed, plausible, WRONG build that
+  // every downstream consumer then treated as authoritative. It made a fully patched
+  // component report as running something newer than the newest known patch.
+  //
+  // A wrong build is worse than a missing one, so refuse to guess: anything that is not
+  // exactly 8 digits throws, and main()'s handler keeps the last-known value and logs KEEP.
+  const m = text.match(/(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*Build\s*(\d+)/i);
   if (!m) return null;
-  return { version: m[1].trim(), releaseDate: isoDate(m[2]), build: m[3].trim() };
+  const build = m[3].trim();
+  if (!/^\d{8}$/.test(build)) {
+    throw new Error(
+      `implausible build "${build}" (${build.length} digits, expected 8) for ${m[1].trim()} -- ` +
+      `likely a typo in the Broadcom release notes; refusing to guess`
+    );
+  }
+  return { version: m[1].trim(), releaseDate: isoDate(m[2]), build };
 }
 
 async function scrapeTechdocs(c) {
