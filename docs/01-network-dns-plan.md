@@ -85,7 +85,7 @@ hosts:
 > ([Create an IP Pool for Tunnel Endpoint IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/create-an-ip-pool-for-tunnel-endpoint-ip-addresses.html)).
 
 **VM Management subnet — the crowded one.** A VCF 9.1 management domain packs a
-lot onto this network: ~30–48 IPs. Size it generously (a `/24` is normal — do
+lot onto this network: ~32–50 IPs. Size it generously (a `/24` is normal — do
 **not** try to squeeze it into a `/27`). On top of discrete appliance IPs it
 needs **two dedicated contiguous blocks**: a `/29` for VCF Automation and a
 `/28`–`/27` for the VCF management-services runtime. Each additional VI Workload
@@ -102,8 +102,9 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
 | NSX Edge nodes (if deployed)    | 2          |             | **Centralized connectivity only** — mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below |
 | Virtual Network Appliances (VNA)| 2          |             | **Distributed connectivity only** (the alternative to the Edge nodes above — a domain has one or the other). 2 appliances minimum for HA, each with an FQDN + static IP; matches `vna01`/`vna02` in the DNS table below. Intake `H4` / `A10` |
-| VCF Automation                  | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` |
-| VCF Automation services runtime | —          |             | FQDN only — Automation's **own** services runtime, served from the `/29` above. **Not** the same component as the fleet runtime below; TechDocs lists *"VCF services runtime — 1 FQDN"* under **both**. Intake `E10` |
+| VCF Automation nodes            | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29`. This is the **VCF services runtime nodes CIDR** the *Add VCF Automation* wizard asks for. **IP-only — no DNS records** |
+| VCF Automation FQDN             | 1          |             | Discrete IP **outside** the `/29` above — the wizard: *"VCF Automation FQDN and VCF services runtime FQDN must resolve to IP addresses that fall outside of the provided CIDR"* |
+| VCF Automation services runtime | 1          |             | Automation's **own** services runtime — a second FQDN, also on a discrete IP **outside** the `/29`. **Not** the same component as the fleet runtime below; TechDocs lists *"VCF services runtime — 1 FQDN"* under **both**. Intake `E10` |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below). Has its own FQDN (intake `E14`) |
 | Avi Controller cluster (optional)| 4 **per NSX instance** |  | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / optionally fronting VCF Automation / tenant LB). Controllers **always** run here in the management domain, even when they serve a workload domain, and a set is scoped to the **NSX instance** — WLDs sharing an NSX instance share one set; a WLD with its own NSX adds another **+4**. (Service Engines are separate: per cluster, in the WLD.) See `prerequisites.md` |
 | License Hub (optional)          | ~9         |             | Only if **vDefend or Avi** is in scope — the licensing appliance the **SSP Installer** deploys, and **not** the `License Server` two rows up (they coexist). One subnet, two IP pools: **installer 1**, **controller + worker nodes 4**, **License Hub services 4**. The node and service pools **cannot be changed after deployment** — size for scale-out now. See `prerequisites.md` |
@@ -111,7 +112,7 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | Log Management (optional)       | — (from runtime block) | | Day-N: 1 FQDN + 6 IPs, +2 per additional replica — **allocated from the services-runtime block above**, not extra subnet IPs (TechDocs FQDN/IP list); size the block `/27` if Log Management is planned. See `05-day2-deployments.md` |
 | Real-time metrics (optional)    | — (from runtime block) | | Day-N: 6 IPs, **also allocated from the services-runtime block** (TechDocs FQDN/IP list) |
 | Identity Broker                 | —          |             | FQDN only — served from the services-runtime block above, no extra VM Mgmt IP |
-| **Approx. total**               | **~30–48** |             | A `/24` VM Mgmt subnet leaves ample room (+4 **per NSX instance** if the Avi LB is in scope, +9 if the **License Hub** is too, +2–4 if Ops for Networks shares this subnet; Log Management / real-time metrics come out of the runtime block — size it `/27`) |
+| **Approx. total**               | **~32–50** |             | A `/24` VM Mgmt subnet leaves ample room (+4 **per NSX instance** if the Avi LB is in scope, +9 if the **License Hub** is too, +2–4 if Ops for Networks shares this subnet; Log Management / real-time metrics come out of the runtime block — size it `/27`) |
 
 > **Separate internal networks — keep off the VM Mgmt subnet.** The VCF services
 > runtime uses an *internal* container CIDR, `198.18.0.0/15` by default
@@ -224,10 +225,16 @@ same shape.
 > carries the row *"VCF services runtime — 1 FQDN"* **twice**: once under **VCF
 > Automation** and once under **VCF Management Services**. The workbook repeats
 > the same field label the same way. They are **separate components with
-> separate FQDNs** — the Automation one resolves into the Automation `/29` node
-> range, the fleet one into the management-services runtime block. Plan and
-> create **both** A + PTR records; see intake `E10` (Automation) and `E14`
-> (fleet).
+> separate FQDNs** — the fleet one resolves into the management-services runtime
+> block; the Automation one gets a discrete VM Mgmt IP. Plan and create **both**
+> A + PTR records; see intake `E10` (Automation) and `E14` (fleet).
+
+> **Both Automation FQDNs go *outside* the `/29`.** The *Add VCF Automation*
+> wizard takes the `/29` as its **VCF services runtime nodes CIDR** and warns:
+> *"VCF Automation FQDN and VCF services runtime FQDN must resolve to IP
+> addresses that fall outside of the provided CIDR."* So the `/29` is for the
+> **nodes only** (IP-only, no DNS records) and the two Automation FQDNs each
+> need their **own discrete VM Mgmt IP** on top of it — budget **`/29` + 2**.
 
 | Role               | Sample FQDN                          | IP source            |
 | ------------------ | ------------------------------------ | -------------------- |
@@ -246,8 +253,8 @@ same shape.
 | Fleet components   | `sfo-fc01.sfo.example.io`            | VM Mgmt subnet       |
 | Instance components | `sfo-ic01.sfo.example.io`           | VM Mgmt subnet       |
 | VCF services runtime (VCF Management Services) | `sfo-svcs01.sfo.example.io` | services-runtime block — the **fleet** runtime. Intake `E14` |
-| VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
-| VCF services runtime (VCF Automation) | `sfo-autosvcs01.sfo.example.io` | VCF Automation `/29` node range — Automation's **own** runtime, a **second, separate** FQDN. Intake `E10` |
+| VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet — **outside** the Automation `/29` |
+| VCF services runtime (VCF Automation) | `sfo-autosvcs01.sfo.example.io` | VM Mgmt subnet — **outside** the Automation `/29`. Automation's **own** runtime, a **second, separate** FQDN. Intake `E10` |
 | NSX Edge 1 (Centralized only) | `sfo-m01-en01.sfo.example.io` | VM Mgmt subnet       |
 | NSX Edge 2 (Centralized only) | `sfo-m01-en02.sfo.example.io` | VM Mgmt subnet       |
 | Virtual Network Appliance 1 (Distributed only) | `sfo-m01-vna01.sfo.example.io` | ESX Mgmt subnet — the VNA cluster that gives a Distributed Transit Gateway its stateful services (NAT); **not** a replacement for an Edge cluster (no Tier-0/Tier-1 runs on it) |

@@ -431,7 +431,8 @@ function day2Epic(sel: Selection): Epic {
       : 'single-node (no load balancer needed)';
     const tasks = [
       `Deploy via SDDC Manager API or via VCF Operations as a ${modelText}. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C). Set the services-runtime cluster CIDR.`,
-      'Have BOTH VCF Automation FQDNs resolving before you start: the Automation appliance FQDN AND Automation\'s own "VCF services runtime" FQDN (lowercase, A + PTR, from the VCF Automation /29 node range). This is a second, separate FQDN from the fleet VCF Management Services runtime created at bring-up — TechDocs and the workbook use the identical label for both.',
+      'Have BOTH VCF Automation FQDNs resolving before you start: the Automation appliance FQDN AND Automation\'s own "VCF services runtime" FQDN (lowercase, A + PTR). This is a second, separate FQDN from the fleet VCF Management Services runtime created at bring-up — TechDocs and the workbook use the identical label for both.',
+      'Both of those FQDNs must resolve to discrete VM Management IPs that fall OUTSIDE the /29 you enter as the "VCF services runtime nodes CIDR" — the wizard enforces this. Budget the /29 (3 node IPs + 2 buffer, IP-only, no DNS records) PLUS 2 separate IPs for the FQDNs.',
     ];
     if (a.placement === 'overlay' && sel.connectivity === 'distributed') {
       tasks.push('This fleet uses Distributed connectivity (no centralized Edge cluster), but the NSX Overlay Segment placement needs an NSX Edge cluster + Tier-0 + Tier-1 for the fleet segment — deploy that Edge cluster first, or pick the Dedicated Management / NSX VLAN Segment placement instead (see 05-day2-deployments.md section C).');

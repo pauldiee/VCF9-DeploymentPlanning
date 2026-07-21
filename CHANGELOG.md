@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.3.1 — 2026-07-21
+- **Both VCF Automation FQDNs resolve *outside* the services-runtime nodes
+  `/29` — `+2` VM Mgmt IPs** (#190, follow-up to #189). The *Add VCF Automation*
+  → **Parameters** step states it inline: *"VCF Automation FQDN and VCF services
+  runtime FQDN must resolve to IP addresses that fall outside of the provided
+  CIDR."* Lab-confirmed that the **VCF services runtime nodes CIDR** field takes
+  a **routable `/29` from the VM Management subnet** — so the `/29` is for the
+  **nodes only** (IP-only, **no DNS records**) and the Automation appliance FQDN
+  and Automation's own services-runtime FQDN each need a **discrete VM Mgmt IP
+  on top of it**. Corrects the `-> (VCF Automation /29 range)` example added in
+  v2.3.0 **and** the older `VCF Automation -> (from /29)` row in the Rainpole
+  sample, which predates #189. VM Mgmt IP budget **~30–48 → ~32–50**. Updated
+  `ip-dns-plan.csv` (both FQDN rows + a new IP-only `/29` row),
+  `docs/01-network-dns-plan.md` (IP-count table, totals, A/PTR sources, new
+  callout), `docs/05-day2-deployments.md` (section D callout) and the
+  deployment-plan tool's Automation story.
+- **Flagged as unverified:** `05-day2-deployments.md` section D still describes
+  the Automation *cluster CIDR* as an **internal** `198.18.0.0/15` network.
+  Whether that is a **separate** wizard field from the routable `/29`, or a
+  conflation in this repo, is unconfirmed — the row now carries an explicit
+  "check before relying on it" note pointing at #190 rather than being silently
+  rewritten.
+
 ## v2.3.0 — 2026-07-21
 - **Two VCF services-runtime FQDNs, not one — v1.4.2 reversed** (#189).
   Lab-verified and confirmed verbatim against the TechDocs

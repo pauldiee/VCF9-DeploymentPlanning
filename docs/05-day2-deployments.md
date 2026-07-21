@@ -152,6 +152,14 @@ and asks for:
 > network — pick one of the sheet's reserved ranges (`198.18.0.0/15` default)
 > and keep it distinct from every routed subnet in the Step 1 plan.
 
+> **Unverified — check this in the wizard before you rely on it (#190).** The
+> *Add VCF Automation* wizard's **VCF services runtime nodes CIDR** field is
+> lab-confirmed to take a **routable `/29` from VM Management**, not an internal
+> range. Whether the *internal* cluster CIDR above is a **separate** field
+> further down that wizard, or whether the two have been conflated in this repo,
+> has not been confirmed. If there is only one CIDR field, this row and the note
+> above are wrong.
+
 ---
 
 ## D. VCF Automation — deployment method
@@ -177,6 +185,15 @@ network placement (section C) together.
 > created at bring-up — intake `E14`). The workbook repeats the same field
 > label the same way. Plan and create **both** A + PTR records; using the
 > bring-up fleet FQDN here is a common and confusing failure.
+
+> **Both Automation FQDNs must resolve *outside* the CIDR you provide.** The
+> *Add VCF Automation* → **Parameters** step states it inline: *"VCF Automation
+> FQDN and VCF services runtime FQDN must resolve to IP addresses that fall
+> outside of the provided CIDR."* Lab-confirmed that the **VCF services runtime
+> nodes CIDR** field takes a routable **`/29` from the VM Management subnet** —
+> so that `/29` covers the **nodes only** (IP-only, no DNS records) and the two
+> FQDNs each need their **own discrete VM Mgmt IP on top of it**. Budget
+> **`/29` + 2**, and see `01-network-dns-plan.md`.
 
 ---
 

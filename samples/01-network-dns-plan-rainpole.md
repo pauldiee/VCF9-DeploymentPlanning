@@ -40,9 +40,10 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | SDDC Manager                    | `.13`                | Also the VCF Installer FQDN              |
 | License Server                  | `.14`                | Tied to VCF Operations; outside the services-runtime block |
 | VCF Operations VIP              | `.21`                | Load balancer (HA)                       |
-| VCF Automation services runtime | — (`/29` block)      | FQDN only — Automation's **own** runtime, served from the VCF Automation `/29` below. A **separate** component from the management-services runtime on the next row, despite the identical workbook field label |
+| VCF Automation FQDN             | `.22`                | Discrete IP — **outside** the `/29` below (wizard requirement) |
+| VCF Automation services runtime | `.23`                | Discrete IP, **also outside** the `/29`. Automation's **own** runtime — a **separate** component from the management-services runtime on the next row, despite the identical workbook field label |
 | VCF Management Services runtime | `.32–.47`            | CIDR-aligned `/28` block (`10.11.10.32/28`) — fits the 12-node minimum; plan a `/27` instead if Day-2 Log Management / real-time metrics are in scope |
-| VCF Automation nodes            | `.56–.63`            | CIDR-aligned `/29` block (`10.11.10.56/29`); 3 node IPs + 2 redeploy/rolling-update buffer |
+| VCF Automation nodes            | `.56–.63`            | CIDR-aligned `/29` block (`10.11.10.56/29`); 3 node IPs + 2 redeploy/rolling-update buffer. Entered as the *VCF services runtime nodes CIDR*; **IP-only, no DNS records** — the two Automation FQDNs above sit outside it |
 | VCF Operations analytics        | `.52`, `.53`, `.54`  | Primary / replica / data                 |
 | vCenter                         | `.70`                |                                          |
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |
@@ -86,8 +87,8 @@ TEP `10.11.19.2–.5`.
 | VCF Ops nodes      | `flt-ops01{a,b,c}.rainpole.io`       | `10.11.10.52–.54` |
 | VCF Ops cloud proxy| `sfo-cp01.sfo.rainpole.io`           | `10.11.10.12` |
 | License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |
-| VCF Automation     | `flt-auto01.rainpole.io`             | (from `/29`)  |
-| VCF services runtime (VCF Automation) | `flt-autosvcs01.rainpole.io` | (from `/29`) — Automation's **own** runtime, intake `E10` |
+| VCF Automation     | `flt-auto01.rainpole.io`             | `10.11.10.22` — **outside** the `/29` |
+| VCF services runtime (VCF Automation) | `flt-autosvcs01.rainpole.io` | `10.11.10.23` — **outside** the `/29`; Automation's **own** runtime, intake `E10` |
 | Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
 | VCF services runtime (VCF Management Services) | `sfo-sr01.sfo.rainpole.io` | `10.11.10.10` — the **fleet** runtime, intake `E14` |
 | Fleet components   | `flt-fc01.rainpole.io`               | `10.11.10.20` |
