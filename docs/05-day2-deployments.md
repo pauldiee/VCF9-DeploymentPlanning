@@ -32,7 +32,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations, VCF Management Services (incl. the Identity Broker), the Cloud Proxy and the License Server are bring-up** — the Installer deploys them automatically, no opt-in (or defers Operations + Automation + cloud proxy + license server as a set for **custom network placement** — see C). VCF Automation can be deferred indefinitely; Log Management & Operations for Networks are often Day-N. The Identity Broker's Day-2 part is **configuration only** (AD binding / fleet SSO) plus any additional instance |
 |D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (deployment-plan epic E5, `06-deployment-plan.md`). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
-|D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment? | Four options — see C; NSX Overlay needs an Edge cluster + transit gateway |
+|D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment / **NSX VPC subnet**? | Five options — see C. NSX Overlay needs an Edge cluster + transit gateway; **NSX VPC is not on the sheet and is API-only**. At Day-N *every* non-shared placement is API-only |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
 
 Size the footprint of whatever you choose here on the
@@ -96,10 +96,15 @@ request certificates (the SAN list depends on it).
 
 ---
 
-## C. Network placement — the four options
+## C. Network placement — the options
 
-This is the decision behind the "VCF Automation on a VPC network" question — but
-the sheet does **not** offer a VPC. It offers four placements, and they line up
+This is the decision behind the "VCF Automation on a VPC network" question. The
+Day-N sheet offers **four** placements and a VPC is **not** one of them — but
+that is a limitation of the sheet and the wizard, **not of the platform**, so
+the table below carries **five**: the sheet's four, plus the **NSX VPC subnet**
+(lab-verified, API-only — see the subsection after the table).
+
+The first four line up
 with the Broadcom design library's four *fleet-level components* network models
 ([Fleet-Level Components Networking Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html))
 and the [custom-networking deployment guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html):
@@ -117,8 +122,10 @@ and the [custom-networking deployment guidance](https://techdocs.broadcom.com/us
 | **Dedicated Management Network** | Dedicated VLAN                                    | Fleet components on a **separate, dedicated** vDS port group / VLAN — create it first. **Cloud Proxy stays on the VM-mgmt network.** Physical firewall can secure it; for DR/stretched the VLAN must be routable across AZs/regions (IP mobility). |
 | **NSX Overlay Segment**          | Dedicated VLAN **+** NSX Overlay Segment (hybrid) | VCF management **services** on a VLAN; **VCF Operations, Automation, Ops-for-Networks, License Server** on an NSX **overlay** (Geneve) segment; **Cloud Proxy stays on VM-mgmt**. Needs an **NSX Edge cluster + Tier-0** (BGP to physical, advertise segments), a **Tier-1** linked to it, and the segment on the management overlay transport zone. |
 | **NSX VLAN Segment**             | (VLAN-backed NSX segment)                          | Fleet components on an NSX **VLAN-backed** segment (NSX-managed, no overlay/Edge routing).          |
+| **NSX VPC subnet** — **not on the sheet** | VPC-based patterns in the design library (DMZ VPC + Mgmt App VPC + Transit Gateway) | VCF Automation on an **NSX VPC subnet**. **Not offered by the Day-N sheet or the wizard** — deploy via the **Fleet LCM API** (section D). Create the VPC + subnet first and let it realise in vCenter, where it appears as an ordinary **distributed portgroup** with a MoRef. Use when you need VPC isolation or the DMZ / Transit Gateway pattern. **Lab-verified 2026-07-21.** See *NSX VPC — one of the non-management placements* below |
 
-There is no NSX VPC option — placement is one of the four above. The design
+The sheet and the wizard offer no NSX VPC option — but the platform does
+support it, via the API (below). The design
 library adds a fifth, DR-oriented model — *Dedicated VLAN + NSX **Stretched**
 Overlay Segment* — which stretches the overlay via **NSX Federation** with a
 **Global Manager** (primary/secondary) so VCF Operations keeps its IP on
@@ -127,6 +134,67 @@ region failover (no DNS repoint); see the design library's
 
 The point of the non-shared options is to **separate user-facing networks from
 management networks** for regulatory / security requirements.
+
+> **At Day-N, every non-shared placement is API-only.** Lab-verified
+> 2026-07-21: the Day-N *Add VCF Automation* wizard (Fleet LCM, via VCF
+> Operations) has **no network picker at all** — it asks only for the services
+> runtime nodes CIDR and the FQDNs, and always uses the management network. So
+> **Dedicated Management Network, NSX Overlay Segment, NSX VLAN Segment and NSX
+> VPC alike** have to be deployed through the **Fleet LCM API** once the fleet is
+> up. Section D has the procedure; it applies to all four, not just the VPC.
+>
+> **The exception is the deferred-components path.** The **VCF Installer**'s
+> third deployment path — *Deploy deferred components*, unlocked by the
+> *Management Components Custom Networking* toggle at bring-up (see the callout
+> above) — **does** place VCF Operations + VCF Automation onto a prepared vDS /
+> NSX segment from a UI. That is a different wizard at a different point in the
+> lifecycle. If you know the placement up front, that route avoids the API
+> entirely; decide it **before** bring-up rather than after.
+
+### NSX VPC — one of the non-management placements
+
+The **first four** placements in the table are what the **Day-N sheet and the
+deployment wizard** offer. They are not the limit of what the platform supports:
+**VCF Automation can be placed on an NSX VPC subnet** — the fifth row — and
+Broadcom's own design library builds patterns on exactly that.
+
+A VPC is not a special case mechanically — per the callout above, **all** the
+non-shared placements go through the same Fleet LCM API at Day-N. What makes the
+VPC worth its own section is that it is the one placement the sheet does not
+list at all, so there is nowhere else to record the decision.
+
+From [VCF Automation instance types — deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-automation-deployment-models-9-x/vcf-automation-instance-types/deployment.html):
+
+> *"To provide an additional layer of network isolation, this deployment pattern
+> also uses a second VPC for the VCF Automation instances."*
+> *"The DMZ VPC accommodates external facing services (like load balancers) and
+> serves as a security barrier between the Internet and the internal application
+> network."*
+> *"The Transit Gateway routes traffic between the two VPCs and to the upstream
+> network, enabling safe channels of communication."*
+> *"Provider Admin can apply east/west firewall on the Mgmt App VPC to protect
+> access to VCF Automation appliances."*
+
+So the shape is a **DMZ VPC** for external-facing services, a **Mgmt App VPC**
+for the VCF Automation appliances, and a **Transit Gateway** routing between
+them and upstream — with east/west firewalling available on the app VPC.
+
+**How you actually deploy it:** through the **Fleet LCM API**, exactly like the
+other non-management placements — the VPC subnet is referenced by its
+`networkMoId` like any portgroup. See *Deploying VCF Automation to a
+non-management network — API only* in section D for the full procedure.
+
+> **Lab-verified 2026-07-21.** VCF Automation deployed onto an NSX VPC subnet
+> via the Fleet LCM API: validation passed, the node VMs landed on the VPC
+> portgroup, the cluster came up and the Provider Management UI serves at
+> `/provider`. Budget generous time — the platform returns `404`, then `500`,
+> before it finally answers, and that progression is normal rather than a fault.
+
+> **Choosing between them.** If a VPC is not a requirement, one of the four
+> sheet placements is the lower-friction path — they are wizard-driven, and the
+> workbook has fields for them. Reach for a VPC when you need its isolation or
+> the DMZ/Transit Gateway pattern above, and accept the API-only deployment
+> route that comes with it.
 
 **Common prerequisites** (all placements): the initial VCF fleet / instance
 deployment is complete; component binaries downloaded to VCF Installer; load
@@ -181,6 +249,25 @@ capture which one, as they ask for different inputs:
 Both deploy paths need: VCF Automation FQDN, VCF services-runtime FQDN, node
 prefix, the node IP pool, and the admin password. Decide the method and the
 network placement (section C) together.
+
+> **Size *is* the deployment model — they are not separate choices.** TechDocs
+> [VCF Automation Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-automation-deployment-models.html):
+> the **Simple** model is *"Single node. Applies to small appliance size"* and
+> **High Availability** is *"Three node cluster. Applies to medium or large node
+> sizes"*. A small deployment *"can be scaled out to the high availability model
+> by resizing the node to Medium or Large, which automatically scales the
+> deployment out to 3 nodes."*
+>
+> | Size | Nodes | Model |
+> | --- | --- | --- |
+> | `small` | 1 | Simple |
+> | `medium` | 3 | High Availability |
+> | `large` | 3 | High Availability |
+>
+> This is why the Fleet LCM payload carries only `"size"` and has no HA flag —
+> there is nothing else for it to key off. Capture the **size**; the model and
+> node count follow from it. Note this also means **you cannot have a
+> large single node**, nor a small HA cluster.
 
 > **That services-runtime FQDN is Automation's own — a second one.** TechDocs'
 > [FQDN/IP list](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)

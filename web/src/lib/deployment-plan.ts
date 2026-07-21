@@ -39,8 +39,16 @@ export interface Wld {
   supervisorLb: SupervisorLb;
 }
 
-export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan';
-export type AutomationModel = 'single' | 'ha';
+export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 'vpc';
+/**
+ * VCF Automation appliance size. Size IS the deployment-model selector, not an
+ * independent choice: TechDocs describes the Simple model as "Single node.
+ * Applies to small appliance size" and High Availability as "Three node
+ * cluster. Applies to medium or large node sizes", with a resize from small to
+ * medium/large automatically scaling out to 3 nodes. The Fleet LCM payload
+ * carries only `size` for exactly this reason. (#193)
+ */
+export type AutomationModel = 'small' | 'medium' | 'large';
 export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type SupervisorLb = 'builtin' | 'flb' | 'avi';
@@ -109,7 +117,7 @@ export function defaultSelection(): Selection {
     supervisorSize: 'Small',
     mgmtStretched: false,
     day2: true,
-    automation: { deploy: true, model: 'single', placement: 'shared', aviLb: false },
+    automation: { deploy: true, model: 'small', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
     wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
   };
@@ -151,13 +159,22 @@ export const AUTOMATION_PLACEMENTS: { value: AutomationPlacement; label: string;
   { value: 'dedicated', label: 'Dedicated Management Network', text: 'build the dedicated vDS port group / VLAN first; Cloud Proxy stays on the VM-Management network' },
   { value: 'overlay', label: 'NSX Overlay Segment', text: 'needs an NSX Edge cluster + Tier-0 (BGP) + Tier-1 and the overlay segment first; Cloud Proxy stays on VM-Management' },
   { value: 'vlan', label: 'NSX VLAN Segment', text: 'deploy on an NSX VLAN-backed segment (no overlay / Edge routing)' },
+  { value: 'vpc', label: 'NSX VPC subnet (API only)', text: 'create the VPC and its subnet first; NOT offered by the wizard or the Day-N sheet — deploy via the Fleet LCM API (see 05-day2-deployments.md section C "NSX VPC — the fifth placement" and section D)' },
 ];
 
-/** VCF Automation deployment models — HA is a three-node cluster behind the built-in cluster VIP. */
-export const AUTOMATION_MODELS: { value: AutomationModel; label: string }[] = [
-  { value: 'single', label: 'Single-node' },
-  { value: 'ha', label: 'HA cluster' },
+/**
+ * VCF Automation sizes. The size determines the deployment model and node count
+ * — they are not independent choices (#193). HA is a three-node cluster behind
+ * the built-in cluster VIP.
+ */
+export const AUTOMATION_MODELS: { value: AutomationModel; label: string; nodes: number; model: string }[] = [
+  { value: 'small', label: 'Small — 1 node (Simple model)', nodes: 1, model: 'Simple' },
+  { value: 'medium', label: 'Medium — 3 nodes (High Availability)', nodes: 3, model: 'High Availability' },
+  { value: 'large', label: 'Large — 3 nodes (High Availability)', nodes: 3, model: 'High Availability' },
 ];
+
+/** Saved-plan values from before #193, mapped so existing files still load. */
+const LEGACY_AUTOMATION_MODELS: Record<string, AutomationModel> = { single: 'small', ha: 'medium' };
 
 const AVI_LB_URL =
   'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html';
@@ -425,11 +442,29 @@ function day2Epic(sel: Selection): Epic {
     };
   } else {
     const p = AUTOMATION_PLACEMENTS.find((x) => x.value === a.placement) ?? AUTOMATION_PLACEMENTS[0];
-    const ha = a.model === 'ha';
+    const sizeInfo = AUTOMATION_MODELS.find((m) => m.value === a.model) ?? AUTOMATION_MODELS[0];
+    const ha = sizeInfo.nodes > 1;
     const modelText = ha
-      ? 'HA cluster (three nodes behind the cluster VIP of VCF Automation\'s built-in load balancer — no external load balancer required)'
-      : 'single-node (no load balancer needed)';
-    const tasks = [
+      ? `${a.model} size — ${sizeInfo.nodes}-node ${sizeInfo.model} cluster behind the cluster VIP of VCF Automation's built-in load balancer (no external load balancer required). Size is what selects this: medium/large deploy 3 nodes, small deploys 1`
+      : `${a.model} size — single node (${sizeInfo.model} model, no load balancer needed). Resizing to medium or large later automatically scales out to 3 nodes`;
+    const vpc = a.placement === 'vpc';
+    // Every non-shared placement is API-only at Day-N: the Add VCF Automation
+    // wizard has no network picker and always uses the management network.
+    // (The VCF Installer's "deploy deferred components" path can place on a
+    // prepared vDS/NSX segment from a UI, but that happens at bring-up.)
+    const nonMgmt = a.placement !== 'shared';
+    const tasks = nonMgmt ? [
+      vpc
+        ? `Create the NSX VPC and its subnet FIRST, and confirm it has realised in vCenter as a distributed portgroup — it has no MoRef until it appears there. Note the subnet's gateway address with prefix.`
+        : `Build the ${p.label} FIRST — ${p.text} — and confirm it is visible in vCenter as a portgroup; it has no MoRef until it appears there. Note its gateway address with prefix.`,
+      `Deploy as a ${modelText} via the FLEET LCM API. The Day-N Add VCF Automation wizard has NO network picker — it always uses the management network — so any non-management placement must go through the API, which also accepts an explicit 5-IP list instead of a CIDR. POST /fleet-lcm/v1/components/validations, then POST /fleet-lcm/v1/components. See 05-day2-deployments.md section D.`,
+      `If this placement was known before bring-up, the VCF Installer's "deploy deferred components" path could have placed it from the UI instead (Management Components Custom Networking toggle) — worth checking which route applies before scripting anything.`,
+      `Capture networkMoId (Get-VDPortgroup one-liner), gatewayCidrIpv4 (gateway address WITH prefix), and exactly 5 IP addresses for ipv4Pool.addresses — no CIDR.`,
+      `Create A + PTR for BOTH Automation FQDNs (appliance + its own services runtime) on the target network and OUTSIDE the 5-address pool — pre-validation resolves them, so they must exist before you start.`,
+      `Confirm the return path from the target network to SDDC Manager, vCenter, VCF Operations, the identity broker, DNS and NTP. Pre-validation does NOT test this.`,
+      `Confirm the Fleet Depot Service has synced the VCFA binaries INCLUDING the VCD Migration Engine component, or the deployment fails on missing binaries.`,
+      `Watch the task under SDDC lifecycle (Build > Tasks > VCF Instances > <instance>), NOT Fleet lifecycle where wizard-driven tasks appear.`,
+    ] : [
       `Deploy via SDDC Manager API or via VCF Operations as a ${modelText}. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C). Set the services-runtime cluster CIDR.`,
       'Have BOTH VCF Automation FQDNs resolving before you start: the Automation appliance FQDN AND Automation\'s own "VCF services runtime" FQDN (lowercase, A + PTR). This is a second, separate FQDN from the fleet VCF Management Services runtime created at bring-up — TechDocs and the workbook use the identical label for both.',
       'Both of those FQDNs must resolve to discrete VM Management IPs that fall OUTSIDE the /29 you enter as the "VCF services runtime nodes CIDR" — the wizard enforces this. Budget the /29 (3 node IPs + 2 buffer, IP-only, no DNS records) PLUS 2 separate IPs for the FQDNs.',
@@ -439,9 +474,11 @@ function day2Epic(sel: Selection): Epic {
     }
     automationStory = {
       id: '8.2',
-      title: `VCF Automation (${p.label}${ha ? ', HA' : ''})`,
+      title: `VCF Automation (${p.label}, ${a.model}${ha ? ' — HA, 3 nodes' : ' — 1 node'})`,
       tasks,
-      acceptance: `VCF Automation deployed and healthy (${ha ? 'HA cluster reachable on its cluster VIP' : 'single-node'}) on the ${p.label}; services-runtime cluster CIDR set and non-overlapping.`,
+      acceptance: nonMgmt
+        ? `VCF Automation deployed and healthy (${ha ? 'HA cluster reachable on its cluster VIP' : 'single-node'}) on the ${p.label}: node VMs on the target portgroup, the Provider Management UI answering at https://<appliance-fqdn>/provider, and login working with the local admin account set in the deployment spec. Allow generous time after the task reports success — 404 then 500 before the UI answers is the normal progression, not a fault.`
+        : `VCF Automation deployed and healthy (${ha ? 'HA cluster reachable on its cluster VIP' : 'single-node'}) on the ${p.label}; services-runtime cluster CIDR set and non-overlapping.`,
     };
     if (a.aviLb) {
       aviStory = {
@@ -464,7 +501,7 @@ function day2Epic(sel: Selection): Epic {
     compNames.length > 1 ? `${compNames.slice(0, -1).join(', ')} & ${compNames[compNames.length - 1]}` : compNames[0];
 
   const stories: Story[] = [
-    { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.' },
+    { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment / NSX VPC subnet for the Day-2 components; build the network if non-shared. Note that at Day-N every non-shared placement is API-only — the Add VCF Automation wizard has no network picker (see 05-day2-deployments.md section C). TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN/VPC subnet is visible in vCenter, reachable, and the fleet FQDNs resolve.' },
     automationStory,
   ];
   if (aviStory) stories.push(aviStory);
@@ -721,7 +758,11 @@ export function coerceSelection(data: unknown): Selection | null {
     day2: bool(d.day2, base.day2),
     automation: {
       deploy: bool(auto.deploy, base.automation.deploy),
-      model: oneOf(auto.model, AUTOMATION_MODELS.map((m) => m.value), base.automation.model),
+      model: oneOf(
+        LEGACY_AUTOMATION_MODELS[String(auto.model)] ?? auto.model,
+        AUTOMATION_MODELS.map((m) => m.value),
+        base.automation.model,
+      ),
       placement: oneOf(auto.placement, AUTOMATION_PLACEMENTS.map((p) => p.value), base.automation.placement),
       aviLb: bool(auto.aviLb, base.automation.aviLb),
     },

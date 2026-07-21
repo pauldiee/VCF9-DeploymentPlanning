@@ -1,5 +1,40 @@
 # Changelog
 
+## v2.3.5 — 2026-07-21
+- **"There is no NSX VPC option" was wrong** (#192). `05-day2-deployments.md`
+  section C stated flatly that VPC placement did not exist. **Lab-verified
+  2026-07-21:** VCF Automation deployed onto an **NSX VPC subnet** via the Fleet
+  LCM API — validation passed, node VMs landed on the VPC portgroup, the cluster
+  came up and the Provider Management UI serves at `/provider`. Broadcom's design
+  library documents the pattern too ([VCF Automation instance types —
+  deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-automation-deployment-models-9-x/vcf-automation-instance-types/deployment.html)):
+  a **DMZ VPC** for external-facing services, a **Mgmt App VPC** for the VCF
+  Automation appliances, and a **Transit Gateway** between them and upstream,
+  with east/west firewalling on the app VPC. New section C subsection covering
+  it, plus a fifth placement in the deployment-plan tool.
+- **Generalised: at Day-N *every* non-shared placement is API-only** (#192). The
+  Day-N *Add VCF Automation* wizard has **no network picker at all** — it asks
+  only for the runtime nodes CIDR and the FQDNs, and always uses the management
+  network. So Dedicated Management Network, NSX Overlay Segment, NSX VLAN
+  Segment **and** NSX VPC all require the Fleet LCM API. VPC is not a special
+  case. **The exception:** the VCF Installer's *deploy deferred components* path
+  (the *Management Components Custom Networking* toggle at bring-up) **does**
+  place onto a prepared vDS / NSX segment from a UI — a different wizard at a
+  different point in the lifecycle, and worth choosing before bring-up. The
+  deployment-plan tool now emits the API task set for **all** non-shared
+  placements, not just the VPC.
+- **VCF Automation size *is* the deployment model** (#193). The tool offered
+  `Single-node` / `HA cluster` with no size concept, implying two independent
+  axes. TechDocs [VCF Automation
+  Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-automation-deployment-models.html):
+  Simple is *"Single node. Applies to small appliance size"*, High Availability
+  is *"Three node cluster. Applies to medium or large node sizes"*, and resizing
+  small → medium/large *"automatically scales the deployment out to 3 nodes"*.
+  Hence the Fleet LCM payload carrying only `"size"` and no HA flag. The
+  selector is now **Small (1 node) / Medium (3) / Large (3)**, with legacy saved
+  plans mapped (`single`→`small`, `ha`→`medium`) so existing files and tracker
+  progress still load. Documented in `05-day2-deployments.md` section D.
+
 ## v2.3.4 — 2026-07-21
 - **Step-by-step for the non-management VCFA deployment** (#192). The section D
   subsection gains an explicit **Step 0 — the target network must already

@@ -51,7 +51,7 @@ const epics = selectedEpics(sel);
         <label class="planx__check"><input type="checkbox" id="optDay2" checked /> Day-2 fleet (Automation / Logs / Networks / fleet SSO) <span class="planx__tag">E8</span></label>
         <div class="planx__sub" id="autoBlock">
           <label class="planx__check"><input type="checkbox" id="optAutoDeploy" checked /> Deploy VCF Automation <span class="planx__tag">E8.2</span></label>
-          <label class="planx__sublabel">Deployment model
+          <label class="planx__sublabel">Size (sets the deployment model)
             <select id="selAutoModel">
               {AUTOMATION_MODELS.map((m) => <option value={m.value}>{m.label}</option>)}
             </select>
