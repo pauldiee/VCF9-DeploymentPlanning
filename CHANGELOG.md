@@ -1,5 +1,38 @@
 # Changelog
 
+## v2.3.3 — 2026-07-21
+- **Deploying VCF Automation to a non-management network is API-only** (#192).
+  New `05-day2-deployments.md` section D subsection. The Fleet LCM **UI can only
+  place VCFA on the management network** and only accepts a **CIDR** for the
+  node addresses (smallest legal input a `/29` — 8 addresses for a component
+  that needs 5). VLAN portgroup, NSX overlay segment and **NSX VPC subnet**
+  placements are **API-only**, and the API takes an explicit list of 5 IPs.
+  Covers: the exact pre-validation failure text and why it is **not** saying the
+  placement is unsupported (the deployment network is never *declared* — the
+  fields do not exist in the UI); the declaring fields `networkMoId` /
+  `gatewayCidrIpv4` / `ipv4Pool.addresses`; **NSX VPC subnets appear as
+  `DISTRIBUTED_PORTGROUP`**, not `OPAQUE_NETWORK` (N-VDS era); the five API
+  calls and the **two different hosts** (auth on the VCFMS runtime, everything
+  else on fleet lifecycle); the `admin@vsp.local` token account (**VSP** = VCF
+  Services Platform); and the depot / **VCD Migration Engine** and
+  new-deployments-only prerequisites. Plus a **watch-the-right-task-list**
+  callout: an API-initiated deployment appears under **SDDC lifecycle**, not
+  Fleet lifecycle, so it can look like it never started.
+  **Credit: William Lam** — approach, endpoints and payload shape are from his
+  post and `fleet_lcm_deploy_vcf_automation_to_different_network.ps1`, cited
+  inline.
+- **Verification status stated, not overclaimed** (#192). Confirmed through
+  validation `SUCCEEDED` → deployment task progressing → **bootstrap VM present
+  in vCenter on the target VPC portgroup** (the stage that proves the placement
+  was *honoured*, not merely accepted). End-to-end completion was **not** yet
+  confirmed at time of writing and the section says so.
+- **Fixed a leftover contradiction from #190.** The section D two-FQDN callout
+  still read *"resolving into the Automation `/29` node range"* — reversed in
+  #190 and missed in that pass. Now says **outside** it.
+- **Non-management deployment checklist** added to `05-day2-deployments.md`
+  section E, including the item pre-validation does *not* cover: the return path
+  from the target network to SDDC Manager / vCenter / VCF Operations.
+
 ## v2.3.2 — 2026-07-21
 - **Automation's two CIDRs separated, and the v2.3.1 "unverified" flag resolved**
   (#190). TechDocs research settles it: VCF Automation has **both** an

@@ -185,8 +185,8 @@ network placement (section C) together.
 > **That services-runtime FQDN is Automation's own — a second one.** TechDocs'
 > [FQDN/IP list](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)
 > carries *"VCF services runtime — 1 FQDN"* **twice**: once under **VCF
-> Automation** (this one — intake `E10`, resolving into the Automation `/29`
-> node range) and once under **VCF Management Services** (the fleet runtime
+> Automation** (this one — intake `E10`, on a discrete IP **outside** the
+> Automation `/29` node range) and once under **VCF Management Services** (the fleet runtime
 > created at bring-up — intake `E14`). The workbook repeats the same field
 > label the same way. Plan and create **both** A + PTR records; using the
 > bring-up fleet FQDN here is a common and confusing failure.
@@ -200,6 +200,93 @@ network placement (section C) together.
 > FQDNs each need their **own discrete VM Mgmt IP on top of it**. Budget
 > **`/29` + 2**, and see `01-network-dns-plan.md`.
 
+### Deploying VCF Automation to a non-management network — API only
+
+**The Fleet LCM UI can only place VCF Automation on the management network.**
+It also only accepts a **CIDR** for the node addresses, so the smallest legal
+input is a `/29` — 8 addresses for a component that needs 5. Placing VCFA on
+anything else (a VLAN portgroup, an NSX overlay segment, an **NSX VPC subnet**)
+is **API-only**, and the API additionally accepts an explicit list of 5 IPs.
+
+> **Credit.** The API approach, endpoints and payload shape below are William
+> Lam's, from [VCF 9.1 — Deploying VCF Automation (VCFA) to non-Management
+> Network](https://williamlam.com/2026/06/vcf-9-1-deploying-vcf-automation-vcfa-to-non-management-network.html)
+> and his `fleet_lcm_deploy_vcf_automation_to_different_network.ps1`.
+
+**What failure looks like if you try it through the UI.** The bootstrap aborts
+at pre-validation:
+
+```
+A pre-validation prevented the bootstrap: VCF services runtime FQDN is not on
+the management network.
+A pre-validation prevented the bootstrap: Not all addresses from the VCF
+Management Services IPv4 pool are part of the management network range, which
+is from <first> to <last>.
+Failed to bootstrap VCF services runtime of type 'CONSUMPTION'.
+```
+
+Read that carefully: it is **not** saying your placement is unsupported. It is
+saying the fleet is validating against the **management** range — because the
+deployment network was never *declared*, and the fields that declare it **do
+not exist in the UI**. `CONSUMPTION` is the Automation runtime (as opposed to
+the management-services one).
+
+**The fields that declare it**, in `vspClusterSpec`:
+
+| Field | Meaning |
+| --- | --- |
+| `networkMoId` | vSphere MoRef of the target network, e.g. `dvportgroup-58`. A `Get-VirtualPortGroup` one-liner is enough to find it |
+| `gatewayCidrIpv4` | The **gateway address with prefix**, e.g. `172.30.70.1/24` — not the network address |
+| `ipv4Pool.addresses` | **Exactly 5** explicit IP addresses — minimum 5, maximum 5, no CIDR |
+
+**NSX VPC subnets are valid targets.** They appear in vCenter as ordinary
+`DISTRIBUTED_PORTGROUP` — **not** `OPAQUE_NETWORK`, which was the N-VDS era —
+so they can be referenced by MoRef like any portgroup. VPC default subnets are
+named `vm-default-<hash>` and `pod-default-<hash>`.
+
+**The APIs involved** — note the **two different hosts**:
+
+| Call | Purpose |
+| --- | --- |
+| `POST https://<vcfms-runtime>/api/v1/identity/token` | Auth (form-urlencoded, `grant_type=password`) |
+| `GET https://<fleet-lcm>/fleet-lcm/v1/sddc-lcms` | Resolve `sddcLcmId` from the VCF instance name |
+| `POST https://<fleet-lcm>/fleet-lcm/v1/components/validations` | Validate the spec |
+| `POST https://<fleet-lcm>/fleet-lcm/v1/components` | Deploy |
+| `GET https://<fleet-lcm>/fleet-lcm/v1/tasks/{id}` | Poll either task |
+
+Authentication happens on the **VCF management-services runtime**; everything
+else on the **fleet lifecycle** appliance. Swapping the two is the most likely
+first-run failure.
+
+The token account is **`admin@vsp.local`** — the local admin of the VCF services
+runtime (**VSP** = VCF Services Platform, the name that also shows up in the
+*"Bootstrap VCF Services Platform"* task). It is **not** vSphere SSO and **not**
+the VCF Operations login, and it has no reveal API — it comes from the bring-up
+record or gets rotated.
+
+> **Watch the right task list.** An API-initiated deployment appears under
+> **SDDC lifecycle**, not Fleet lifecycle where the UI-driven tasks show up:
+> **Build → Tasks → VCF Instances → \<instance\>**, as *"Creating VSP Cluster …
+> in domain \<domain\>"* / *"Bootstrap VCF Services Platform"*. Looking in the
+> Fleet lifecycle list makes a perfectly healthy deployment look like it never
+> started.
+
+**Two prerequisites that fail before networking is even reached:**
+
+- **Depot.** The Fleet Depot Service must have synced the VCFA binaries
+  **including the VCD Migration Engine** component, or the deployment fails on
+  missing binaries whatever the network looks like.
+- **New deployments only.** Upgrades of an existing Aria Automation 8.x or VCF
+  Automation 9.0.x/9.1.x reuse the network VCFA is already on — this path does
+  not move an existing deployment.
+
+> **Verification status (2026-07-21).** Confirmed in the lab through three
+> stages: the validation task returned `SUCCEEDED`, the deployment task was
+> accepted and progressed, and **the bootstrap VM appeared in vCenter attached
+> to the target VPC portgroup** — which is the stage that actually proves the
+> placement was honoured rather than merely accepted. **End-to-end completion of
+> the deployment was not yet confirmed when this was written** (#192).
+
 ---
 
 ## E. DNS / IP checklist (additive to Step 1)
@@ -212,6 +299,18 @@ On top of `01-network-dns-plan.md`, for every Day-2 appliance you deploy:
 - [ ] VCF services-runtime **cluster CIDR** does not overlap any Step 1 subnet
 - [ ] Passwords captured with the other fleet credentials (intake section F)
 - [ ] The synthetic check prerequisites (DNS/NTP/reachability) are in place
+
+If VCF Automation is going on a **non-management** network (section D):
+
+- [ ] Both Automation FQDNs have A + PTR **before** you start — the
+      pre-validation resolves them
+- [ ] Both resolve onto the **target** network, outside the 5-address pool
+- [ ] `networkMoId` captured for that network (`Get-VirtualPortGroup`)
+- [ ] `gatewayCidrIpv4` is the **gateway address with prefix**
+- [ ] The `admin@vsp.local` password is to hand (no reveal API)
+- [ ] Fleet Depot Service has synced VCFA binaries **incl. VCD Migration Engine**
+- [ ] Return path from the target network to SDDC Manager / vCenter / VCF
+      Operations is open — pre-validation does **not** check it
 
 ---
 
