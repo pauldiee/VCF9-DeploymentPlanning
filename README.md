@@ -48,6 +48,7 @@ This repo flips the order:
 | `tools/Set-VCFBackupConfig.ps1`     | Sets that backup location through the API (`-WhatIf`, `-ShowThumbprint`) — for when the wizard fails without a usable error |
 | `tools/Get-VCFProxyConfig.ps1`      | Read-only check of the proxy (`peerProxy`) stored on the VCF services runtime (VSP) via the Fleet LCM API |
 | `tools/Set-VCFProxyConfig.ps1`      | Sets that proxy through the API (`-WhatIf`, authenticating / TLS proxy, exclude lists) — or clears it (`-Remove`) — so the fleet can download bundles without direct internet |
+| `tools/third-party/`                | **Not our work.** Mirrored third-party scripts, each with its licence alongside. Currently `fleet_lcm_deploy_vcf_automation_to_different_network.ps1` — © 2022 William Lam, BSD 2-Clause, unmodified mirror of [his script](https://github.com/lamw/vmware-scripts) for deploying VCF Automation to a non-management network, hosted for air-gapped use. Prefer upstream; see `docs/05-day2-deployments.md` section D. Copied to the site alongside `tools/*.ps1` at build time |
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 
 ## Web version

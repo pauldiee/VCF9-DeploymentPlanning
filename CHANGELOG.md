@@ -1,5 +1,31 @@
 # Changelog
 
+## v2.3.4 — 2026-07-21
+- **Step-by-step for the non-management VCFA deployment** (#192). The section D
+  subsection gains an explicit **Step 0 — the target network must already
+  exist**: the API takes a *reference* to an existing network, it does not
+  create one. Create the NSX **VPC subnet / overlay segment** first, wait for it
+  to **realise in vCenter** (no MoRef until it appears there), check the return
+  path, and create both A + PTR records — pre-validation resolves them, so they
+  must exist first. Then **Step 1 — get the `networkMoId`**, with the
+  `Get-VDPortgroup` one-liner (and the vSphere Client address-bar fallback for
+  when PowerCLI is not available), plus which VPC default subnet to target
+  (`vm-default-<hash>`, not `pod-default-<hash>`).
+- **Mirrored William Lam's deployment script for air-gapped use** (#192). New
+  **`tools/third-party/`** directory (`web/public/scripts/` is gitignored and
+  regenerated at build time, so a mirror placed there would not survive a clean
+  checkout); the `prebuild` step now copies `tools/third-party/*` to the site
+  alongside `tools/*.ps1`.
+  `tools/third-party/fleet_lcm_deploy_vcf_automation_to_different_network.ps1`
+  — **© 2022 William Lam, redistributed unmodified under the BSD 2-Clause
+  Licence**, with the full licence text alongside as
+  `LICENSE-lamw-vmware-scripts.txt`. The only change is a provenance header
+  carrying the copyright notice, the upstream URL, the mirror date and the
+  **SHA-256 of the pristine upstream file** so the copy can be verified against
+  the original. Docs and README link the **GitHub original first** and label the
+  mirror as frozen; it does not track upstream. Everything else under
+  `web/public/scripts/` is this project's own work — this one is not.
+
 ## v2.3.3 — 2026-07-21
 - **Deploying VCF Automation to a non-management network is API-only** (#192).
   New `05-day2-deployments.md` section D subsection. The Fleet LCM **UI can only

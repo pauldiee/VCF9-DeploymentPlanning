@@ -231,18 +231,56 @@ deployment network was never *declared*, and the fields that declare it **do
 not exist in the UI**. `CONSUMPTION` is the Automation runtime (as opposed to
 the management-services one).
 
-**The fields that declare it**, in `vspClusterSpec`:
+#### Step 0 — the target network must already exist
+
+**Create the NSX VPC subnet or overlay segment first, and let it realise.** The
+API takes a *reference* to an existing network (`networkMoId`) — it does not
+create one. Nothing downstream works until the network exists **and** vCenter
+can see it:
+
+1. **Create the network in NSX** — an **NSX VPC** (its default subnets are
+   created for you) or an **overlay segment** on a transport zone the management
+   cluster is attached to. Note its **gateway address and prefix** while you are
+   there; you need it verbatim later.
+2. **Confirm it reached vCenter.** NSX pushes segments to vCenter as
+   distributed portgroups, and there is a short lag. Until it appears in
+   *vCenter → Networking*, it has no MoRef and cannot be referenced.
+3. **Check reachability** from the target network back to SDDC Manager,
+   vCenter and VCF Operations. Pre-validation does **not** test this, so a
+   one-way route or a missing firewall rule surfaces late, mid-deployment.
+4. **Create the DNS records** — A + PTR for both Automation FQDNs, resolving
+   onto this network and **outside** the 5-address pool. Pre-validation *does*
+   resolve them, so they must exist before you start.
+
+#### Step 1 — get the `networkMoId`
+
+A PowerCLI one-liner is enough:
+
+```powershell
+Get-VDPortgroup -Name "vm-default-<hash>" |
+    Select-Object Name, @{N='MoRef'; E={$_.ExtensionData.MoRef.Value}}
+```
+
+`Get-VirtualPortGroup -Name "<name>"` works too. The value looks like
+`dvportgroup-58` — that string is what goes into `networkMoId`.
+
+Without PowerCLI, select the portgroup in the vSphere Client and read the MoRef
+out of the browser address bar (`.../dvPortgroup/dvportgroup-58/summary`).
+
+> **NSX VPC default subnets** are named `vm-default-<hash>` and
+> `pod-default-<hash>`. The **`vm-default`** one is the VM-facing subnet — that
+> is the one to target. They appear as ordinary `DISTRIBUTED_PORTGROUP` entries
+> alongside your VLAN portgroups.
+
+#### Step 2 — the fields that declare the network
+
+In `vspClusterSpec`:
 
 | Field | Meaning |
 | --- | --- |
 | `networkMoId` | vSphere MoRef of the target network, e.g. `dvportgroup-58`. A `Get-VirtualPortGroup` one-liner is enough to find it |
 | `gatewayCidrIpv4` | The **gateway address with prefix**, e.g. `172.30.70.1/24` — not the network address |
 | `ipv4Pool.addresses` | **Exactly 5** explicit IP addresses — minimum 5, maximum 5, no CIDR |
-
-**NSX VPC subnets are valid targets.** They appear in vCenter as ordinary
-`DISTRIBUTED_PORTGROUP` — **not** `OPAQUE_NETWORK`, which was the N-VDS era —
-so they can be referenced by MoRef like any portgroup. VPC default subnets are
-named `vm-default-<hash>` and `pod-default-<hash>`.
 
 **The APIs involved** — note the **two different hosts**:
 
@@ -280,6 +318,28 @@ record or gets rotated.
   Automation 9.0.x/9.1.x reuse the network VCFA is already on — this path does
   not move an existing deployment.
 
+#### The script
+
+You do not have to hand-craft the payload — William Lam publishes a script that
+does validate-then-deploy, with a `$ValidateOnly` switch that defaults to `$true`.
+
+| Copy | When to use it |
+| ---- | -------------- |
+| [**GitHub — `lamw/vmware-scripts`**](https://github.com/lamw/vmware-scripts/blob/master/powershell/fleet_lcm_deploy_vcf_automation_to_different_network.ps1) | **Always prefer this.** The canonical, maintained copy |
+| [Mirror on this site](https://vcf-planning.hollebollevsan.nl/scripts/fleet_lcm_deploy_vcf_automation_to_different_network.ps1) | Air-gapped or restricted networks that cannot reach GitHub. **Frozen at 2026-07-21** — it does not track upstream |
+
+> **Not our script.** `fleet_lcm_deploy_vcf_automation_to_different_network.ps1`
+> is **© 2022 William Lam**, redistributed unmodified under the **BSD 2-Clause
+> Licence** ([full text](https://vcf-planning.hollebollevsan.nl/scripts/LICENSE-lamw-vmware-scripts.txt)).
+> The mirrored copy adds only a provenance header carrying the copyright notice,
+> the upstream URL and the SHA-256 of the pristine file, so it can be verified
+> against the original. Everything else in this table of scripts is ours; this
+> one is not — please credit William, not this project.
+
+Run it with `$ValidateOnly = $true` first, and set `$OutputJsonPayload = $true`
+to inspect the payload before anything is sent — note that the printed payload
+contains the passwords in cleartext.
+
 > **Verification status (2026-07-21).** Confirmed in the lab through three
 > stages: the validation task returned `SUCCEEDED`, the deployment task was
 > accepted and progressed, and **the bootstrap VM appeared in vCenter attached
@@ -305,7 +365,9 @@ If VCF Automation is going on a **non-management** network (section D):
 - [ ] Both Automation FQDNs have A + PTR **before** you start — the
       pre-validation resolves them
 - [ ] Both resolve onto the **target** network, outside the 5-address pool
-- [ ] `networkMoId` captured for that network (`Get-VirtualPortGroup`)
+- [ ] The VPC subnet / overlay segment **exists in NSX and is visible in
+      vCenter** — it has no MoRef until it has realised there
+- [ ] `networkMoId` captured for that network (`Get-VDPortgroup`)
 - [ ] `gatewayCidrIpv4` is the **gateway address with prefix**
 - [ ] The `admin@vsp.local` password is to hand (no reveal API)
 - [ ] Fleet Depot Service has synced VCFA binaries **incl. VCD Migration Engine**

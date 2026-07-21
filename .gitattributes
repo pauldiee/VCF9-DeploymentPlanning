@@ -1,0 +1,4 @@
+# Mirrored third-party files must stay byte-identical to upstream, so that the
+# SHA-256 recorded in their provenance headers remains verifiable. Disable all
+# end-of-line conversion for them.
+tools/third-party/** -text
