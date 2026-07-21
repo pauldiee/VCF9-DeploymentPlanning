@@ -169,6 +169,15 @@ Both deploy paths need: VCF Automation FQDN, VCF services-runtime FQDN, node
 prefix, the node IP pool, and the admin password. Decide the method and the
 network placement (section C) together.
 
+> **That services-runtime FQDN is Automation's own — a second one.** TechDocs'
+> [FQDN/IP list](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)
+> carries *"VCF services runtime — 1 FQDN"* **twice**: once under **VCF
+> Automation** (this one — intake `E10`, resolving into the Automation `/29`
+> node range) and once under **VCF Management Services** (the fleet runtime
+> created at bring-up — intake `E14`). The workbook repeats the same field
+> label the same way. Plan and create **both** A + PTR records; using the
+> bring-up fleet FQDN here is a common and confusing failure.
+
 ---
 
 ## E. DNS / IP checklist (additive to Step 1)

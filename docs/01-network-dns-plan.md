@@ -103,7 +103,8 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | NSX Edge nodes (if deployed)    | 2          |             | **Centralized connectivity only** — mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below |
 | Virtual Network Appliances (VNA)| 2          |             | **Distributed connectivity only** (the alternative to the Edge nodes above — a domain has one or the other). 2 appliances minimum for HA, each with an FQDN + static IP; matches `vna01`/`vna02` in the DNS table below. Intake `H4` / `A10` |
 | VCF Automation                  | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` |
-| VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below) |
+| VCF Automation services runtime | —          |             | FQDN only — Automation's **own** services runtime, served from the `/29` above. **Not** the same component as the fleet runtime below; TechDocs lists *"VCF services runtime — 1 FQDN"* under **both**. Intake `E10` |
+| VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below). Has its own FQDN (intake `E14`) |
 | Avi Controller cluster (optional)| 4 **per NSX instance** |  | 3 controller nodes + cluster VIP — only if Avi is the chosen LB (e.g. Supervisor LB choice / optionally fronting VCF Automation / tenant LB). Controllers **always** run here in the management domain, even when they serve a workload domain, and a set is scoped to the **NSX instance** — WLDs sharing an NSX instance share one set; a WLD with its own NSX adds another **+4**. (Service Engines are separate: per cluster, in the WLD.) See `prerequisites.md` |
 | License Hub (optional)          | ~9         |             | Only if **vDefend or Avi** is in scope — the licensing appliance the **SSP Installer** deploys, and **not** the `License Server` two rows up (they coexist). One subnet, two IP pools: **installer 1**, **controller + worker nodes 4**, **License Hub services 4**. The node and service pools **cannot be changed after deployment** — size for scale-out now. See `prerequisites.md` |
 | VCF Operations for Networks (optional) | 2 (+2 if Large) |  | Platform node + collector node — lands here when the Day-2 placement is the **Shared Management Network** (a **Large** platform is a 3-node cluster: +2); see `05-day2-deployments.md` |
@@ -219,6 +220,15 @@ same shape.
 > is case-insensitive but the appliances are not always — the practical rule:
 > create **every** VCF FQDN lowercase.
 
+> **Two "VCF services runtime" FQDNs — not one.** The TechDocs FQDN/IP list
+> carries the row *"VCF services runtime — 1 FQDN"* **twice**: once under **VCF
+> Automation** and once under **VCF Management Services**. The workbook repeats
+> the same field label the same way. They are **separate components with
+> separate FQDNs** — the Automation one resolves into the Automation `/29` node
+> range, the fleet one into the management-services runtime block. Plan and
+> create **both** A + PTR records; see intake `E10` (Automation) and `E14`
+> (fleet).
+
 | Role               | Sample FQDN                          | IP source            |
 | ------------------ | ------------------------------------ | -------------------- |
 | ESXi host 1..N     | `sfo01-m01-r01-esx0N.sfo.example.io` | ESX Mgmt subnet      |
@@ -235,7 +245,9 @@ same shape.
 | Identity Broker    | `sfo-idb01.sfo.example.io`           | services-runtime block |
 | Fleet components   | `sfo-fc01.sfo.example.io`            | VM Mgmt subnet       |
 | Instance components | `sfo-ic01.sfo.example.io`           | VM Mgmt subnet       |
+| VCF services runtime (VCF Management Services) | `sfo-svcs01.sfo.example.io` | services-runtime block — the **fleet** runtime. Intake `E14` |
 | VCF Automation VIP | `sfo-vcfauto01.sfo.example.io`       | VM Mgmt subnet       |
+| VCF services runtime (VCF Automation) | `sfo-autosvcs01.sfo.example.io` | VCF Automation `/29` node range — Automation's **own** runtime, a **second, separate** FQDN. Intake `E10` |
 | NSX Edge 1 (Centralized only) | `sfo-m01-en01.sfo.example.io` | VM Mgmt subnet       |
 | NSX Edge 2 (Centralized only) | `sfo-m01-en02.sfo.example.io` | VM Mgmt subnet       |
 | Virtual Network Appliance 1 (Distributed only) | `sfo-m01-vna01.sfo.example.io` | ESX Mgmt subnet — the VNA cluster that gives a Distributed Transit Gateway its stateful services (NAT); **not** a replacement for an Edge cluster (no Tier-0/Tier-1 runs on it) |

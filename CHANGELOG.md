@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.3.0 — 2026-07-21
+- **Two VCF services-runtime FQDNs, not one — v1.4.2 reversed** (#189).
+  Lab-verified and confirmed verbatim against the TechDocs
+  [First VCF Instance FQDNs and IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)
+  table, which lists the row *"VCF services runtime — 1 FQDN\*"* **twice**: once
+  under **VCF Automation** and once under **VCF Management Services**. The
+  v1.4.2 removal under #110 ("Automation's own services runtime is a hidden /
+  internal component — it does not have or need an FQDN") was **wrong**;
+  Automation's runtime needs its own lowercase FQDN, resolving into the VCF
+  Automation `/29` node range. Intake `E10`/`E14` and the mapping already had
+  this right since #111 — only the DNS/IP planning list was left with one row.
+  Restored across `ip-dns-plan.csv` (both rows now name their parent component;
+  new `sfo-m01-autosvcs01` row, E10), `docs/01-network-dns-plan.md` (IP-count
+  table + A/PTR table — which was missing the **fleet** runtime record too —
+  plus a "two runtimes" callout), `docs/05-day2-deployments.md` (section D
+  callout), the Rainpole sample, and the deployment-plan tool's VCF Automation
+  story (a task calling out both FQDNs).
+
 ## v2.2.9 — 2026-07-20
 - **`Get-VCFCredentials.ps1` v1.2.0 — VCF Management account inventory** (#188).
   New `-VCFOps` mode lists the management-plane password *accounts* (VCF
