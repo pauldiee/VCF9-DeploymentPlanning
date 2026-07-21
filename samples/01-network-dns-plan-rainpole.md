@@ -88,7 +88,7 @@ TEP `10.11.19.2–.5`.
 | VCF Ops cloud proxy| `sfo-cp01.sfo.rainpole.io`           | `10.11.10.12` |
 | License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |
 | VCF Automation     | `flt-auto01.rainpole.io`             | `10.11.10.22` — **outside** the `/29` |
-| VCF services runtime (VCF Automation) | `flt-autosvcs01.rainpole.io` | `10.11.10.23` — **outside** the `/29`; Automation's **own** runtime, intake `E10` |
+| VCF services runtime (VCF Automation) | `flt-vcfa-sr01.rainpole.io` | `10.11.10.23` — **outside** the `/29`; Automation's **own** runtime, intake `E10` (naming follows Broadcom's own Rainpole example in the services-runtime redeploy API docs) |
 | Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
 | VCF services runtime (VCF Management Services) | `sfo-sr01.sfo.rainpole.io` | `10.11.10.10` — the **fleet** runtime, intake `E14` |
 | Fleet components   | `flt-fc01.rainpole.io`               | `10.11.10.20` |

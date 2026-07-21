@@ -1,5 +1,32 @@
 # Changelog
 
+## v2.3.2 — 2026-07-21
+- **Automation's two CIDRs separated, and the v2.3.1 "unverified" flag resolved**
+  (#190). TechDocs research settles it: VCF Automation has **both** an
+  **internal cluster CIDR** (`198.18.0.0/15`, or `240./250.`) *and* a
+  **routable nodes CIDR**. The internal one is real but **API-only** —
+  `internalClusterCidrIpv4`, set via the **fleet lifecycle API / JSON spec**
+  (it appears in the services-runtime redeploy payload next to `platformFqdn`),
+  which is why it is absent from the *Add VCF Automation* wizard. So
+  `05-day2-deployments.md` section D was **right** — just mislabelled as a
+  wizard input. The v2.3.1 "verify before relying on it" note is replaced with a
+  two-row comparison table.
+- **New: the contiguous `/29` is version-dependent** (#190). TechDocs *Upgrade
+  to VCF Automation* — `9.1.0.0`–`9.1.0.300`: *"verify that you have a dedicated
+  CIDR … For example, a /29 subnet mask as VCF Automation requires 5 IP
+  addresses"*; **`9.1.0.400` and later**: *"verify that you have dedicated 5
+  unique IP addresses"* — no contiguous block required. Documented in
+  `01-network-dns-plan.md`, `05-day2-deployments.md` and `ip-dns-plan.csv`; a
+  `/29` stays the tidier choice and is valid on every version.
+- **Non-overlap rule quoted** (#190). TechDocs: *"The IP addresses and FQDN for
+  the VCF services runtime instance for VCF Automation must be unique. You
+  cannot reuse the CIDR block and FQDN from the VCF services runtime instance
+  for VCF management services."* — independent confirmation of the #189 two-FQDN
+  fix, now cited in `01-network-dns-plan.md`.
+- **Rainpole sample:** Automation services-runtime FQDN renamed
+  `flt-autosvcs01` → **`flt-vcfa-sr01`**, matching Broadcom's own Rainpole
+  example in the redeploy API docs.
+
 ## v2.3.1 — 2026-07-21
 - **Both VCF Automation FQDNs resolve *outside* the services-runtime nodes
   `/29` — `+2` VM Mgmt IPs** (#190, follow-up to #189). The *Add VCF Automation*

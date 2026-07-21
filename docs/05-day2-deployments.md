@@ -145,20 +145,25 @@ and asks for:
 | subnet mask   | `255.255.255.0`                                    | Segment subnet                                    |
 | gateway       | `10.11.40.1`                                       | Segment gateway                                   |
 | IP pool       | `10.11.40.11 – .20` (5+)                           | Node IP pool (5+ addresses)                       |
-| cluster CIDR  | `198.18.0.0/15` (default; or `240.0.0.0/15` / `250.0.0.0/15`) | VCF Automation **internal** services-runtime node network |
+| internal cluster CIDR | `198.18.0.0/15` (default; or `240.0.0.0/15` / `250.0.0.0/15`) | VCF Automation **internal** services-runtime node network — `internalClusterCidrIpv4`, set via the **fleet lifecycle API / JSON spec only** (not a wizard field) |
+| nodes CIDR / IPs | `/29` (5 IPs) on **VM Management** — see the note below | Routable node addresses; the wizard's *VCF services runtime nodes CIDR*. **Must not overlap** the VCF management-services runtime range |
 | DNS (A + PTR) | `sfo-vcfa01.sfo.example.io`                        | Forward + reverse for every appliance             |
 
 > The **cluster CIDR** is the VCF Automation services-runtime *internal* node
 > network — pick one of the sheet's reserved ranges (`198.18.0.0/15` default)
 > and keep it distinct from every routed subnet in the Step 1 plan.
 
-> **Unverified — check this in the wizard before you rely on it (#190).** The
-> *Add VCF Automation* wizard's **VCF services runtime nodes CIDR** field is
-> lab-confirmed to take a **routable `/29` from VM Management**, not an internal
-> range. Whether the *internal* cluster CIDR above is a **separate** field
-> further down that wizard, or whether the two have been conflated in this repo,
-> has not been confirmed. If there is only one CIDR field, this row and the note
-> above are wrong.
+> **Two different CIDRs — don't confuse them (#190).** VCF Automation has
+> **both**, and only one of them appears in the *Add VCF Automation* wizard:
+>
+> | | What | Where you set it |
+> | --- | --- | --- |
+> | **Nodes CIDR** (routable) | A dedicated block on the **VM Management** subnet for the Automation nodes — the wizard's **VCF services runtime nodes CIDR** field. Both Automation FQDNs resolve **outside** it | *Add VCF Automation* wizard |
+> | **Internal cluster CIDR** | `198.18.0.0/15` (or `240.0.0.0/15` / `250.0.0.0/15`) — platform-internal, never routed | **API / JSON spec only** — `internalClusterCidrIpv4` via the **fleet lifecycle API**. Not exposed in the wizard |
+>
+> The wizard showing no internal-CIDR field is expected — it defaults. Override
+> it only when `198.18.0.0/15` clashes with something you actually route, and
+> then you must do it through the API.
 
 ---
 

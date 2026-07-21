@@ -102,7 +102,7 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
 | NSX Edge nodes (if deployed)    | 2          |             | **Centralized connectivity only** — mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below |
 | Virtual Network Appliances (VNA)| 2          |             | **Distributed connectivity only** (the alternative to the Edge nodes above — a domain has one or the other). 2 appliances minimum for HA, each with an FQDN + static IP; matches `vna01`/`vna02` in the DNS table below. Intake `H4` / `A10` |
-| VCF Automation nodes            | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29`. This is the **VCF services runtime nodes CIDR** the *Add VCF Automation* wizard asks for. **IP-only — no DNS records** |
+| VCF Automation nodes            | 5          | `/29` (see note) | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` **on `9.1.0.0`–`9.1.0.300`** — from **`9.1.0.400`** TechDocs asks only for *"5 unique IP addresses"*, no contiguous block. This is the **VCF services runtime nodes CIDR** the *Add VCF Automation* wizard asks for. **IP-only — no DNS records**. Must **not overlap** the management-services runtime block below |
 | VCF Automation FQDN             | 1          |             | Discrete IP **outside** the `/29` above — the wizard: *"VCF Automation FQDN and VCF services runtime FQDN must resolve to IP addresses that fall outside of the provided CIDR"* |
 | VCF Automation services runtime | 1          |             | Automation's **own** services runtime — a second FQDN, also on a discrete IP **outside** the `/29`. **Not** the same component as the fleet runtime below; TechDocs lists *"VCF services runtime — 1 FQDN"* under **both**. Intake `E10` |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below). Has its own FQDN (intake `E14`) |
@@ -235,6 +235,19 @@ same shape.
 > addresses that fall outside of the provided CIDR."* So the `/29` is for the
 > **nodes only** (IP-only, no DNS records) and the two Automation FQDNs each
 > need their **own discrete VM Mgmt IP** on top of it — budget **`/29` + 2**.
+>
+> **Contiguity depends on your target version.** TechDocs (*Upgrade to VCF
+> Automation*): for `9.1.0.0`–`9.1.0.300`, *"verify that you have a dedicated
+> CIDR … For example, a /29 subnet mask as VCF Automation requires 5 IP
+> addresses"*; for **`9.1.0.400` and later**, *"verify that you have dedicated 5
+> unique IP addresses"* — the contiguous-block requirement is gone. Planning a
+> `/29` is still the tidier choice and is valid on every version.
+>
+> **Never reuse the fleet runtime's addressing.** TechDocs: *"The IP addresses
+> and FQDN for the VCF services runtime instance for VCF Automation must be
+> unique. You cannot reuse the CIDR block and FQDN from the VCF services runtime
+> instance for VCF management services."* The two runtime ranges must not
+> overlap.
 
 | Role               | Sample FQDN                          | IP source            |
 | ------------------ | ------------------------------------ | -------------------- |
