@@ -1,5 +1,48 @@
 # Changelog
 
+## v2.5.2 — 2026-07-22
+- **Avi 32.1.1 gives legacy licences 90 days, and that overrides their validity
+  dates** (#211). TechDocs, verbatim: 25-character serial keys and YAML licences
+  are **deprecated**; upgraded or newly deployed 32.1.1 controllers get *"a
+  strict grace period of 90 days"* commencing *"upon the initial boot or
+  completion of the upgrade"*, and *"this 90-day limit **overrides any existing
+  validity dates**"* — their example expires licences that were *"originally
+  valid until 2029"*. A site with paid-up legacy licences and years remaining
+  gets **90 days** after upgrading. Broadcom's instruction: *"Plan the
+  transition … **before initiating an upgrade**."* New intake row **`E16a`**
+  makes this a **pre-upgrade gate**.
+- **Corrects v2.5.1's reading of the two dates** (#211/#209). They are not a
+  general Broadcom cutoff — both are **per-controller clocks started by your own
+  deployment**: the licence row is the **30-day keyless evaluation**, the banner
+  is the **90-day legacy grace period** from that controller's initial boot.
+  That is why they sat two months apart.
+- **Licensing an Avi controller is four steps, and step 1 is not in any
+  appliance** (#211): upgrade the entitlement on the **Broadcom Support
+  Portal** → deploy and register License Hub → allocate the licence and generate
+  an activation code (connected) or signed file (disconnected) in the Avi Cloud
+  Console → assign it to the controller endpoint. The entitlement upgrade is
+  **one-way — an upgraded licence cannot be downgraded**.
+
+## v2.5.1 — 2026-07-22
+- **The Avi Passphrase is restore-critical** (#209). Confirmed: it protects the
+  controller's configuration backups, so it now gets the same treatment as the
+  SFTP **backup encryption passphrase** — chosen up front, password manager,
+  **named owner**, and a plain statement that losing it makes every controller
+  backup useless. It is set once, in passing, on a welcome screen no VCF-side
+  document mentions, which is exactly how it goes unrecorded.
+- **Connected still means zero licences — verify the count, not the status**
+  (#209). Field-observed: **Connectivity Status: Connected** with a fresh
+  refresh timestamp, and **0 Used / 0 Available**, because the licence file had
+  not been loaded into the hub. A green indicator is not evidence of a licensed
+  fleet — check **LICENSE USAGE**. The controller's ON-PREM LICENSE HUB card
+  (URL, status, Last Refresh, **REFRESH LICENSES**, **DISCONNECT**) is the place
+  to verify the join.
+- **Legacy licences may carry two different dates** (#209). The banner's
+  *"All legacy licenses are scheduled to expire on `<date>`"* and the licence
+  row's own **Expiry** were observed to differ by about two months — so the
+  banner reads as a **general legacy-licence cutoff**, not a restatement of the
+  licence in front of you. Read both and diary both.
+
 ## v2.5.0 — 2026-07-22
 - **The Avi controller has its own first-login wizard** (#209). The VCF deploy
   is not the end: **System Settings → Email/SMTP → Multi-Tenant**, none of it
