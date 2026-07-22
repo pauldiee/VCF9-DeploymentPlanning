@@ -499,6 +499,35 @@ missing template blocks the entire Day-2 certificate pass.
   password, and the **issuing certificate template** name.
 - **OpenSSL:** configured on the appliance with the org details (Common Name,
   Country, Locality, Organization, OU, State) — no external prerequisites.
+- **The certificate pass is a bulk operation — but it must be staggered.**
+  Lab-verified 2026-07-22. In **VCF Operations → Fleet Management →
+  Certificates** you tick multiple components in the list and act on them
+  together: `Generate CSRs`, `Download CSRs`, `Replace With Configured CA
+  Certificate`, `Import Certificates` (plus *Renew Certificates* and *Replace
+  With Imported Certificates*). Progress is reported per batch as an *n/total*
+  counter, and the UI notes changes may take some time to appear after the task
+  reports success. Three planning consequences:
+  - **Generate before replace.** The *Replace With Configured CA Certificate*
+    dialog states *"Last generated Certificate Signing Requests (CSRs) will be
+    used for generating certificate(s)"* — the replace consumes the **most
+    recently generated** CSRs rather than issuing fresh ones. Regenerate if the
+    component's SANs/FQDN changed since the last generate, or you will sign a
+    stale request.
+  - **Do not fire batches in parallel.** The dialog carries a mandatory
+    acknowledgement behind this caution: *"Each certificate rotation can trigger
+    automated retrust operations across dependent components. To avoid system
+    instability, wait for any current or ongoing batch operations to be
+    completed before starting the next."* So the change window budgets **fewer,
+    larger batches with a settling wait between them** — not one sweeping
+    fleet-wide action, and not many small ones fired concurrently.
+  - **The CA burst is real.** A batch submits every selected CSR at once. On a
+    Microsoft CA, confirm the issuing template does **not** require manual
+    approval — an approval-gated template turns a bulk generate into a stalled
+    queue rather than an error.
+- The certificate list also carries an **Auto-renewal Status** column. In a
+  freshly deployed 9.1 fleet the entries observed were **Deactivated** — treat
+  auto-renewal as something you opt into, and check expiry ownership rather than
+  assuming the fleet renews itself.
 - TechDocs walk-throughs: [Configure a Certificate Authority for VMware Cloud
   Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
   and the umbrella [Managing Certificates in VMware Cloud

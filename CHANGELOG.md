@@ -1,5 +1,33 @@
 # Changelog
 
+## v2.3.6 — 2026-07-22
+- **The certificate pass is bulk-capable — but must be staggered** (#194).
+  Lab-verified 2026-07-22. **VCF Operations → Fleet Management → Certificates**
+  lets you tick multiple components and act on them together (`Generate CSRs`,
+  `Download CSRs`, `Replace With Configured CA Certificate`, `Import
+  Certificates`, plus *Renew* / *Replace With Imported*), reporting progress per
+  batch as an *n/total* counter. But the replace dialog carries a **mandatory
+  acknowledgement**: *"Each certificate rotation can trigger automated retrust
+  operations across dependent components… wait for any current or ongoing batch
+  operations to be completed before starting the next."* So the planning shape is
+  **fewer, larger batches with a settling wait between them** — not one sweeping
+  fleet-wide action. Story **8.5** said "in one pass" in both
+  `06-deployment-plan.md` and the export tool; corrected in both, with the
+  acceptance criterion now requiring each batch to have settled before the next
+  started.
+- **Generate before replace — the replace reuses the *last* CSRs** (#194). The
+  dialog states *"Last generated Certificate Signing Requests (CSRs) will be used
+  for generating certificate(s)"*, so a stale CSR set is a real failure mode:
+  regenerate whenever a SAN or FQDN changed. Also captured: the CA type
+  (**Microsoft CA** / **OpenSSL**) is chosen **per replacement operation**, not
+  only in the global Configure-CA wizard, and a bulk generate submits every CSR
+  at once — an **approval-gated Microsoft CA template stalls the queue** rather
+  than erroring. All added to `prerequisites.md` → Certificate Authority.
+- **Auto-renewal is not on by default** (#194). The certificate list carries an
+  **Auto-renewal Status** column, observed **Deactivated** across a fresh 9.1
+  fleet. Noted in `prerequisites.md` so expiry ownership is assigned rather than
+  assumed.
+
 ## v2.3.5 — 2026-07-21
 - **"There is no NSX VPC option" was wrong** (#192). `05-day2-deployments.md`
   section C stated flatly that VPC placement did not exist. **Lab-verified
