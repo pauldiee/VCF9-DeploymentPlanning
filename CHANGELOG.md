@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.5.3 — 2026-07-22
+- **The AD bind account is a shared dependency — a rotation breaks every
+  consumer at once** (#210). Field-verified: a changed bind password took down
+  all AD authentication to the Identity Broker; updating it restored logins. The
+  docs covered creating the account and naming a password owner, but nothing
+  about its **lifecycle**. `prerequisites.md` now states that vCenter, NSX, VCF
+  Operations, Log Management and the Identity Broker each cache the credential
+  **independently** — so one change breaks all of them, **silently**, until
+  someone tries to log in. Either exempt the account from expiry deliberately or
+  keep a maintained **consumer list** for rotations.
+- **The diagnostic signature, so the next one takes seconds** (#210): *all* AD
+  users failing at once **while the service's own health endpoint reports
+  healthy** = bind credential or LDAPS trust. The broker's `/acs/health`
+  returned `true` throughout, and the UI error (*"Authentication was
+  unsuccessful…"*) is anti-enumeration — identical for a wrong password, a user
+  outside the search base, a failed bind, or a missing role mapping. Confirm
+  with a local-account login and a direct LDAP bind (one-liner included), and
+  check **LDAPS certificate expiry** as the other cause of the same symptoms.
+- **Intake `C5` now asks for the expiry policy and consumer list** (#210), not
+  just a DN and a password owner — an owner alone does not prevent this.
+- Sister-repo counterpart: **VCFHealthCheck#298** proposes automated detection
+  (active bind probe, bind-password expiry warning, LDAPS certificate expiry).
+
 ## v2.5.2 — 2026-07-22
 - **Avi 32.1.1 gives legacy licences 90 days, and that overrides their validity
   dates** (#211). TechDocs, verbatim: 25-character serial keys and YAML licences

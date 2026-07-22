@@ -87,7 +87,7 @@ Legend:
 |C2 | Site / child domain (if any)                                   | `[CFG-M]` |
 |C3 | DC FQDNs (at least two)                                        | `[CFG-M]` |
 |C4 | LDAPS reachable from VM Mgmt subnet?                           | `[CFG-M]` |
-|C5 | SSO bind service account (DN + password owner)                 | `[CFG-M]` |
+|C5 | SSO bind service account (DN + password owner) — **plus its password-expiry policy and the list of every system that uses it** (vCenter identity source, NSX LDAP, VCF Operations, Log Management, Identity Broker…). Each caches the credential independently, so one rotation breaks them all at once and each fails **silently** until someone tries to log in. An owner alone does not prevent this → `prerequisites.md` | `[CFG-M]` |
 |C6 | SDDC admin / operator / viewer AD group DNs                    | `[CFG-M]` |
 |C7 | DNS server #1 / #2 IP addresses — the Installer accepts **max 2** at bring-up | `[MGMT]`  |
 |C8 | Default DNS suffix for VCF (e.g. `sfo.example.io`)             | `[MGMT]`  |

@@ -877,7 +877,47 @@ groups must exist before the deployment starts (deployment plan **E4** story
   AD bind accounts you plan for vSphere / NSX, the **Identity Broker bind
   account** (see below), and the **admin groups** you will map to VCF roles —
   capture them in the intake (section C, e.g. `C5`).
+- **Decide the bind account's password-expiry policy, and write down every
+  system that uses it.** Creating the account is the easy part; what breaks
+  later is its **rotation**. The same bind account typically backs vCenter's
+  identity source, NSX's LDAP configuration, VCF Operations, Log Management
+  **and** the Identity Broker — each caches the credential **independently**, so
+  one password change breaks all of them at once and each fails **silently**
+  until somebody tries to log in. Either exempt the account from expiry
+  deliberately, or own a rotation runbook that walks a **maintained list of
+  consumers**. Doing neither means the domain's normal expiry schedule decides
+  when your fleet loses authentication.
 - AD DCs reachable from every management component.
+
+> **When every AD login fails at once: recognise the signature before you start
+> debugging.** Field-verified 2026-07-22 — an expired/changed bind password took
+> down all AD authentication to the Identity Broker, and the symptoms actively
+> mislead:
+>
+> - **The service's own health endpoint reports healthy.** The broker's
+>   `/acs/health` returned `true` throughout, and its OIDC discovery, signing
+>   keys and configuration were all fine — none of that touches the directory
+>   binding. **A green health check does not mean people can log in.**
+> - **The error message is deliberately uninformative.** *"Authentication was
+>   unsuccessful. Verify your credentials or contact your administrator if the
+>   issue persists"* is the same string for a wrong password, a user outside the
+>   search base, a failed service-account bind, and a missing role mapping — it
+>   is anti-enumeration, so read nothing into it.
+>
+> **The signature to recognise:** *all* AD users failing simultaneously + the
+> service reporting healthy = **bind credential or LDAPS trust**, essentially
+> always. Two cheap confirmations, in order: does a **local** account still log
+> in (if yes, it is the directory side), and does a **direct bind** with the
+> configured credential succeed:
+>
+> ```powershell
+> $e=New-Object System.DirectoryServices.DirectoryEntry("LDAP://<dc-fqdn>:636/DC=example,DC=com","<bindDN>","<password>"); $e.NativeObject; "bind OK"
+> ```
+>
+> If the bind fails it is the account or the LDAPS path; if it succeeds the
+> problem is **base DN / search filter / group-role mapping** instead. Also
+> check the **LDAPS certificate expiry** on the DCs — the other cause of every
+> AD login dying at once, with the same misleading symptoms.
 
 > **Workbook gotcha:** the *Active Directory Inputs* tab that the workbook's
 > own prereq row points at is **hidden** in the 9.1 workbook (v1.9.1.001) and
