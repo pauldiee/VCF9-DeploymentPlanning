@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.3.9 — 2026-07-22
+- **VCF Operations for Networks deploys IP-only — there is no FQDN field**
+  (#197). Field-observed and confirmed against TechDocs *Deploy VCF Operations
+  for Networks*, whose Parameters page asks only for a password, the **platform
+  node IP**, the **collector node IP** and an optional **Dual Stack** toggle —
+  **DNS, FQDN and hostname are not mentioned anywhere on it**. Intake `E14`
+  already said as much; the planning template and the Day-2 doc had never caught
+  up. New `05-day2-deployments.md` **B.2**: records are **not required**, create
+  A + PTR anyway for runbooks / firewall rules / log identification, and two
+  limits stated plainly — an A record does not make the appliance use that name,
+  and Ops for Networks' participation in **fleet certificate management is not
+  established**, so no CA-signed cert with that name is promised.
+- **Its generated password is shown once and covers three accounts** (#197).
+  *"Save password to secure place. You won't be able to see it again after the
+  deployment"* — and per TechDocs it is used for **`console-user`, `support` and
+  `admin@local`**. Capture it **before** clicking Finish; this is the VCF
+  Management side, where there is no reveal API to fall back on.
+- **`ip-dns-plan.csv` gains the two missing rows** (#197) — platform node and
+  collector node, marked **Day-N (if in scope)** so it is clear they are **not
+  needed at bring-up**, with the IP-only / FQDN-optional caveat in the
+  description. `01-network-dns-plan.md`'s IP-count row now says the same, so
+  nobody plans A/PTR as mandatory.
+
 ## v2.3.8 — 2026-07-22
 - **The sizer had no VCF Automation size** (#196). #193 fixed the
   deployment-plan tool but never touched the sizer, which modelled Automation as
