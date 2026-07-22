@@ -8,6 +8,15 @@ it and the proxy the fleet may need to reach it. The
 [SFTP Backup Target](08-backup-target.md) — the target every management component
 backs up to.
 
+> **What the depot does *not* cover: SSP / License Hub.** If **vDefend or Avi** is
+> in scope, the **Security Services Platform Installer** (`.ova`) and the
+> **License Hub** package (`.tar`) are downloaded **by hand from the Broadcom
+> Support Portal** — roughly **9.5 GB** between them — and the License Hub
+> package is then *uploaded to* the SSP Installer. Neither passes through the
+> Fleet Depot Service or the offline depot built here, which is VCF-component
+> scoped. Plan that transfer separately, especially for an air-gapped site. See
+> [`prerequisites.md` → License Hub](prerequisites.md#license-hub-only-if-vdefend-or-avi-is-in-scope).
+
 ## Contents
 
 | # | Section | Use it when |
