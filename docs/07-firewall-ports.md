@@ -100,6 +100,17 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 > - **Cloud Proxy** needs **443, 4505, 4506** for Telegraf-based app monitoring.
 > - **License Server** requires an FQDN/IP **outside** the VCF services-runtime
 >   range (IPv4 only) — a routing/reachability point, not just a port.
+> - **License Hub needs a DFW *exclusion*, not a rule** (only if vDefend or Avi
+>   is in scope — the separate SSP-deployed appliance, not the License Server
+>   above). TechDocs, verbatim: *"If the License Hub VMs are running in an NSX
+>   overlay network, NSX VLAN segments, and security-enabled port groups, add
+>   the License Hub VMs to a **firewall exclusion list**."* No reason is given.
+>   This is the one entry on this page that is **not** a port to open — it is a
+>   policy carve-out, and it has to come from whoever owns **vDefend DFW**
+>   policy, so raise it with them rather than with the perimeter firewall team.
+>   Do it **before** the deploy: the appliance being licensed by the product
+>   that is filtering it is an awkward thing to debug afterwards. See
+>   [`prerequisites.md`](prerequisites.md) → License Hub.
 
 ---
 

@@ -54,9 +54,31 @@
   deploy, even though TechDocs allows either order.
 - **What the deploy run looks like** (#207): 4 steps, ~28 tasks — vCenter
   Configuration (6, starting with **creating a content library**), **Workload
-  Cluster (18)**, Security Platform (3), Metrics (1). A **CLEANUP** button
-  provides a supported unwind for a failed or stopped run — better than
-  hand-deleting VMs and leaving half-built objects for the retry.
+  Cluster (18)**, Security Platform (3), Metrics (1). TechDocs states no
+  expected duration.
+- **License Hub needs an NSX DFW *exclusion*, not a port** (#207). TechDocs:
+  *"If the License Hub VMs are running in an NSX overlay network, NSX VLAN
+  segments, and security-enabled port groups, add the License Hub VMs to a
+  firewall exclusion list."* No reason given. Added to `07-firewall-ports.md` —
+  the one entry there that is a **policy carve-out** rather than a flow, and it
+  belongs to the **vDefend DFW** owner, not the perimeter firewall team. The
+  appliance that licenses vDefend being filtered by vDefend is a poor thing to
+  discover after the fact.
+- **Failure recovery is three different buttons** (#207). **Stop Deployment**
+  *"does not undo any previous deployments"*; **Update & Redeploy** *"starts
+  from the point it was stopped"* (resume, not restart); **Cleanup** *"removes
+  all the previous deployment tasks"*. Normal path is Stop → fix → Update &
+  Redeploy. Corrects the previous entry, which described Cleanup loosely as the
+  unwind for any failed run.
+- **A vCenter outage mid-deploy is the expensive failure** (#207). TechDocs:
+  resources already exist, so reset may be unavailable — *"clean up the
+  deployment before resetting the configurations"*, and *"If the VMware vCenter
+  server is not recoverable, uninstall SSP Installer and deploy a new one."*
+  Don't run this deploy in a window where vCenter may be patched or restarted.
+- **Post-deploy steps, including a backup** (#207): wait for **Healthy**
+  (Troubleshooting Diagnostic if not), **Done**, then in via the **Instance FQDN
+  & IP** link with the Configure-step credentials — and **back up the SSP
+  Installer**, which TechDocs raises as a step at this point.
 - **The 4.5 GB package can be pulled by URL** (#207). *Upload a License Hub
   Package* accepts a **locally hosted URL** as well as a browser upload — the
   better path over a slow link or where the file already sits on an internal

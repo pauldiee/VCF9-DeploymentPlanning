@@ -433,10 +433,51 @@ without either does not need it.
   library**, which is what that datastore is for), **Workload Cluster** (**18
   tasks** — the bulk of the run; the instance comes up as a cluster, which is
   why it is controller + worker rather than one appliance), **Security
-  Platform** (3) and **Metrics** (1). A **CLEANUP** button sits next to **STOP
-  DEPLOYMENT** throughout, so a failed or aborted run has a supported unwind
-  path — use it rather than hand-deleting VMs, or the next attempt inherits
-  half-built objects.
+  Platform** (3) and **Metrics** (1). TechDocs gives **no expected duration**.
+
+- **If it fails mid-run, there are three controls and they do different
+  things.** Verbatim:
+
+  | Control | What it does |
+  | ------- | ------------ |
+  | **Stop Deployment** | *"Halts the ongoing deployment so that you can fix the error. **This action does not undo any previous deployments.**"* |
+  | **Update & Redeploy** | *"Start the ongoing deployment after resolving an error. **The deployment starts from the point it was stopped.**"* |
+  | **Cleanup** | *"Removes all the previous deployment tasks."* |
+
+  So the normal recovery is **Stop → fix → Update & Redeploy**, which *resumes*
+  rather than restarting — **Cleanup** is the heavier option that discards the
+  work so far. Stopping alone leaves everything already built in place.
+
+> **A vCenter outage mid-deploy is the bad failure — and the escape hatch is
+> ugly.** TechDocs, verbatim: *"If the deployment fails because VMware vCenter
+> becomes unavailable during the deployment, and you navigate to the Configure
+> screen, the option to reset the configurations might not be available. This is
+> expected behavior because some resources have been created on the VMware
+> vCenter server. To resolve the issue, clean up the deployment before resetting
+> the configurations. **If the VMware vCenter server is not recoverable,
+> uninstall SSP Installer and deploy a new one.**"* Two practical consequences:
+> **Cleanup before reset**, in that order — and don't run this deploy during a
+> window when vCenter is being patched or restarted.
+
+- **After it completes.** Wait for the instance to report **Healthy** (if it
+  does not, TechDocs points at **Troubleshooting Diagnostic**), click **Done**,
+  then reach the hub through the **Instance FQDN & IP** link and log in *"using
+  the credentials you specified in the Configure step"* — the `admin` / `audit`
+  passwords from the SET dialog, so they need to be recorded at planning time,
+  not invented at the wizard. **Back up the SSP Installer** at this point;
+  TechDocs raises it as a step here rather than leaving it to a backup policy.
+  **Instance Management** is where you *"edit configurations, reset passwords,
+  or delete the instance"* afterwards — note **delete**, which is the only
+  answer to the immutable fields above.
+
+> **NSX firewall exclusion list — the licensing appliance can be blocked by the
+> product it licenses.** TechDocs, verbatim: *"If the License Hub VMs are
+> running in an NSX overlay network, NSX VLAN segments, and security-enabled
+> port groups, add the License Hub VMs to a firewall exclusion list."* The
+> documentation **does not say why**. Since License Hub exists to license
+> **vDefend**, and vDefend is the distributed firewall doing the blocking, this
+> is worth raising with whoever owns DFW policy **before** the deploy — see
+> [`07-firewall-ports.md`](07-firewall-ports.md).
 
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in
