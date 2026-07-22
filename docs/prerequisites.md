@@ -274,6 +274,41 @@ without either does not need it.
 > commitment below is only the last of those — the first two also have to reach
 > an isolated site before anything can be deployed at all.
 
+- **What the SSP Installer OVA asks for.** Field-observed 2026-07-22. A plain
+  *Deploy OVF Template* on a **single vNIC**, IP allocation **Static – Manual**,
+  IPv4. Have these ready before you start (`*` = required):
+
+  | Group | Fields |
+  | ----- | ------ |
+  | Application | GRUB root password; GRUB menu timeout (default `4`); **`sysadmin`\***, **`admin`\***, **`audit`\*** passwords |
+  | Network | **FQDN\*** — *"must contain a dot character"*; **IPv4 address\***; **netmask\***; default gateway |
+  | DNS | **DNS server list\*** (space-separated, **max 3**); domain search list |
+  | Services | NTP server list; **Enable SSH** (**off** by default) |
+
+  - **It needs a real FQDN**, unlike VCF Operations for Networks — so plan an
+    A + PTR record for it in Step 1, not just an IP.
+  - **Four passwords to capture at deploy time**, three of them mandatory.
+  - **Only the first three DNS servers are used** — *"all other will be
+    ignored"*, silently. If the site standard hands out four or more resolvers,
+    decide which three, rather than letting the order decide.
+  - **NTP is not marked required — treat it as required anyway.** This is a
+    licensing and security appliance; clock skew breaks certificate validation
+    and token exchange, and the platform is gated on NTP regardless.
+  - **Storage: 396 GB thick, but only ~7 GB thin** (5.0 GB download). The 400 GB
+    in the table above is the thick figure.
+
+> **The password rule is stricter than the rest of the platform — check your
+> generator.** Verbatim, for `sysadmin` / `admin` / `audit`: *"Min of 12
+> characters… ≥1 lower case letter… ≥1 upper case letter… ≥1 number digit… ≥1
+> special char… At least five different characters… No dictionary words… No
+> palindromes… No monotonic character sequence (more than 4 monotonic characters
+> are not allowed)"*. That is well beyond the min-8 rule other fleet components
+> accept. Worse, *"password strength validation will occur during **VM boot**"* —
+> so a non-compliant password **deploys successfully** and then forces a change
+> at first login (`sysadmin` gets a change-password prompt; for `admin`/`audit`
+> you log into the SSPI UI as `admin` and use **User Management**) rather than
+> failing in the wizard where you typed it.
+
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in
 > [`09-binary-depot.md`](09-binary-depot.md) — someone must carry a fresh

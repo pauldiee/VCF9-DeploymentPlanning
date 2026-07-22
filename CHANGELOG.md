@@ -1,5 +1,34 @@
 # Changelog
 
+## v2.4.4 — 2026-07-22
+- **What the SSP Installer OVA actually asks for** (#206). Nothing described the
+  deploy inputs. New table in `prerequisites.md`: GRUB root password + menu
+  timeout, **three required appliance passwords** (`sysadmin` / `admin` /
+  `audit`), **FQDN**, IPv4 address, netmask, gateway, **DNS server list**, domain
+  search list, NTP server list and **Enable SSH** (**off** by default), on a
+  single vNIC with **Static – Manual** IPv4.
+- **The SSP Installer needs a real FQDN — Step 1 never budgeted one** (#206).
+  Unlike VCF Operations for Networks, its OVA **requires** an FQDN (*"must
+  contain a dot character"*). `01-network-dns-plan.md`'s License Hub row now says
+  **~9 IPs + 1 FQDN**, and `ip-dns-plan.csv` gains an **SSP Installer** row — the
+  template previously had no SSP or License Hub row at all.
+- **Only three DNS servers are used, and the rest are dropped silently** (#206):
+  *"At most three name servers can be configured (first 3 name servers passed in
+  list will be used and all other will be ignored)"*. A site handing out four or
+  more resolvers should choose which three rather than letting list order decide.
+- **NTP is not marked required — the docs say treat it as required** (#206).
+  It is a licensing and security appliance; clock skew breaks certificate
+  validation and token exchange.
+- **SSP passwords are stricter than the rest of the platform, and validated at
+  boot** (#206). Min **12**, ≥5 distinct characters, **no dictionary words, no
+  palindromes, no monotonic run >4** — well beyond the min-8 other components
+  accept. And *"password strength validation will occur during **VM boot**"*, so
+  a non-compliant password **deploys successfully** and forces a change at first
+  login instead of failing in the wizard. Added to the `02-intake.md` password
+  table and called out in `prerequisites.md`.
+- **Storage clarified** (#206): **396 GB thick but only ~7 GB thin** (5.0 GB
+  download) — the footprint table's 400 GB is the thick figure.
+
 ## v2.4.3 — 2026-07-22
 - **SSP / License Hub software is a manual download — and it is two files**
   (#205). `prerequisites.md` covered License Hub's IPs, footprint, scale and

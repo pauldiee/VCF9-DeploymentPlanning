@@ -178,6 +178,7 @@ failure. Verified against TechDocs
 | Log Management / Ops for Networks / Identity Broker accounts | min 8 | 1 upper, 1 lower, 1 digit, 1 special |
 | VMware Live Recovery `admin` / `root` | 8–20 | 1 upper, 1 lower, 1 digit, 1 special; password history 5 |
 | Avi controller `admin` | min 15 | 1 upper, 1 special (workbook *AVI Load Balancer* section) |
+| **SSP Installer** `sysadmin` / `admin` / `audit` (+ GRUB root) | min 12 | 1 upper, 1 lower, 1 digit, 1 special, **≥5 different characters, no dictionary words, no palindromes, no monotonic run >4**. Validated at **VM boot**, not in the wizard — a weak password deploys and then forces a change at first login. Only if vDefend/Avi is in scope |
 
 Practical rule: one strong **15–20 character** pattern with all four character
 classes (and no triple-repeats, dictionary words, or spaces) satisfies every
