@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.5.4 — 2026-07-22
+- **`05-day2-deployments.md` covered neither Avi nor License Hub** (#208) — the
+  two largest Day-N appliance sets in a vDefend/Avi deployment. Section B is
+  scoped to the *Deploy Fleet Management Day-N* sheet, and neither comes from it,
+  so a reader planning Day-N work got a complete-looking list that was missing
+  both. New **B.3 — Deployed outside VCF fleet management** compares them side by
+  side (when, deployed from, software source, footprint, addresses, DNS) and
+  **points at `prerequisites.md`** rather than restating it, so the two files
+  cannot drift apart.
+- **New decision-gate row `D6`** (#208): *is vDefend or Avi in scope?* — the
+  question that surfaces both, asked where the other Day-N scope questions are.
+- **Section E gains a nine-item checklist** for these two (#208), covering the
+  things the fleet Day-N workflows never check: the Avi cluster FQDN resolving
+  first, the depot sync, the License Hub pool-then-DNS ordering, the ~9.5 GB
+  manual download, certificates for every connection, the DFW exclusion, and the
+  restore-critical Avi passphrase.
+- **Section F gains three owners** (#208), including the **vDefend / DFW policy
+  owner** for the License Hub exclusion — a distinct role from the perimeter
+  firewall team, and one the matrix did not previously represent.
+
 ## v2.5.3 — 2026-07-22
 - **The AD bind account is a shared dependency — a rotation breaks every
   consumer at once** (#210). Field-verified: a changed bind password took down
