@@ -1,5 +1,53 @@
 # Changelog
 
+## v2.5.0 — 2026-07-22
+- **The Avi controller has its own first-login wizard** (#209). The VCF deploy
+  is not the end: **System Settings → Email/SMTP → Multi-Tenant**, none of it
+  collected by the VCF-side deployment. `prerequisites.md` and intake `E16`
+  updated with all three sections and their defaults.
+- **A third Avi secret** (#209): a **Passphrase**, separate from the controller
+  `admin` and VCF Ops admin passwords the deploy wizard takes. Nothing on the
+  VCF side mentions it.
+- **The controller's DNS is set at first login** (#209) — resolvers and search
+  domain belong in the Step 1 plan even though the deploy never asks.
+- **The Multi-Tenant page is an architecture decision disguised as a setup
+  step** (#209). Whether **Service Engines are provider-shared or per-tenant**,
+  and whether the **IP route domain is shared**, shape how the platform can be
+  carved up later. Defaults suit single-tenant enterprise use; a fleet heading
+  toward real tenant separation should decide **before** first login.
+- **Registered is not licensed — licensing is a six-step chain** (#207/#209).
+  Even deployed *and* registered, the hub banners *"The License Hub is
+  registered, but no licenses are found."* The chain: deploy → register → **load
+  the licence file from the Avi Cloud Console** → onboard each endpoint → assign
+  → **switch the endpoint to On-prem License Hub**. Any of the last four left
+  undone leaves a healthy, fully-deployed, **unlicensed** fleet. Written up as
+  one owned task in `prerequisites.md` and intake `E17`, because stopping at
+  "the hub is up" is the natural failure mode.
+- **Onboarding an endpoint needs its credentials *and* its certificate**
+  (#207). *Endpoint Management → Onboard an Endpoint* takes Type, Endpoint Name,
+  Connection Type (**Dynamic** by default), **IP / Cluster IP / VIP / FQDN**,
+  Username, Password and a **Certificate**. The hub logs in to every appliance
+  it licenses — same shape as the SSP Installer's vCenter connection, same
+  consequence: gather certificates up front.
+- **The Avi controller must be pointed at License Hub — it does not find it**
+  (#209/#175). *Administration → Licensing* offers **Cloud Licensing** or
+  **On-prem License Hub**, and the controller stays on **0 Used / 0 Available**
+  until someone switches it and the hub assigns it a licence via **Endpoint
+  Management**. Deploying the hub is only half the job; the endpoint opts in
+  from its own side. Documented from both directions — the Avi section and the
+  License Hub section now cross-reference.
+- **Avi licences are counted in Service Units** (#209), and the portals split by
+  job: **assignment** in the Avi Cloud Console, **split/merge/upgrade** in the
+  Broadcom Support Portal → Entitlements.
+- **Legacy Avi licences carry an expiry countdown** (#209). The controller
+  banners *"All legacy licenses are scheduled to expire on `<date>`"* against a
+  **Legacy / Eval** entry with a Service Unit count — the push toward
+  subscription licensing through License Hub, and a date worth reading on
+  deployment day rather than at expiry.
+- **Email/SMTP defaults to None** (#209) — Avi raises events with no path to a
+  human out of the box. Wire it into the fleet's alerting standard deliberately,
+  or record that Avi alerts live only in its own UI.
+
 ## v2.4.9 — 2026-07-22
 - **Avi: reserve four IPs, type three** (#209). Settled after a wrong turn in
   v2.4.8 (now **withdrawn** — it claimed a VIP input exists; it does not). The

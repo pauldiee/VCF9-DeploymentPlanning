@@ -242,6 +242,83 @@ Prepare up front:
   but on a management cluster sized to the line, confirm the headroom in
   `04-sizing.md` before you get there.
 
+- **The controller has its own first-login wizard — the VCF deploy is not the
+  end.** Field-observed 2026-07-22. Logging into the new controller opens
+  **WELCOME ADMIN → System Settings**, *"Let's get started with some basic
+  questions"*, which asks for:
+
+  Three sections, each with its own **NEXT**, then **SAVE**:
+
+  | Section | Fields (defaults in **bold**) |
+  | ------- | ----------------------------- |
+  | **1. System Settings** | **Passphrase\*** + **Confirm Passphrase\*** — a **third secret**, separate from the controller `admin` and VCF Ops admin passwords above; **DNS Resolver(s)** (comma-separated); **DNS Search Domain**; *Join the CEIP* (**off**); *Enable Configuration Warnings Checks* (**on**) |
+  | **2. Email/SMTP** | **None** / Local Host / SMTP Server / Anonymous Server |
+  | **3. Multi-Tenant** | **IP Route Domain**: per-tenant, or **share across tenants**; **Service Engines managed within the**: tenant, or **Provider (shared across tenants)**; **Tenant Access to Service Engine**: **Read Access** or None |
+
+  A **Setup Cloud After** checkbox sits alongside SAVE throughout, deferring
+  cloud configuration to a later step.
+
+  Three planning consequences:
+
+  - **A secret to have ready that no VCF-side document mentions.** Capture the
+    passphrase with the other two Avi credentials.
+  - **The controller's DNS is configured here**, not during the VCF deploy — so
+    the resolvers and search domain belong in the Step 1 plan even though
+    nothing in the deployment wizard asked for them.
+  - **The Multi-Tenant page is an architecture decision disguised as a setup
+    step.** Whether Service Engines are **provider-shared or per-tenant**, and
+    whether the **IP route domain is shared**, shape how the platform can be
+    carved up later. The defaults (shared route domain, provider-managed SEs,
+    tenants get read access) suit a single-tenant enterprise deployment. If the
+    fleet is heading toward genuine tenant separation — service-provider use, or
+    strict per-tenant isolation — decide this **before** first login rather than
+    accepting the defaults and discovering the model later.
+
+- **The controller must be pointed at License Hub — it does not find it.**
+  **Administration → Licensing** offers a two-way choice under *Get Started*:
+
+  | Mode | Product wording |
+  | ---- | --------------- |
+  | **Cloud Licensing** | *"Connect to cloud licensing to enable automatic license management and get access to the latest features."* |
+  | **On-prem License Hub** | *"For enhanced control, use an On-prem License Hub. Manage licenses locally and maintain full control over your licensing environment."* |
+
+  Selecting the second switches the controller to the hub (*"Switched to On-prem
+  License Hub"*), and its **ON BOARDING INSTRUCTION** button lays out the same
+  four stages the hub itself shows, from the Avi side: **Deploy & Register →
+  Licenses → Endpoint Management → Usage Reporting and License Refresh**. The
+  operative one is **Endpoint Management** — *"Assign licenses to AVI
+  Controllers from On-prem License Hub"*. That is the actual join between the
+  two appliances: the hub holds the entitlement, and the controller is an
+  **endpoint** it assigns licences to. Until that is done the controller reports
+  **0 Used / 0 Available**.
+
+  - **Licences are measured in Service Units**, not per-appliance — the figure
+    to check against an entitlement at procurement time.
+  - Splitting, merging or upgrading licences happens in the **Broadcom Support
+    Portal → Entitlements**, while assignment happens in the **Avi Cloud
+    Console** — two different portals for two different jobs.
+  - Ordering: the controller can be **switched to On-prem mode before the hub is
+    registered**, it simply has nothing to draw on yet. So the switch is safe to
+    make early, but licences do not appear until the hub itself is registered
+    (see the [License Hub section](#license-hub-only-if-vdefend-or-avi-is-in-scope)).
+
+> **Legacy licences are on a clock — check this on day one.** The controller
+> banners a countdown: *"All legacy licenses are scheduled to expire on
+> `<date>` (in `<n>` day(s))"*, with the licence listed as **Type: Legacy /
+> Eval** and a Service Unit count. Whatever the specific expiry on your
+> controller, the direction of travel is away from legacy keys and toward
+> **subscription licences through License Hub** — which is exactly why License
+> Hub exists (see [`prerequisites.md` → License
+> Hub](#license-hub-only-if-vdefend-or-avi-is-in-scope)). Read the banner on the
+> day you deploy and diary the date: an Avi controller whose licences lapse is
+> not a quiet problem.
+
+> **Email/SMTP defaults to None — so nothing is alerting anyone.** Avi raises
+> its own events, and out of the box there is no path for them to reach a human.
+> If the fleet has a monitoring or alerting standard, wire the controller into
+> it deliberately; if it does not, at least record that Avi alerts live only in
+> its own UI.
+
 > **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
 > *"This Avi Load Balancer will automatically be deployed and linked to other
 > workload domains sharing the same NSX manager associated with `<workload
@@ -365,6 +442,40 @@ without either does not need it.
     *"Assign licenses to **NSX Managers, Security Service Platform, and Avi
     Controllers**"*. That names the three endpoint types behind the
     **120-endpoint** scale figure above.
+  - **The endpoint has to opt in from its own side.** An Avi controller does not
+    discover the hub: someone must switch it to **On-prem License Hub** under
+    *Administration → Licensing* (the alternative being **Cloud Licensing**).
+    Deploying the hub is therefore only half the job — see the [Avi
+    section](#avi-load-balancer-only-if-in-scope). Until both halves are done the
+    controller shows **0 Used / 0 Available**.
+  - **Onboarding an endpoint needs that endpoint's credentials *and* its
+    certificate.** *Endpoint Management → Onboard an Endpoint → Connect to an
+    Endpoint* asks for **Type** (e.g. `Avi Controller`), **Endpoint Name**,
+    **Connection Type** (defaults to **Dynamic**), **IP Address or FQDN** —
+    *"Enter either IP, Cluster IP, VIP, or FQDN"* — plus **Username**,
+    **Password** and a **Certificate** paste box. The hub logs in to each
+    endpoint, so **every** appliance it licenses needs an admin credential
+    recorded and a certificate to hand. That is the same shape as the SSP
+    Installer's vCenter connection above, and the same planning consequence:
+    gather certificates before you start, not during.
+
+> **Registered is not licensed — there are three gates, not one.** With the hub
+> deployed *and* registered, it still banners: *"The License Hub is registered,
+> but **no licenses are found**. Download the license file from Avi Cloud
+> Console and add into Licenses."* The full chain is:
+>
+> 1. **Deploy** the SSP Installer, then the License Hub instance.
+> 2. **Register** the hub with the Avi Cloud Console (connected or disconnected).
+> 3. **Load licences** — download the licence file from the console and add it
+>    under *Licenses*. Registration alone brings none.
+> 4. **Onboard each endpoint** (credentials + certificate, above).
+> 5. **Assign** licences to those endpoints.
+> 6. **Switch the endpoint itself** to On-prem License Hub — for Avi, under
+>    *Administration → Licensing*.
+>
+> Any of steps 3–6 left undone leaves a healthy, fully-deployed, **unlicensed**
+> fleet. Plan the whole chain as one task with one owner; stopping at "the hub
+> is up" is the failure mode this list exists to prevent.
 
 > **Disconnected mode is a standing manual loop, and two of its steps are easy
 > to miss.** The file exchange is not one round trip: registration file →
