@@ -404,6 +404,40 @@ without either does not need it.
 > documentation will be **rejected at the wizard**. The 15+ pattern above is
 > the safe answer either way, which is why it is written that way here.
 
+- **The Pre-Checks tab is the product's own pre-flight list — read it as your
+  checklist.** Field-observed 2026-07-22: **9 pre-checks**, all re-runnable from
+  a **RERUN PRE-CHECK** button, so a failure is fixed and retried in place
+  rather than by restarting the wizard.
+
+  | Pre-check | What it reported |
+  | --------- | ---------------- |
+  | Check SSPI basic infra | *"SSPI infra is healthy and Licensing validations passed"* |
+  | Check vCenter | *"Verified vCenter access, cluster, datacenter, datastore, portgroup, **CPU and memory**"* |
+  | Check compatibility | *"Complete Licensing compatibility check."* |
+  | Check content library datastore | *"Datastore check appears to be satisfactory."* |
+  | Check Storage Policy | *"The storage policy '…' appears to be satisfactory."* |
+  | Check network configuration | *"The network configuration appears to be satisfactory."* |
+  | Check fqdn domain | *"Domain check appears to be satisfactory."* |
+  | Check NTP configuration | *"NTP check completed successfully."* |
+  | Check network reachability | *"Verified **NodePool IP** network reachability."* |
+
+  Worth noting what that list implies: **cluster CPU and memory are validated**
+  (so the reservation footprint is checked, not just accepted), and both the
+  **FQDN/domain** and the **node-pool IPs** are tested before anything is built.
+  TechDocs permits the DNS records *"either before or after deploying the
+  instance"* — but with a domain pre-check in the way, having DNS in place
+  **first** is the path of least resistance.
+
+- **What the deploy itself does — 4 steps, ~28 tasks.** Once started:
+  **vCenter Configuration** (6 tasks — it begins by **creating a content
+  library**, which is what that datastore is for), **Workload Cluster** (**18
+  tasks** — the bulk of the run; the instance comes up as a cluster, which is
+  why it is controller + worker rather than one appliance), **Security
+  Platform** (3) and **Metrics** (1). A **CLEANUP** button sits next to **STOP
+  DEPLOYMENT** throughout, so a failed or aborted run has a supported unwind
+  path — use it rather than hand-deleting VMs, or the next attempt inherits
+  half-built objects.
+
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in
 > [`09-binary-depot.md`](09-binary-depot.md) — someone must carry a fresh

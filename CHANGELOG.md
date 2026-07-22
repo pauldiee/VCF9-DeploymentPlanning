@@ -45,6 +45,18 @@
   the reservation *"required for a production environment"*, so check the
   footprint against management-cluster admission-control headroom rather than
   planning to switch it off.
+- **The 9 pre-checks, as a pre-flight checklist** (#207). Field-observed, all
+  re-runnable via **RERUN PRE-CHECK** so a failure is fixed in place. They
+  validate **cluster CPU and memory**, the content-library datastore, the
+  storage policy, network configuration, **FQDN/domain**, NTP and **node-pool IP
+  reachability** — a useful statement of what has to be true before the deploy
+  starts. The domain pre-check is also why DNS is easier created **before** the
+  deploy, even though TechDocs allows either order.
+- **What the deploy run looks like** (#207): 4 steps, ~28 tasks — vCenter
+  Configuration (6, starting with **creating a content library**), **Workload
+  Cluster (18)**, Security Platform (3), Metrics (1). A **CLEANUP** button
+  provides a supported unwind for a failed or stopped run — better than
+  hand-deleting VMs and leaving half-built objects for the retry.
 - **The 4.5 GB package can be pulled by URL** (#207). *Upload a License Hub
   Package* accepts a **locally hosted URL** as well as a browser upload — the
   better path over a slow link or where the file already sits on an internal
