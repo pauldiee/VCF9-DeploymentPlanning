@@ -1,5 +1,36 @@
 # Changelog
 
+## v2.4.7 — 2026-07-22
+- **The Avi cluster FQDN must resolve BEFORE the deploy** (#209). The wizard
+  takes the three node IPs and then, under *"Enter the VIP for cluster access"*,
+  asks only for a **Cluster FQDN** and a **Cluster Name** — **there is no field
+  to type the VIP into**. It reads the VIP from DNS. The docs had the right
+  count (4 IPs) but implied you enter the VIP; ordering is now explicit in
+  `prerequisites.md`, `01-network-dns-plan.md` and intake `E16`. Field-confirmed.
+- **A Cluster Name is a separate input from the cluster FQDN** (#209) — decide
+  both up front instead of inventing one at the wizard.
+- **The Avi deploy asks for the VCF Ops admin password too** (#209), on the same
+  screen as the new controller `admin`. Avi's own rule, from the tooltip: min
+  **15** characters with specials **`(!@#$%^&*()~)`** — recorded rather than
+  inferred from the cross-component set.
+- **Where Avi is deployed from, and what "optional" means** (#209): **VCF
+  Operations → Build → Lifecycle → VCF Instances → *domain* → Manage
+  Components**. Verbatim: *"Optional components … are **included in your
+  entitlement**. Add-ons are optional appliances that are **purchased and
+  managed in separate from the SDDC Manager**."* Avi is an Optional Component —
+  entitled, not a separate purchase.
+- **The wizard states the per-NSX-instance rule itself** (#209/#174): *"This Avi
+  Load Balancer will automatically be deployed and linked to other workload
+  domains sharing the same NSX manager associated with `<WLD>`."* The docs
+  asserted this; it is now quotable from the product. The deploy also *"will
+  create service accounts with NSX Manager and vCenter Server as required"*.
+- **Real Small-tier figures** (#209): **96 GB memory, 18 GHz CPU, 1,536 GB
+  disk** reserved across the three-node cluster, shown against live cluster
+  availability — the Form Factor step doubles as a capacity check.
+- **Avi is depot-fed, unlike License Hub** (#209/#205): *"Software bundle is
+  downloaded and ready"* (`32.1.1`, ~3.8 GB). Avi cannot be deployed until the
+  depot has synced it — the opposite of the SSP/License Hub manual download.
+
 ## v2.4.6 — 2026-07-22
 - **The Avi Cloud Console endpoint is `portal.pulse.broadcom.com`** (#178).
   Open since the License Hub work began, because the design blueprint named the

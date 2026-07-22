@@ -179,16 +179,28 @@ Prepare up front:
   (so **per NSX instance** — multiply if the fleet runs more than one): 3
   controller nodes + the **cluster VIP**.
 - **One DNS record per set — the cluster FQDN**, with **A + PTR**, resolving to
-  the **cluster VIP**. The **3 controller nodes and the VIP are IP-only**: the
-  workbook's Avi section asks for them as plain IP fields and nothing resolves
-  them by name, so don't ask the AD/DNS team for records that nothing consumes
-  (`01-network-dns-plan.md` DNS table, intake `E16`, and
+  the **cluster VIP**, and it must **exist before you start the deploy**. This
+  is not a preference: the wizard collects the **three node IPs** and then, under
+  *"Enter the VIP for cluster access"*, asks only for a **Cluster FQDN** and a
+  **Cluster Name** — **there is no field to type the VIP into**. The VIP is
+  taken from what the FQDN resolves to, so an absent A record has nowhere to be
+  fixed later in the flow (field-confirmed 2026-07-22). The **3 controller nodes
+  are IP-only**: the workbook's Avi section asks for them as plain IP fields and
+  nothing resolves them by name, so don't ask the AD/DNS team for records that
+  nothing consumes (`01-network-dns-plan.md` DNS table, intake `E16`, and
   [`workbook-cell-mapping.md`](workbook-cell-mapping.md) all say the same).
+- **A Cluster Name as well as the cluster FQDN** — a separate field, and the two
+  are not interchangeable. Decide both up front rather than inventing one at the
+  wizard.
 - **Controller size**: Small / Large / XLarge (the deploy wizard's tiers). Size
   it in `04-sizing.md` — note the workbook's Avi disk figures diverge from the
   NSX ALB controller ladder.
 - **Two strong passwords** (password manager, owners in intake `F11`): the
-  controller **admin** and the **VCF Ops admin** (break-glass) accounts.
+  controller **admin** and the **VCF Ops admin** accounts — the wizard asks for
+  **both, on the same screen**, so the VCF Operations admin credential has to be
+  to hand at Avi deploy time, not just the new Avi one. Avi's rule, verbatim
+  from the field tooltip: at least one lowercase, one uppercase, one digit, one
+  special character **`(!@#$%^&*()~)`** and **at least 15 characters**.
 - **Avi binaries in the depot** — 32.1.1 or higher must be available from the
   (online or offline) depot before VCF Operations can deploy the controller
   (see [`09-binary-depot.md`](09-binary-depot.md)).
@@ -202,6 +214,40 @@ Prepare up front:
   VIP/data network + IPAM profile; VPC: the VPC external IP blocks).
 - Firewall: admin access to the controller UI/API (443) and the Service
   Engine ↔ controller secure channel — see [`07-firewall-ports.md`](07-firewall-ports.md) §E.
+
+- **Where you deploy it from, and what "optional" means.** **VCF Operations →
+  Build → Lifecycle → VCF Instances → *your domain* → Manage Components**, where
+  **Avi Load Balancer** appears as a card beside **VCF Operations HCX**. That
+  page draws a distinction worth knowing at procurement time, verbatim:
+  *"**Optional components** are appliances that can be installed at domain to
+  help in leveraging specific use cases and/or goals and are **included in your
+  entitlement**. **Add-ons** are optional appliances that are **purchased and
+  managed in separate from the SDDC Manager**."* Avi is an **Optional
+  Component** — entitled and SDDC-Manager-managed, not a separate purchase.
+
+- **What the deploy wizard asks for.** Field-observed 2026-07-22 — four steps:
+
+  | Step | Fields |
+  | ---- | ------ |
+  | **1. Select version** | Version dropdown (e.g. `32.1.1`, ~3.8 GB) — shows the release date and **"Software bundle is downloaded and ready"**, i.e. it must already be in the depot |
+  | **2. Form Factor** | **Select Size** (Small / Large / XLarge) — then shows **Resource Availability**: the reservation needed against what the cluster actually has free |
+  | **3. Settings** | **Admin Password\***; **VCF Ops Admin Password\***; **Node 1 / 2 / 3 IP Address\*** (the three ALB controller cluster nodes); **Cluster FQDN**; **Cluster Name** — **no VIP field**, see the DNS bullet above |
+  | **4. Finish** | Review, then two notices worth reading (below) |
+
+  **Small** reserves **96 GB memory, 18 GHz CPU and 1,536 GB disk** across the
+  three-node cluster (≈32 GB / 6 GHz / 512 GB per node). Because step 2 shows
+  this **against live cluster availability**, it doubles as a capacity check —
+  but on a management cluster sized to the line, confirm the headroom in
+  `04-sizing.md` before you get there.
+
+> **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
+> *"This Avi Load Balancer will automatically be deployed and linked to other
+> workload domains sharing the same NSX manager associated with `<workload
+> domain>`."* This is the rule from the callout above, in the product's own
+> words — deploying "an Avi for this workload domain" silently serves **every**
+> workload domain on that NSX Manager. Also noted there: *"Service accounts will
+> be created with NSX Manager and vCenter Server as required"* — the deploy
+> provisions its own service accounts, so expect new principals in both.
 
 > Not the same thing as the **external load balancer for VCF Operations**
 > (see the Network table above and `05-day2-deployments.md` B.1) — that one is
