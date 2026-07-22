@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.4.3 — 2026-07-22
+- **SSP / License Hub software is a manual download — and it is two files**
+  (#205). `prerequisites.md` covered License Hub's IPs, footprint, scale and
+  connected-vs-disconnected but never said **where the software comes from**.
+  Verified on the **Broadcom Support Portal** (*vDefend Security Services
+  Platform*): you need **both** the **SSP Installer `.ova`** (~5.0 GB) and the
+  **License Hub `.tar`** (~4.5 GB) — the OVA is deployed, then the TAR is
+  *uploaded to it*, matching the TechDocs step *"Upload a License Hub
+  installation package to SSP Installer."* Take them from the **same release
+  page** as a matched pair (build numbers differ within a release) and keep the
+  portal's SHA2/MD5.
+- **Neither comes through the depot** (#205). Stated in both places it could be
+  assumed otherwise: the License Hub section, and a callout at the top of
+  `09-binary-depot.md` — the Fleet Depot Service and the offline depot are
+  **VCF-component scoped**.
+- **Air-gapped sites carry three things, not one** (#205). The `.ova`, the
+  `.tar` (**~9.5 GB** together) **and** the six-monthly license file. The doc
+  previously implied only the licence file was a manual burden.
+- **Connected mode reports outbound too** (#205, relates to #178). Added the
+  verbatim *"License usage report is consolidated and provided to the Avi Cloud
+  Console **every 24 hours**"* alongside the 15-minute inbound poll, since a
+  proxy allowlist has to accommodate both directions.
+
 ## v2.4.2 — 2026-07-22
 - **Real-Time Metrics collects nothing until a policy enables it** (#203).
   `05-day2-deployments.md` B.0 documented the deployment *cost* but not the

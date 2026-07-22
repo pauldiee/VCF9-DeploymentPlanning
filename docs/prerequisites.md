@@ -247,9 +247,32 @@ without either does not need it.
   Platform, Avi Controller."* One instance covers all but the largest fleets.
 - **Connected or disconnected — decide with the depot decision (intake `G1`).**
   **Connected** mode needs live connectivity to the **Avi Cloud Console**;
-  registration is automatic and licenses are polled **every 15 minutes**.
+  registration is automatic and licenses are polled **every 15 minutes**, and the
+  traffic is **two-way in purpose** — TechDocs: *"License usage report is
+  consolidated and provided to the Avi Cloud Console **every 24 hours**."*
   **Disconnected** (air-gapped) mode uses file-based registration and a
   **manual license file import every six months**.
+- **You download the software yourself — it is not in the VCF depot.** Verified
+  2026-07-22. The **Broadcom Support Portal**, under **vDefend Security Services
+  Platform** (5.1.2 at the time of writing), carries **two** files and you need
+  **both**:
+
+  | File | What it is | Size |
+  | ---- | ---------- | ---- |
+  | `VMware-Security-Services-Platform-Installer-<version>.ova` | The **SSP Installer** appliance — deploy this first | **~5.0 GB** |
+  | `License-Hub-<version>.tar` | The **License Hub installation package** — *uploaded to* the SSP Installer, which then deploys License Hub | **~4.5 GB** |
+
+  Neither comes through the **Fleet Depot Service** or the offline depot in
+  [`09-binary-depot.md`](09-binary-depot.md) — that machinery is VCF-component
+  scoped. Take the two files from the **same release page** as a matched pair
+  (their build numbers differ within a release), and keep the portal's **SHA2 /
+  MD5** — a 5 GB OVA hand-carried on removable media is exactly when a checksum
+  earns its keep.
+
+> **Air-gapped: three things to carry, not one.** The `.ova`, the `.tar`
+> (**~9.5 GB** together) **and** the six-monthly license file. The recurring
+> commitment below is only the last of those — the first two also have to reach
+> an isolated site before anything can be deployed at all.
 
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in
