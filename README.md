@@ -31,6 +31,7 @@ This repo flips the order:
 | `docs/07-firewall-ports.md`         | Reference — deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
 | `docs/08-backup-target.md`          | Reference — build guide for the SFTP backup target (building, verifying, field-notes gotchas) |
 | `docs/09-binary-depot.md`           | Reference — build guide for the offline depot / VCF Download Tool (feed the depot, connect VCF, the fleet proxy) |
+| `docs/10-supervisor-enablement.md`  | Reference — build guide for enabling a vSphere Supervisor on a workload domain (Centralized Transit Gateway + Avi, validation, field notes) |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |

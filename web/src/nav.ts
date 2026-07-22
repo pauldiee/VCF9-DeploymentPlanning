@@ -82,6 +82,13 @@ export const NAV: NavItem[] = [
     blurb: 'The offline depot and VCF Download Tool — build, feed, and connect the depot the platform installs and patches from.',
   },
   {
+    slug: '10-supervisor-enablement',
+    step: 'Reference',
+    label: 'Supervisor',
+    icon: 'dharmachakra',
+    blurb: 'Enable a vSphere Supervisor on a workload domain: the pre-flight gate, the Centralized Transit Gateway, Avi, the content library, and the wizard screen by screen.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',
