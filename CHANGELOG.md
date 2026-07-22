@@ -1,5 +1,29 @@
 # Changelog
 
+## v2.5.5 — 2026-07-22
+- **The deployment-plan tool never mentioned License Hub** (#213). The sizer has
+  budgeted its footprint since #176, but a generated plan — the artefact people
+  actually work from — never told anyone to build or license it. Two stories now
+  **bracket the Avi deploy**, per the real sequence: the hub must exist and hold
+  licences **before** a controller is built (`8.2a`), and the controller can only
+  be **onboarded and licensed after** it exists (`8.3a` for Automation's Avi, and
+  a matching story in each Supervisor-Avi workload domain).
+- **New `vDefend in scope` toggle** (#213), gating on **vDefend OR Avi** — the
+  same condition the sizer uses. Deliberately **not** filed under Day-2 fleet
+  components: those come from the *Deploy Fleet Management Day-N* sheet, and
+  vDefend/SSP comes from outside VCF fleet management entirely.
+- **E8 is now pulled in by licensing as well as Day-2** (#213). A Supervisor-Avi
+  fleet with no Day-2 work selected previously had nowhere for the licensing
+  stories to live, so they would have silently vanished; that case now emits a
+  focused *"Licensing prerequisites"* epic containing only the hub deployment.
+- **Existing story IDs are unchanged** (#213) — the new stories use suffixed IDs
+  (`8.2a`, `8.3a`) so saved tracker progress, which keys on
+  `${epicId}:${storyId}`, still maps.
+- The hub story also carries the **brownfield gate**: if the site already runs
+  Avi, migrate the entitlement on the Broadcom Support Portal **before**
+  upgrading, because 32.1.1 starts a 90-day clock that overrides existing
+  validity dates (#211).
+
 ## v2.5.4 — 2026-07-22
 - **`05-day2-deployments.md` covered neither Avi nor License Hub** (#208) — the
   two largest Day-N appliance sets in a vDefend/Avi deployment. Section B is

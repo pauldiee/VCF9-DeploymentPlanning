@@ -77,7 +77,36 @@ export interface Selection {
   day2: boolean;
   automation: AutomationChoice;
   day2Components: Day2Components;
+  /**
+   * vDefend in scope. Deliberately NOT part of Day2Components: those are fleet
+   * components from the "Deploy Fleet Management Day-N" sheet, and vDefend/SSP
+   * comes from outside VCF fleet management entirely (05-day2-deployments.md
+   * B.3). It also must not be gated on `day2`, because a fleet can need License
+   * Hub for a Supervisor Avi LB with no Day-2 fleet work at all. (#213)
+   */
+  vdefend: boolean;
   wlds: Wld[];
+}
+
+/**
+ * Avi is in scope if anything asks for it: in front of VCF Automation, or as a
+ * Supervisor load balancer in any workload domain. (#213)
+ */
+export function aviInScope(sel: Selection): boolean {
+  return (
+    (sel.day2 && sel.automation.deploy && sel.automation.aviLb) ||
+    sel.wlds.some((w) => w.supervisor && w.supervisorLb === 'avi')
+  );
+}
+
+/**
+ * License Hub is required whenever vDefend OR Avi is in scope — it licenses
+ * both (prerequisites.md, License Hub). The sizer already budgets its footprint
+ * on the same condition (#176); this keeps the plan agreeing with the sizer
+ * instead of costing a component it never tells anyone to build. (#213)
+ */
+export function licenseHubNeeded(sel: Selection): boolean {
+  return sel.vdefend || aviInScope(sel);
 }
 
 /** True when the principal storage is vSAN (ESA or OSA). */
@@ -119,6 +148,7 @@ export function defaultSelection(): Selection {
     day2: true,
     automation: { deploy: true, model: 'small', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
+    vdefend: false,
     wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
   };
 }
@@ -431,6 +461,18 @@ const E7_MGMT_STRETCH: Epic = {
 // LB in front is an optional post-deployment addition, never a requirement
 // (TechDocs design library: VCF Automation Load Balancing Design).
 function day2Epic(sel: Selection): Epic {
+  // License Hub can pull this epic into scope on its own: a fleet may need it
+  // for a Supervisor Avi LB with no Day-2 fleet work selected at all. In that
+  // case emit ONLY the licensing stories - the user did not ask for Day-2. (#213)
+  if (!sel.day2) {
+    return {
+      id: 'E8',
+      title: 'Licensing prerequisites (vDefend / Avi)',
+      owner: 'Platform',
+      ref: '05-day2-deployments.md',
+      stories: [licenseHubDeployStory('8.1', sel)],
+    };
+  }
   const a = sel.automation;
   let automationStory: Story;
   let aviStory: Story | null = null;
@@ -504,7 +546,15 @@ function day2Epic(sel: Selection): Epic {
     { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment / NSX VPC subnet for the Day-2 components; build the network if non-shared. Note that at Day-N every non-shared placement is API-only — the Add VCF Automation wizard has no network picker (see 05-day2-deployments.md section C). TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN/VPC subnet is visible in vCenter, reachable, and the fleet FQDNs resolve.' },
     automationStory,
   ];
-  if (aviStory) stories.push(aviStory);
+  // Ordering (#213): the hub must exist and hold licences BEFORE any Avi
+  // controller is built, and the controller can only be onboarded after it
+  // exists - so the two licensing stories bracket the Avi deploy. Suffixed IDs
+  // keep every existing 8.x key stable for saved tracker progress.
+  if (licenseHubNeeded(sel)) stories.push(licenseHubDeployStory('8.2a', sel));
+  if (aviStory) {
+    stories.push(aviStory);
+    stories.push(licenseHubEndpointStory('8.3a', 'the Avi controller for VCF Automation'));
+  }
   if (compNames.length) {
     stories.push({
       id: '8.4',
@@ -536,6 +586,50 @@ function day2Epic(sel: Selection): Epic {
 }
 
 // ---- Validation & handover (E10, always last) ------------------------------
+
+/**
+ * License Hub stories (#213). Two halves, deliberately separated because they
+ * bracket the Avi deploy: the hub must EXIST and hold licences before a
+ * controller is built, and the controller can only be ONBOARDED once it exists.
+ * Deploying the hub is only step 2 of six — stopping there leaves a healthy,
+ * fully-deployed, unlicensed fleet (prerequisites.md, License Hub).
+ */
+function licenseHubDeployStory(id: string, sel: Selection): Story {
+  const why = sel.vdefend
+    ? aviInScope(sel) ? 'vDefend and Avi are both in scope' : 'vDefend is in scope'
+    : 'Avi is in scope';
+  return {
+    id,
+    title: 'License Hub — deploy and load licences (BEFORE any Avi controller)',
+    tasks: [
+      `Required because ${why}: License Hub licenses vDefend AND Avi, and it is deployed from the SSP Installer — outside VCF fleet management entirely (05-day2-deployments.md B.3).`,
+      'BROWNFIELD GATE — do this first if the site already runs Avi on an older version: Avi 32.1.1 deprecates 25-character and YAML licences and gives them a strict 90-day grace period from initial boot / upgrade completion, and that limit OVERRIDES existing validity dates (licences valid until 2029 still stop). Upgrade the entitlement on the Broadcom Support Portal BEFORE upgrading Avi — it is one-way, an upgraded licence cannot be downgraded. Intake E16a.',
+      'Obtain the software yourself: TWO files, ~9.5 GB total, from the Broadcom Support Portal — the SSP Installer OVA and the License Hub .tar. NOT depot-fed, unlike Avi. Keep the portal checksums; air-gapped sites carry both files in.',
+      'Deploy the SSP Installer OVA: it REQUIRES an FQDN (A + PTR), takes max 3 DNS servers (extras are silently dropped), and enforces a min-12 password rule with no dictionary words / palindromes / monotonic runs, validated at VM BOOT rather than in the wizard.',
+      'Connect it to vCenter: administrator credential PLUS the vSphere trusted root CA certificate pasted or uploaded — there is no thumbprint prompt, so fetch the certificate first (the issuer of vCenter\'s machine SSL certificate). No vCenter object name in the path may contain / , \' = [ ] & % \\ ".',
+      'Deploy the License Hub instance: 3 FQDNs (the instance and messaging names must map to the 1st and 2nd IPs of the service pool, so settle the pool ranges BEFORE requesting DNS), two contiguous immutable IP pools in one subnet, a distributed port group, and a NON-encrypted storage policy. Instance name, instance FQDN, storage policy and both pools cannot be changed after deployment. The instance password rule is 15-128 — stricter than the OVA\'s minimum, so one 15+ pattern clears both layers.',
+      'Raise the NSX DFW EXCLUSION for the License Hub VMs with the vDefend policy owner — a policy carve-out, not a firewall rule, and not the perimeter firewall team (07-firewall-ports.md section E).',
+      'Register the hub with the Avi Cloud Console (portal.pulse.broadcom.com, outbound 443 — NOT on Broadcom\'s Public URLs list, so it is missing from an allowlist built from that page; License Hub has its own proxy setting). Choose connected or disconnected: disconnected is a file exchange plus a recurring usage-report / licence-refresh loop. Both modes need a Broadcom customer account — name who holds it.',
+      'REGISTERED IS NOT LICENSED: download the licence file from the Avi Cloud Console and add it under Licenses. Registration brings no entitlement with it.',
+    ],
+    acceptance:
+      'SSP Installer and the License Hub instance deployed and Healthy; the hub is registered with the Avi Cloud Console AND shows licences loaded under Licenses (not an empty list); the SSP Installer has been backed up — that backup is the only migration path if the vCenter FQDN/IP ever changes.',
+  };
+}
+
+function licenseHubEndpointStory(id: string, what: string): Story {
+  return {
+    id,
+    title: `License Hub — onboard ${what} and assign licences`,
+    tasks: [
+      `Onboard the ${what} as an endpoint in License Hub (Endpoint Management -> Onboard an Endpoint): Type = Avi Controller, endpoint name, connection type, the cluster IP/VIP/FQDN, plus that endpoint's ADMIN CREDENTIAL and its CERTIFICATE — the hub logs in to it, so have both to hand.`,
+      'Assign licences to the endpoint from the hub.',
+      'Switch the controller itself to On-prem License Hub (Administration -> Licensing). The controller does NOT discover the hub — deploying the hub is only half the job, and until this is done it reports 0 Used / 0 Available.',
+      'Verify LICENSE USAGE, not the connectivity status: "Connected" with a fresh refresh timestamp still shows 0 Used / 0 Available if no licence file was loaded. A green indicator is not evidence of a licensed fleet.',
+    ],
+    acceptance: `${what} listed as an endpoint in License Hub with licences assigned; the controller shows On-prem License Hub connected AND a non-zero licence count under LICENSE USAGE.`,
+  };
+}
 
 const E10_HANDOVER: Epic = {
   id: 'E10',
@@ -650,6 +744,9 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
         ],
         acceptance: "Avi controller cluster healthy in the management domain and associated with this WLD's NSX instance; cloud connector connected; Service Engine management + VIP networks ready, so Supervisor activation can select Avi.",
       });
+      // The controller exists now, so it can be onboarded and licensed. The hub
+      // itself was deployed earlier in E8 (#213).
+      stories.push(licenseHubEndpointStory(`9.${stories.length + 1}`, "this workload domain's Avi controller"));
     }
     const lbPrereq =
       w.supervisorLb === 'avi'
@@ -684,7 +781,10 @@ export function selectedEpics(sel: Selection): Epic[] {
   sel = normalizeSelection(sel);
   const out: Epic[] = coreEpics(sel);
   if (sel.mgmtStretched) out.push(E7_MGMT_STRETCH);
-  if (sel.day2) out.push(day2Epic(sel));
+  // E8 is pulled in by Day-2 fleet work OR by License Hub being required at all
+  // — otherwise a Supervisor-Avi-only fleet would have nowhere for the licensing
+  // stories to live and they would silently vanish. (#213)
+  if (sel.day2 || licenseHubNeeded(sel)) out.push(day2Epic(sel));
   sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize)));
   out.push(E10_HANDOVER);
   return out;
@@ -695,6 +795,7 @@ export function typeLabel(sel: Selection): string {
   sel = normalizeSelection(sel);
   const parts: string[] = [`management${sel.mgmtStretched ? ' (stretched)' : ''}`];
   if (sel.day2) parts.push('Day-2 fleet');
+  if (licenseHubNeeded(sel)) parts.push(sel.vdefend ? 'vDefend + License Hub' : 'License Hub');
   if (sel.wlds.length) {
     const n = sel.wlds.length;
     const stretched = sel.wlds.filter((w) => w.stretched).length;
@@ -771,6 +872,7 @@ export function coerceSelection(data: unknown): Selection | null {
       networks: bool(comps.networks, base.day2Components.networks),
       identityBroker: bool(comps.identityBroker, base.day2Components.identityBroker),
     },
+    vdefend: bool(d.vdefend, base.vdefend),
     wlds,
   });
 }
