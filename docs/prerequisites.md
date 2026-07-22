@@ -360,6 +360,47 @@ without either does not need it.
   through a browser session over a slow or long-haul link. In an air-gapped
   enclave the file is usually already sitting on an internal host anyway.
 
+- **The vCenter connection needs the trusted root CA certificate — fetch it
+  first.** Field-verified 2026-07-22 against TechDocs. *Connect to vCenter* asks
+  for three things, and the third is the one that stops people:
+
+  | Field | TechDocs |
+  | ----- | -------- |
+  | **vCenter Server** | *"Enter the server FQDN or IP address."* |
+  | **Username** | *"Enter the VMware vCenter Admin user name, or the name of a user who has **administrator privileges**."* |
+  | **Certificate** | Paste the PEM **or** *"click **Browse Local Files** to select the certificate file"* |
+
+  There is **no thumbprint prompt and no "accept this certificate" button** —
+  the certificate has to be **in your hands before you open the dialog**.
+  TechDocs gives the retrieval route: *"From your browser, enter the VMware
+  vCenter's base URL (for example, `vcenter.domain.com`). Right-click **Download
+  trusted root CA certificates** at the bottom right"* — that link yields a
+  **ZIP** of the vCenter `TRUSTED_ROOTS` store, which you unpack to get the
+  certificate to paste. Add it to the jump-host prep: no certificate, no
+  connection, no deploy. Note also that **no least-privilege role is
+  documented** — TechDocs asks for an administrator, so treat this as a
+  privileged credential and record who holds it.
+
+> **The SSP Installer is welded to its vCenter — and that is why the backup
+> matters.** TechDocs, verbatim: *"Changing the vCenter Server's FQDN or IP
+> address after the deployment is not supported. If a change of the FQDN or IP
+> address is required, you must **deploy a new SSP Installer instance**, connect
+> to the new vCenter Server, and **restore your configuration from a Security
+> Services Platform backup**."* So the post-deploy "back up the SSP Installer"
+> step is not routine hygiene — it is the **only** migration path if the
+> management vCenter is ever renamed or re-addressed. A site with a vCenter
+> rename on its roadmap should know this before it deploys.
+
+> **Ten characters that must not appear in your vCenter object names.**
+> TechDocs, verbatim: *"While naming the VMware vCenter resources, such as data
+> center, cluster datastore, resource pool, storage policy, DVS name, or port
+> group name used by the SSP Installer, do not use the following 10 special
+> characters:"* `/` `,` `'` `=` `[` `]` `&` `%` `\` `"`. This is a constraint on
+> the **environment you already have**, not on anything you are about to name —
+> an existing datastore, storage policy or port group with a comma or an
+> apostrophe in its name is a problem to find **now**, while the fix is still a
+> rename rather than a redeploy.
+
 - **What the License Hub deploy wizard asks for.** Field-observed 2026-07-22
   (SSP Installer `5.1.2`). *Deploy an Instance | License Hub* runs
   **Configure → Pre-Checks → Deploy**, with Configure split into three steps:
@@ -367,7 +408,7 @@ without either does not need it.
   | Step | Fields |
   | ---- | ------ |
   | **1. Define Instance and Required FQDN(s)** | **Version\*** (dropdown — the uploaded package; *"If no version is available, click Upload to upload a package"*); **Instance Name\*** (*"32 characters max, all lowercase, alphanumeric name with hyphens allowed"* — **immutable**); Deployment (fixed: `License Hub`); **Instance FQDN\*** (→ 1st service-pool IP, **immutable**); **Messaging FQDN** (→ 2nd service-pool IP); **User Passwords\*** (a **SET** sub-dialog — see the two-layer note below) |
-  | **2. Select vCenter Parameters** | **vCenter connection\*** (pick an existing one or **ADD NEW CONNECTION**); **Data Center\***; **Cluster\***; **Storage Policy\*** (**immutable**; **no VM-encrypted policy**); **Content Library & VM Datastore\***; Resource Pool (**optional** — *"No selection creates a new pool by default"*); **Reserve Resource** (toggle, **Activated** by default — *"required for a production environment"*) |
+  | **2. Select vCenter Parameters** | **vCenter connection\*** (pick an existing one or **ADD NEW CONNECTION** — needs the **root CA certificate**, see above); **Data Center\***; **Cluster\***; **Storage Policy\*** (**immutable**; **no VM-encrypted policy**); **Content Library & VM Datastore\***; Resource Pool (**optional** — *"No selection creates a new pool by default"*); **Reserve Resource** (toggle, **Activated** by default — *"required for a production environment"*) |
   | **3. Configure Connectivity Options** | **DVS\*** + **Port Group\*** (a **distributed** port group); **Subnet\*** (CIDR, e.g. `10.1.1.0/24`); **Default Gateway\***; **Node IP Pool\*** (range, e.g. `10.1.1.4-10.1.1.15`); **Service IP Pool\*** (range, e.g. `10.1.1.16-10.1.1.24`); **NTP Server(s)** (up to **5**, comma-separated, **IP or FQDN**); **DNS Server(s)** (up to **5**, comma-separated, **IP only**); **Search Domain** (one) |
 
   - **It needs a distributed port group** — the wizard asks for a **DVS** and a

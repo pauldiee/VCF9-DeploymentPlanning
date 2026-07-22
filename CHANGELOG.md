@@ -45,6 +45,23 @@
   the reservation *"required for a production environment"*, so check the
   footprint against management-cluster admission-control headroom rather than
   planning to switch it off.
+- **The vCenter connection needs the root CA certificate in hand** (#207).
+  *Connect to vCenter* takes FQDN/IP, an **administrator** credential, and the
+  **certificate** — pasted as PEM or via **Browse Local Files**. There is **no
+  thumbprint prompt and no accept-this-certificate button**, so it must be
+  fetched first: the vCenter base URL → *"Download trusted root CA
+  certificates"* → unpack the ZIP. Now a jump-host prep item; nothing in the
+  docs mentioned it. No least-privilege role is documented — TechDocs asks for
+  an administrator.
+- **The SSP Installer is welded to its vCenter** (#207). *"Changing the vCenter
+  Server's FQDN or IP address after the deployment is not supported"* — the
+  remedy is a **new SSP Installer instance restored from a backup**. That makes
+  the post-deploy "back up the SSP Installer" step the only migration path for a
+  vCenter rename or re-address, not routine hygiene.
+- **Ten characters banned from vCenter object names** (#207): `/ , ' = [ ] & %
+  \ "` must not appear in the data center, cluster, datastore, resource pool,
+  storage policy, DVS or port group the SSP Installer uses. A constraint on the
+  **existing** environment — worth checking while the fix is still a rename.
 - **The 9 pre-checks, as a pre-flight checklist** (#207). Field-observed, all
   re-runnable via **RERUN PRE-CHECK** so a failure is fixed in place. They
   validate **cluster CPU and memory**, the content-library datastore, the
