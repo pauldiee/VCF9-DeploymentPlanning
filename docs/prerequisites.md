@@ -274,6 +274,45 @@ Prepare up front:
     strict per-tenant isolation — decide this **before** first login rather than
     accepting the defaults and discovering the model later.
 
+- **The controller must be pointed at License Hub — it does not find it.**
+  **Administration → Licensing** offers a two-way choice under *Get Started*:
+
+  | Mode | Product wording |
+  | ---- | --------------- |
+  | **Cloud Licensing** | *"Connect to cloud licensing to enable automatic license management and get access to the latest features."* |
+  | **On-prem License Hub** | *"For enhanced control, use an On-prem License Hub. Manage licenses locally and maintain full control over your licensing environment."* |
+
+  Selecting the second switches the controller to the hub (*"Switched to On-prem
+  License Hub"*), and its **ON BOARDING INSTRUCTION** button lays out the same
+  four stages the hub itself shows, from the Avi side: **Deploy & Register →
+  Licenses → Endpoint Management → Usage Reporting and License Refresh**. The
+  operative one is **Endpoint Management** — *"Assign licenses to AVI
+  Controllers from On-prem License Hub"*. That is the actual join between the
+  two appliances: the hub holds the entitlement, and the controller is an
+  **endpoint** it assigns licences to. Until that is done the controller reports
+  **0 Used / 0 Available**.
+
+  - **Licences are measured in Service Units**, not per-appliance — the figure
+    to check against an entitlement at procurement time.
+  - Splitting, merging or upgrading licences happens in the **Broadcom Support
+    Portal → Entitlements**, while assignment happens in the **Avi Cloud
+    Console** — two different portals for two different jobs.
+  - Ordering: the controller can be **switched to On-prem mode before the hub is
+    registered**, it simply has nothing to draw on yet. So the switch is safe to
+    make early, but licences do not appear until the hub itself is registered
+    (see the [License Hub section](#license-hub-only-if-vdefend-or-avi-is-in-scope)).
+
+> **Legacy licences are on a clock — check this on day one.** The controller
+> banners a countdown: *"All legacy licenses are scheduled to expire on
+> `<date>` (in `<n>` day(s))"*, with the licence listed as **Type: Legacy /
+> Eval** and a Service Unit count. Whatever the specific expiry on your
+> controller, the direction of travel is away from legacy keys and toward
+> **subscription licences through License Hub** — which is exactly why License
+> Hub exists (see [`prerequisites.md` → License
+> Hub](#license-hub-only-if-vdefend-or-avi-is-in-scope)). Read the banner on the
+> day you deploy and diary the date: an Avi controller whose licences lapse is
+> not a quiet problem.
+
 > **Email/SMTP defaults to None — so nothing is alerting anyone.** Avi raises
 > its own events, and out of the box there is no path for them to reach a human.
 > If the fleet has a monitoring or alerting standard, wire the controller into
@@ -403,6 +442,12 @@ without either does not need it.
     *"Assign licenses to **NSX Managers, Security Service Platform, and Avi
     Controllers**"*. That names the three endpoint types behind the
     **120-endpoint** scale figure above.
+  - **The endpoint has to opt in from its own side.** An Avi controller does not
+    discover the hub: someone must switch it to **On-prem License Hub** under
+    *Administration → Licensing* (the alternative being **Cloud Licensing**).
+    Deploying the hub is therefore only half the job — see the [Avi
+    section](#avi-load-balancer-only-if-in-scope). Until both halves are done the
+    controller shows **0 Used / 0 Available**.
 
 > **Disconnected mode is a standing manual loop, and two of its steps are easy
 > to miss.** The file exchange is not one round trip: registration file →

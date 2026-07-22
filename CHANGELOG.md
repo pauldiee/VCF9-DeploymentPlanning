@@ -15,6 +15,21 @@
   and whether the **IP route domain is shared**, shape how the platform can be
   carved up later. Defaults suit single-tenant enterprise use; a fleet heading
   toward real tenant separation should decide **before** first login.
+- **The Avi controller must be pointed at License Hub — it does not find it**
+  (#209/#175). *Administration → Licensing* offers **Cloud Licensing** or
+  **On-prem License Hub**, and the controller stays on **0 Used / 0 Available**
+  until someone switches it and the hub assigns it a licence via **Endpoint
+  Management**. Deploying the hub is only half the job; the endpoint opts in
+  from its own side. Documented from both directions — the Avi section and the
+  License Hub section now cross-reference.
+- **Avi licences are counted in Service Units** (#209), and the portals split by
+  job: **assignment** in the Avi Cloud Console, **split/merge/upgrade** in the
+  Broadcom Support Portal → Entitlements.
+- **Legacy Avi licences carry an expiry countdown** (#209). The controller
+  banners *"All legacy licenses are scheduled to expire on `<date>`"* against a
+  **Legacy / Eval** entry with a Service Unit count — the push toward
+  subscription licensing through License Hub, and a date worth reading on
+  deployment day rather than at expiry.
 - **Email/SMTP defaults to None** (#209) — Avi raises events with no path to a
   human out of the box. Wire it into the fleet's alerting standard deliberately,
   or record that Avi alerts live only in its own UI.
