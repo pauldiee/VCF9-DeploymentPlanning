@@ -102,7 +102,7 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 | VCF Operations VIP              | 1          |             | Optional: external load balancer for an HA deployment                     |
 | NSX Edge nodes (if deployed)    | 2          |             | **Centralized connectivity only** — mgmt-domain edge cluster; matches `en01`/`en02` in the DNS table below |
 | Virtual Network Appliances (VNA)| 2          |             | **Distributed connectivity only** (the alternative to the Edge nodes above — a domain has one or the other). 2 appliances minimum for HA, each with an FQDN + static IP; matches `vna01`/`vna02` in the DNS table below. Intake `H4` / `A10` |
-| VCF Automation nodes            | 5          | `/29` (see note) | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs); allocate a contiguous `/29` **on `9.1.0.0`–`9.1.0.300`** — from **`9.1.0.400`** TechDocs asks only for *"5 unique IP addresses"*, no contiguous block. This is the **VCF services runtime nodes CIDR** the *Add VCF Automation* wizard asks for. **IP-only — no DNS records**. Must **not overlap** the management-services runtime block below |
+| VCF Automation nodes            | 5          | `/29`       | **3 node IPs + 2 buffer** for automatic redeploy of failed nodes / rolling updates (TechDocs). Allocate a **contiguous `/29`** — that is what the *Add VCF Automation* wizard's **VCF services runtime nodes CIDR** field takes (field-verified on `9.1.0.0200`). A relaxed, non-contiguous option exists **on the upgrade path only** — see the callout below before assuming it applies here. **IP-only — no DNS records**. Must **not overlap** the management-services runtime block below |
 | VCF Automation FQDN             | 1          |             | Discrete IP **outside** the `/29` above — the wizard: *"VCF Automation FQDN and VCF services runtime FQDN must resolve to IP addresses that fall outside of the provided CIDR"* |
 | VCF Automation services runtime | 1          |             | Automation's **own** services runtime — a second FQDN, also on a discrete IP **outside** the `/29`. **Not** the same component as the fleet runtime below; TechDocs lists *"VCF services runtime — 1 FQDN"* under **both**. Intake `E10` |
 | VCF management-services runtime | 12–30      | `/28`–`/27` | Dedicated contiguous block: `/28` = 12 (minimum), `/27` = 30 (recommended) — the headroom absorbs Day-N **Log Management** and **real-time metrics** worker nodes (rows below). Has its own FQDN (intake `E14`) |
@@ -236,12 +236,40 @@ same shape.
 > **nodes only** (IP-only, no DNS records) and the two Automation FQDNs each
 > need their **own discrete VM Mgmt IP** on top of it — budget **`/29` + 2**.
 >
-> **Contiguity depends on your target version.** TechDocs (*Upgrade to VCF
-> Automation*): for `9.1.0.0`–`9.1.0.300`, *"verify that you have a dedicated
-> CIDR … For example, a /29 subnet mask as VCF Automation requires 5 IP
-> addresses"*; for **`9.1.0.400` and later**, *"verify that you have dedicated 5
-> unique IP addresses"* — the contiguous-block requirement is gone. Planning a
-> `/29` is still the tidier choice and is valid on every version.
+> **Contiguity: plan a `/29`. The relaxed option is documented for the *upgrade*
+> path only.** The one place Broadcom states a version split is
+> [Perform the Upgrade to VCF Automation 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation/phase-3-import-and-upgrade-aria-automation-8-to-vcf-automation-9/upgrade-to-vcf-automation.html)
+> — an **upgrade** page. Verbatim: for `9.1.0.0`–`9.1.0.300`, *"verify that you
+> have a dedicated CIDR for use by the VCF services runtime instance that hosts
+> the VCF Automation nodes"*; for **`9.1.0.400` and later**, *"verify that you
+> have dedicated 5 unique IP addresses"*, and *"The IP addresses can be
+> contiguous or non-contiguous."* The **field is renamed** across that boundary —
+> *VCF services runtime nodes **CIDR*** (`9.1.0.0`–`9.1.0.300`, takes *"a valid
+> CIDR"*) becomes *VCF services runtime nodes **IP pool*** (`9.1.0.400`+, takes
+> *"a CIDR or 5 comma-separated individual IP addresses"*).
+>
+> **None of that is stated for a fresh deployment.** What *is* verified in the
+> field: on `9.1.0.0200` the *Add VCF Automation* wizard asks for a **CIDR**. So
+> allocate a contiguous `/29` — correct on every version, and the only option
+> observed in-product. Do not plan scattered addresses for a new deployment on
+> the strength of an upgrade page.
+>
+> **Mind the digits — the real build numbers carry four.** Broadcom's patch
+> release notes, the Version Overview and the product itself all use a
+> **four-digit** patch component: `9.1.0.0100`, `9.1.0.0200`, **`9.1.0.0400`**.
+> The upgrade page quoted above writes three (`9.1.0.300`, `9.1.0.400`) for what
+> is evidently the same train. **Use the four-digit form** when checking what a
+> fleet is actually running — that is what you will see in the release notes and
+> in the UI; treat the three-digit strings as that page's own shorthand.
+>
+> **And you cannot reach `9.1.0.0400` on Automation today anyway.** Patch trains
+> run **per component**: as of **2026-07-22** SDDC Manager, VCF Operations,
+> Orchestrator and Log Management are at **`9.1.0.0400`** (released 2026-07-13)
+> while **VCF Automation is at `9.1.0.0200`** (build 25556825). So the relaxed
+> option is unreachable for Automation regardless of which path you are on —
+> check the current per-component versions on the
+> [Version Overview](https://vcf-planning.hollebollevsan.nl/version-overview/)
+> rather than assuming the fleet moves as one.
 >
 > **Never reuse the fleet runtime's addressing.** TechDocs: *"The IP addresses
 > and FQDN for the VCF services runtime instance for VCF Automation must be

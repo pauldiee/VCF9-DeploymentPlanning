@@ -94,6 +94,53 @@ request certificates (the SAN list depends on it).
 > and lifecycle-manage for **tenant / workload** load balancing — that is a
 > different service from the LB that fronts VCF Operations itself.
 
+### B.0 — Real-Time Metrics is a maintenance-window change, not an add-on
+
+Field-observed 2026-07-22. Everything else in the table above deploys *alongside*
+the fleet. **Real-Time Metrics (RTM) does not** — it lands as extra worker
+capacity **inside the VCF services runtime** (VCFMS), the same runtime hosting
+fleet lifecycle, the Identity Broker and Log Management. That runtime was sized
+at bring-up for the components that existed then, so adding RTM makes it **grow
+its node group**, and the *Add Real-Time Metrics* wizard blocks INSTALL behind an
+acknowledgement:
+
+> To deploy the real-time metrics component you must first scale up VCF services
+> runtime in the following VCF Instances: … Scale-up affects all of the VCF
+> management services components for those VCF Instances and the operation must
+> be performed during a maintenance window.
+>
+> ☐ I am aware of possible service disruption and want to continue with deployment
+
+**Plan it as a change window against the whole management-services runtime**, not
+as an optional extra someone ticks on a Tuesday afternoon.
+
+**The size wording misleads.** The wizard's *Review Resource Requirements* dialog
+shows a **Real-time metrics size** — Medium on a Medium instance, needing **32
+vCPU / 43 GB / 15 GB / 6 IP addresses**. That is the size RTM will be *deployed
+at*, derived from the instance size. It is **not** a statement that the runtime
+already has room; a Medium instance sets RTM's shape, it does not pre-provision
+capacity for it.
+
+Before you start:
+
+- [ ] **6 free IPs in the services-runtime block** — this is why that block is
+      recommended at `/27` rather than `/28` (see `01-network-dns-plan.md`)
+- [ ] The **management cluster can absorb** the extra vCPU / RAM, since the
+      scale-up places new workers
+- [ ] A **maintenance window**, agreed with whoever depends on fleet management
+
+Also note the wizard's own header: RTM *"will be installed on all eligible VCF
+Instances. If any instance is added or imported after service installation, you
+need to manually install it there by repeating these steps."* So it is not
+self-propagating — a later instance needs its own pass, with its own window.
+
+> **None of this is in TechDocs.** [Deploy Real-Time
+> Metrics](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/deploying-vcf-operations-for-real-time-data-service.html)
+> covers version support (core components must be **9.1 or later**), System
+> Managed Credential for shared NSX, and **port 443** connectivity to ESX hosts —
+> but says nothing about a runtime scale-up, resource requirements, IP counts,
+> maintenance windows or disruption. The warning exists only in the product.
+
 ### B.2 — VCF Operations for Networks: IP-only, and a one-shot password
 
 Field-observed 2026-07-22, and consistent with TechDocs [Deploy VCF Operations

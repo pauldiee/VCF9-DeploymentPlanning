@@ -1,5 +1,44 @@
 # Changelog
 
+## v2.4.0 — 2026-07-22
+- **Real-Time Metrics is a maintenance-window change, not an add-on** (#199).
+  New `05-day2-deployments.md` **B.0**. RTM is not a standalone appliance — it
+  lands as extra worker capacity **inside the VCF services runtime**, so
+  installing it forces that runtime to **scale up**, and the wizard gates INSTALL
+  behind *"Scale-up affects all of the VCF management services components for
+  those VCF Instances and the operation must be performed during a maintenance
+  window"* plus an *"I am aware of possible service disruption"* checkbox. Also
+  captured: the **Real-time metrics size** shown in the review dialog (Medium →
+  32 vCPU / 43 GB / 15 GB / **6 IPs**) is the size RTM will be *deployed at*, not
+  evidence the runtime has room; a pre-flight checklist; and that RTM installs on
+  **all eligible instances** but must be installed **manually** on any instance
+  added later. **None of this is in TechDocs** — the *Deploy Real-Time Metrics*
+  page covers version support, System Managed Credential and port 443, and is
+  silent on scale-up, resources, IPs, windows and disruption.
+- **The `/29`-vs-5-IPs version split was cited from an *upgrade* page and applied
+  to fresh deploys** (#201). `01-network-dns-plan.md` welded the split and the
+  *Add VCF Automation* wizard into one sentence; nothing establishes that the
+  split describes a fresh deployment at all. The callout is rewritten to
+  **attribute it to the upgrade path explicitly**, and the `/29` now rests on
+  what is actually observed — the fresh-deploy wizard asks for a **CIDR**
+  (field-verified on `9.1.0.0200`). The source URL is recorded for the first
+  time; it had been cited three times as *"TechDocs (Upgrade to VCF Automation)"*
+  with **no link**.
+- **Fuller quotes from that page** (#201): *"The IP addresses can be contiguous
+  or non-contiguous"*, and the **field rename** across the boundary — *VCF
+  services runtime nodes **CIDR*** (takes *"a valid CIDR"*) becomes *VCF services
+  runtime nodes **IP pool*** (takes *"a CIDR or 5 comma-separated individual IP
+  addresses"*). Both are scoped to the upgrade path in the text, not stated as
+  general fact.
+- **Build numbering: four digits is the real form** (#201). Release notes, the
+  Version Overview and the product all use `9.1.0.0100` / `9.1.0.0200` /
+  **`9.1.0.0400`**; the upgrade page writes three (`9.1.0.400`) for the same
+  train. Docs now tell readers to use the **four-digit** form when checking what
+  a fleet runs. Also stated: patch trains are **per component** — on 2026-07-22
+  SDDC Manager, VCF Operations, Orchestrator and Log Management are at
+  `9.1.0.0400` while **VCF Automation is still `9.1.0.0200`**, so the relaxed
+  option is unreachable for Automation on any path.
+
 ## v2.3.9 — 2026-07-22
 - **The sizer left the bring-up Cloud Proxy out by default** (#198). It was an
   opt-in checkbox defaulting to **off**, while the **License Server — deployed by
