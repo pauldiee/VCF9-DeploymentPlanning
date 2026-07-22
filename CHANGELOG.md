@@ -1,8 +1,91 @@
 # Changelog
 
+## v2.3.7 — 2026-07-22
+- **A `$` in the VCF Automation deploy password is silently eaten** (#195,
+  follow-up to #192). Field-verified — it cost most of a day. William Lam's
+  script assigns the appliance password in a **double-quoted** PowerShell string,
+  and PowerShell interpolates `$…` inside double quotes, so `VMware1!$ecret` is
+  sent as **`VMware1!`**. No error, no warning, and the deployment **succeeds** —
+  leaving a healthy appliance built around a password nobody knows. New callout
+  in `05-day2-deployments.md` section D: use single quotes, verify the literal
+  value via `$OutputJsonPayload`, and — as the first diagnostic — **try the
+  password truncated at the first `$`**. This is a PowerShell quoting trap, not a
+  defect in Lam's script; the credit block is unchanged.
+- **Why it reads as a broken appliance rather than a bad password** (#195).
+  Documented because the misdiagnosis is the expensive part: the Provider UI and
+  **SSH as `vmware-system-user`** fail *together* (different credentials, same
+  provisioning value), VCF Operations fails to change the password with **"could
+  not get a token"**, and a power-cycle changes nothing. Two independent auth
+  surfaces down at once reads as a bootstrap fault.
+- **Recovery is two-part if you are genuinely locked out** (#195). New
+  subsection: [KB
+  325916](https://knowledge.broadcom.com/external/article/325916) for the
+  console/GRUB root reset (incl. the `faillock` / `pam_tally2` lockout check —
+  your own retries may have locked the account), **then** [KB
+  419010](https://knowledge.broadcom.com/external/article/419010/unable-to-remediate-vcf-automation-vmwar.html)
+  to realign the Kubernetes secret — because `passwd vmware-system-user`
+  **misaligns** it and Fleet Management then shows the password **Disconnected**.
+  Doing only the first half leaves a differently-broken appliance. KB 419010 is
+  scoped to **9.0.x**, so the namespace/secret naming is flagged as verify-first
+  on 9.1. "Disconnected" in *Fleet Management → Passwords* also noted as a
+  no-SSH diagnostic in its own right.
+- **#192 closed out end-to-end.** The VPC deployment **completed**, and the
+  instance **registered itself in Components with no manual sync** — the earlier
+  absence was lag, not a failure, so that is now stated explicitly rather than
+  leaving readers hunting. The verification-status callout no longer says
+  completion is unconfirmed.
+
+## v2.3.6 — 2026-07-22
+- **The certificate pass is bulk-capable — but must be staggered** (#194).
+  Field-verified 2026-07-22 on a real deployment, not a lab. **VCF Operations →
+  Fleet Management → Certificates**
+  lets you tick multiple components and act on them together (`Generate CSRs`,
+  `Download CSRs`, `Replace With Configured CA Certificate`, `Import
+  Certificates`, plus *Renew* / *Replace With Imported*), reporting progress per
+  batch as an *n/total* counter. But the replace dialog carries a **mandatory
+  acknowledgement**: *"Each certificate rotation can trigger automated retrust
+  operations across dependent components… wait for any current or ongoing batch
+  operations to be completed before starting the next."* So the planning shape is
+  **fewer, larger batches with a settling wait between them** — not one sweeping
+  fleet-wide action. Story **8.5** said "in one pass" in both
+  `06-deployment-plan.md` and the export tool; corrected in both, with the
+  acceptance criterion now requiring each batch to have settled before the next
+  started.
+- **Generate before replace — the replace reuses the *last* CSRs** (#194). The
+  dialog states *"Last generated Certificate Signing Requests (CSRs) will be used
+  for generating certificate(s)"*, so a stale CSR set is a real failure mode:
+  regenerate whenever a SAN or FQDN changed. Also captured: the CA type
+  (**Microsoft CA** / **OpenSSL**) is chosen **per replacement operation**, not
+  only in the global Configure-CA wizard, and a bulk generate submits every CSR
+  at once — an **approval-gated Microsoft CA template stalls the queue** rather
+  than erroring. All added to `prerequisites.md` → Certificate Authority.
+- **A failure does not stop the batch** (#194). Field-verified 2026-07-22: an
+  **NSX Manager** replacement failed and the rest kept progressing. A batch is
+  **partial-success by design**, so the *n/total* counter is the only signal
+  something did not land — read the final count and the task list rather than
+  treating "the batch finished" as "the fleet is certified", and re-run the
+  failed components as their own batch once the current one has settled.
+- **NSX Manager rotation vs. a running NSX backup** (#194). The failure above
+  was an NSX Manager with an **NSX backup in progress**. Suspected — **not
+  confirmed** — that the rotation triggers a backup and does not wait long
+  enough for it. Documented as an observation with a mitigation (check for a
+  running/scheduled NSX backup, give NSX Manager its own batch), not as a
+  mechanism.
+- **Corrected: the #189 / #190 / #192 VCF Automation findings were field, not
+  lab.** The v2.3.0, v2.3.1 and v2.3.5 entries and the matching passages in
+  `05-day2-deployments.md` said "Lab-verified" / "Confirmed in the lab"; that
+  work was done on a **real deployment**. Reworded to `Field-verified` /
+  `Field-confirmed` in nine places. No environment-identifying detail added —
+  the evidential weight is the only thing that changes. (Older `Lab-verified`
+  claims elsewhere in this file predate that work and are untouched.)
+- **Auto-renewal is not on by default** (#194). The certificate list carries an
+  **Auto-renewal Status** column, observed **Deactivated** across a fresh 9.1
+  fleet. Noted in `prerequisites.md` so expiry ownership is assigned rather than
+  assumed.
+
 ## v2.3.5 — 2026-07-21
 - **"There is no NSX VPC option" was wrong** (#192). `05-day2-deployments.md`
-  section C stated flatly that VPC placement did not exist. **Lab-verified
+  section C stated flatly that VPC placement did not exist. **Field-verified
   2026-07-21:** VCF Automation deployed onto an **NSX VPC subnet** via the Fleet
   LCM API — validation passed, node VMs landed on the VPC portgroup, the cluster
   came up and the Provider Management UI serves at `/provider`. Broadcom's design
@@ -126,7 +209,7 @@
   `/29` — `+2` VM Mgmt IPs** (#190, follow-up to #189). The *Add VCF Automation*
   → **Parameters** step states it inline: *"VCF Automation FQDN and VCF services
   runtime FQDN must resolve to IP addresses that fall outside of the provided
-  CIDR."* Lab-confirmed that the **VCF services runtime nodes CIDR** field takes
+  CIDR."* Field-confirmed that the **VCF services runtime nodes CIDR** field takes
   a **routable `/29` from the VM Management subnet** — so the `/29` is for the
   **nodes only** (IP-only, **no DNS records**) and the Automation appliance FQDN
   and Automation's own services-runtime FQDN each need a **discrete VM Mgmt IP
@@ -146,7 +229,7 @@
 
 ## v2.3.0 — 2026-07-21
 - **Two VCF services-runtime FQDNs, not one — v1.4.2 reversed** (#189).
-  Lab-verified and confirmed verbatim against the TechDocs
+  Field-verified and confirmed verbatim against the TechDocs
   [First VCF Instance FQDNs and IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)
   table, which lists the row *"VCF services runtime — 1 FQDN\*"* **twice**: once
   under **VCF Automation** and once under **VCF Management Services**. The

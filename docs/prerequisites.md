@@ -499,6 +499,51 @@ missing template blocks the entire Day-2 certificate pass.
   password, and the **issuing certificate template** name.
 - **OpenSSL:** configured on the appliance with the org details (Common Name,
   Country, Locality, Organization, OU, State) — no external prerequisites.
+- **The certificate pass is a bulk operation — but it must be staggered.**
+  Field-verified 2026-07-22 on a real deployment. In **VCF Operations → Fleet Management →
+  Certificates** you tick multiple components in the list and act on them
+  together: `Generate CSRs`, `Download CSRs`, `Replace With Configured CA
+  Certificate`, `Import Certificates` (plus *Renew Certificates* and *Replace
+  With Imported Certificates*). Progress is reported per batch as an *n/total*
+  counter, and the UI notes changes may take some time to appear after the task
+  reports success. Three planning consequences:
+  - **Generate before replace.** The *Replace With Configured CA Certificate*
+    dialog states *"Last generated Certificate Signing Requests (CSRs) will be
+    used for generating certificate(s)"* — the replace consumes the **most
+    recently generated** CSRs rather than issuing fresh ones. Regenerate if the
+    component's SANs/FQDN changed since the last generate, or you will sign a
+    stale request.
+  - **Do not fire batches in parallel.** The dialog carries a mandatory
+    acknowledgement behind this caution: *"Each certificate rotation can trigger
+    automated retrust operations across dependent components. To avoid system
+    instability, wait for any current or ongoing batch operations to be
+    completed before starting the next."* So the change window budgets **fewer,
+    larger batches with a settling wait between them** — not one sweeping
+    fleet-wide action, and not many small ones fired concurrently.
+  - **The CA burst is real.** A batch submits every selected CSR at once. On a
+    Microsoft CA, confirm the issuing template does **not** require manual
+    approval — an approval-gated template turns a bulk generate into a stalled
+    queue rather than an error.
+  - **A failure does not stop the batch.** Field-verified 2026-07-22: when one
+    component's replacement failed, the remaining ones **kept progressing**. A
+    batch is therefore **partial-success by design** — it will not halt and wait
+    for you. The *n/total* counter is the only signal that something did not
+    land (`5/6` means one failed), so **read the final count and open the task
+    list**, rather than treating "the batch finished" as "the fleet is
+    certified". Re-run the failed components as their own small batch once the
+    current one has settled, and verify per component at the end of the pass.
+  - **NSX Manager: watch for a backup running concurrently.** Field-observed
+    2026-07-22 — the one failure in a batch was an **NSX Manager**, with an NSX
+    **backup in progress** at the time. The working theory (**not confirmed**) is
+    that the rotation *triggers* a backup itself and does not wait long enough
+    for it to finish before proceeding. Either way the mitigation is the same:
+    **check that no NSX backup is running or scheduled** in the window, and give
+    NSX Manager its own batch rather than bundling it with a long run of ESX
+    hosts. If it fails, re-run it alone once the backup has completed.
+- The certificate list also carries an **Auto-renewal Status** column. In a
+  freshly deployed 9.1 fleet the entries observed were **Deactivated** — treat
+  auto-renewal as something you opt into, and check expiry ownership rather than
+  assuming the fleet renews itself.
 - TechDocs walk-throughs: [Configure a Certificate Authority for VMware Cloud
   Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
   and the umbrella [Managing Certificates in VMware Cloud
