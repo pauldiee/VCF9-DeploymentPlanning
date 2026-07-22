@@ -251,7 +251,7 @@ Prepare up front:
 
   | Section | Fields (defaults in **bold**) |
   | ------- | ----------------------------- |
-  | **1. System Settings** | **Passphrase\*** + **Confirm Passphrase\*** — a **third secret**, separate from the controller `admin` and VCF Ops admin passwords above; **DNS Resolver(s)** (comma-separated); **DNS Search Domain**; *Join the CEIP* (**off**); *Enable Configuration Warnings Checks* (**on**) |
+  | **1. System Settings** | **Passphrase\*** + **Confirm Passphrase\*** — a **third secret**, separate from the controller `admin` and VCF Ops admin passwords above, and **restore-critical** (see below); **DNS Resolver(s)** (comma-separated); **DNS Search Domain**; *Join the CEIP* (**off**); *Enable Configuration Warnings Checks* (**on**) |
   | **2. Email/SMTP** | **None** / Local Host / SMTP Server / Anonymous Server |
   | **3. Multi-Tenant** | **IP Route Domain**: per-tenant, or **share across tenants**; **Service Engines managed within the**: tenant, or **Provider (shared across tenants)**; **Tenant Access to Service Engine**: **Read Access** or None |
 
@@ -260,8 +260,14 @@ Prepare up front:
 
   Three planning consequences:
 
-  - **A secret to have ready that no VCF-side document mentions.** Capture the
-    passphrase with the other two Avi credentials.
+  - **A secret to have ready that no VCF-side document mentions — and losing it
+    costs you your backups.** The Avi **Passphrase** protects the controller's
+    configuration backups, so treat it exactly like the **backup encryption
+    passphrase** for the SFTP target (see the Backup section below): chosen up
+    front, stored in a password manager, with a **named owner**. It is
+    **required to restore**, and a lost passphrase makes every controller backup
+    useless. Nothing on the VCF side asks for it, and it is set once, in passing,
+    on a welcome screen — which is exactly how it ends up unrecorded.
   - **The controller's DNS is configured here**, not during the VCF deploy — so
     the resolvers and search domain belong in the Step 1 plan even though
     nothing in the deployment wizard asked for them.
@@ -302,16 +308,31 @@ Prepare up front:
     make early, but licences do not appear until the hub itself is registered
     (see the [License Hub section](#license-hub-only-if-vdefend-or-avi-is-in-scope)).
 
-> **Legacy licences are on a clock — check this on day one.** The controller
-> banners a countdown: *"All legacy licenses are scheduled to expire on
-> `<date>` (in `<n>` day(s))"*, with the licence listed as **Type: Legacy /
-> Eval** and a Service Unit count. Whatever the specific expiry on your
-> controller, the direction of travel is away from legacy keys and toward
-> **subscription licences through License Hub** — which is exactly why License
-> Hub exists (see [`prerequisites.md` → License
-> Hub](#license-hub-only-if-vdefend-or-avi-is-in-scope)). Read the banner on the
-> day you deploy and diary the date: an Avi controller whose licences lapse is
-> not a quiet problem.
+  Once connected, the page shows an **ON-PREM LICENSE HUB** card — the hub
+  **URL**, a **Connectivity Status** of *Connected*, a **Last Refresh**
+  timestamp, a **REFRESH LICENSES** button and a **DISCONNECT ON-PREM
+  LICENSING** action. Use that card as the verification step: *Connected* plus a
+  recent refresh is the proof the join actually works.
+
+> **Connected still means zero licences — verify the count, not the status.**
+> Field-observed: with connectivity **Connected** and a fresh refresh
+> timestamp, the controller still reported **0 Used / 0 Available**, because the
+> licence file had not yet been loaded into the hub (step 3 of the chain in the
+> License Hub section). A green connectivity indicator is **not** evidence of a
+> licensed fleet. Check **LICENSE USAGE**, not *Connectivity Status*.
+
+> **Legacy licences are on a clock — and there may be two dates, not one.** The
+> controller banners a countdown, *"All legacy licenses are scheduled to expire
+> on `<date>` (in `<n>` day(s))"*, while the licence row carries **its own
+> Expiry**. Field-observed, those two were **different** — the individual
+> **Legacy / Eval** entry expired roughly two months before the banner's date —
+> so the banner appears to be a **general legacy-licence cutoff** rather than a
+> restatement of the licence in front of you. Read **both**: the row tells you
+> when *this* licence dies, the banner when the legacy model does. Either way
+> the direction of travel is toward **subscription licences through License
+> Hub** (see the [License Hub
+> section](#license-hub-only-if-vdefend-or-avi-is-in-scope)). Diary both dates on
+> deployment day — an Avi controller whose licences lapse is not a quiet problem.
 
 > **Email/SMTP defaults to None — so nothing is alerting anyone.** Avi raises
 > its own events, and out of the box there is no path for them to reach a human.

@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.5.1 — 2026-07-22
+- **The Avi Passphrase is restore-critical** (#209). Confirmed: it protects the
+  controller's configuration backups, so it now gets the same treatment as the
+  SFTP **backup encryption passphrase** — chosen up front, password manager,
+  **named owner**, and a plain statement that losing it makes every controller
+  backup useless. It is set once, in passing, on a welcome screen no VCF-side
+  document mentions, which is exactly how it goes unrecorded.
+- **Connected still means zero licences — verify the count, not the status**
+  (#209). Field-observed: **Connectivity Status: Connected** with a fresh
+  refresh timestamp, and **0 Used / 0 Available**, because the licence file had
+  not been loaded into the hub. A green indicator is not evidence of a licensed
+  fleet — check **LICENSE USAGE**. The controller's ON-PREM LICENSE HUB card
+  (URL, status, Last Refresh, **REFRESH LICENSES**, **DISCONNECT**) is the place
+  to verify the join.
+- **Legacy licences may carry two different dates** (#209). The banner's
+  *"All legacy licenses are scheduled to expire on `<date>`"* and the licence
+  row's own **Expiry** were observed to differ by about two months — so the
+  banner reads as a **general legacy-licence cutoff**, not a restatement of the
+  licence in front of you. Read both and diary both.
+
 ## v2.5.0 — 2026-07-22
 - **The Avi controller has its own first-login wizard** (#209). The VCF deploy
   is not the end: **System Settings → Email/SMTP → Multi-Tenant**, none of it
