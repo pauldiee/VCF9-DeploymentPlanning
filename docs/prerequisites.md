@@ -273,7 +273,11 @@ without either does not need it.
 > something to fix afterwards.
 - **Three VMs, not one appliance** — an **installer**, a **controller** node and
   a **worker** node (it deploys as an SSP instance: one controller + one
-  worker). Footprint:
+  worker). **Instance Management** reports this back as a **Deployment Size** of
+  *"1 controllers, 1 workers"* — plural, because **controllers and workers are
+  the scale-out axis**, and they draw from the node pool. That is precisely why
+  the pools are immutable and have to be sized for growth up front: adding nodes
+  later means addresses have to already be sitting in the range. Footprint:
 
   | Component | vCPU | Memory (GB) | Storage (GB) |
   | --------- | ---- | ----------- | ------------ |
