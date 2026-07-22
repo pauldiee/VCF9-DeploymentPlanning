@@ -71,6 +71,13 @@ Before committing any doc change:
 2. **README.md** — if a file was added/moved/removed, the contents table is in sync
 3. **`docs/workbook-cell-mapping.md`** — if an intake question was renumbered or added in `02-intake.md`, the mapping is updated in the same commit. Mapping uses sheet name + field label, **never** P-coordinates.
 4. **Sample / example values** — confirm no real customer data leaked in (use Rainpole-style placeholders only: `sfo.example.io`, `rainpole.io`, `10.11.x.x`)
+5. **`docs/06-deployment-plan.md` ↔ the export tool** — if a story was added,
+   removed or renumbered in `web/src/lib/deployment-plan.ts`, the doc changes in
+   the same commit (and vice versa). `npm run build` enforces this via
+   `web/scripts/check-plan-sync.mjs` (or run `npm run check:plan-sync`
+   standalone), so a drifting build fails rather than shipping quietly. The
+   tracker needs no sync — it imports the same generator. Note the drift runs
+   **both ways**: the doc has been the correct one before now (#215).
 
 If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 values on every version component).
 

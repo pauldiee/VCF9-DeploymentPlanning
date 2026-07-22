@@ -1,5 +1,32 @@
 # Changelog
 
+## v2.5.6 — 2026-07-22
+- **`06-deployment-plan.md` had drifted from the export tool, and nothing was
+  watching** (#215). The doc gains **story `8.2a`** (License Hub — deploy and
+  load licences, *before* any Avi controller) and **`8.3a`** (onboard the
+  controller, assign licences, switch it to On-prem License Hub), the note that
+  licensing can pull E8 in **with Day-2 switched off**, the Avi controller's
+  **first-login wizard** (including the restore-critical Passphrase), and the
+  per-WLD onboarding story in E9. The old License Hub sub-bullet — *"three VMs
+  and ~9 IPs"* — is replaced by the real chain.
+- **A drift guard, not just a fix** (#215). `web/scripts/check-plan-sync.mjs`
+  runs the actual generator across four representative selections and fails if
+  it emits a story the doc does not document. Wired into **`prebuild`**, so it
+  runs on every local *and* CI build with no workflow change — and it was
+  verified to fail on a deliberately removed story before being trusted.
+- **The doc stays hand-written** (#215). The guard checks *completeness*, not
+  content: `06` is deliberately rich prose (rationale, TechDocs links, gotchas)
+  that a generator would flatten. E9 is exempt by design and says so — its Avi
+  and licensing stories are numbered by selection, so the doc describes them
+  instead of giving them fixed numbers.
+- **The drift ran both ways** (#215) — worth recording, since the instinct is to
+  treat the doc as the laggard. The doc carried the **correct** Avi placement
+  from #174 while the *tool* kept the wrong one until #212; then the tool gained
+  the License Hub stories in #213 while the doc had none. Either side can be
+  wrong, which is why the pre-commit checklist now names the pair.
+- The **tracker needed nothing** (#215): it imports `selectedEpics` from the same
+  module and has no scope controls of its own, so it inherited #213 for free.
+
 ## v2.5.5 — 2026-07-22
 - **The deployment-plan tool never mentioned License Hub** (#213). The sizer has
   budgeted its footprint since #176, but a generated plan — the artefact people

@@ -5,15 +5,17 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node -e \"const fs=require('fs'); for (const p of ['.astro','node_modules/.astro']) fs.rmSync(p,{recursive:true,force:true}); fs.mkdirSync('public/scripts',{recursive:true}); for (const f of fs.readdirSync('../tools').filter(f=>f.endsWith('.ps1'))) { fs.copyFileSync('../tools/'+f,'public/scripts/'+f); console.log('copied tools/'+f+' -> public/scripts/'+f); } const tp='../tools/third-party'; if (fs.existsSync(tp)) { for (const f of fs.readdirSync(tp)) { fs.copyFileSync(tp+'/'+f,'public/scripts/'+f); console.log('copied tools/third-party/'+f+' -> public/scripts/'+f); } }\"",
+    "prebuild": "node -e \"const fs=require('fs'); for (const p of ['.astro','node_modules/.astro']) fs.rmSync(p,{recursive:true,force:true}); fs.mkdirSync('public/scripts',{recursive:true}); for (const f of fs.readdirSync('../tools').filter(f=>f.endsWith('.ps1'))) { fs.copyFileSync('../tools/'+f,'public/scripts/'+f); console.log('copied tools/'+f+' -> public/scripts/'+f); } const tp='../tools/third-party'; if (fs.existsSync(tp)) { for (const f of fs.readdirSync(tp)) { fs.copyFileSync(tp+'/'+f,'public/scripts/'+f); console.log('copied tools/third-party/'+f+' -> public/scripts/'+f); } }\" && node scripts/check-plan-sync.mjs",
     "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "check:plan-sync": "node scripts/check-plan-sync.mjs"
   },
   "dependencies": {
     "astro": "^5.6.1"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "pagefind": "^1.5.2"
   }
 }
