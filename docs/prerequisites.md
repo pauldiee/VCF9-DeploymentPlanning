@@ -532,6 +532,20 @@ missing template blocks the entire Day-2 certificate pass.
     list**, rather than treating "the batch finished" as "the fleet is
     certified". Re-run the failed components as their own small batch once the
     current one has settled, and verify per component at the end of the pass.
+  - **The CSR dialog ships with Broadcom's placeholders — replace them.**
+    Field-observed 2026-07-22: *Generate CSR* pre-fills Organization
+    **`Broadcom`**, Organizational Unit **`vcfms`**, Country **United States of
+    America**, State **`CA`**, Locality **`Palo Alto`**, and defaults **Key Size
+    to 2048**. Easy to click straight past — and then wrong in every certificate
+    you issue. Agree the subject fields with whoever owns the CA (they may be
+    enforced by the template anyway) and confirm **2048** meets the site's crypto
+    policy before generating in bulk.
+  - **`DNS/FQDN SAN` is a required field.** Even for components deployed
+    IP-only — VCF Operations for Networks is the example (see
+    [`05-day2-deployments.md` §B.2](05-day2-deployments.md)) — so every component
+    you intend to certify needs a resolvable name planned in Step 1. For a
+    multi-node/clustered appliance the dialog requires *"FQDNs and IPs of **all**
+    nodes"*.
   - **NSX Manager: watch for a backup running concurrently.** Field-observed
     2026-07-22 — the one failure in a batch was an **NSX Manager**, with an NSX
     **backup in progress** at the time. The working theory (**not confirmed**) is

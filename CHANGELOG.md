@@ -1,5 +1,63 @@
 # Changelog
 
+## v2.4.2 — 2026-07-22
+- **Real-Time Metrics collects nothing until a policy enables it** (#203).
+  `05-day2-deployments.md` B.0 documented the deployment *cost* but not the
+  enablement step — and *ESX Top* ships **`Deactivated` (Inherited)**, so a fleet
+  can pay the VCFMS scale-up and the maintenance window and still collect
+  nothing. New "after deployment" block: **Configurations → Policy Definition →
+  Real time metrics → EDIT POLICY**, the **two** object types the editor actually
+  exposes (**Host System** with category *ESX Top*, and **vCenter** — **no VMs,
+  datastores or clusters**, contrary to secondary summaries of the release
+  notes), group-based scoping so 2-second collection is not switched on
+  fleet-wide, and the granularity quote (20 s default, 2 s floor for ESX).
+- **Correction: Ops for Networks *does* participate in certificate management,
+  and its FQDN is mandatory** (#204, correcting #197). B.2 said participation was
+  "not established" and framed the FQDN as optional-but-recommended. The
+  *Generate CSR* dialog runs for the appliance (`Common Name:
+  OPS_NETWORKS-PLATFORM…`) and **`DNS/FQDN SAN` is a required field**. So the
+  records are not needed **to deploy**, but are **required at certificate
+  replacement** — a site that reads "IP-only" and skips DNS hits a hard stop at
+  the certificate pass. A **Large** 3-node platform needs *"FQDNs and IPs of all
+  nodes"*. Corrected in `05-day2-deployments.md`, `01-network-dns-plan.md` and
+  both `ip-dns-plan.csv` rows.
+- **CSR dialog ships with Broadcom's placeholder subject** (#204) —
+  Organization `Broadcom`, OU `vcfms`, `Palo Alto` / `CA` / United States, and
+  **Key Size 2048**. Noted in `prerequisites.md` next to the bulk-CSR guidance
+  from #194: replace them before generating, and check 2048 meets the site's
+  crypto policy — otherwise every issued certificate carries it.
+- **Greyed-out *Activate Network & Flow Collection* is a stale browser session**
+  (#202). After a successful Ops for Networks deploy the checkbox can still read
+  *"VCF Operations for networks Appliance is required"*; a **browser restart**
+  enabled it with no fleet-side action. Documented with the order of checks,
+  because the message invites the wrong conclusion (failed deploy) and the
+  obvious "fix" is a second appliance to clean up.
+
+## v2.4.1 — 2026-07-22
+- **The sizer's Real-Time Metrics figures were invented** (#200). Checked against
+  the pinned workbook: its *Real-time Metrics* row multiplies by a node-count
+  cell (`J29`) that **does not exist in the sheet**, so the formula evaluates to
+  **0 vCPU / 0 RAM** at every size. The tool had papered over that by inventing a
+  node count (2, or 3 on Large) and multiplying it by the VCFMS worker figures —
+  producing **48 vCPU / 96 GB** on Medium, a number from no source at all.
+- **Replaced with the product's own scale-up delta** (#200). RTM deploys **no
+  appliances of its own** — it grows the VCFMS runtime — so the row now shows a
+  **node count of 0** and reports the scale-up cost. **Medium (32 vCPU / 43 GB)
+  is observed** from the wizard; **Small and Large are derived** from the VCFMS
+  worker ratio and are labelled as derived in `docs/04-sizing.md` rather than
+  presented as fact.
+- **Disk conflict documented rather than silently resolved** (#200): the workbook
+  hard-codes **205 GB**, the wizard reports **15 GB** for the same Medium
+  instance. The tool reports 205 — the only RTM figure that traces to the
+  source — and `04-sizing.md` states the disagreement so a reader comparing the
+  tool against the wizard does not assume one is broken.
+- **`CLAUDE.md` corrected: `ImportExcel` is not installed** — it is absent from
+  both pwsh 7.x and Windows PowerShell 5.1, despite the guidance saying
+  otherwise. Replaced with the module-free recipe (treat the `.xlsx` as a zip and
+  parse the XML parts), plus a warning learned here: **read the `<f>` formula,
+  not just the cached `<v>` value** — a cached `0` may only mean the sheet ships
+  with that option set to *Exclude*, and a formula may reference a missing cell.
+
 ## v2.4.0 — 2026-07-22
 - **Real-Time Metrics is a maintenance-window change, not an add-on** (#199).
   New `05-day2-deployments.md` **B.0**. RTM is not a standalone appliance — it

@@ -134,6 +134,29 @@ Instances. If any instance is added or imported after service installation, you
 need to manually install it there by repeating these steps."* So it is not
 self-propagating — a later instance needs its own pass, with its own window.
 
+**After deployment: it collects nothing until you enable it in a policy.** This
+is the step that gets forgotten once the change window closes. Field-observed
+2026-07-22.
+
+- **Where:** **Configurations → Policy Definition** → select a policy (e.g.
+  *Base Settings → Default Policy*) → the **Real time metrics** card → **EDIT
+  POLICY**.
+- **Which objects — only two.** The *Select Object Type* dropdown offers
+  **Host System** (category **ESX Top**) and **vCenter**, both grouped under
+  *vCenter*. **No VMs, no datastores, no clusters** — worth stating because
+  secondary summaries of the 9.1 release notes claim real-time covers "VMs,
+  hosts and datastores", which is not what the policy editor exposes.
+- **It is off by default.** *ESX Top* shows **`Deactivated` (Inherited)**. A fleet
+  can finish the deployment — scale-up, maintenance window and all — and still
+  collect nothing, because no policy activates it.
+- **Scope it with groups.** The policy's **Groups and Objects** section is the
+  per-object mechanism: put the hosts that need real-time granularity into a
+  custom group and assign a policy with *ESX Top* activated, leaving everything
+  else on the default. That avoids turning 2-second collection on fleet-wide.
+- **Granularity** is set in the same policy — TechDocs: *"You can configure the
+  granularity of real-time metrics, which defaults to 20 seconds, to as low as 2
+  seconds for ESX metrics via policy-based configuration."*
+
 > **None of this is in TechDocs.** [Deploy Real-Time
 > Metrics](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/deploying-vcf-operations-for-real-time-data-service.html)
 > covers version support (core components must be **9.1 or later**), System
@@ -155,14 +178,26 @@ Operations for networks nodes"*. **DNS, FQDN and hostname are not mentioned
 anywhere on that TechDocs page** — matching intake `E14`, which already records
 these two as needing **IPs only**.
 
-So **DNS records are not required** and nothing in the deploy consumes them.
-**Create A + PTR for both nodes anyway** — runbooks and bookmarks that survive an
-IP change, firewall / proxy rules expressed by name, sensible identification in
-logs and support bundles, and consistency with every other appliance in the Step
-1 plan. Two limits worth stating plainly: an A record does **not** make the
-appliance use that name for anything, and whether Ops for Networks participates
-in **fleet certificate management is not established** — so do not assume a
-CA-signed certificate carrying that name comes for free.
+So **DNS records are not required to deploy** and nothing in the wizard consumes
+them. **Create A + PTR for both nodes anyway — you will need them later.**
+
+> **The FQDN becomes mandatory at certificate replacement.** Field-verified
+> 2026-07-22. Ops for Networks **does** participate in fleet certificate
+> management (its *Generate CSR* dialog runs with `Common Name:
+> OPS_NETWORKS-PLATFORM…`), and in that dialog **`DNS/FQDN SAN` is a required
+> field** — *"Enter FQDN separated by a comma"*. So a site that reads "IP-only"
+> and skips DNS hits a hard stop at the certificate pass, which is a far worse
+> moment to discover it than during Step 1 planning. The dialog also warns: *"For
+> multi-node/clustered deployment, FQDNs and IPs of **all** nodes must be
+> provided"* — so a **Large** (3-node) platform needs every node's FQDN and IP,
+> not just the two you deployed with.
+
+Beyond the certificate requirement, the records earn their keep for runbooks and
+bookmarks that survive an IP change, firewall / proxy rules expressed by name,
+sensible identification in logs and support bundles, and consistency with every
+other appliance in the Step 1 plan. One limit worth stating plainly: an A record
+does **not** make the appliance use that name for anything — it is for you, and
+for the certificate.
 
 > **The generated password is shown once and cannot be recovered.** The
 > Parameters page says *"Save password to secure place. You won't be able to see
@@ -172,6 +207,19 @@ CA-signed certificate carrying that name comes for free.
 > affordances on that screen. Put it in the credential store **before** you click
 > Finish: this sits on the VCF Management side, where there is **no reveal API**
 > to fall back on (see section F).
+
+> **If *Activate Network & Flow Collection* is greyed out, restart your browser
+> before anything else.** Field-observed 2026-07-22. After a successful deploy,
+> **Network Operations → Network & Flow** can still show the checkbox disabled
+> with *"VCF Operations for networks Appliance is required."* — a **stale
+> client-side capability flag**, not a missing appliance. A browser restart
+> enabled it immediately, with no fleet-side action. The message invites exactly
+> the wrong conclusion (that the deployment failed) and the obvious "fix" is a
+> second appliance you then have to clean up. Order of checks: confirm the
+> appliance is listed under **Build → Lifecycle → VCF Management → Components**
+> (the deployment task may sit under **SDDC lifecycle**, not Fleet lifecycle —
+> see section D); then **restart the browser / re-login**; only then is there a
+> real problem to investigate.
 
 ---
 
