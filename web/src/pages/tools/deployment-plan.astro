@@ -69,6 +69,12 @@ const epics = selectedEpics(sel);
       </fieldset>
 
       <fieldset>
+        <legend>Security add-on</legend>
+        <p class="planx__hint">Tick <em>vDefend</em> if the security add-on is in scope. It matters here because <strong>License Hub</strong> licenses <em>both</em> vDefend and Avi — so ticking either this or an Avi option anywhere adds the licensing stories. Those sit <strong>outside VCF fleet management</strong>: the software is a manual ~9.5&nbsp;GB two-file download (not depot-fed), deployed from the SSP Installer, and the hub must exist and hold licences <strong>before</strong> any Avi controller is built. This box is deliberately <em>not</em> under Day-2 fleet — a Supervisor Avi load balancer needs License Hub even with no Day-2 work selected.</p>
+        <label class="planx__check"><input type="checkbox" id="optVdefend" /> vDefend in scope <span class="planx__tag">E8</span></label>
+      </fieldset>
+
+      <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
         <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…) and picks its own <em>NSX connectivity</em>, independent of the management domain's (intake H4). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story. Activation <strong>requires that domain's north-south connectivity to be in place first</strong>, so its connectivity story becomes an explicit prerequisite (Centralized: Edge cluster + Tier-0 + BGP, plus the Supervisor ingress/egress CIDRs; Distributed: Distributed Transit Gateway + VNA, plus the external IP block and the /16 private transit-gateway block). Then pick the Supervisor <em>load balancer</em>: the built-in NSX/VPC LB (default, no extra appliance), the Foundation Load Balancer (platform-packaged L4 pair for VDS networking), or Avi (adds its own story: controller cluster into the domain + cloud connector + Service Engine/VIP networks, all before activation).</p>
         <div id="wldList"></div>
@@ -183,6 +189,7 @@ const epics = selectedEpics(sel);
         networks: (<HTMLInputElement>$('optD2Networks')).checked,
         identityBroker: (<HTMLInputElement>$('optD2Broker')).checked,
       },
+      vdefend: (<HTMLInputElement>$('optVdefend')).checked,
       wlds: wlds.map((w) => ({ ...w })),
     };
   }
@@ -376,7 +383,7 @@ const epics = selectedEpics(sel);
     render();
   });
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
-  for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi', 'optD2Logs', 'optD2Networks', 'optD2Broker']) {
+  for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi', 'optD2Logs', 'optD2Networks', 'optD2Broker', 'optVdefend']) {
     $(id).addEventListener('change', () => { syncAuto(); render(); });
   }
 
@@ -405,6 +412,7 @@ const epics = selectedEpics(sel);
     (<HTMLInputElement>$('optD2Logs')).checked = sel.day2Components.logs;
     (<HTMLInputElement>$('optD2Networks')).checked = sel.day2Components.networks;
     (<HTMLInputElement>$('optD2Broker')).checked = sel.day2Components.identityBroker;
+    (<HTMLInputElement>$('optVdefend')).checked = sel.vdefend;
     wlds = sel.wlds.map((w) => ({ ...w }));
     wldSeq = wlds.length;
   }
