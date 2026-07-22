@@ -448,6 +448,34 @@ without either does not need it.
     Deploying the hub is therefore only half the job — see the [Avi
     section](#avi-load-balancer-only-if-in-scope). Until both halves are done the
     controller shows **0 Used / 0 Available**.
+  - **Onboarding an endpoint needs that endpoint's credentials *and* its
+    certificate.** *Endpoint Management → Onboard an Endpoint → Connect to an
+    Endpoint* asks for **Type** (e.g. `Avi Controller`), **Endpoint Name**,
+    **Connection Type** (defaults to **Dynamic**), **IP Address or FQDN** —
+    *"Enter either IP, Cluster IP, VIP, or FQDN"* — plus **Username**,
+    **Password** and a **Certificate** paste box. The hub logs in to each
+    endpoint, so **every** appliance it licenses needs an admin credential
+    recorded and a certificate to hand. That is the same shape as the SSP
+    Installer's vCenter connection above, and the same planning consequence:
+    gather certificates before you start, not during.
+
+> **Registered is not licensed — there are three gates, not one.** With the hub
+> deployed *and* registered, it still banners: *"The License Hub is registered,
+> but **no licenses are found**. Download the license file from Avi Cloud
+> Console and add into Licenses."* The full chain is:
+>
+> 1. **Deploy** the SSP Installer, then the License Hub instance.
+> 2. **Register** the hub with the Avi Cloud Console (connected or disconnected).
+> 3. **Load licences** — download the licence file from the console and add it
+>    under *Licenses*. Registration alone brings none.
+> 4. **Onboard each endpoint** (credentials + certificate, above).
+> 5. **Assign** licences to those endpoints.
+> 6. **Switch the endpoint itself** to On-prem License Hub — for Avi, under
+>    *Administration → Licensing*.
+>
+> Any of steps 3–6 left undone leaves a healthy, fully-deployed, **unlicensed**
+> fleet. Plan the whole chain as one task with one owner; stopping at "the hub
+> is up" is the failure mode this list exists to prevent.
 
 > **Disconnected mode is a standing manual loop, and two of its steps are easy
 > to miss.** The file exchange is not one round trip: registration file →

@@ -15,6 +15,20 @@
   and whether the **IP route domain is shared**, shape how the platform can be
   carved up later. Defaults suit single-tenant enterprise use; a fleet heading
   toward real tenant separation should decide **before** first login.
+- **Registered is not licensed — licensing is a six-step chain** (#207/#209).
+  Even deployed *and* registered, the hub banners *"The License Hub is
+  registered, but no licenses are found."* The chain: deploy → register → **load
+  the licence file from the Avi Cloud Console** → onboard each endpoint → assign
+  → **switch the endpoint to On-prem License Hub**. Any of the last four left
+  undone leaves a healthy, fully-deployed, **unlicensed** fleet. Written up as
+  one owned task in `prerequisites.md` and intake `E17`, because stopping at
+  "the hub is up" is the natural failure mode.
+- **Onboarding an endpoint needs its credentials *and* its certificate**
+  (#207). *Endpoint Management → Onboard an Endpoint* takes Type, Endpoint Name,
+  Connection Type (**Dynamic** by default), **IP / Cluster IP / VIP / FQDN**,
+  Username, Password and a **Certificate**. The hub logs in to every appliance
+  it licenses — same shape as the SSP Installer's vCenter connection, same
+  consequence: gather certificates up front.
 - **The Avi controller must be pointed at License Hub — it does not find it**
   (#209/#175). *Administration → Licensing* offers **Cloud Licensing** or
   **On-prem License Hub**, and the controller stays on **0 Used / 0 Available**
