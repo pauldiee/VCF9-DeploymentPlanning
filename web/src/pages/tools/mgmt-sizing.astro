@@ -125,7 +125,7 @@ const opt = (values: readonly string[]) => values;
           </label>
           <label class="sizer__check"><input id="vcfOps" type="checkbox" /> VCF Operations</label>
           <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy (Ops collector)</label>
-          <p class="sizer__hint">The Installer deploys a unified cloud proxy automatically at bring-up, so on a first instance it is there whether or not it is ticked — leaving it off under-counts. Day-N <em>additional</em> collectors come on top of this one.</p>
+          <p class="sizer__hint">On a <strong>new</strong> deployment the Installer adds a unified cloud proxy automatically at bring-up, so it is there whether or not it is ticked — leave it on for greenfield. Untick it when sizing an <strong>upgrade or an existing fleet</strong> whose proxy is already accounted for. Day-N <em>additional</em> collectors come on top of this one.</p>
           <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
           <label id="vcfAutomationSizeLabel" hidden>VCF Automation size
             <select id="vcfAutomationSize">{opt(OPTIONS.vcfAutomationSize).map((v) => <option>{v}</option>)}</select>

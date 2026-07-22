@@ -213,10 +213,10 @@ export function defaultState(): SizingState {
     sspSize: 'Excluded',
     vcfOps: true, // normally deployed in a greenfield fleet; exclude only if reusing an instance
     // The VCF Installer deploys a unified cloud proxy automatically at bring-up,
-    // alongside the License Server — so on a first instance it is present whether
-    // or not anyone ticks it. Default it on; untick only when sizing a fleet that
-    // genuinely has none, and note that Day-N *additional* collectors are extra
-    // on top of this one (#198).
+    // alongside the License Server — so on a NEW first instance it is present
+    // whether or not anyone ticks it, hence the default. It stays a checkbox
+    // deliberately: an upgrade / existing-fleet sizing may already account for
+    // the proxy, and Day-N *additional* collectors are extra on top of it (#198).
     vcfOpsCollector: true,
     vcfAutomation: false,
     vcfAutomationSize: 'Medium',

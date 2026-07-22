@@ -9,6 +9,9 @@
   **on**, with a comment and a hint on the control noting that the Installer
   deploys a unified cloud proxy automatically and that Day-N *additional*
   collectors come on top of it. Existing saved sizings keep whatever they stored.
+  It stays a **checkbox on purpose** — an upgrade or existing-fleet sizing may
+  already account for the proxy, so the control has to remain untickable rather
+  than becoming an automatic row like the License Server.
 - **VCF Operations for Networks deploys IP-only — there is no FQDN field**
   (#197). Field-observed and confirmed against TechDocs *Deploy VCF Operations
   for Networks*, whose Parameters page asks only for a password, the **platform
