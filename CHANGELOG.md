@@ -1,5 +1,40 @@
 # Changelog
 
+## v2.3.7 — 2026-07-22
+- **A `$` in the VCF Automation deploy password is silently eaten** (#195,
+  follow-up to #192). Field-verified — it cost most of a day. William Lam's
+  script assigns the appliance password in a **double-quoted** PowerShell string,
+  and PowerShell interpolates `$…` inside double quotes, so `VMware1!$ecret` is
+  sent as **`VMware1!`**. No error, no warning, and the deployment **succeeds** —
+  leaving a healthy appliance built around a password nobody knows. New callout
+  in `05-day2-deployments.md` section D: use single quotes, verify the literal
+  value via `$OutputJsonPayload`, and — as the first diagnostic — **try the
+  password truncated at the first `$`**. This is a PowerShell quoting trap, not a
+  defect in Lam's script; the credit block is unchanged.
+- **Why it reads as a broken appliance rather than a bad password** (#195).
+  Documented because the misdiagnosis is the expensive part: the Provider UI and
+  **SSH as `vmware-system-user`** fail *together* (different credentials, same
+  provisioning value), VCF Operations fails to change the password with **"could
+  not get a token"**, and a power-cycle changes nothing. Two independent auth
+  surfaces down at once reads as a bootstrap fault.
+- **Recovery is two-part if you are genuinely locked out** (#195). New
+  subsection: [KB
+  325916](https://knowledge.broadcom.com/external/article/325916) for the
+  console/GRUB root reset (incl. the `faillock` / `pam_tally2` lockout check —
+  your own retries may have locked the account), **then** [KB
+  419010](https://knowledge.broadcom.com/external/article/419010/unable-to-remediate-vcf-automation-vmwar.html)
+  to realign the Kubernetes secret — because `passwd vmware-system-user`
+  **misaligns** it and Fleet Management then shows the password **Disconnected**.
+  Doing only the first half leaves a differently-broken appliance. KB 419010 is
+  scoped to **9.0.x**, so the namespace/secret naming is flagged as verify-first
+  on 9.1. "Disconnected" in *Fleet Management → Passwords* also noted as a
+  no-SSH diagnostic in its own right.
+- **#192 closed out end-to-end.** The VPC deployment **completed**, and the
+  instance **registered itself in Components with no manual sync** — the earlier
+  absence was lag, not a failure, so that is now stated explicitly rather than
+  leaving readers hunting. The verification-status callout no longer says
+  completion is unconfirmed.
+
 ## v2.3.6 — 2026-07-22
 - **The certificate pass is bulk-capable — but must be staggered** (#194).
   Field-verified 2026-07-22 on a real deployment, not a lab. **VCF Operations →

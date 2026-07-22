@@ -427,12 +427,63 @@ Run it with `$ValidateOnly = $true` first, and set `$OutputJsonPayload = $true`
 to inspect the payload before anything is sent — note that the printed payload
 contains the passwords in cleartext.
 
+> **Single-quote the password — a `$` in it will be silently eaten.**
+> Field-verified 2026-07-22 (#195). The script assigns the password in a
+> **double-quoted** PowerShell string, and PowerShell interpolates `$…` inside
+> double quotes. A password of `VMware1!$ecret` is sent as **`VMware1!`** — the
+> `$ecret` expands to an undefined variable and disappears. There is **no error
+> and no warning**, and the deployment **succeeds**: you get a healthy appliance
+> built around a password nobody knows. Use `'single quotes'` (literal in
+> PowerShell), and confirm the literal value in the `$OutputJsonPayload` output
+> before you deploy.
+>
+> **It does not present as a password problem** — it presents as a broken
+> appliance. The Provider UI (`admin@vsp.local`) rejects the login, SSH as
+> `vmware-system-user` fails as well (a *different* credential — both are set
+> from the same provisioning value, so they break together), changing the
+> password from VCF Operations fails with **"could not get a token"**, and a
+> power-cycle changes nothing. Two independent auth surfaces failing at once
+> reads as a bootstrap fault, not a typo.
+>
+> **First diagnostic, 30 seconds:** try the password **truncated at the first
+> `$`**. If that logs you in, this is the bug — stop, and do not start a
+> single-user-mode password reset. See *If you are already locked out* below.
+
+**If you are already locked out.** Recovery is **two-part**, and doing only the
+obvious half leaves the appliance in a different broken state:
+
+1. **Console / GRUB root reset** — [KB
+   325916](https://knowledge.broadcom.com/external/article/325916). At the Photon
+   boot screen press `e`, append `init=/bin/bash` to the line beginning `linux:`,
+   **F10**, then `mount -o rw,remount /` and `passwd`. Check lockout too — your
+   own retries may have locked the account: `faillock --user <user>` and
+   `/usr/sbin/faillock --user <user> --reset` (8.18.x+), or `pam_tally2` on
+   ≤ 8.16.x. Exit with `reboot -f`. Snapshot first.
+2. **Realign the Kubernetes secret** — [KB
+   419010](https://knowledge.broadcom.com/external/article/419010/unable-to-remediate-vcf-automation-vmwar.html).
+   Resetting `vmware-system-user` with `passwd` **misaligns the stored secret**,
+   and Fleet Management then shows the password **Disconnected**. Regenerate the
+   hash (`vmsp passwd --password-stdin`, base64) and `kubectl patch` the
+   `vcf-mgmt-…-ssh-password-secret` in namespace `vmsp-platform`, then **wait up
+   to 60 minutes** before retrying password updates. That KB is scoped to
+   **9.0.x** — on 9.1 confirm the naming with
+   `kubectl get secrets -n vmsp-platform | grep ssh` before patching anything.
+
+*Password shows **Disconnected** in **VCF Operations → Fleet Management →
+Passwords*** is also a useful **diagnostic on its own** — it is visible in the
+UI with no SSH, and it distinguishes a misaligned secret from a wrong password.
+
 > **Verification status (2026-07-21).** Confirmed on a real deployment through three
 > stages: the validation task returned `SUCCEEDED`, the deployment task was
 > accepted and progressed, and **the bootstrap VM appeared in vCenter attached
 > to the target VPC portgroup** — which is the stage that actually proves the
-> placement was honoured rather than merely accepted. **End-to-end completion of
-> the deployment was not yet confirmed when this was written** (#192).
+> placement was honoured rather than merely accepted.
+>
+> **Completed 2026-07-22** (#192). The deployment finished, the instance
+> **registered itself in VCF Operations → Components on its own** (no manual sync
+> or re-register — it simply lagged, so do not go chasing it), and login
+> succeeded. The apparent lockout in between was **not** a deployment fault: it
+> was the `$`-interpolation trap above (#195).
 
 ---
 
