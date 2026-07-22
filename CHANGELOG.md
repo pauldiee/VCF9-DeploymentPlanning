@@ -1,6 +1,14 @@
 # Changelog
 
 ## v2.3.9 — 2026-07-22
+- **The sizer left the bring-up Cloud Proxy out by default** (#198). It was an
+  opt-in checkbox defaulting to **off**, while the **License Server — deployed by
+  the same bring-up** — was counted automatically. So a default first-instance
+  greenfield sizing silently omitted an appliance that will certainly exist, the
+  same class of under-count as #176/#177. `vcfOpsCollector` now defaults to
+  **on**, with a comment and a hint on the control noting that the Installer
+  deploys a unified cloud proxy automatically and that Day-N *additional*
+  collectors come on top of it. Existing saved sizings keep whatever they stored.
 - **VCF Operations for Networks deploys IP-only — there is no FQDN field**
   (#197). Field-observed and confirmed against TechDocs *Deploy VCF Operations
   for Networks*, whose Parameters page asks only for a password, the **platform
