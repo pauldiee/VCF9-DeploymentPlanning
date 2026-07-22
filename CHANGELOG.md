@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.3.8 — 2026-07-22
+- **The sizer had no VCF Automation size** (#196). #193 fixed the
+  deployment-plan tool but never touched the sizer, which modelled Automation as
+  a bare checkbox: it inherited the **fleet** `deploymentSize` and took its node
+  count from the **fleet** `deploymentModel`. That produced configurations which
+  cannot exist — *Small + High Availability* gave a **3-node Small** (Small is
+  1 node), *Medium + Simple* gave a **1-node Medium** (Medium is 3 nodes) — and
+  it could not express the ordinary case of a Medium/Large fleet running a
+  single-node Automation. VCF Automation now has its **own Small / Medium /
+  Large selector**, shown when it is included, with the node count derived from
+  it via the new `vcfAutomationNodes()` (**Small → 1**, **Medium/Large → 3**).
+  The fleet model/size no longer feed the Automation row at all. Saved sizings
+  missing the new field fall back to the default rather than erroring.
+- **`docs/04-sizing.md`** states the coupling alongside the other component
+  caveats, so the sizer's behaviour is explained where the figures are sourced.
+
 ## v2.3.7 — 2026-07-22
 - **A `$` in the VCF Automation deploy password is silently eaten** (#195,
   follow-up to #192). Field-verified — it cost most of a day. William Lam's

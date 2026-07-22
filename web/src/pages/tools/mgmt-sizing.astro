@@ -126,6 +126,10 @@ const opt = (values: readonly string[]) => values;
           <label class="sizer__check"><input id="vcfOps" type="checkbox" /> VCF Operations</label>
           <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy (Ops collector)</label>
           <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
+          <label id="vcfAutomationSizeLabel" hidden>VCF Automation size
+            <select id="vcfAutomationSize">{opt(OPTIONS.vcfAutomationSize).map((v) => <option>{v}</option>)}</select>
+            <span class="sizer__hint">Automation's own size, independent of the deployment profile — and it sets the node count: Small = 1 node (Simple), Medium / Large = 3 nodes (High Availability).</span>
+          </label>
           <label class="sizer__check"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
           <label class="sizer__check"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
         </fieldset>
@@ -190,7 +194,7 @@ const opt = (values: readonly string[]) => values;
 
   // ---- bind top-level inputs to state ----
   const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
-  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize', 'logsSize'] as const;
+  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize', 'logsSize', 'vcfAutomationSize'] as const;
   const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd'] as const;
 
   function hydrate() {
@@ -382,6 +386,9 @@ const opt = (values: readonly string[]) => values;
     // Log Management replicas only apply when a size is chosen
     ($('logsReplicasLabel') as HTMLElement).hidden = state.logsSize === 'Exclude';
 
+    // VCF Automation size only applies when Automation is included
+    ($('vcfAutomationSizeLabel') as HTMLElement).hidden = !state.vcfAutomation;
+
     // Oversubscription guardrail — the workbook caps the recommendation at 2:1
     const over = Math.max(state.cpuOver, state.ramOver);
     const warn = $('oversubWarn') as HTMLElement;
@@ -430,6 +437,7 @@ const opt = (values: readonly string[]) => values;
     sspSize: OPTIONS.sspSize,
     opsNetSize: OPTIONS.opsNetSize,
     logsSize: OPTIONS.logsSize,
+    vcfAutomationSize: OPTIONS.vcfAutomationSize,
   };
   function sanitize(obj: any): SizingState {
     const out = defaultState();
