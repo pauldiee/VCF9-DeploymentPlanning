@@ -2,14 +2,22 @@
 
 ## v2.5.0 — 2026-07-22
 - **The Avi controller has its own first-login wizard** (#209). The VCF deploy
-  is not the end: **WELCOME ADMIN → System Settings** asks for a
-  **Passphrase** (a **third** secret, separate from the controller `admin` and
-  VCF Ops admin passwords), **DNS Resolver(s)**, a **DNS Search Domain**, the
-  **CEIP** opt-in and a **Setup Cloud After** checkbox. Two of those are
-  planning items nothing on the VCF side asks for — a secret to have ready, and
-  the controller's **DNS configuration**, which belongs in the Step 1 plan even
-  though the VCF deploy never collects it. `prerequisites.md` and intake `E16`
-  updated.
+  is not the end: **System Settings → Email/SMTP → Multi-Tenant**, none of it
+  collected by the VCF-side deployment. `prerequisites.md` and intake `E16`
+  updated with all three sections and their defaults.
+- **A third Avi secret** (#209): a **Passphrase**, separate from the controller
+  `admin` and VCF Ops admin passwords the deploy wizard takes. Nothing on the
+  VCF side mentions it.
+- **The controller's DNS is set at first login** (#209) — resolvers and search
+  domain belong in the Step 1 plan even though the deploy never asks.
+- **The Multi-Tenant page is an architecture decision disguised as a setup
+  step** (#209). Whether **Service Engines are provider-shared or per-tenant**,
+  and whether the **IP route domain is shared**, shape how the platform can be
+  carved up later. Defaults suit single-tenant enterprise use; a fleet heading
+  toward real tenant separation should decide **before** first login.
+- **Email/SMTP defaults to None** (#209) — Avi raises events with no path to a
+  human out of the box. Wire it into the fleet's alerting standard deliberately,
+  or record that Avi alerts live only in its own UI.
 
 ## v2.4.9 — 2026-07-22
 - **Avi: reserve four IPs, type three** (#209). Settled after a wrong turn in

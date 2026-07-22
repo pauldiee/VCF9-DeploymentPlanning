@@ -247,19 +247,38 @@ Prepare up front:
   **WELCOME ADMIN → System Settings**, *"Let's get started with some basic
   questions"*, which asks for:
 
-  | Field | Notes |
-  | ----- | ----- |
-  | **Passphrase\*** + **Confirm Passphrase\*** | A **third secret**, separate from the controller `admin` and VCF Ops admin passwords above. Capture it with them |
-  | **DNS Resolver(s)** | Comma-separated list — set **here**, not in the VCF deploy wizard |
-  | **DNS Search Domain** | e.g. `abc.com` — single domain |
-  | **CEIP** | The Customer Experience Improvement Program opt-in decision |
-  | **Setup Cloud After** | A checkbox deferring cloud configuration to a later step |
+  Three sections, each with its own **NEXT**, then **SAVE**:
 
-  Two planning consequences: there is **a secret to have ready that no
-  VCF-side document mentions**, and the controller's **DNS configuration is
-  entered at first login** — so the resolvers and search domain belong in the
-  Step 1 plan alongside everything else, even though the VCF deploy never asked
-  for them.
+  | Section | Fields (defaults in **bold**) |
+  | ------- | ----------------------------- |
+  | **1. System Settings** | **Passphrase\*** + **Confirm Passphrase\*** — a **third secret**, separate from the controller `admin` and VCF Ops admin passwords above; **DNS Resolver(s)** (comma-separated); **DNS Search Domain**; *Join the CEIP* (**off**); *Enable Configuration Warnings Checks* (**on**) |
+  | **2. Email/SMTP** | **None** / Local Host / SMTP Server / Anonymous Server |
+  | **3. Multi-Tenant** | **IP Route Domain**: per-tenant, or **share across tenants**; **Service Engines managed within the**: tenant, or **Provider (shared across tenants)**; **Tenant Access to Service Engine**: **Read Access** or None |
+
+  A **Setup Cloud After** checkbox sits alongside SAVE throughout, deferring
+  cloud configuration to a later step.
+
+  Three planning consequences:
+
+  - **A secret to have ready that no VCF-side document mentions.** Capture the
+    passphrase with the other two Avi credentials.
+  - **The controller's DNS is configured here**, not during the VCF deploy — so
+    the resolvers and search domain belong in the Step 1 plan even though
+    nothing in the deployment wizard asked for them.
+  - **The Multi-Tenant page is an architecture decision disguised as a setup
+    step.** Whether Service Engines are **provider-shared or per-tenant**, and
+    whether the **IP route domain is shared**, shape how the platform can be
+    carved up later. The defaults (shared route domain, provider-managed SEs,
+    tenants get read access) suit a single-tenant enterprise deployment. If the
+    fleet is heading toward genuine tenant separation — service-provider use, or
+    strict per-tenant isolation — decide this **before** first login rather than
+    accepting the defaults and discovering the model later.
+
+> **Email/SMTP defaults to None — so nothing is alerting anyone.** Avi raises
+> its own events, and out of the box there is no path for them to reach a human.
+> If the fleet has a monitoring or alerting standard, wire the controller into
+> it deliberately; if it does not, at least record that Avi alerts live only in
+> its own UI.
 
 > **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
 > *"This Avi Load Balancer will automatically be deployed and linked to other
