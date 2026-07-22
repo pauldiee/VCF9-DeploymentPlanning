@@ -179,16 +179,28 @@ Prepare up front:
   (so **per NSX instance** — multiply if the fleet runs more than one): 3
   controller nodes + the **cluster VIP**.
 - **One DNS record per set — the cluster FQDN**, with **A + PTR**, resolving to
-  the **cluster VIP**. The **3 controller nodes and the VIP are IP-only**: the
-  workbook's Avi section asks for them as plain IP fields and nothing resolves
-  them by name, so don't ask the AD/DNS team for records that nothing consumes
-  (`01-network-dns-plan.md` DNS table, intake `E16`, and
+  the **cluster VIP**, and it must **exist before you start the deploy**. This
+  is not a preference: the wizard collects the **three node IPs** and then, under
+  *"Enter the VIP for cluster access"*, asks only for a **Cluster FQDN** and a
+  **Cluster Name** — **there is no field to type the VIP into**. The VIP is
+  taken from what the FQDN resolves to, so an absent A record has nowhere to be
+  fixed later in the flow (field-confirmed 2026-07-22). The **3 controller nodes
+  are IP-only**: the workbook's Avi section asks for them as plain IP fields and
+  nothing resolves them by name, so don't ask the AD/DNS team for records that
+  nothing consumes (`01-network-dns-plan.md` DNS table, intake `E16`, and
   [`workbook-cell-mapping.md`](workbook-cell-mapping.md) all say the same).
+- **A Cluster Name as well as the cluster FQDN** — a separate field, and the two
+  are not interchangeable. Decide both up front rather than inventing one at the
+  wizard.
 - **Controller size**: Small / Large / XLarge (the deploy wizard's tiers). Size
   it in `04-sizing.md` — note the workbook's Avi disk figures diverge from the
   NSX ALB controller ladder.
 - **Two strong passwords** (password manager, owners in intake `F11`): the
-  controller **admin** and the **VCF Ops admin** (break-glass) accounts.
+  controller **admin** and the **VCF Ops admin** accounts — the wizard asks for
+  **both, on the same screen**, so the VCF Operations admin credential has to be
+  to hand at Avi deploy time, not just the new Avi one. Avi's rule, verbatim
+  from the field tooltip: at least one lowercase, one uppercase, one digit, one
+  special character **`(!@#$%^&*()~)`** and **at least 15 characters**.
 - **Avi binaries in the depot** — 32.1.1 or higher must be available from the
   (online or offline) depot before VCF Operations can deploy the controller
   (see [`09-binary-depot.md`](09-binary-depot.md)).
@@ -202,6 +214,40 @@ Prepare up front:
   VIP/data network + IPAM profile; VPC: the VPC external IP blocks).
 - Firewall: admin access to the controller UI/API (443) and the Service
   Engine ↔ controller secure channel — see [`07-firewall-ports.md`](07-firewall-ports.md) §E.
+
+- **Where you deploy it from, and what "optional" means.** **VCF Operations →
+  Build → Lifecycle → VCF Instances → *your domain* → Manage Components**, where
+  **Avi Load Balancer** appears as a card beside **VCF Operations HCX**. That
+  page draws a distinction worth knowing at procurement time, verbatim:
+  *"**Optional components** are appliances that can be installed at domain to
+  help in leveraging specific use cases and/or goals and are **included in your
+  entitlement**. **Add-ons** are optional appliances that are **purchased and
+  managed in separate from the SDDC Manager**."* Avi is an **Optional
+  Component** — entitled and SDDC-Manager-managed, not a separate purchase.
+
+- **What the deploy wizard asks for.** Field-observed 2026-07-22 — four steps:
+
+  | Step | Fields |
+  | ---- | ------ |
+  | **1. Select version** | Version dropdown (e.g. `32.1.1`, ~3.8 GB) — shows the release date and **"Software bundle is downloaded and ready"**, i.e. it must already be in the depot |
+  | **2. Form Factor** | **Select Size** (Small / Large / XLarge) — then shows **Resource Availability**: the reservation needed against what the cluster actually has free |
+  | **3. Settings** | **Admin Password\***; **VCF Ops Admin Password\***; **Node 1 / 2 / 3 IP Address\*** (the three ALB controller cluster nodes); **Cluster FQDN**; **Cluster Name** — **no VIP field**, see the DNS bullet above |
+  | **4. Finish** | Review, then two notices worth reading (below) |
+
+  **Small** reserves **96 GB memory, 18 GHz CPU and 1,536 GB disk** across the
+  three-node cluster (≈32 GB / 6 GHz / 512 GB per node). Because step 2 shows
+  this **against live cluster availability**, it doubles as a capacity check —
+  but on a management cluster sized to the line, confirm the headroom in
+  `04-sizing.md` before you get there.
+
+> **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
+> *"This Avi Load Balancer will automatically be deployed and linked to other
+> workload domains sharing the same NSX manager associated with `<workload
+> domain>`."* This is the rule from the callout above, in the product's own
+> words — deploying "an Avi for this workload domain" silently serves **every**
+> workload domain on that NSX Manager. Also noted there: *"Service accounts will
+> be created with NSX Manager and vCenter Server as required"* — the deploy
+> provisions its own service accounts, so expect new principals in both.
 
 > Not the same thing as the **external load balancer for VCF Operations**
 > (see the Network table above and `05-day2-deployments.md` B.1) — that one is
@@ -232,9 +278,52 @@ without either does not need it.
 - **~9 IPs on one subnet, in two pools** — **installer 1**, **controller +
   worker nodes 4**, **License Hub services 4**. The **node and service pools
   cannot be modified after deployment**, so size them for scale-out up front.
+  Both pools are entered as **contiguous start–end ranges inside one subnet**
+  (see the deploy-wizard table below), so they need a **free, unbroken block** —
+  scattered spare addresses in an otherwise-used subnet will not do.
+- **Two FQDNs for the instance, on top of the installer's own — and they are
+  pinned to the service IP pool.** The installer appliance needs an FQDN
+  (below), and the **License Hub instance** it deploys asks for an **Instance
+  FQDN** (it errors *"Instance FQDN is required"*) and a **Messaging FQDN**.
+  Both take *"253 characters max, alphanumeric name with hyphens allowed"*.
+  Neither is a free-standing record — TechDocs is explicit about which address
+  each one resolves to:
+
+  | FQDN | Purpose | Maps to |
+  | ---- | ------- | ------- |
+  | **Instance FQDN** | *"the FQDN to use for accessing the License Hub instance from a browser or in an API call"* | *"the **first** IP address in the service IP pool"* |
+  | **Messaging FQDN** | *"used by the internal components of the License Hub instance"* | *"the **second** IP address in the service IP pool"* |
+
+  *"You must configure DNS with this mapping either before or after deploying
+  the instance"* — for both. So the **service pool's first two addresses are
+  spoken for**, and the DNS records cannot be written until the pool range is
+  fixed. Order the work that way: agree the subnet → fix the two pool ranges →
+  then request A + PTR for the first two service-pool addresses.
+
+> **Three things here cannot be changed after deployment — get them right the
+> first time.** TechDocs, verbatim: the **Instance Name** — *"This name cannot
+> be changed after deployment"* (and *"cannot contain uppercase letters or
+> special characters, and the length cannot exceed 32 characters"*); the
+> **Instance FQDN** — *"This FQDN cannot be changed after deployment"*; and the
+> **Storage Policy** — *"You cannot change the storage policy after
+> deployment"*. Add the **node and service IP pools**, immutable for the same
+> reason, and this appliance has an unusually long list of one-way doors for
+> something deployed Day-N. A rename or a re-IP means a redeploy.
+
+> **Encrypted storage policies are not supported — check this before you pick a
+> cluster.** TechDocs: *"VM encrypted storage policy is not supported"* and
+> *"You cannot use third-party encryption solutions."* A site whose management
+> cluster defaults to an encryption-enabled storage policy (or runs third-party
+> VM encryption) has to provide a non-encrypted policy for this instance —
+> and since the policy is also immutable, that is a deploy-time decision, not
+> something to fix afterwards.
 - **Three VMs, not one appliance** — an **installer**, a **controller** node and
   a **worker** node (it deploys as an SSP instance: one controller + one
-  worker). Footprint:
+  worker). **Instance Management** reports this back as a **Deployment Size** of
+  *"1 controllers, 1 workers"* — plural, because **controllers and workers are
+  the scale-out axis**, and they draw from the node pool. That is precisely why
+  the pools are immutable and have to be sized for growth up front: adding nodes
+  later means addresses have to already be sitting in the range. Footprint:
 
   | Component | vCPU | Memory (GB) | Storage (GB) |
   | --------- | ---- | ----------- | ------------ |
@@ -246,12 +335,46 @@ without either does not need it.
   120, where Endpoints could be a mix of NSX Manager, vDefend Security Services
   Platform, Avi Controller."* One instance covers all but the largest fleets.
 - **Connected or disconnected — decide with the depot decision (intake `G1`).**
-  **Connected** mode needs live connectivity to the **Avi Cloud Console**;
-  registration is automatic and licenses are polled **every 15 minutes**, and the
-  traffic is **two-way in purpose** — TechDocs: *"License usage report is
-  consolidated and provided to the Avi Cloud Console **every 24 hours**."*
-  **Disconnected** (air-gapped) mode uses file-based registration and a
-  **manual license file import every six months**.
+  The choice is made at **first login to the hub**, not at deploy time, and it
+  can be deferred: the *Get Started* screen offers **SKIP**, so a deployed hub
+  can sit unregistered. The product labels **connected mode "Recommended"**.
+
+  | | **Connected** | **Disconnected** |
+  | --- | --- | --- |
+  | Product wording | *"requires a stable internet connection to streamline the registration process, update licenses, and generate usage reports"* | *"does not require an Internet connection. You must manually download and transfer files for registration, update licenses, and generate usage reports"* |
+  | Registration | Log in with a **Broadcom account**; complete it in the Avi Cloud Console | Download a **registration file** → upload to the console → import the **activation file** back |
+  | Licences | Assign in the console; *"View assigned licenses"* in the hub | Generate an updated **licence file** in the console → import into the hub |
+  | Usage reporting | *"reported to Avi Cloud Console on a regular basis. Usage-based licensing will **automatically refresh**"* | Generate a report → upload to the console → **import the refreshed licence file**, or the licence lapses |
+
+  - **The endpoint is `portal.pulse.broadcom.com`** — the **Avi Cloud Console**.
+    It is **not** on Broadcom's Public URLs list, so a proxy allowlist built from
+    that page alone will miss it. In **disconnected** mode nothing in the data
+    centre needs it, but **an administrator's browser still does** — the file
+    exchange happens through that portal from wherever they sit.
+  - **A Broadcom customer account is a prerequisite, not a detail.** Connected
+    mode logs in with it; disconnected mode still needs someone able to sign
+    into the console to convert registration files into licences. Establish
+    **who holds that account** during planning — it is an entitlement question,
+    and it is not the same person as the vCenter administrator.
+  - **Connected mode has its own Proxy Server Setting**, offered right next to
+    *"Check your internet connection"*. So the hub does **not** have to inherit
+    the fleet proxy — but it does need to be pointed at one deliberately.
+  - **Endpoints are assigned licences in the hub's Endpoint Management** —
+    *"Assign licenses to **NSX Managers, Security Service Platform, and Avi
+    Controllers**"*. That names the three endpoint types behind the
+    **120-endpoint** scale figure above.
+
+> **Disconnected mode is a standing manual loop, and two of its steps are easy
+> to miss.** The file exchange is not one round trip: registration file →
+> activation file → **and then a licence still has to be generated**. The hub
+> warns in as many words: *"Don't forget to generate the license in Avi Cloud
+> Console after downloading the activation file."* Usage reporting is the same
+> shape in reverse — *"Generate a report periodically"*, upload it, *"to obtain
+> a refreshed license file"*, and import that *"for continued use"*. **Continued
+> use is the operative phrase**: in disconnected mode the licence does not
+> refresh itself, so this is a recurring, owner-assigned task, not a one-time
+> registration. That is the same commitment as the six-month import below, seen
+> from the console side.
 - **You download the software yourself — it is not in the VCF depot.** Verified
   2026-07-22. The **Broadcom Support Portal**, under **vDefend Security Services
   Platform** (5.1.2 at the time of writing), carries **two** files and you need
@@ -309,6 +432,200 @@ without either does not need it.
 > you log into the SSPI UI as `admin` and use **User Management**) rather than
 > failing in the wizard where you typed it.
 
+- **Uploading the License Hub package — there is a URL option.** Once the
+  installer is up, the `.tar` is loaded under **Package Management**, which
+  tracks packages as *in use* / *not in use* (a package stays **Not in use**
+  until an instance consumes it). The **Upload a License Hub Package** dialog:
+  *"The License Hub package is available for download from the Broadcom
+  Downloads site. Once downloaded, it can be uploaded directly to the platform
+  using the **local file** option or by providing the **locally hosted URL**."*
+  For a **~4.5 GB** file the URL path is the friendlier one — stage the `.tar`
+  on an internal web server and let the appliance pull it, instead of pushing it
+  through a browser session over a slow or long-haul link. In an air-gapped
+  enclave the file is usually already sitting on an internal host anyway.
+
+- **The vCenter connection needs the trusted root CA certificate — fetch it
+  first.** Field-verified 2026-07-22 against TechDocs. *Connect to vCenter* asks
+  for three things, and the third is the one that stops people:
+
+  | Field | TechDocs |
+  | ----- | -------- |
+  | **vCenter Server** | *"Enter the server FQDN or IP address."* |
+  | **Username** | *"Enter the VMware vCenter Admin user name, or the name of a user who has **administrator privileges**."* |
+  | **Certificate** | Paste the PEM **or** *"click **Browse Local Files** to select the certificate file"* |
+
+  There is **no thumbprint prompt and no "accept this certificate" button** —
+  the certificate has to be **in your hands before you open the dialog**.
+  TechDocs gives the retrieval route: *"From your browser, enter the VMware
+  vCenter's base URL (for example, `vcenter.domain.com`). Right-click **Download
+  trusted root CA certificates** at the bottom right"* — that link yields a
+  **ZIP** of the vCenter `TRUSTED_ROOTS` store, which you unpack to get the
+  certificate to paste. Add it to the jump-host prep: no certificate, no
+  connection, no deploy.
+
+  > **Which certificate from that ZIP — the docs do not say, and the wrong one
+  > fails.** *"Download trusted root CA certificates"* yields a store with
+  > **several** certificates, and the one the dialog wants is the **issuer of
+  > vCenter's machine SSL certificate** — the **machine intermediate/root**, not
+  > simply the first file in the archive. Where vCenter runs the default VMCA
+  > that is the VMCA root; where the machine certificate has been replaced by an
+  > enterprise or subordinate CA, it is **that** intermediate. Check what
+  > actually signed the machine certificate before pasting, rather than working
+  > through the ZIP by trial and error. Note also that **no least-privilege role is
+  documented** — TechDocs asks for an administrator, so treat this as a
+  privileged credential and record who holds it.
+
+> **The SSP Installer is welded to its vCenter — and that is why the backup
+> matters.** TechDocs, verbatim: *"Changing the vCenter Server's FQDN or IP
+> address after the deployment is not supported. If a change of the FQDN or IP
+> address is required, you must **deploy a new SSP Installer instance**, connect
+> to the new vCenter Server, and **restore your configuration from a Security
+> Services Platform backup**."* So the post-deploy "back up the SSP Installer"
+> step is not routine hygiene — it is the **only** migration path if the
+> management vCenter is ever renamed or re-addressed. A site with a vCenter
+> rename on its roadmap should know this before it deploys.
+
+> **Ten characters that must not appear in your vCenter object names.**
+> TechDocs, verbatim: *"While naming the VMware vCenter resources, such as data
+> center, cluster datastore, resource pool, storage policy, DVS name, or port
+> group name used by the SSP Installer, do not use the following 10 special
+> characters:"* `/` `,` `'` `=` `[` `]` `&` `%` `\` `"`. This is a constraint on
+> the **environment you already have**, not on anything you are about to name —
+> an existing datastore, storage policy or port group with a comma or an
+> apostrophe in its name is a problem to find **now**, while the fix is still a
+> rename rather than a redeploy.
+
+- **What the License Hub deploy wizard asks for.** Field-observed 2026-07-22
+  (SSP Installer `5.1.2`). *Deploy an Instance | License Hub* runs
+  **Configure → Pre-Checks → Deploy**, with Configure split into three steps:
+
+  | Step | Fields |
+  | ---- | ------ |
+  | **1. Define Instance and Required FQDN(s)** | **Version\*** (dropdown — the uploaded package; *"If no version is available, click Upload to upload a package"*); **Instance Name\*** (*"32 characters max, all lowercase, alphanumeric name with hyphens allowed"* — **immutable**); Deployment (fixed: `License Hub`); **Instance FQDN\*** (→ 1st service-pool IP, **immutable**); **Messaging FQDN** (→ 2nd service-pool IP); **User Passwords\*** (a **SET** sub-dialog — see the two-layer note below) |
+  | **2. Select vCenter Parameters** | **vCenter connection\*** (pick an existing one or **ADD NEW CONNECTION** — needs the **root CA certificate**, see above); **Data Center\***; **Cluster\***; **Storage Policy\*** (**immutable**; **no VM-encrypted policy**); **Content Library & VM Datastore\***; Resource Pool (**optional** — *"No selection creates a new pool by default"*); **Reserve Resource** (toggle, **Activated** by default — *"required for a production environment"*) |
+  | **3. Configure Connectivity Options** | **DVS\*** + **Port Group\*** (a **distributed** port group); **Subnet\*** (CIDR, e.g. `10.1.1.0/24`); **Default Gateway\***; **Node IP Pool\*** (range, e.g. `10.1.1.4-10.1.1.15`); **Service IP Pool\*** (range, e.g. `10.1.1.16-10.1.1.24`); **NTP Server(s)** (up to **5**, comma-separated, **IP or FQDN**); **DNS Server(s)** (up to **5**, comma-separated, **IP only**); **Search Domain** (one) |
+
+  - **It needs a distributed port group** — the wizard asks for a **DVS** and a
+    port group on it. A vSphere Standard Switch is not an option, which matters
+    if the licensing appliances were going to land on a management network that
+    is not on the vDS.
+  - **A content library datastore is required**, and the same picker covers the
+    VM datastore. The installer stages the instance through a content library,
+    so that datastore needs room beyond the running VMs' footprint.
+  - **Resource Pool is optional, but it creates one anyway**, and **Reserve
+    Resource is on by default and TechDocs calls it *"required for a production
+    environment"*** — so the instance lands with **reservations**, and turning
+    them off to squeeze it in is not a supported production shortcut. Check the
+    footprint against management-cluster admission-control headroom **before**
+    deploying.
+
+> **Two different DNS limits, and two different password rules — one product,
+> two layers.** The **installer OVA** takes at most **3 DNS servers** (extras
+> silently ignored) and enforces the strict min-12 rule above. The **deployed
+> instance** takes up to **5 DNS servers** and enforces a *different, simpler*
+> password rule, verbatim: *"At least 15 characters in length, and no more than
+> 128 characters… At least 1 lowercase, 1 uppercase, 1 numeric character and 1
+> special character"* — **no** dictionary / palindrome / monotonic-run checks,
+> but a **higher minimum**. The practical consequence: **a password that passes
+> the OVA can still be rejected by the instance wizard.** Users seen in that
+> dialog: `admin`, `audit` (it scrolls — there may be more). Pick one password
+> pattern of **15+ characters** that satisfies the strict OVA rules, and it
+> clears both layers.
+>
+> **TechDocs and the product disagree on the instance minimum — believe the
+> product.** The deploy-configuration page states *"Minimum length: 12"*, while
+> the shipping `5.1.2` dialog states *"At least 15 characters in length"*
+> (field-observed 2026-07-22). A 12–14 character password planned from the
+> documentation will be **rejected at the wizard**. The 15+ pattern above is
+> the safe answer either way, which is why it is written that way here.
+
+- **The Pre-Checks tab is the product's own pre-flight list — read it as your
+  checklist.** Field-observed 2026-07-22: **9 pre-checks**, all re-runnable from
+  a **RERUN PRE-CHECK** button, so a failure is fixed and retried in place
+  rather than by restarting the wizard.
+
+  | Pre-check | What it reported |
+  | --------- | ---------------- |
+  | Check SSPI basic infra | *"SSPI infra is healthy and Licensing validations passed"* |
+  | Check vCenter | *"Verified vCenter access, cluster, datacenter, datastore, portgroup, **CPU and memory**"* |
+  | Check compatibility | *"Complete Licensing compatibility check."* |
+  | Check content library datastore | *"Datastore check appears to be satisfactory."* |
+  | Check Storage Policy | *"The storage policy '…' appears to be satisfactory."* |
+  | Check network configuration | *"The network configuration appears to be satisfactory."* |
+  | Check fqdn domain | *"Domain check appears to be satisfactory."* |
+  | Check NTP configuration | *"NTP check completed successfully."* |
+  | Check network reachability | *"Verified **NodePool IP** network reachability."* |
+
+  Worth noting what that list implies: **cluster CPU and memory are validated**
+  (so the reservation footprint is checked, not just accepted), and both the
+  **FQDN/domain** and the **node-pool IPs** are tested before anything is built.
+  TechDocs permits the DNS records *"either before or after deploying the
+  instance"* — but with a domain pre-check in the way, having DNS in place
+  **first** is the path of least resistance.
+
+- **What the deploy itself does — 4 steps, ~28 tasks.** Once started:
+  **vCenter Configuration** (6 tasks — it begins by **creating a content
+  library**, which is what that datastore is for), **Workload Cluster** (**18
+  tasks** — the bulk of the run; the instance comes up as a cluster, which is
+  why it is controller + worker rather than one appliance), **Security
+  Platform** (3) and **Metrics** (1). TechDocs gives **no expected duration**.
+
+- **If it fails mid-run, there are three controls and they do different
+  things.** Verbatim:
+
+  | Control | What it does |
+  | ------- | ------------ |
+  | **Stop Deployment** | *"Halts the ongoing deployment so that you can fix the error. **This action does not undo any previous deployments.**"* |
+  | **Update & Redeploy** | *"Start the ongoing deployment after resolving an error. **The deployment starts from the point it was stopped.**"* |
+  | **Cleanup** | *"Removes all the previous deployment tasks."* |
+
+  So the normal recovery is **Stop → fix → Update & Redeploy**, which *resumes*
+  rather than restarting — **Cleanup** is the heavier option that discards the
+  work so far. Stopping alone leaves everything already built in place.
+
+> **A vCenter outage mid-deploy is the bad failure — and the escape hatch is
+> ugly.** TechDocs, verbatim: *"If the deployment fails because VMware vCenter
+> becomes unavailable during the deployment, and you navigate to the Configure
+> screen, the option to reset the configurations might not be available. This is
+> expected behavior because some resources have been created on the VMware
+> vCenter server. To resolve the issue, clean up the deployment before resetting
+> the configurations. **If the VMware vCenter server is not recoverable,
+> uninstall SSP Installer and deploy a new one.**"* Two practical consequences:
+> **Cleanup before reset**, in that order — and don't run this deploy during a
+> window when vCenter is being patched or restarted.
+
+- **The completion banner hands you the DNS request.** On success the installer
+  names the instance and both endpoints, and says to *"Share the Instance
+  FQDN/IP … and Messaging FQDN/IP … with your DNS administrator. Proper backup
+  of this security service platform installer is crucial to restore the Service
+  Platform Instances and Services to their working state in the event of a
+  failure."* Three things this settles: the **Messaging FQDN is real and gets
+  its own address** (not an optional extra); its IP is the one **immediately
+  after** the instance IP, matching the TechDocs first/second service-pool rule;
+  and DNS **can** legitimately be created after the deploy — the product hands
+  you the two mappings to pass on. Creating them beforehand still avoids the
+  domain pre-check being the thing that discovers a missing record.
+
+- **After it completes.** Wait for the instance to report **Healthy** (if it
+  does not, TechDocs points at **Troubleshooting Diagnostic**), click **Done**,
+  then reach the hub through the **Instance FQDN & IP** link and log in *"using
+  the credentials you specified in the Configure step"* — the `admin` / `audit`
+  passwords from the SET dialog, so they need to be recorded at planning time,
+  not invented at the wizard. **Back up the SSP Installer** at this point;
+  TechDocs raises it as a step here rather than leaving it to a backup policy.
+  **Instance Management** is where you *"edit configurations, reset passwords,
+  or delete the instance"* afterwards — note **delete**, which is the only
+  answer to the immutable fields above.
+
+> **NSX firewall exclusion list — the licensing appliance can be blocked by the
+> product it licenses.** TechDocs, verbatim: *"If the License Hub VMs are
+> running in an NSX overlay network, NSX VLAN segments, and security-enabled
+> port groups, add the License Hub VMs to a firewall exclusion list."* The
+> documentation **does not say why**. Since License Hub exists to license
+> **vDefend**, and vDefend is the distributed firewall doing the blocking, this
+> is worth raising with whoever owns DFW policy **before** the deploy — see
+> [`07-firewall-ports.md`](07-firewall-ports.md).
+
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in
 > [`09-binary-depot.md`](09-binary-depot.md) — someone must carry a fresh
@@ -319,7 +636,10 @@ TechDocs:
 [License Hub for vDefend and Avi](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/security-modernization/vdefend-lateral-security/security-services-platform-for-vmware-cloud-foundation/license-hub-for-vdefend-and-avi/license-hub-for-vmware-vdefend-and-vmware-avi-load-balancer.html)
 (the VCF 9.1 design blueprint — sizing, endpoint scale, modes) ·
 [Deploying License Hub](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/deploying-license-hub.html)
-(SSP 5.1 — the deploy procedure).
+(SSP 5.1 — the deploy procedure) ·
+[Configure a License Hub Deployment](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/deploying-license-hub/steps-to-deploy-a-license-hub-instance/configure-a-license-hub-deployment.html)
+(the field-by-field reference for the wizard above — FQDN-to-pool mapping, the
+immutable fields, the storage-policy restriction).
 
 ## vSphere Supervisor (only if in scope)
 
@@ -742,6 +1062,7 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 | `vcf.broadcom.com`              | Licensing                                      | VCF Operations                                                     |
 | `auth.esp.vmware.com`           | Update Manager Download Service (UMDS)         | SDDC Manager, VCF Download Tool                                    |
 | `api.prod.nsxti.vmware.com`     | IDS/IPS advanced threat prevention (VMware vDefend) — **only if vDefend IDS/IPS is enabled; not part of the VCF SKU** | NSX Manager |
+| `portal.pulse.broadcom.com`     | **Avi Cloud Console** — License Hub registration, license assignment and usage reporting. **Only if vDefend or Avi is in scope, and only in connected mode.** Not on the Broadcom Public URLs list | License Hub (**connected** mode); an admin browser in **disconnected** mode |
 
 > **Proxying these? The proxy must be reachable from the whole
 > services-runtime node block, not just the depot/Ops IPs.** Allowlisting these

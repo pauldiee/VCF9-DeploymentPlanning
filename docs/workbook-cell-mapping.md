@@ -233,7 +233,7 @@ before wiring a generator.
 | F10    | Backups                  | Backup encryption passphrase             |
 | B18    | Backups                  | SFTP host / port / account / path        |
 | E16    | AVI Load Balancer {SDDC} | Version / Edge Cluster form factor / Admin Password / Node 1–3 IP Address / Cluster VIP / Cluster FQDN / Cluster Name — **only the Cluster FQDN needs DNS** (nodes + VIP are IP-only fields). The section holds **one** controller set; a fleet with more than one **NSX instance** needs a set each (`prerequisites.md` → Avi Load Balancer) and the workbook has nowhere to put the second — capture it in the Step 1 plan |
-| E17    | —                        | — (**no workbook fields**: License Hub is deployed from the **SSP Installer**, outside the P&P workbook's scope — capture its ~9 IPs + connected/disconnected mode in the Step 1 plan / intake instead) |
+| E17    | —                        | — (**no workbook fields**: License Hub is deployed from the **SSP Installer**, outside the P&P workbook's scope — capture its ~9 IPs (two contiguous pools), its **3 FQDNs** (installer + instance + messaging) and the connected/disconnected mode in the Step 1 plan / intake instead) |
 
 ## Sheet: Deploy Workload Domain
 

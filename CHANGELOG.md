@@ -1,5 +1,182 @@
 # Changelog
 
+## v2.4.7 — 2026-07-22
+- **The Avi cluster FQDN must resolve BEFORE the deploy** (#209). The wizard
+  takes the three node IPs and then, under *"Enter the VIP for cluster access"*,
+  asks only for a **Cluster FQDN** and a **Cluster Name** — **there is no field
+  to type the VIP into**. It reads the VIP from DNS. The docs had the right
+  count (4 IPs) but implied you enter the VIP; ordering is now explicit in
+  `prerequisites.md`, `01-network-dns-plan.md` and intake `E16`. Field-confirmed.
+- **A Cluster Name is a separate input from the cluster FQDN** (#209) — decide
+  both up front instead of inventing one at the wizard.
+- **The Avi deploy asks for the VCF Ops admin password too** (#209), on the same
+  screen as the new controller `admin`. Avi's own rule, from the tooltip: min
+  **15** characters with specials **`(!@#$%^&*()~)`** — recorded rather than
+  inferred from the cross-component set.
+- **Where Avi is deployed from, and what "optional" means** (#209): **VCF
+  Operations → Build → Lifecycle → VCF Instances → *domain* → Manage
+  Components**. Verbatim: *"Optional components … are **included in your
+  entitlement**. Add-ons are optional appliances that are **purchased and
+  managed in separate from the SDDC Manager**."* Avi is an Optional Component —
+  entitled, not a separate purchase.
+- **The wizard states the per-NSX-instance rule itself** (#209/#174): *"This Avi
+  Load Balancer will automatically be deployed and linked to other workload
+  domains sharing the same NSX manager associated with `<WLD>`."* The docs
+  asserted this; it is now quotable from the product. The deploy also *"will
+  create service accounts with NSX Manager and vCenter Server as required"*.
+- **Real Small-tier figures** (#209): **96 GB memory, 18 GHz CPU, 1,536 GB
+  disk** reserved across the three-node cluster, shown against live cluster
+  availability — the Form Factor step doubles as a capacity check.
+- **Avi is depot-fed, unlike License Hub** (#209/#205): *"Software bundle is
+  downloaded and ready"* (`32.1.1`, ~3.8 GB). Avi cannot be deployed until the
+  depot has synced it — the opposite of the SSP/License Hub manual download.
+
+## v2.4.6 — 2026-07-22
+- **The Avi Cloud Console endpoint is `portal.pulse.broadcom.com`** (#178).
+  Open since the License Hub work began, because the design blueprint named the
+  console but never the endpoint and it was not worth inventing. Observed in the
+  registration flow. Added to **both** places #178 called out: the Public URLs
+  table in `prerequisites.md` and section A.1 of `07-firewall-ports.md`,
+  outbound **443**, gated on **vDefend or Avi in scope** and **connected mode**.
+- **It is not on Broadcom's Public URLs list** (#178). A proxy allowlist built
+  from that TechDocs page alone will miss it — which is precisely how a
+  connected-mode hub fails to register on a proxied site.
+- **Disconnected mode still needs the portal — from a browser** (#178). Nothing
+  in the data centre reaches it, but an administrator must sign in to convert
+  registration files into licences. Air-gapped does not mean nobody talks to
+  Broadcom.
+- **License Hub has its own Proxy Server Setting** (#178). It does not inherit
+  the fleet proxy; it has to be pointed at one deliberately. This was #178's
+  second open question.
+- **A Broadcom customer account is a prerequisite in BOTH modes** (#178/#207) —
+  connected logs in with it, disconnected needs someone able to sign into the
+  console. An entitlement question, and not the vCenter administrator. Now an
+  intake item.
+- **The mode is chosen at first login and can be skipped** (#207) — a deployed
+  hub can sit unregistered; the product marks **connected** as *Recommended*.
+- **Disconnected mode is a standing loop, not a one-time import** (#207). The
+  exchange is registration file → activation file → **and a licence still has to
+  be generated** (*"Don't forget to generate the license in Avi Cloud Console
+  after downloading the activation file"*). Usage reporting reverses it: generate
+  a report, upload, import the refreshed licence *"for continued use"*.
+- **Endpoint Management names the three endpoint types** (#207): *"NSX Managers,
+  Security Service Platform, and Avi Controllers"* — the mix behind the
+  120-endpoint scale figure.
+
+## v2.4.5 — 2026-07-22
+- **The License Hub deploy wizard, end to end** (#207). Field-observed on SSP
+  Installer `5.1.2`. New table in `prerequisites.md` covering all three Configure
+  steps — *Define Instance and Required FQDN(s)*, *Select vCenter Parameters*,
+  *Configure Connectivity Options* — plus the `Configure → Pre-Checks → Deploy`
+  flow. Nothing described the inputs beyond the installer OVA before.
+- **Three FQDNs, not one — Step 1 budgeted a third of what is needed** (#207).
+  The instance adds an **Instance FQDN** (required — *"Instance FQDN is
+  required"*) and a **Messaging FQDN** on top of the installer's own.
+  `01-network-dns-plan.md` now says **~9 IPs + 3 FQDNs**, and `ip-dns-plan.csv`
+  gains four rows (both instance FQDNs and both IP pools).
+- **The two instance FQDNs are pinned to the service IP pool** (#207). TechDocs:
+  the Instance FQDN *"must map to the first IP address in the service IP pool"*
+  and the Messaging FQDN *"to the second"*. They are not free-standing records —
+  **the pool range has to be settled before the DNS records can be requested**,
+  which reverses the usual "ask for the names early" order. The service pool's
+  first two addresses are therefore already spoken for.
+- **An unusual number of one-way doors** (#207). **Instance Name**, **Instance
+  FQDN**, **storage policy** and both **IP pools** are all immutable after
+  deployment; a rename or re-IP means a redeploy. Called out together in
+  `prerequisites.md` rather than left scattered across field descriptions.
+- **Encrypted storage policies are not supported** (#207). TechDocs: *"VM
+  encrypted storage policy is not supported"* and *"You cannot use third-party
+  encryption solutions."* Combined with the policy being immutable, a site whose
+  management cluster defaults to encryption has a deploy-time decision to make.
+- **TechDocs and the product disagree on the instance password minimum** (#207).
+  The documentation says *"Minimum length: 12"*; the shipping `5.1.2` dialog
+  says *"At least 15 characters in length"*. A 12–14 character password planned
+  from the docs is **rejected at the wizard** — the docs here follow the
+  product.
+- **A password that passes the OVA can still be rejected by the instance**
+  (#207). Two layers, two rules: the **OVA** enforces **min 12** with no
+  dictionary words / palindromes / monotonic runs, the **instance wizard**
+  enforces **15–128** with none of those extras. `02-intake.md`'s password table
+  now carries both rows instead of one. The same split applies to **DNS
+  servers** — **3** at the OVA, **5** at the instance.
+- **The IP pools are contiguous ranges, not a count** (#207). Both are entered
+  as start–end inside one subnet, so an unbroken block has to be free — the
+  earlier "~9 IPs" phrasing let you plan scattered spares that will not work.
+- **Three deploy-time constraints worth knowing before the wizard** (#207): it
+  requires a **distributed** port group (no standard switch), a **content
+  library datastore**, and it **reserves resources by default** — TechDocs calls
+  the reservation *"required for a production environment"*, so check the
+  footprint against management-cluster admission-control headroom rather than
+  planning to switch it off.
+- **The vCenter connection needs the root CA certificate in hand** (#207).
+  *Connect to vCenter* takes FQDN/IP, an **administrator** credential, and the
+  **certificate** — pasted as PEM or via **Browse Local Files**. There is **no
+  thumbprint prompt and no accept-this-certificate button**, so it must be
+  fetched first: the vCenter base URL → *"Download trusted root CA
+  certificates"* → unpack the ZIP. Now a jump-host prep item; nothing in the
+  docs mentioned it. No least-privilege role is documented — TechDocs asks for
+  an administrator.
+- **Which certificate from the vCenter ZIP — the docs never say** (#207). The
+  trusted-root archive holds several; the dialog wants the **issuer of
+  vCenter's machine SSL certificate** (the machine intermediate/root) — the
+  VMCA root on a default vCenter, or the enterprise/subordinate CA where the
+  machine certificate has been replaced. Picking the wrong file fails the
+  connection, so check what signed the machine certificate first.
+- **The completion banner is the DNS hand-off** (#207). It names both endpoints
+  and says to share the Instance and Messaging FQDN/IP *"with your DNS
+  administrator"*, confirming the **Messaging FQDN is real, gets its own
+  address, and sits immediately after the instance IP** — the TechDocs
+  first/second service-pool rule, observed. It also confirms DNS may legitimately
+  follow the deploy.
+- **The SSP Installer is welded to its vCenter** (#207). *"Changing the vCenter
+  Server's FQDN or IP address after the deployment is not supported"* — the
+  remedy is a **new SSP Installer instance restored from a backup**. That makes
+  the post-deploy "back up the SSP Installer" step the only migration path for a
+  vCenter rename or re-address, not routine hygiene.
+- **Ten characters banned from vCenter object names** (#207): `/ , ' = [ ] & %
+  \ "` must not appear in the data center, cluster, datastore, resource pool,
+  storage policy, DVS or port group the SSP Installer uses. A constraint on the
+  **existing** environment — worth checking while the fix is still a rename.
+- **The 9 pre-checks, as a pre-flight checklist** (#207). Field-observed, all
+  re-runnable via **RERUN PRE-CHECK** so a failure is fixed in place. They
+  validate **cluster CPU and memory**, the content-library datastore, the
+  storage policy, network configuration, **FQDN/domain**, NTP and **node-pool IP
+  reachability** — a useful statement of what has to be true before the deploy
+  starts. The domain pre-check is also why DNS is easier created **before** the
+  deploy, even though TechDocs allows either order.
+- **What the deploy run looks like** (#207): 4 steps, ~28 tasks — vCenter
+  Configuration (6, starting with **creating a content library**), **Workload
+  Cluster (18)**, Security Platform (3), Metrics (1). TechDocs states no
+  expected duration.
+- **License Hub needs an NSX DFW *exclusion*, not a port** (#207). TechDocs:
+  *"If the License Hub VMs are running in an NSX overlay network, NSX VLAN
+  segments, and security-enabled port groups, add the License Hub VMs to a
+  firewall exclusion list."* No reason given. Added to `07-firewall-ports.md` —
+  the one entry there that is a **policy carve-out** rather than a flow, and it
+  belongs to the **vDefend DFW** owner, not the perimeter firewall team. The
+  appliance that licenses vDefend being filtered by vDefend is a poor thing to
+  discover after the fact.
+- **Failure recovery is three different buttons** (#207). **Stop Deployment**
+  *"does not undo any previous deployments"*; **Update & Redeploy** *"starts
+  from the point it was stopped"* (resume, not restart); **Cleanup** *"removes
+  all the previous deployment tasks"*. Normal path is Stop → fix → Update &
+  Redeploy. Corrects the previous entry, which described Cleanup loosely as the
+  unwind for any failed run.
+- **A vCenter outage mid-deploy is the expensive failure** (#207). TechDocs:
+  resources already exist, so reset may be unavailable — *"clean up the
+  deployment before resetting the configurations"*, and *"If the VMware vCenter
+  server is not recoverable, uninstall SSP Installer and deploy a new one."*
+  Don't run this deploy in a window where vCenter may be patched or restarted.
+- **Post-deploy steps, including a backup** (#207): wait for **Healthy**
+  (Troubleshooting Diagnostic if not), **Done**, then in via the **Instance FQDN
+  & IP** link with the Configure-step credentials — and **back up the SSP
+  Installer**, which TechDocs raises as a step at this point.
+- **The 4.5 GB package can be pulled by URL** (#207). *Upload a License Hub
+  Package* accepts a **locally hosted URL** as well as a browser upload — the
+  better path over a slow link or where the file already sits on an internal
+  host. Recorded in `prerequisites.md` along with Package Management's
+  in-use / not-in-use tracking.
+
 ## v2.4.4 — 2026-07-22
 - **What the SSP Installer OVA actually asks for** (#206). Nothing described the
   deploy inputs. New table in `prerequisites.md`: GRUB root password + menu
