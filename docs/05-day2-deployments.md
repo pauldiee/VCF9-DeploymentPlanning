@@ -173,6 +173,19 @@ CA-signed certificate carrying that name comes for free.
 > Finish: this sits on the VCF Management side, where there is **no reveal API**
 > to fall back on (see section F).
 
+> **If *Activate Network & Flow Collection* is greyed out, restart your browser
+> before anything else.** Field-observed 2026-07-22. After a successful deploy,
+> **Network Operations → Network & Flow** can still show the checkbox disabled
+> with *"VCF Operations for networks Appliance is required."* — a **stale
+> client-side capability flag**, not a missing appliance. A browser restart
+> enabled it immediately, with no fleet-side action. The message invites exactly
+> the wrong conclusion (that the deployment failed) and the obvious "fix" is a
+> second appliance you then have to clean up. Order of checks: confirm the
+> appliance is listed under **Build → Lifecycle → VCF Management → Components**
+> (the deployment task may sit under **SDDC lifecycle**, not Fleet lifecycle —
+> see section D); then **restart the browser / re-login**; only then is there a
+> real problem to investigate.
+
 ---
 
 ## C. Network placement — the options
