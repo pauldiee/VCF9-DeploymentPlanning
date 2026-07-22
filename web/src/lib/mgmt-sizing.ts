@@ -110,6 +110,7 @@ export const OPTIONS = {
   sspSize: ['Excluded', 'Medium', 'Large', 'X-Large'] as const,
   opsNetSize: ['Excluded', 'Small', 'Medium', 'Large'] as const,
   logsSize: ['Exclude', 'Small', 'Medium', 'Large'] as const,
+  vcfAutomationSize: ['Small', 'Medium', 'Large'] as const,
   nsxModel: ['Shared', 'Dedicated - Single Node', 'Dedicated - HA Cluster'] as const,
   gm: ['None', 'Active GM', 'Standby GM'] as const,
   clusterType: ['Standard', 'Stretched (multi-AZ)'] as const,
@@ -127,6 +128,15 @@ export function logsSizeOptions(deploymentSize: string): string[] {
 }
 export function logsReplicaMin(logsSize: string): number {
   return logsSize === 'Large' ? 6 : logsSize === 'Medium' ? 3 : 1;
+}
+
+// VCF Automation's SIZE selects its deployment model — they are not independent
+// axes. TechDocs "VCF Automation Models": Simple is "Single node. Applies to
+// small appliance size"; High Availability is "Three node cluster. Applies to
+// medium or large node sizes." So Small = 1 node, Medium/Large = 3 (#193, #196).
+// This is Automation's own size, NOT the fleet deployment size or model.
+export function vcfAutomationNodes(vcfAutomationSize: string): number {
+  return vcfAutomationSize === 'Small' ? 1 : 3;
 }
 
 export interface WorkloadDomain {
@@ -168,6 +178,9 @@ export interface SizingState {
   vcfOps: boolean;
   vcfOpsCollector: boolean;
   vcfAutomation: boolean;
+  // Automation's OWN size — independent of deploymentSize, and it also decides
+  // the node count (see vcfAutomationNodes).
+  vcfAutomationSize: string;
   opsNetSize: string;
   logsSize: string; // Log Management: 'Exclude' or Small/Medium/Large
   logsReplicas: number; // Log Management replica count
@@ -199,8 +212,14 @@ export function defaultState(): SizingState {
     aviSize: 'Excluded',
     sspSize: 'Excluded',
     vcfOps: true, // normally deployed in a greenfield fleet; exclude only if reusing an instance
-    vcfOpsCollector: false,
+    // The VCF Installer deploys a unified cloud proxy automatically at bring-up,
+    // alongside the License Server — so on a NEW first instance it is present
+    // whether or not anyone ticks it, hence the default. It stays a checkbox
+    // deliberately: an upgrade / existing-fleet sizing may already account for
+    // the proxy, and Day-N *additional* collectors are extra on top of it (#198).
+    vcfOpsCollector: true,
     vcfAutomation: false,
+    vcfAutomationSize: 'Medium',
     opsNetSize: 'Excluded',
     logsSize: 'Exclude',
     logsReplicas: 3,
@@ -379,15 +398,17 @@ export function components(s: SizingState): Component[] {
     list.push({ name: 'License Server', nodes: 1, cpu: 2, ram: 4, disk: 12 });
   }
 
-  // VCF Automation
+  // VCF Automation. Sized on its OWN size, not the fleet deployment size or
+  // model — and that size decides the node count (#193, #196).
   if (s.vcfAutomation) {
-    const nodes = ha ? 3 : 1;
+    const vcfaSize = s.vcfAutomationSize;
+    const nodes = vcfAutomationNodes(vcfaSize);
     list.push({
       name: 'VCF Automation',
       nodes,
-      cpu: vcfaCpu[size] * nodes,
-      ram: vcfaRam[size] * nodes,
-      disk: vcfaDisk[size] * nodes,
+      cpu: vcfaCpu[vcfaSize] * nodes,
+      ram: vcfaRam[vcfaSize] * nodes,
+      disk: vcfaDisk[vcfaSize] * nodes,
     });
   }
 

@@ -56,7 +56,7 @@ network placement from section C.
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | Appliance mode: a **three-node cluster** ([TechDocs deployment modes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/deployment-models-for-sso.html)) | **Additional instance only** — the first broker arrives **at bring-up** with the VCF Management Services (no opt-in; FQDN + services-runtime IP asked by the Installer). A Day-N **appliance-mode** broker is deployed via VCF Operations fleet management, e.g. to serve **up to five VCF instances** from one broker or to create a separate SSO boundary. Day-N work on the bring-up broker itself is configuration: identity provider (AD/LDAP), user/group provisioning |
 | **Log Management** (formerly *VCF Operations for Logs* — renamed in 9.1) | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them |
-| **VCF Operations for Networks**| Platform node + Collector node                                | Optional dual-stack (IPv4 / IPv6)                             |
+| **VCF Operations for Networks**| Platform node + Collector node                                | **IP-only — the wizard has no FQDN field** (see B.2). Optional dual-stack (IPv4 / IPv6). One generated password covers three accounts and is **shown once** |
 
 ### B.1 — VCF Operations load balancer is **external, never served by VCF**
 
@@ -93,6 +93,38 @@ request certificates (the SAN list depends on it).
 > external. Nor is it the platform's own **Avi/NSX ALB**, which VCF *can* deploy
 > and lifecycle-manage for **tenant / workload** load balancing — that is a
 > different service from the LB that fronts VCF Operations itself.
+
+### B.2 — VCF Operations for Networks: IP-only, and a one-shot password
+
+Field-observed 2026-07-22, and consistent with TechDocs [Deploy VCF Operations
+for Networks](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/installing-vcf-networks.html).
+
+**There are no FQDN fields.** The *Add VCF Operations for Networks* wizard runs
+Add Options → Parameters → Summary, and the **Parameters** page asks only for a
+**Password**, the **Platform Node IP address** (*"Enter the static IPv4 address
+for the platform node"*), the **Collector Node IP address**, and an optional
+**Dual Stack** toggle that *"turns on IPv4 and IPv6 networking for the VCF
+Operations for networks nodes"*. **DNS, FQDN and hostname are not mentioned
+anywhere on that TechDocs page** — matching intake `E14`, which already records
+these two as needing **IPs only**.
+
+So **DNS records are not required** and nothing in the deploy consumes them.
+**Create A + PTR for both nodes anyway** — runbooks and bookmarks that survive an
+IP change, firewall / proxy rules expressed by name, sensible identification in
+logs and support bundles, and consistency with every other appliance in the Step
+1 plan. Two limits worth stating plainly: an A record does **not** make the
+appliance use that name for anything, and whether Ops for Networks participates
+in **fleet certificate management is not established** — so do not assume a
+CA-signed certificate carrying that name comes for free.
+
+> **The generated password is shown once and cannot be recovered.** The
+> Parameters page says *"Save password to secure place. You won't be able to see
+> it again after the deployment"*, and TechDocs adds that it *"is used for the
+> **console-user**, **support**, and **admin@local** accounts"* — **one secret,
+> three accounts**. `COPY TO CLIPBOARD` and `RE-GENERATE` are the only
+> affordances on that screen. Put it in the credential store **before** you click
+> Finish: this sits on the VCF Management side, where there is **no reveal API**
+> to fall back on (see section F).
 
 ---
 

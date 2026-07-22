@@ -129,6 +129,12 @@ against Broadcom TechDocs (issue #16). Results:
 - **VCF Operations / Automation / VCFMS / Cloud Proxy / Ops-for-Networks** come
   from the workbook's own reference tables; no external per-size Broadcom table
   was available to cross-check — validate against the workbook itself.
+- **VCF Automation is sized on its own size, not the deployment profile.** It has
+  a separate **Small / Medium / Large** selector in the tool, and that size also
+  fixes the node count — **Small = 1 node** (Simple model), **Medium / Large = 3
+  nodes** (High Availability). Size and model are **not** independent choices
+  (#193). The fleet's deployment model / size does not drive Automation at all,
+  so a Large fleet can run a single-node Automation and vice versa.
 
 ## Source
 

@@ -1,5 +1,55 @@
 # Changelog
 
+## v2.3.9 — 2026-07-22
+- **The sizer left the bring-up Cloud Proxy out by default** (#198). It was an
+  opt-in checkbox defaulting to **off**, while the **License Server — deployed by
+  the same bring-up** — was counted automatically. So a default first-instance
+  greenfield sizing silently omitted an appliance that will certainly exist, the
+  same class of under-count as #176/#177. `vcfOpsCollector` now defaults to
+  **on**, with a comment and a hint on the control noting that the Installer
+  deploys a unified cloud proxy automatically and that Day-N *additional*
+  collectors come on top of it. Existing saved sizings keep whatever they stored.
+  It stays a **checkbox on purpose** — an upgrade or existing-fleet sizing may
+  already account for the proxy, so the control has to remain untickable rather
+  than becoming an automatic row like the License Server.
+- **VCF Operations for Networks deploys IP-only — there is no FQDN field**
+  (#197). Field-observed and confirmed against TechDocs *Deploy VCF Operations
+  for Networks*, whose Parameters page asks only for a password, the **platform
+  node IP**, the **collector node IP** and an optional **Dual Stack** toggle —
+  **DNS, FQDN and hostname are not mentioned anywhere on it**. Intake `E14`
+  already said as much; the planning template and the Day-2 doc had never caught
+  up. New `05-day2-deployments.md` **B.2**: records are **not required**, create
+  A + PTR anyway for runbooks / firewall rules / log identification, and two
+  limits stated plainly — an A record does not make the appliance use that name,
+  and Ops for Networks' participation in **fleet certificate management is not
+  established**, so no CA-signed cert with that name is promised.
+- **Its generated password is shown once and covers three accounts** (#197).
+  *"Save password to secure place. You won't be able to see it again after the
+  deployment"* — and per TechDocs it is used for **`console-user`, `support` and
+  `admin@local`**. Capture it **before** clicking Finish; this is the VCF
+  Management side, where there is no reveal API to fall back on.
+- **`ip-dns-plan.csv` gains the two missing rows** (#197) — platform node and
+  collector node, marked **Day-N (if in scope)** so it is clear they are **not
+  needed at bring-up**, with the IP-only / FQDN-optional caveat in the
+  description. `01-network-dns-plan.md`'s IP-count row now says the same, so
+  nobody plans A/PTR as mandatory.
+
+## v2.3.8 — 2026-07-22
+- **The sizer had no VCF Automation size** (#196). #193 fixed the
+  deployment-plan tool but never touched the sizer, which modelled Automation as
+  a bare checkbox: it inherited the **fleet** `deploymentSize` and took its node
+  count from the **fleet** `deploymentModel`. That produced configurations which
+  cannot exist — *Small + High Availability* gave a **3-node Small** (Small is
+  1 node), *Medium + Simple* gave a **1-node Medium** (Medium is 3 nodes) — and
+  it could not express the ordinary case of a Medium/Large fleet running a
+  single-node Automation. VCF Automation now has its **own Small / Medium /
+  Large selector**, shown when it is included, with the node count derived from
+  it via the new `vcfAutomationNodes()` (**Small → 1**, **Medium/Large → 3**).
+  The fleet model/size no longer feed the Automation row at all. Saved sizings
+  missing the new field fall back to the default rather than erroring.
+- **`docs/04-sizing.md`** states the coupling alongside the other component
+  caveats, so the sizer's behaviour is explained where the figures are sourced.
+
 ## v2.3.7 — 2026-07-22
 - **A `$` in the VCF Automation deploy password is silently eaten** (#195,
   follow-up to #192). Field-verified — it cost most of a day. William Lam's
