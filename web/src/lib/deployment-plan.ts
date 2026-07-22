@@ -645,10 +645,10 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
         id: `9.${stories.length + 1}`,
         title: 'Avi Load Balancer for Supervisor',
         tasks: [
-          `Deploy the Avi controller cluster into THIS workload domain via VCF Operations (lifecycle-managed; Avi 32.1.1+ binaries must be available from the depot). Controller IPs/FQDN/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11; create a local content library in the WLD vCenter for the Service Engine images. TechDocs: ${AVI_LB_URL}`,
-          `Integrate Avi with the WLD networking: ${cloudText}. Plan a minimum of 2 Service Engines for HA. All of this must be in place before Supervisor activation.`,
+          `Deploy the Avi controller cluster IN THE MANAGEMENT DOMAIN via VCF Operations, launched from THIS workload domain's Manage Components page (Build → Lifecycle → VCF Instances → domain) so it is associated with this WLD's NSX instance (lifecycle-managed; Avi 32.1.1+ binaries must be available from the depot). Controllers are SHARED by every workload domain on the same NSX Manager — a WLD with its own NSX instance needs its own set. Controller IPs/FQDN/passwords are captured up front in prerequisites.md (Avi Load Balancer) and intake E16/F11; create a local content library in the WLD vCenter for the Service Engine images. TechDocs: ${AVI_LB_URL}`,
+          `Integrate Avi with the WLD networking: ${cloudText}. Service Engines are the part that runs in the workload domain — per cluster, minimum 2 for HA. All of this must be in place before Supervisor activation.`,
         ],
-        acceptance: 'Avi controller cluster healthy in the workload domain; cloud connector connected; Service Engine management + VIP networks ready, so Supervisor activation can select Avi.',
+        acceptance: "Avi controller cluster healthy in the management domain and associated with this WLD's NSX instance; cloud connector connected; Service Engine management + VIP networks ready, so Supervisor activation can select Avi.",
       });
     }
     const lbPrereq =
