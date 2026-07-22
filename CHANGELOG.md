@@ -1,12 +1,21 @@
 # Changelog
 
+## v2.4.8 — 2026-07-22
+- **Correction to v2.4.7: the Avi wizard *does* have a VIP field** (#209). The
+  previous entry claimed there was none and that the VIP was read from DNS —
+  wrong, inferred from a screenshot whose panel was cut off below **Cluster
+  Name**. The *"Enter the VIP for cluster access"* group takes the **VIP**, the
+  **Cluster FQDN** and the **Cluster Name**; all four IPs are entered. The
+  original "3 nodes + cluster VIP" wording was right all along and is restored.
+- **What survives the correction** (#209): the **cluster FQDN must still resolve
+  before the deploy** — confirmed independently of the VIP question — so it
+  belongs in the Step 1 DNS request rather than a post-deploy list. The
+  requirement stands; the reason given for it in v2.4.7 does not.
+
 ## v2.4.7 — 2026-07-22
-- **The Avi cluster FQDN must resolve BEFORE the deploy** (#209). The wizard
-  takes the three node IPs and then, under *"Enter the VIP for cluster access"*,
-  asks only for a **Cluster FQDN** and a **Cluster Name** — **there is no field
-  to type the VIP into**. It reads the VIP from DNS. The docs had the right
-  count (4 IPs) but implied you enter the VIP; ordering is now explicit in
-  `prerequisites.md`, `01-network-dns-plan.md` and intake `E16`. Field-confirmed.
+- **The Avi cluster FQDN must resolve BEFORE the deploy** (#209) — see the
+  correction in v2.4.8 above: the justification given here (that the wizard has
+  no VIP field) is **wrong**, though the DNS-first requirement itself holds.
 - **A Cluster Name is a separate input from the cluster FQDN** (#209) — decide
   both up front instead of inventing one at the wizard.
 - **The Avi deploy asks for the VCF Ops admin password too** (#209), on the same
