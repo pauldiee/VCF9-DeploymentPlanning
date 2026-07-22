@@ -179,12 +179,12 @@ Prepare up front:
   (so **per NSX instance** — multiply if the fleet runs more than one): 3
   controller nodes + the **cluster VIP**.
 - **One DNS record per set — the cluster FQDN**, with **A + PTR**, resolving to
-  the **cluster VIP**, and it must **exist before you start the deploy**. This
-  is not a preference: the wizard collects the **three node IPs** and then, under
-  *"Enter the VIP for cluster access"*, asks only for a **Cluster FQDN** and a
-  **Cluster Name** — **there is no field to type the VIP into**. The VIP is
-  taken from what the FQDN resolves to, so an absent A record has nowhere to be
-  fixed later in the flow (field-confirmed 2026-07-22). The **3 controller nodes
+  the **cluster VIP**, and it must **exist before you start the deploy**
+  (field-confirmed 2026-07-22). The wizard's *"Enter the VIP for cluster
+  access"* group takes the **VIP**, the **Cluster FQDN** and a **Cluster Name**,
+  so the address is entered rather than derived — but the record still has to be
+  in place first, so create it as part of the Step 1 DNS request rather than
+  treating it as a post-deploy tidy-up. The **3 controller nodes
   are IP-only**: the workbook's Avi section asks for them as plain IP fields and
   nothing resolves them by name, so don't ask the AD/DNS team for records that
   nothing consumes (`01-network-dns-plan.md` DNS table, intake `E16`, and
@@ -231,7 +231,7 @@ Prepare up front:
   | ---- | ------ |
   | **1. Select version** | Version dropdown (e.g. `32.1.1`, ~3.8 GB) — shows the release date and **"Software bundle is downloaded and ready"**, i.e. it must already be in the depot |
   | **2. Form Factor** | **Select Size** (Small / Large / XLarge) — then shows **Resource Availability**: the reservation needed against what the cluster actually has free |
-  | **3. Settings** | **Admin Password\***; **VCF Ops Admin Password\***; **Node 1 / 2 / 3 IP Address\*** (the three ALB controller cluster nodes); **Cluster FQDN**; **Cluster Name** — **no VIP field**, see the DNS bullet above |
+  | **3. Settings** | **Admin Password\***; **VCF Ops Admin Password\***; **Node 1 / 2 / 3 IP Address\*** (the three ALB controller cluster nodes); then *"Enter the VIP for cluster access"* — the **cluster VIP**, **Cluster FQDN** and **Cluster Name**. The panel scrolls; all four IPs are entered here |
   | **4. Finish** | Review, then two notices worth reading (below) |
 
   **Small** reserves **96 GB memory, 18 GHz CPU and 1,536 GB disk** across the
