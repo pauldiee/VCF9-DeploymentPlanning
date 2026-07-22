@@ -232,6 +232,16 @@ without either does not need it.
 - **~9 IPs on one subnet, in two pools** — **installer 1**, **controller +
   worker nodes 4**, **License Hub services 4**. The **node and service pools
   cannot be modified after deployment**, so size them for scale-out up front.
+  Both pools are entered as **contiguous start–end ranges inside one subnet**
+  (see the deploy-wizard table below), so they need a **free, unbroken block** —
+  scattered spare addresses in an otherwise-used subnet will not do.
+- **Two FQDNs for the instance, on top of the installer's own.** Field-observed
+  2026-07-22. The installer appliance needs an FQDN (below), and the **License
+  Hub instance** it deploys asks for an **Instance FQDN** — required, it errors
+  *"Instance FQDN is required"* — and a **Messaging FQDN**. Both take *"253
+  characters max, alphanumeric name with hyphens allowed"*. Whether the
+  **Messaging FQDN is strictly mandatory is not confirmed**; only the Instance
+  FQDN was seen to block the wizard. Plan A + PTR for all three.
 - **Three VMs, not one appliance** — an **installer**, a **controller** node and
   a **worker** node (it deploys as an SSP instance: one controller + one
   worker). Footprint:
@@ -308,6 +318,54 @@ without either does not need it.
 > at first login (`sysadmin` gets a change-password prompt; for `admin`/`audit`
 > you log into the SSPI UI as `admin` and use **User Management**) rather than
 > failing in the wizard where you typed it.
+
+- **Uploading the License Hub package — there is a URL option.** Once the
+  installer is up, the `.tar` is loaded under **Package Management**, which
+  tracks packages as *in use* / *not in use* (a package stays **Not in use**
+  until an instance consumes it). The **Upload a License Hub Package** dialog:
+  *"The License Hub package is available for download from the Broadcom
+  Downloads site. Once downloaded, it can be uploaded directly to the platform
+  using the **local file** option or by providing the **locally hosted URL**."*
+  For a **~4.5 GB** file the URL path is the friendlier one — stage the `.tar`
+  on an internal web server and let the appliance pull it, instead of pushing it
+  through a browser session over a slow or long-haul link. In an air-gapped
+  enclave the file is usually already sitting on an internal host anyway.
+
+- **What the License Hub deploy wizard asks for.** Field-observed 2026-07-22
+  (SSP Installer `5.1.2`). *Deploy an Instance | License Hub* runs
+  **Configure → Pre-Checks → Deploy**, with Configure split into three steps:
+
+  | Step | Fields |
+  | ---- | ------ |
+  | **1. Define Instance and Required FQDN(s)** | **Version\*** (dropdown — the uploaded package); **Instance Name\*** (*"32 characters max, all lowercase, alphanumeric name with hyphens allowed"*); Deployment (fixed: `License Hub`); **Instance FQDN\***; **Messaging FQDN**; **User Passwords\*** (a **SET** sub-dialog — see the two-layer note below) |
+  | **2. Select vCenter Parameters** | **vCenter connection\*** (pick an existing one or **ADD NEW CONNECTION**); **Data Center\***; **Cluster\***; **Storage Policy\***; **Content Library & VM Datastore\***; Resource Pool (**optional** — *"No selection creates a new pool by default"*); **Reserve Resource** (toggle, **Activated** by default) |
+  | **3. Configure Connectivity Options** | **DVS\*** + **Port Group\*** (a **distributed** port group); **Subnet\*** (CIDR, e.g. `10.1.1.0/24`); **Default Gateway\***; **Node IP Pool\*** (range, e.g. `10.1.1.4-10.1.1.15`); **Service IP Pool\*** (range, e.g. `10.1.1.16-10.1.1.24`); **NTP Server(s)** (up to **5**, comma-separated, **IP or FQDN**); **DNS Server(s)** (up to **5**, comma-separated, **IP only**); **Search Domain** (one) |
+
+  - **It needs a distributed port group** — the wizard asks for a **DVS** and a
+    port group on it. A vSphere Standard Switch is not an option, which matters
+    if the licensing appliances were going to land on a management network that
+    is not on the vDS.
+  - **A content library datastore is required**, and the same picker covers the
+    VM datastore. The installer stages the instance through a content library,
+    so that datastore needs room beyond the running VMs' footprint.
+  - **Resource Pool is optional, but it creates one anyway**, and **Reserve
+    Resource is on by default** — so the instance lands with **reservations**
+    unless you turn that off. On a management cluster sized without slack, check
+    this against your admission-control headroom before deploying rather than
+    after.
+
+> **Two different DNS limits, and two different password rules — one product,
+> two layers.** The **installer OVA** takes at most **3 DNS servers** (extras
+> silently ignored) and enforces the strict min-12 rule above. The **deployed
+> instance** takes up to **5 DNS servers** and enforces a *different, simpler*
+> password rule, verbatim: *"At least 15 characters in length, and no more than
+> 128 characters… At least 1 lowercase, 1 uppercase, 1 numeric character and 1
+> special character"* — **no** dictionary / palindrome / monotonic-run checks,
+> but a **higher minimum**. The practical consequence: **a password that passes
+> the OVA can still be rejected by the instance wizard.** Users seen in that
+> dialog: `admin`, `audit` (it scrolls — there may be more). Pick one password
+> pattern of **15+ characters** that satisfies the strict OVA rules, and it
+> clears both layers.
 
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in

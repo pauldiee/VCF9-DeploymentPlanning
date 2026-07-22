@@ -1,5 +1,36 @@
 # Changelog
 
+## v2.4.5 — 2026-07-22
+- **The License Hub deploy wizard, end to end** (#207). Field-observed on SSP
+  Installer `5.1.2`. New table in `prerequisites.md` covering all three Configure
+  steps — *Define Instance and Required FQDN(s)*, *Select vCenter Parameters*,
+  *Configure Connectivity Options* — plus the `Configure → Pre-Checks → Deploy`
+  flow. Nothing described the inputs beyond the installer OVA before.
+- **Three FQDNs, not one — Step 1 budgeted a third of what is needed** (#207).
+  The instance adds an **Instance FQDN** (required — *"Instance FQDN is
+  required"*) and a **Messaging FQDN** (mandatory status **unconfirmed**, written
+  as plan-for-it) on top of the installer's own. `01-network-dns-plan.md` now
+  says **~9 IPs + 3 FQDNs**, and `ip-dns-plan.csv` gains four rows (both instance
+  FQDNs and both IP pools).
+- **A password that passes the OVA can still be rejected by the instance**
+  (#207). Two layers, two rules: the **OVA** enforces **min 12** with no
+  dictionary words / palindromes / monotonic runs, the **instance wizard**
+  enforces **15–128** with none of those extras. `02-intake.md`'s password table
+  now carries both rows instead of one. The same split applies to **DNS
+  servers** — **3** at the OVA, **5** at the instance.
+- **The IP pools are contiguous ranges, not a count** (#207). Both are entered
+  as start–end inside one subnet, so an unbroken block has to be free — the
+  earlier "~9 IPs" phrasing let you plan scattered spares that will not work.
+- **Three deploy-time constraints worth knowing before the wizard** (#207): it
+  requires a **distributed** port group (no standard switch), a **content
+  library datastore**, and it **reserves resources by default** — check that
+  against management-cluster admission-control headroom.
+- **The 4.5 GB package can be pulled by URL** (#207). *Upload a License Hub
+  Package* accepts a **locally hosted URL** as well as a browser upload — the
+  better path over a slow link or where the file already sits on an internal
+  host. Recorded in `prerequisites.md` along with Package Management's
+  in-use / not-in-use tracking.
+
 ## v2.4.4 — 2026-07-22
 - **What the SSP Installer OVA actually asks for** (#206). Nothing described the
   deploy inputs. New table in `prerequisites.md`: GRUB root password + menu
