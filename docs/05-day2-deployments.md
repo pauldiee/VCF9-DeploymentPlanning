@@ -34,6 +34,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment / **NSX VPC subnet**? | Five options — see C. NSX Overlay needs an Edge cluster + transit gateway; **NSX VPC is not on the sheet and is API-only**. At Day-N *every* non-shared placement is API-only |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
+|D6 | **Is vDefend or Avi in scope?**                                     | If so there are **two more Day-N appliance sets**, and **neither comes from the Day-N sheet** — the **Avi Load Balancer** (via VCF Operations) and **License Hub** (via the SSP Installer, outside VCF entirely). See **B.3**; full detail in [`prerequisites.md`](prerequisites.md). Easy to miss precisely because the fleet tooling never mentions them |
 
 Size the footprint of whatever you choose here on the
 [sizing tool](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)
@@ -220,6 +221,39 @@ for the certificate.
 > (the deployment task may sit under **SDDC lifecycle**, not Fleet lifecycle —
 > see section D); then **restart the browser / re-login**; only then is there a
 > real problem to investigate.
+
+### B.3 — Deployed **outside** VCF fleet management (Avi, License Hub)
+
+Everything in section B comes from the *Deploy Fleet Management Day-N* sheet.
+These two do not — and that is exactly why they get forgotten. Both are Day-N
+appliance sets, both are substantial, and neither appears anywhere in the fleet
+Day-N tooling. Detail lives in [`prerequisites.md`](prerequisites.md); this is
+the Day-N planner's summary.
+
+| | **Avi Load Balancer** | **License Hub** (+ SSP Installer) |
+| --- | --- | --- |
+| **When** | Only if Avi is the chosen LB (Supervisor, tenant LB, optionally fronting Automation) | Only if **vDefend or Avi** is in scope — Avi in scope means **both** rows apply |
+| **Deployed from** | **VCF Operations → Build → Lifecycle → VCF Instances → *domain* → Manage Components** (an *Optional Component*, included in entitlement) | The **SSP Installer** appliance — **outside VCF entirely** |
+| **Software** | **Depot-fed** — *"Software bundle is downloaded and ready"*; can't deploy until the depot has synced it | **Manual download**, two files, **~9.5 GB** from the Broadcom Support Portal. **Not in the depot** |
+| **Footprint** | 3 controller nodes in the **management domain**, **per NSX instance** — plus Service Engines **per cluster** in the WLD (min 2) | 3 VMs: installer + controller + worker |
+| **Addresses** | 4 per controller set (3 nodes + VIP) | ~9 in **two contiguous pools**, immutable after deployment |
+| **DNS** | Cluster FQDN **must resolve before the deploy** | 3 FQDNs; the instance + messaging names map to the **1st and 2nd service-pool IPs**, so fix the pool ranges *before* requesting records |
+
+Three things that bite Day-N planners specifically:
+
+- **Avi controller sets are scoped to the NSX instance, not the workload
+  domain.** The wizard says so itself: *"This Avi Load Balancer will
+  automatically be deployed and linked to other workload domains sharing the
+  same NSX manager…"*. Count sets per NSX instance (`04-sizing.md`), not per WLD.
+- **License Hub needs an NSX DFW *exclusion*, not a firewall rule** — a policy
+  carve-out owned by the **vDefend DFW** owner, not the perimeter firewall team.
+  See [`07-firewall-ports.md`](07-firewall-ports.md) §E.
+- **Licensing is a six-step chain, and deploying the hub is only step 2.**
+  Deploy → register → **load the licence file** → onboard each endpoint →
+  assign → **switch the endpoint to On-prem License Hub**. Stop early and you
+  have a healthy, fully-deployed, **unlicensed** fleet. Give the whole chain one
+  owner. If the site **already runs Avi on an older version**, entitlement
+  migration is a **pre-upgrade gate** with a hard 90-day clock (intake `E16a`).
 
 ---
 
@@ -625,6 +659,25 @@ On top of `01-network-dns-plan.md`, for every Day-2 appliance you deploy:
 - [ ] Passwords captured with the other fleet credentials (intake section F)
 - [ ] The synthetic check prerequisites (DNS/NTP/reachability) are in place
 
+If **Avi** or **License Hub** is in scope (B.3) — neither is covered by the
+fleet Day-N workflows above:
+
+- [ ] **Avi cluster FQDN resolves *before* the deploy** — the VIP is not a
+      wizard input, so an absent A record has nowhere to be fixed later
+- [ ] A separate **Cluster Name** decided, distinct from that FQDN
+- [ ] The **Avi bundle has synced to the depot** (`09-binary-depot.md`)
+- [ ] **License Hub pool ranges settled first**, then A + PTR for the **1st and
+      2nd service-pool addresses** (instance + messaging FQDNs)
+- [ ] Both License Hub pools are **contiguous, unbroken blocks** in one subnet
+- [ ] The **SSP Installer's two files (~9.5 GB) are downloaded** — they do not
+      come through the depot
+- [ ] **vCenter root CA certificate to hand** for the SSP Installer connection,
+      and an **admin credential + certificate per endpoint** for onboarding
+- [ ] The **NSX DFW exclusion** for the License Hub VMs is raised with the
+      vDefend policy owner
+- [ ] Certificates and passphrases captured: the Avi **Passphrase** is
+      **restore-critical** (lost = no controller restore)
+
 If VCF Automation is going on a **non-management** network (section D):
 
 - [ ] Both Automation FQDNs have A + PTR **before** you start — the
@@ -651,6 +704,9 @@ If VCF Automation is going on a **non-management** network (section D):
 | VCF Automation method (D)                        | Platform + Architect|          |
 | Day-2 FQDNs + PTR records (E)                    | AD/DNS/NTP          |          |
 | Appliance passwords (E)                          | Platform / Security |          |
+| Avi / License Hub in scope, and the licensing chain end to end (B.3, D6) | Architect | |
+| **NSX DFW exclusion** for the License Hub VMs (B.3) | **vDefend / DFW policy owner** — *not* the perimeter firewall team | |
+| Broadcom Support Portal entitlement + account (B.3) | Architect / Procurement | |
 
 ---
 
