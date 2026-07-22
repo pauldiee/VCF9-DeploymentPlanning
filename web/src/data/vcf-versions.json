@@ -1,6 +1,12 @@
 {
-  "_updated": "2026-07-21",
-  "_sourceErrors": [],
+  "_updated": "2026-07-22",
+  "_sourceErrors": [
+    {
+      "key": "software-depot",
+      "source": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations.html",
+      "error": "implausible build \"255070105\" (9 digits, expected 8) for 9.1.0.0400 -- likely a typo in the Broadcom release notes; refusing to guess"
+    }
+  ],
   "_sources": {
     "techdocs": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x",
     "ga": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html"
