@@ -2,7 +2,8 @@
 
 ## v2.3.6 — 2026-07-22
 - **The certificate pass is bulk-capable — but must be staggered** (#194).
-  Lab-verified 2026-07-22. **VCF Operations → Fleet Management → Certificates**
+  Field-verified 2026-07-22 on a real deployment, not a lab. **VCF Operations →
+  Fleet Management → Certificates**
   lets you tick multiple components and act on them together (`Generate CSRs`,
   `Download CSRs`, `Replace With Configured CA Certificate`, `Import
   Certificates`, plus *Renew* / *Replace With Imported*), reporting progress per
@@ -23,12 +24,18 @@
   only in the global Configure-CA wizard, and a bulk generate submits every CSR
   at once — an **approval-gated Microsoft CA template stalls the queue** rather
   than erroring. All added to `prerequisites.md` → Certificate Authority.
-- **A failure does not stop the batch** (#194). Lab-verified 2026-07-22: one
-  component's replacement failed and the rest kept progressing. A batch is
+- **A failure does not stop the batch** (#194). Field-verified 2026-07-22: an
+  **NSX Manager** replacement failed and the rest kept progressing. A batch is
   **partial-success by design**, so the *n/total* counter is the only signal
   something did not land — read the final count and the task list rather than
   treating "the batch finished" as "the fleet is certified", and re-run the
   failed components as their own batch once the current one has settled.
+- **NSX Manager rotation vs. a running NSX backup** (#194). The failure above
+  was an NSX Manager with an **NSX backup in progress**. Suspected — **not
+  confirmed** — that the rotation triggers a backup and does not wait long
+  enough for it. Documented as an observation with a mitigation (check for a
+  running/scheduled NSX backup, give NSX Manager its own batch), not as a
+  mechanism.
 - **Auto-renewal is not on by default** (#194). The certificate list carries an
   **Auto-renewal Status** column, observed **Deactivated** across a fresh 9.1
   fleet. Noted in `prerequisites.md` so expiry ownership is assigned rather than

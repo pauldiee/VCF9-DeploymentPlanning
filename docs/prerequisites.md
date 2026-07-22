@@ -500,7 +500,7 @@ missing template blocks the entire Day-2 certificate pass.
 - **OpenSSL:** configured on the appliance with the org details (Common Name,
   Country, Locality, Organization, OU, State) — no external prerequisites.
 - **The certificate pass is a bulk operation — but it must be staggered.**
-  Lab-verified 2026-07-22. In **VCF Operations → Fleet Management →
+  Field-verified 2026-07-22 on a real deployment. In **VCF Operations → Fleet Management →
   Certificates** you tick multiple components in the list and act on them
   together: `Generate CSRs`, `Download CSRs`, `Replace With Configured CA
   Certificate`, `Import Certificates` (plus *Renew Certificates* and *Replace
@@ -524,7 +524,7 @@ missing template blocks the entire Day-2 certificate pass.
     Microsoft CA, confirm the issuing template does **not** require manual
     approval — an approval-gated template turns a bulk generate into a stalled
     queue rather than an error.
-  - **A failure does not stop the batch.** Lab-verified 2026-07-22: when one
+  - **A failure does not stop the batch.** Field-verified 2026-07-22: when one
     component's replacement failed, the remaining ones **kept progressing**. A
     batch is therefore **partial-success by design** — it will not halt and wait
     for you. The *n/total* counter is the only signal that something did not
@@ -532,6 +532,14 @@ missing template blocks the entire Day-2 certificate pass.
     list**, rather than treating "the batch finished" as "the fleet is
     certified". Re-run the failed components as their own small batch once the
     current one has settled, and verify per component at the end of the pass.
+  - **NSX Manager: watch for a backup running concurrently.** Field-observed
+    2026-07-22 — the one failure in a batch was an **NSX Manager**, with an NSX
+    **backup in progress** at the time. The working theory (**not confirmed**) is
+    that the rotation *triggers* a backup itself and does not wait long enough
+    for it to finish before proceeding. Either way the mitigation is the same:
+    **check that no NSX backup is running or scheduled** in the window, and give
+    NSX Manager its own batch rather than bundling it with a long run of ESX
+    hosts. If it fails, re-run it alone once the backup has completed.
 - The certificate list also carries an **Auto-renewal Status** column. In a
   freshly deployed 9.1 fleet the entries observed were **Deactivated** — treat
   auto-renewal as something you opt into, and check expiry ownership rather than
