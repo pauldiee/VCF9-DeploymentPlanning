@@ -377,7 +377,17 @@ without either does not need it.
   trusted root CA certificates** at the bottom right"* — that link yields a
   **ZIP** of the vCenter `TRUSTED_ROOTS` store, which you unpack to get the
   certificate to paste. Add it to the jump-host prep: no certificate, no
-  connection, no deploy. Note also that **no least-privilege role is
+  connection, no deploy.
+
+  > **Which certificate from that ZIP — the docs do not say, and the wrong one
+  > fails.** *"Download trusted root CA certificates"* yields a store with
+  > **several** certificates, and the one the dialog wants is the **issuer of
+  > vCenter's machine SSL certificate** — the **machine intermediate/root**, not
+  > simply the first file in the archive. Where vCenter runs the default VMCA
+  > that is the VMCA root; where the machine certificate has been replaced by an
+  > enterprise or subordinate CA, it is **that** intermediate. Check what
+  > actually signed the machine certificate before pasting, rather than working
+  > through the ZIP by trial and error. Note also that **no least-privilege role is
   documented** — TechDocs asks for an administrator, so treat this as a
   privileged credential and record who holds it.
 
@@ -499,6 +509,18 @@ without either does not need it.
 > uninstall SSP Installer and deploy a new one.**"* Two practical consequences:
 > **Cleanup before reset**, in that order — and don't run this deploy during a
 > window when vCenter is being patched or restarted.
+
+- **The completion banner hands you the DNS request.** On success the installer
+  names the instance and both endpoints, and says to *"Share the Instance
+  FQDN/IP … and Messaging FQDN/IP … with your DNS administrator. Proper backup
+  of this security service platform installer is crucial to restore the Service
+  Platform Instances and Services to their working state in the event of a
+  failure."* Three things this settles: the **Messaging FQDN is real and gets
+  its own address** (not an optional extra); its IP is the one **immediately
+  after** the instance IP, matching the TechDocs first/second service-pool rule;
+  and DNS **can** legitimately be created after the deploy — the product hands
+  you the two mappings to pass on. Creating them beforehand still avoids the
+  domain pre-check being the thing that discovers a missing record.
 
 - **After it completes.** Wait for the instance to report **Healthy** (if it
   does not, TechDocs points at **Troubleshooting Diagnostic**), click **Done**,

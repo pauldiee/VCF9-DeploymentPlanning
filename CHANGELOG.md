@@ -53,6 +53,18 @@
   certificates"* → unpack the ZIP. Now a jump-host prep item; nothing in the
   docs mentioned it. No least-privilege role is documented — TechDocs asks for
   an administrator.
+- **Which certificate from the vCenter ZIP — the docs never say** (#207). The
+  trusted-root archive holds several; the dialog wants the **issuer of
+  vCenter's machine SSL certificate** (the machine intermediate/root) — the
+  VMCA root on a default vCenter, or the enterprise/subordinate CA where the
+  machine certificate has been replaced. Picking the wrong file fails the
+  connection, so check what signed the machine certificate first.
+- **The completion banner is the DNS hand-off** (#207). It names both endpoints
+  and says to share the Instance and Messaging FQDN/IP *"with your DNS
+  administrator"*, confirming the **Messaging FQDN is real, gets its own
+  address, and sits immediately after the instance IP** — the TechDocs
+  first/second service-pool rule, observed. It also confirms DNS may legitimately
+  follow the deploy.
 - **The SSP Installer is welded to its vCenter** (#207). *"Changing the vCenter
   Server's FQDN or IP address after the deployment is not supported"* — the
   remedy is a **new SSP Installer instance restored from a backup**. That makes
