@@ -8,10 +8,28 @@
   flow. Nothing described the inputs beyond the installer OVA before.
 - **Three FQDNs, not one — Step 1 budgeted a third of what is needed** (#207).
   The instance adds an **Instance FQDN** (required — *"Instance FQDN is
-  required"*) and a **Messaging FQDN** (mandatory status **unconfirmed**, written
-  as plan-for-it) on top of the installer's own. `01-network-dns-plan.md` now
-  says **~9 IPs + 3 FQDNs**, and `ip-dns-plan.csv` gains four rows (both instance
-  FQDNs and both IP pools).
+  required"*) and a **Messaging FQDN** on top of the installer's own.
+  `01-network-dns-plan.md` now says **~9 IPs + 3 FQDNs**, and `ip-dns-plan.csv`
+  gains four rows (both instance FQDNs and both IP pools).
+- **The two instance FQDNs are pinned to the service IP pool** (#207). TechDocs:
+  the Instance FQDN *"must map to the first IP address in the service IP pool"*
+  and the Messaging FQDN *"to the second"*. They are not free-standing records —
+  **the pool range has to be settled before the DNS records can be requested**,
+  which reverses the usual "ask for the names early" order. The service pool's
+  first two addresses are therefore already spoken for.
+- **An unusual number of one-way doors** (#207). **Instance Name**, **Instance
+  FQDN**, **storage policy** and both **IP pools** are all immutable after
+  deployment; a rename or re-IP means a redeploy. Called out together in
+  `prerequisites.md` rather than left scattered across field descriptions.
+- **Encrypted storage policies are not supported** (#207). TechDocs: *"VM
+  encrypted storage policy is not supported"* and *"You cannot use third-party
+  encryption solutions."* Combined with the policy being immutable, a site whose
+  management cluster defaults to encryption has a deploy-time decision to make.
+- **TechDocs and the product disagree on the instance password minimum** (#207).
+  The documentation says *"Minimum length: 12"*; the shipping `5.1.2` dialog
+  says *"At least 15 characters in length"*. A 12–14 character password planned
+  from the docs is **rejected at the wizard** — the docs here follow the
+  product.
 - **A password that passes the OVA can still be rejected by the instance**
   (#207). Two layers, two rules: the **OVA** enforces **min 12** with no
   dictionary words / palindromes / monotonic runs, the **instance wizard**
@@ -23,8 +41,10 @@
   earlier "~9 IPs" phrasing let you plan scattered spares that will not work.
 - **Three deploy-time constraints worth knowing before the wizard** (#207): it
   requires a **distributed** port group (no standard switch), a **content
-  library datastore**, and it **reserves resources by default** — check that
-  against management-cluster admission-control headroom.
+  library datastore**, and it **reserves resources by default** — TechDocs calls
+  the reservation *"required for a production environment"*, so check the
+  footprint against management-cluster admission-control headroom rather than
+  planning to switch it off.
 - **The 4.5 GB package can be pulled by URL** (#207). *Upload a License Hub
   Package* accepts a **locally hosted URL** as well as a browser upload — the
   better path over a slow link or where the file already sits on an internal

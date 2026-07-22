@@ -235,13 +235,42 @@ without either does not need it.
   Both pools are entered as **contiguous start–end ranges inside one subnet**
   (see the deploy-wizard table below), so they need a **free, unbroken block** —
   scattered spare addresses in an otherwise-used subnet will not do.
-- **Two FQDNs for the instance, on top of the installer's own.** Field-observed
-  2026-07-22. The installer appliance needs an FQDN (below), and the **License
-  Hub instance** it deploys asks for an **Instance FQDN** — required, it errors
-  *"Instance FQDN is required"* — and a **Messaging FQDN**. Both take *"253
-  characters max, alphanumeric name with hyphens allowed"*. Whether the
-  **Messaging FQDN is strictly mandatory is not confirmed**; only the Instance
-  FQDN was seen to block the wizard. Plan A + PTR for all three.
+- **Two FQDNs for the instance, on top of the installer's own — and they are
+  pinned to the service IP pool.** The installer appliance needs an FQDN
+  (below), and the **License Hub instance** it deploys asks for an **Instance
+  FQDN** (it errors *"Instance FQDN is required"*) and a **Messaging FQDN**.
+  Both take *"253 characters max, alphanumeric name with hyphens allowed"*.
+  Neither is a free-standing record — TechDocs is explicit about which address
+  each one resolves to:
+
+  | FQDN | Purpose | Maps to |
+  | ---- | ------- | ------- |
+  | **Instance FQDN** | *"the FQDN to use for accessing the License Hub instance from a browser or in an API call"* | *"the **first** IP address in the service IP pool"* |
+  | **Messaging FQDN** | *"used by the internal components of the License Hub instance"* | *"the **second** IP address in the service IP pool"* |
+
+  *"You must configure DNS with this mapping either before or after deploying
+  the instance"* — for both. So the **service pool's first two addresses are
+  spoken for**, and the DNS records cannot be written until the pool range is
+  fixed. Order the work that way: agree the subnet → fix the two pool ranges →
+  then request A + PTR for the first two service-pool addresses.
+
+> **Three things here cannot be changed after deployment — get them right the
+> first time.** TechDocs, verbatim: the **Instance Name** — *"This name cannot
+> be changed after deployment"* (and *"cannot contain uppercase letters or
+> special characters, and the length cannot exceed 32 characters"*); the
+> **Instance FQDN** — *"This FQDN cannot be changed after deployment"*; and the
+> **Storage Policy** — *"You cannot change the storage policy after
+> deployment"*. Add the **node and service IP pools**, immutable for the same
+> reason, and this appliance has an unusually long list of one-way doors for
+> something deployed Day-N. A rename or a re-IP means a redeploy.
+
+> **Encrypted storage policies are not supported — check this before you pick a
+> cluster.** TechDocs: *"VM encrypted storage policy is not supported"* and
+> *"You cannot use third-party encryption solutions."* A site whose management
+> cluster defaults to an encryption-enabled storage policy (or runs third-party
+> VM encryption) has to provide a non-encrypted policy for this instance —
+> and since the policy is also immutable, that is a deploy-time decision, not
+> something to fix afterwards.
 - **Three VMs, not one appliance** — an **installer**, a **controller** node and
   a **worker** node (it deploys as an SSP instance: one controller + one
   worker). Footprint:
@@ -337,8 +366,8 @@ without either does not need it.
 
   | Step | Fields |
   | ---- | ------ |
-  | **1. Define Instance and Required FQDN(s)** | **Version\*** (dropdown — the uploaded package); **Instance Name\*** (*"32 characters max, all lowercase, alphanumeric name with hyphens allowed"*); Deployment (fixed: `License Hub`); **Instance FQDN\***; **Messaging FQDN**; **User Passwords\*** (a **SET** sub-dialog — see the two-layer note below) |
-  | **2. Select vCenter Parameters** | **vCenter connection\*** (pick an existing one or **ADD NEW CONNECTION**); **Data Center\***; **Cluster\***; **Storage Policy\***; **Content Library & VM Datastore\***; Resource Pool (**optional** — *"No selection creates a new pool by default"*); **Reserve Resource** (toggle, **Activated** by default) |
+  | **1. Define Instance and Required FQDN(s)** | **Version\*** (dropdown — the uploaded package; *"If no version is available, click Upload to upload a package"*); **Instance Name\*** (*"32 characters max, all lowercase, alphanumeric name with hyphens allowed"* — **immutable**); Deployment (fixed: `License Hub`); **Instance FQDN\*** (→ 1st service-pool IP, **immutable**); **Messaging FQDN** (→ 2nd service-pool IP); **User Passwords\*** (a **SET** sub-dialog — see the two-layer note below) |
+  | **2. Select vCenter Parameters** | **vCenter connection\*** (pick an existing one or **ADD NEW CONNECTION**); **Data Center\***; **Cluster\***; **Storage Policy\*** (**immutable**; **no VM-encrypted policy**); **Content Library & VM Datastore\***; Resource Pool (**optional** — *"No selection creates a new pool by default"*); **Reserve Resource** (toggle, **Activated** by default — *"required for a production environment"*) |
   | **3. Configure Connectivity Options** | **DVS\*** + **Port Group\*** (a **distributed** port group); **Subnet\*** (CIDR, e.g. `10.1.1.0/24`); **Default Gateway\***; **Node IP Pool\*** (range, e.g. `10.1.1.4-10.1.1.15`); **Service IP Pool\*** (range, e.g. `10.1.1.16-10.1.1.24`); **NTP Server(s)** (up to **5**, comma-separated, **IP or FQDN**); **DNS Server(s)** (up to **5**, comma-separated, **IP only**); **Search Domain** (one) |
 
   - **It needs a distributed port group** — the wizard asks for a **DVS** and a
@@ -349,10 +378,11 @@ without either does not need it.
     VM datastore. The installer stages the instance through a content library,
     so that datastore needs room beyond the running VMs' footprint.
   - **Resource Pool is optional, but it creates one anyway**, and **Reserve
-    Resource is on by default** — so the instance lands with **reservations**
-    unless you turn that off. On a management cluster sized without slack, check
-    this against your admission-control headroom before deploying rather than
-    after.
+    Resource is on by default and TechDocs calls it *"required for a production
+    environment"*** — so the instance lands with **reservations**, and turning
+    them off to squeeze it in is not a supported production shortcut. Check the
+    footprint against management-cluster admission-control headroom **before**
+    deploying.
 
 > **Two different DNS limits, and two different password rules — one product,
 > two layers.** The **installer OVA** takes at most **3 DNS servers** (extras
@@ -366,6 +396,13 @@ without either does not need it.
 > dialog: `admin`, `audit` (it scrolls — there may be more). Pick one password
 > pattern of **15+ characters** that satisfies the strict OVA rules, and it
 > clears both layers.
+>
+> **TechDocs and the product disagree on the instance minimum — believe the
+> product.** The deploy-configuration page states *"Minimum length: 12"*, while
+> the shipping `5.1.2` dialog states *"At least 15 characters in length"*
+> (field-observed 2026-07-22). A 12–14 character password planned from the
+> documentation will be **rejected at the wizard**. The 15+ pattern above is
+> the safe answer either way, which is why it is written that way here.
 
 > **Air-gapped: the six-month import is a recurring commitment.** If the site
 > has no internet path — the same site that needs the offline depot in
@@ -377,7 +414,10 @@ TechDocs:
 [License Hub for vDefend and Avi](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/security-modernization/vdefend-lateral-security/security-services-platform-for-vmware-cloud-foundation/license-hub-for-vdefend-and-avi/license-hub-for-vmware-vdefend-and-vmware-avi-load-balancer.html)
 (the VCF 9.1 design blueprint — sizing, endpoint scale, modes) ·
 [Deploying License Hub](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/deploying-license-hub.html)
-(SSP 5.1 — the deploy procedure).
+(SSP 5.1 — the deploy procedure) ·
+[Configure a License Hub Deployment](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/deploying-license-hub/steps-to-deploy-a-license-hub-instance/configure-a-license-hub-deployment.html)
+(the field-by-field reference for the wizard above — FQDN-to-pool mapping, the
+immutable fields, the storage-policy restriction).
 
 ## vSphere Supervisor (only if in scope)
 
