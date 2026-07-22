@@ -289,12 +289,46 @@ without either does not need it.
   120, where Endpoints could be a mix of NSX Manager, vDefend Security Services
   Platform, Avi Controller."* One instance covers all but the largest fleets.
 - **Connected or disconnected — decide with the depot decision (intake `G1`).**
-  **Connected** mode needs live connectivity to the **Avi Cloud Console**;
-  registration is automatic and licenses are polled **every 15 minutes**, and the
-  traffic is **two-way in purpose** — TechDocs: *"License usage report is
-  consolidated and provided to the Avi Cloud Console **every 24 hours**."*
-  **Disconnected** (air-gapped) mode uses file-based registration and a
-  **manual license file import every six months**.
+  The choice is made at **first login to the hub**, not at deploy time, and it
+  can be deferred: the *Get Started* screen offers **SKIP**, so a deployed hub
+  can sit unregistered. The product labels **connected mode "Recommended"**.
+
+  | | **Connected** | **Disconnected** |
+  | --- | --- | --- |
+  | Product wording | *"requires a stable internet connection to streamline the registration process, update licenses, and generate usage reports"* | *"does not require an Internet connection. You must manually download and transfer files for registration, update licenses, and generate usage reports"* |
+  | Registration | Log in with a **Broadcom account**; complete it in the Avi Cloud Console | Download a **registration file** → upload to the console → import the **activation file** back |
+  | Licences | Assign in the console; *"View assigned licenses"* in the hub | Generate an updated **licence file** in the console → import into the hub |
+  | Usage reporting | *"reported to Avi Cloud Console on a regular basis. Usage-based licensing will **automatically refresh**"* | Generate a report → upload to the console → **import the refreshed licence file**, or the licence lapses |
+
+  - **The endpoint is `portal.pulse.broadcom.com`** — the **Avi Cloud Console**.
+    It is **not** on Broadcom's Public URLs list, so a proxy allowlist built from
+    that page alone will miss it. In **disconnected** mode nothing in the data
+    centre needs it, but **an administrator's browser still does** — the file
+    exchange happens through that portal from wherever they sit.
+  - **A Broadcom customer account is a prerequisite, not a detail.** Connected
+    mode logs in with it; disconnected mode still needs someone able to sign
+    into the console to convert registration files into licences. Establish
+    **who holds that account** during planning — it is an entitlement question,
+    and it is not the same person as the vCenter administrator.
+  - **Connected mode has its own Proxy Server Setting**, offered right next to
+    *"Check your internet connection"*. So the hub does **not** have to inherit
+    the fleet proxy — but it does need to be pointed at one deliberately.
+  - **Endpoints are assigned licences in the hub's Endpoint Management** —
+    *"Assign licenses to **NSX Managers, Security Service Platform, and Avi
+    Controllers**"*. That names the three endpoint types behind the
+    **120-endpoint** scale figure above.
+
+> **Disconnected mode is a standing manual loop, and two of its steps are easy
+> to miss.** The file exchange is not one round trip: registration file →
+> activation file → **and then a licence still has to be generated**. The hub
+> warns in as many words: *"Don't forget to generate the license in Avi Cloud
+> Console after downloading the activation file."* Usage reporting is the same
+> shape in reverse — *"Generate a report periodically"*, upload it, *"to obtain
+> a refreshed license file"*, and import that *"for continued use"*. **Continued
+> use is the operative phrase**: in disconnected mode the licence does not
+> refresh itself, so this is a recurring, owner-assigned task, not a one-time
+> registration. That is the same commitment as the six-month import below, seen
+> from the console side.
 - **You download the software yourself — it is not in the VCF depot.** Verified
   2026-07-22. The **Broadcom Support Portal**, under **vDefend Security Services
   Platform** (5.1.2 at the time of writing), carries **two** files and you need
@@ -982,6 +1016,7 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 | `vcf.broadcom.com`              | Licensing                                      | VCF Operations                                                     |
 | `auth.esp.vmware.com`           | Update Manager Download Service (UMDS)         | SDDC Manager, VCF Download Tool                                    |
 | `api.prod.nsxti.vmware.com`     | IDS/IPS advanced threat prevention (VMware vDefend) — **only if vDefend IDS/IPS is enabled; not part of the VCF SKU** | NSX Manager |
+| `portal.pulse.broadcom.com`     | **Avi Cloud Console** — License Hub registration, license assignment and usage reporting. **Only if vDefend or Avi is in scope, and only in connected mode.** Not on the Broadcom Public URLs list | License Hub (**connected** mode); an admin browser in **disconnected** mode |
 
 > **Proxying these? The proxy must be reachable from the whole
 > services-runtime node block, not just the depot/Ops IPs.** Allowlisting these

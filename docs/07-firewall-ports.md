@@ -53,6 +53,7 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 | VCF Operations | `vcf.broadcom.com`, `eapi.broadcom.com` | 443 | TCP | Licensing |
 | SDDC Manager, VCF Download Tool | `auth.esp.vmware.com` | 443 | TCP | Update Manager Download Service (UMDS) |
 | Cloud Proxy | `eapi.broadcom.com` | 443 | TCP | Cloud Proxy connectivity |
+| **License Hub** (connected mode only) | `portal.pulse.broadcom.com` | 443 | TCP | **Avi Cloud Console** — registration, license assignment, usage reporting. Only if **vDefend or Avi** is in scope. **Not on Broadcom's Public URLs list** — it will not appear in a proxy allowlist built from that page alone |
 
 ## B. Admin / management access — jump host → management
 

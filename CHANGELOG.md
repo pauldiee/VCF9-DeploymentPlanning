@@ -1,5 +1,37 @@
 # Changelog
 
+## v2.4.6 — 2026-07-22
+- **The Avi Cloud Console endpoint is `portal.pulse.broadcom.com`** (#178).
+  Open since the License Hub work began, because the design blueprint named the
+  console but never the endpoint and it was not worth inventing. Observed in the
+  registration flow. Added to **both** places #178 called out: the Public URLs
+  table in `prerequisites.md` and section A.1 of `07-firewall-ports.md`,
+  outbound **443**, gated on **vDefend or Avi in scope** and **connected mode**.
+- **It is not on Broadcom's Public URLs list** (#178). A proxy allowlist built
+  from that TechDocs page alone will miss it — which is precisely how a
+  connected-mode hub fails to register on a proxied site.
+- **Disconnected mode still needs the portal — from a browser** (#178). Nothing
+  in the data centre reaches it, but an administrator must sign in to convert
+  registration files into licences. Air-gapped does not mean nobody talks to
+  Broadcom.
+- **License Hub has its own Proxy Server Setting** (#178). It does not inherit
+  the fleet proxy; it has to be pointed at one deliberately. This was #178's
+  second open question.
+- **A Broadcom customer account is a prerequisite in BOTH modes** (#178/#207) —
+  connected logs in with it, disconnected needs someone able to sign into the
+  console. An entitlement question, and not the vCenter administrator. Now an
+  intake item.
+- **The mode is chosen at first login and can be skipped** (#207) — a deployed
+  hub can sit unregistered; the product marks **connected** as *Recommended*.
+- **Disconnected mode is a standing loop, not a one-time import** (#207). The
+  exchange is registration file → activation file → **and a licence still has to
+  be generated** (*"Don't forget to generate the license in Avi Cloud Console
+  after downloading the activation file"*). Usage reporting reverses it: generate
+  a report, upload, import the refreshed licence *"for continued use"*.
+- **Endpoint Management names the three endpoint types** (#207): *"NSX Managers,
+  Security Service Platform, and Avi Controllers"* — the mix behind the
+  120-endpoint scale figure.
+
 ## v2.4.5 — 2026-07-22
 - **The License Hub deploy wizard, end to end** (#207). Field-observed on SSP
   Installer `5.1.2`. New table in `prerequisites.md` covering all three Configure
