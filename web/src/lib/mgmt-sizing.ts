@@ -62,6 +62,26 @@ const vcfaCpu: SizeMap = { Small: 24, Medium: 24, Large: 32 };
 const vcfaRam: SizeMap = { Small: 96, Medium: 96, Large: 128 };
 const vcfaDisk: SizeMap = { Small: 717, Medium: 334, Large: 430 };
 
+// Real-time Metrics. NOT from the workbook: its Management Domain Sizing row
+// multiplies by a node-count cell (J29) that does not exist in the sheet, so the
+// formula evaluates to 0 vCPU / 0 RAM at every size — an incomplete row, not a
+// claim that RTM is free. We previously invented a node count (2, or 3 on Large)
+// and multiplied it by the VCFMS worker figures, which produced 48/96 on Medium.
+//
+// These are the product's own numbers instead: the Add Real-Time Metrics wizard
+// reports 32 vCPU / 43 GB for a Medium instance (field-observed 2026-07-22, #199)
+// — the VCFMS scale-up delta, since RTM deploys no appliances of its own and
+// grows the services runtime instead. Only Medium has been observed. Small and
+// Large are DERIVED from the VCFMS worker ratio (Small worker 12/24 is half of
+// Medium's 24/48; Large worker 24/48 equals Medium's), and are flagged as derived
+// in docs/04-sizing.md. Replace them with observed values when seen (#200).
+const rtmCpu: SizeMap = { Small: 16, Medium: 32, Large: 32 };
+const rtmRam: SizeMap = { Small: 22, Medium: 43, Large: 43 };
+// Disk is contested: the workbook hard-codes 205, the wizard reports 15. We
+// report the workbook's 205 (the only RTM figure that genuinely traces to the
+// source) and document the conflict rather than silently picking a side (#200).
+const RTM_DISK = 205;
+
 const vcfopsCpu: SizeMap = { 'Extra Small': 2, Small: 4, Medium: 8, Large: 16, 'Extra Large': 24 };
 const vcfopsRam: SizeMap = { 'Extra Small': 8, Small: 16, Medium: 32, Large: 48, 'Extra Large': 128 };
 const vcfopsDisk: SizeMap = { 'Extra Small': 274, Small: 274, Medium: 274, Large: 274, 'Extra Large': 274 };
@@ -428,15 +448,16 @@ export function components(s: SizingState): Component[] {
     });
   }
 
-  // Real-time Metrics — worker nodes size off the deployment size
+  // Real-time Metrics. Deploys NO appliances of its own — it scales up the VCFMS
+  // runtime instead, so the figures are the scale-up delta and the node count is
+  // 0 by design, not an omission (#199, #200).
   if (s.vcfRtm) {
-    const nodes = size === 'Large' ? 3 : 2;
     list.push({
-      name: 'Real-time Metrics',
-      nodes,
-      cpu: vcfmsWorkerCpu[size] * nodes,
-      ram: vcfmsWorkerRam[size] * nodes,
-      disk: 205,
+      name: 'Real-time Metrics (VCFMS scale-up)',
+      nodes: 0,
+      cpu: rtmCpu[size],
+      ram: rtmRam[size],
+      disk: RTM_DISK,
     });
   }
 

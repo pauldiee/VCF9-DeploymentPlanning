@@ -1,5 +1,30 @@
 # Changelog
 
+## v2.4.1 — 2026-07-22
+- **The sizer's Real-Time Metrics figures were invented** (#200). Checked against
+  the pinned workbook: its *Real-time Metrics* row multiplies by a node-count
+  cell (`J29`) that **does not exist in the sheet**, so the formula evaluates to
+  **0 vCPU / 0 RAM** at every size. The tool had papered over that by inventing a
+  node count (2, or 3 on Large) and multiplying it by the VCFMS worker figures —
+  producing **48 vCPU / 96 GB** on Medium, a number from no source at all.
+- **Replaced with the product's own scale-up delta** (#200). RTM deploys **no
+  appliances of its own** — it grows the VCFMS runtime — so the row now shows a
+  **node count of 0** and reports the scale-up cost. **Medium (32 vCPU / 43 GB)
+  is observed** from the wizard; **Small and Large are derived** from the VCFMS
+  worker ratio and are labelled as derived in `docs/04-sizing.md` rather than
+  presented as fact.
+- **Disk conflict documented rather than silently resolved** (#200): the workbook
+  hard-codes **205 GB**, the wizard reports **15 GB** for the same Medium
+  instance. The tool reports 205 — the only RTM figure that traces to the
+  source — and `04-sizing.md` states the disagreement so a reader comparing the
+  tool against the wizard does not assume one is broken.
+- **`CLAUDE.md` corrected: `ImportExcel` is not installed** — it is absent from
+  both pwsh 7.x and Windows PowerShell 5.1, despite the guidance saying
+  otherwise. Replaced with the module-free recipe (treat the `.xlsx` as a zip and
+  parse the XML parts), plus a warning learned here: **read the `<f>` formula,
+  not just the cached `<v>` value** — a cached `0` may only mean the sheet ships
+  with that option set to *Exclude*, and a formula may reference a missing cell.
+
 ## v2.4.0 — 2026-07-22
 - **Real-Time Metrics is a maintenance-window change, not an add-on** (#199).
   New `05-day2-deployments.md` **B.0**. RTM is not a standalone appliance — it

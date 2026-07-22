@@ -129,6 +129,24 @@ against Broadcom TechDocs (issue #16). Results:
 - **VCF Operations / Automation / VCFMS / Cloud Proxy / Ops-for-Networks** come
   from the workbook's own reference tables; no external per-size Broadcom table
   was available to cross-check — validate against the workbook itself.
+- **Real-time Metrics does not match the workbook — deliberately.** The
+  workbook's *Real-time Metrics* row multiplies by a node-count cell that **does
+  not exist in the sheet**, so its formula evaluates to **0 vCPU / 0 RAM** at
+  every size. That is an incomplete row, not a claim that RTM is free: the
+  product plainly asks for resources. The tool instead reports the **VCFMS
+  scale-up delta**, because RTM deploys **no appliances of its own** — it grows
+  the services runtime (see [`05-day2-deployments.md` §B.0](05-day2-deployments.md)),
+  which is why its **node count shows 0**.
+  - **Medium — 32 vCPU / 43 GB — is observed**, from the *Add Real-Time Metrics*
+    wizard on a real deployment (2026-07-22).
+  - **Small and Large are derived**, not observed: scaled by the VCFMS worker
+    ratio (a Small worker is 12/24 against Medium's 24/48; a Large worker is
+    24/48, the same as Medium). Treat them as estimates until someone sees the
+    wizard at those sizes.
+  - **Disk is contested.** The tool reports the workbook's **205 GB** — the only
+    RTM figure that genuinely traces to the source — while the wizard reports
+    **15 GB** for the same Medium instance. The gap is unexplained; budget the
+    larger figure and do not be surprised when the wizard shows less.
 - **VCF Automation is sized on its own size, not the deployment profile.** It has
   a separate **Small / Medium / Large** selector in the tool, and that size also
   fixes the node count — **Small = 1 node** (Simple model), **Medium / Large = 3
