@@ -23,7 +23,7 @@ new one (see [§8](#8-field-notes)).
 | 2 | [Pre-flight gate](#2-pre-flight-gate) | The morning of — what to verify before opening the wizard |
 | 3 | [Build the Centralized Transit Gateway](#3-build-the-centralized-transit-gateway) | Edge cluster + Tier-0 + BGP + the IP blocks |
 | 4 | [Avi Load Balancer (only if used)](#4-avi-load-balancer-only-if-used) | Ordering, and the settings that cannot be changed later |
-| 5 | [Content library for Supervisor / VKS images](#5-content-library-for-supervisor--vks-images) | **Changed in 9.1** — the public CDN is gone |
+| 5 | [Content libraries for Supervisor and VKS images](#5-content-libraries-for-supervisor-and-vks-images) | **Two libraries** — one is a hard prerequisite to enablement |
 | 6 | [Activate the Supervisor](#6-activate-the-supervisor) | The wizard, screen by screen |
 | 7 | [Validate](#7-validate) | Proving it actually works, not just that it finished |
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |
@@ -41,24 +41,34 @@ new one (see [§8](#8-field-notes)).
 
 ## 1. Decide the shape first
 
-### 1.1 "Centralized" is ambiguous — resolve it
+### 1.1 The networking paths, and which one this page follows
 
-| Term | What it actually is | 9.1 status |
-| ---- | ------------------- | ---------- |
-| **Centralized Transit Gateway (CTGW)** | A *connectivity mode of VPC networking*. The Transit Gateway attaches to a **Tier-0 on an Edge cluster** instead of to a VNA. Still VPC networking, still the VPC wizard. | Fully supported, UI-driven, 9.1-documented |
-| **Classic NSX Segment Networking** | The pre-9 model: pod / ingress / egress CIDRs, Tier-1 per namespace, Edge LB or Avi. Wizard field reads *Networking Stack: NSX*. | **Removed from the vSphere Client UI in 9.1 — API only** |
+There are **three** networking models for a Supervisor in 9.1, and the VPC model
+splits again into two Transit Gateway modes — so four practical paths:
 
-Verbatim, from the vSphere Supervisor 9.1 release notes **[documented]**:
+**1. VPC + Centralized Transit Gateway** — UI-driven. **Covered on this page.**
+Needs a Tier-0 with outside connectivity and an **Edge cluster**. Load balancer:
+Avi, or the NSX Edge load balancer.
 
-> "Starting with VCF 9.1, the vSphere Client UI no longer supports deploying a
-> Supervisor with classic NSX Segment Networking. Deployment remains fully
-> supported through the API."
+**2. VPC + Distributed Transit Gateway** — UI-driven. See
+[§9.1](#91-distributed-transit-gateway).
+Needs a VLAN-backed network with outside connectivity and a **VNA cluster**, and
+no Edge cluster at all. Load balancer: Avi, or the built-in VPC/VNA one.
 
-**This page documents the CTGW path.** If you need classic NSX segment
-networking, go to [§9.2](#92-classic-nsx-segment-networking-api-only-in-91)
-first — the plan changes materially.
+**3. Classic NSX segment networking** — **API only in 9.1**. See
+[§9.2](#92-classic-nsx-segment-networking-api-only-in-91).
+Needs an Edge cluster and Tier-0, plus pod / ingress / egress CIDRs. Load
+balancer: Avi, or the NSX Edge load balancer.
 
-Both Transit Gateway modes exist under VPC networking **[documented]**:
+**4. vDS networking** — UI-driven. See [§9.3](#93-vds-networking).
+No NSX; distributed port groups instead. Load balancer: the **Foundation Load
+Balancer**, or Avi.
+
+The **Simplified ("Easy") flow** ([§9.4](#94-simplified-easy-supervisor)) is a
+*deployment flow*, not a fifth networking path — it cuts the starting
+configuration down and expands afterwards.
+
+Within VPC networking, the two Transit Gateway modes are **[documented]**:
 
 - **Centralized** — "attaches the Transit Gateway to a Tier-0 Gateway"; "uses the
   Tier-0 networking capabilities and services like BGP and requires an Edge
@@ -70,6 +80,33 @@ Both Transit Gateway modes exist under VPC networking **[documented]**:
 A Transit Gateway must be **all-centralized or all-distributed, never mixed**
 **[documented]**.
 
+#### The word "centralized" is ambiguous — resolve it before you build
+
+Paths 1 and 3 both get called *centralized* in conversation, and they are not the
+same thing:
+
+**Centralized Transit Gateway (CTGW)** is a *connectivity mode of VPC
+networking*. The Transit Gateway attaches to a **Tier-0 on an Edge cluster**
+instead of to a VNA — but it is still VPC networking, and still the VPC wizard.
+Fully supported and UI-driven in 9.1.
+
+**Classic NSX Segment Networking** is the pre-9 model: pod / ingress / egress
+CIDRs, a Tier-1 per namespace, Edge LB or Avi. The wizard field reads *Networking
+Stack: NSX*. **Removed from the vSphere Client UI in 9.1 — API only.**
+
+They look alike from a distance — both want an Edge cluster and a Tier-0, and
+both are "the one with the Edges" — but they use different wizards, different
+CIDR models, and in 9.1 only one of them has a wizard at all. Verbatim, from the
+vSphere Supervisor 9.1 release notes **[documented]**:
+
+> "Starting with VCF 9.1, the vSphere Client UI no longer supports deploying a
+> Supervisor with classic NSX Segment Networking. Deployment remains fully
+> supported through the API."
+
+**This page documents path 1, the CTGW path.** If you need classic NSX segment
+networking, go to [§9.2](#92-classic-nsx-segment-networking-api-only-in-91)
+first — the plan changes materially.
+
 ### 1.2 Load balancer — you may not need Avi
 
 Supervisor activation requires *a* load balancer, not specifically Avi. On the
@@ -78,8 +115,17 @@ VPC path the prerequisite reads **[documented]**:
 > Optionally install and configure the Avi Load Balancer; the **NSX Edge load
 > balancer is used if NSX does not detect the Avi Load Balancer**.
 
-So Avi is opt-in, and it is *detected* rather than configured in the Supervisor
-wizard. Choose it only when you have a reason — an existing Avi estate, L7
+And the choice is exclusive **[documented]**:
+
+> "You can use either the VCF Native Load Balancer or the Avi Load Balancer."
+
+> "You can only use one load balancer. If the Supervisor is configured with the
+> VCF Native Load Balancer, a VPC using the Avi Load Balancer cannot be used."
+
+So Avi is opt-in, it is *detected* rather than configured in the Supervisor
+wizard, and it is **one or the other** — committing the Supervisor to the native
+load balancer rules Avi out for VPCs under it, which is a decision to make before
+activation rather than after. Choose it only when you have a reason — an existing Avi estate, L7
 ingress requirements, or a VCF Automation deployment already fronted by it.
 Otherwise the built-in path needs no extra appliance, no extra licence and no
 extra failure domain.
@@ -121,6 +167,8 @@ Not documented for the stretched case: Edge cluster and Tier-0 placement across
 sites, Avi Controller and Service Engine placement across AZs, and Service Engine
 Group host-group affinity per site. Decide these deliberately and record the
 reasoning.
+
+*Sources: [Supervisor architecture with VPC networking][arch] · [Supervisor 9.1 release notes][relnotes] · [Supervisor on a vSAN stretched cluster][stretched]*
 
 ---
 
@@ -174,8 +222,18 @@ Verify — do not accept assurances. Each of these has failed a real activation.
 - [ ] Load balancer decision made per [§1.2](#12-load-balancer--you-may-not-need-avi)
 - [ ] If Avi: Controller cluster healthy **in the management domain**, licensed,
       registered, and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
-- [ ] **VCF Software Depot configured in vCenter** — this is what creates the
-      VKS content library in 9.1. See [§5](#5-content-library-for-supervisor--vks-images)
+- [ ] **Supervisor Images content library created and assigned** — a hard
+      prerequisite: since VCF 9 the Supervisor release images ship separately
+      from vCenter ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first))
+- [ ] **VCF Software Depot configured in vCenter** — this is what the libraries
+      subscribe to, and what auto-creates the VKS library at first enablement
+      ([§5.2](#52-the-vks-library--for-guest-clusters-afterwards))
+- [ ] **The depot actually holds the content** — a separate question from whether
+      the depot is configured, and the usual cause of a library that syncs but is
+      empty. Check the **SUPERVISOR** path first, then **VKR**
+      ([§5.4](#54-offline-depot-configured-is-not-the-same-as-populated))
+
+*Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90] · [Supervisor architecture with VPC networking][arch]*
 
 ---
 
@@ -215,6 +273,15 @@ gateway and subnet mask.
 | Gateway routing type | **BGP** |
 | Local autonomous system number | Your ASN |
 
+> **The HA modes are not a free choice, and the two layers differ.** Verbatim
+> **[documented]**: "VCF 9.1 supports a tier-0 gateway in **Active/Active**
+> configuration and a Centralized Transit Gateway in **Active/Standby**
+> configuration with the required stateful services such as NAT for the
+> Supervisor." The Transit Gateway is active/standby because it carries stateful
+> services; the Tier-0 beneath it is active/active. If someone reports "the
+> Tier-0 had to be rebuilt as active/standby", that is the *classic NSX segment*
+> path or a different design constraint — it is not this one.
+
 Per Edge node uplink: gateway interface **VLAN**, gateway interface **CIDR**,
 **BGP peer IP**, **BFD** toggle, **MTU** (valid range 1600–9000), **BGP peer
 ASN**, and **BGP peer password**.
@@ -245,6 +312,8 @@ and 9.1 books.
 > failure mode is expensive, and a `/16` of private space costs nothing — so
 > **size it `/16`** and treat a hang at this stage as evidence. Do not present it
 > to a customer as a documented requirement.
+
+*Sources: [Configure the Centralized Gateway][ctgw] · [Supervisor architecture with VPC networking][arch]*
 
 ---
 
@@ -310,12 +379,61 @@ Engine VMs are deployed per Supervisor.
 - Avi provides **L4 for Services in both Supervisor and VKS clusters**, but
   **L7 for Ingresses in Supervisor clusters only** **[documented]**.
 
+*Sources: [Avi for VCF 9.1 — licence management][avi-lic] · [Install and configure NSX and Avi (9.0)][avi-install] · [Configure the Service Engine Group][avi-seg] · [Limitations of using Avi][avi-limits]*
+
 ---
 
-## 5. Content library for Supervisor / VKS images
+## 5. Content libraries for Supervisor and VKS images
 
-**This changed in 9.1 and old procedures are actively wrong.** Verbatim from the
-vSphere Supervisor 9.1 release notes **[documented]**:
+**There are two libraries, not one, and only one of them is a prerequisite to
+enablement.** Conflating them is easy and expensive, so keep them apart:
+
+| Library | Holds | Needed |
+| ------- | ----- | ------ |
+| **Supervisor Images** | Supervisor release images (spherelet + Supervisor OVA) | **Before enablement** |
+| **VKS** | Kubernetes releases for VKS guest clusters | After — auto-created at first enablement when the depot is configured |
+
+### 5.1 The Supervisor Images library — the one you need first
+
+This is the answer to "what do I need before I can deploy a Supervisor at all".
+Verbatim **[documented]**:
+
+> "You can use a subscribed content library for Supervisor enablement and
+> upgrade. Starting from VCF 9, the Supervisor releases can be delivered
+> separately from vCenter."
+
+That last clause is the change worth internalising: **in VCF 9 the Supervisor
+release images no longer ship inside vCenter**. They come from a content library
+you point at the Software Depot.
+
+**Get the subscription URL** — Developer Center → **API Explorer** → GET
+**`lcm/depot/services`**, then assemble **[documented]**:
+
+```
+https://{VcenterLcmDepotServicesAddress}{base_url}/PROD/COMP/SUPERVISOR/lib.json
+```
+
+Note the path component: **`SUPERVISOR`**, not `VKR`. That single word is the
+difference between the two libraries.
+
+**Create it** — Content Libraries → Create → **Subscribed Content Library** →
+subscription URL → sync mode (*Immediately* or *When needed*) → accept the SSL
+thumbprint → datastore → Finish.
+
+**Assign it** — **Supervisor Management → Content Distribution → Supervisor
+Images Library → Assign**, then select the library **[documented]**. This is a
+different screen from where the VKS library is attached
+([§5.2](#52-the-vks-library--for-guest-clusters-afterwards)).
+
+> **Do not delete or edit a library while it is assigned.** Verbatim: "Do not
+> attempt to delete or edit the content library that is assigned with the
+> Supervisor release images. You must unassign the Supervisor release images
+> before you attempt to delete or edit the content library." **[documented]**
+
+### 5.2 The VKS library — for guest clusters, afterwards
+
+This is the one the 9.1 release notes describe, and it is **not** a prerequisite
+to enablement **[documented]**:
 
 > "Starting with VCF 9.1, the public CDN (wp-content.vmware.com or
 > wp-content.broadcom.com) is no longer used to create the default VKS content
@@ -324,37 +442,98 @@ vSphere Supervisor 9.1 release notes **[documented]**:
 > based on the VCF Software Depot endpoint upon the first Supervisor enablement
 > in vCenter."
 
-Read that carefully, because it inverts the usual assumption:
+So with the depot configured you do **not** build this one by hand — it is
+created automatically, from the depot endpoint, at first enablement. Building it
+manually is the fallback for a deployment without the Software Depot: the depot
+path is `.../PROD/COMP/VKR/lib.json`, and without a depot the documented URL is
+`https://wp-content.broadcom.com/v2/latest/lib.json` **[documented]**.
 
-1. **Any subscription URL under `wp-content.*` is dead.** A guide, runbook or
-   habit that starts by pasting that URL will produce a library that never syncs.
-2. **With the VCF Software Depot configured, you do not create the library by
-   hand.** It is created **automatically**, from the depot endpoint, on the
-   **first Supervisor enablement in that vCenter**.
-3. **Manual creation is the fallback**, for when the depot is not configured or
-   the site is air-gapped.
+**Association:** Supervisor Management → Supervisors → select the Supervisor →
+**Configure → General → Kubernetes Service** → **Add** (or *Remove*). Requires
+vSphere 9.0+ and VKS 3.3+ **[documented]**. Scope, verbatim:
 
-So the real pre-flight item is *"is the VCF Software Depot configured in this
-vCenter?"* — not *"has someone built a content library?"*. Confirm the depot
-first; if it is configured, let activation create the library and verify it
-afterwards ([§7](#7-validate)).
+> "The same content library is used for all vSphere Namespaces on a Supervisor
+> instance. For this reason, changing the content library is only allowed at the
+> Supervisor level."
 
-> **Offline / air-gapped sites.** The library must be populated from the offline
-> depot rather than a subscription. Note also a **[field-reported]** issue that
-> the 9.1 `vks-download-tool` does not download the Supervisor OVA or Kubernetes
-> release artifacts, with a fix expected in 9.1.1 — verify the artifacts are
-> actually present before relying on them.
+Per-Supervisor rather than per-namespace, multiple libraries supported, and
+changeable after activation — unlike most choices in this guide, this one is not
+one-shot.
+
+> **Two constraints** **[documented]**: do not add the VKS content library to the
+> **VM Service** tile; and if a library is deleted from vCenter while still linked
+> to VKS, remove the link before other operations will succeed.
+
+### 5.3 Air-gapped: publish locally, and fix the item type
+
+For a full air-gapped site there is a documented publisher flow — build a
+**local, published** library on a connected side, then subscribe to it from the
+air-gapped vCenter **[documented]**:
+
+> "In a full air-gapped environment, where direct internet access is restricted,
+> you must first download the vSphere Supervisor release artifacts on a separate,
+> internet-connected host and then manually upload and publish the artifacts in a
+> content library in your secure environment."
+
+1. From a connected machine, download the full Supervisor release bundle
+   including `lib.json` from `https://wp-content.broadcom.com/supervisor/v1/latest/`.
+   The artifacts are spherelet folders per Kubernetes version (v1.28, v1.29,
+   v1.30, …) containing `spherelet-depot-<version>.zip`,
+   `spherelet-solution-<version>.json`, and the Supervisor OVA parts
+   (`.mf`, `.ovf`, `.cert`, `.vmdk`).
+2. In the secure environment: Content Libraries → Create → **Local content
+   library**, **enable publishing**, set the OVF security policy, pick a
+   datastore.
+3. Import the items — **lowest version number first** — then the matching OVA
+   files.
+4. **Fix the item type, or the assign will fail.** Verbatim: "Manually uploaded
+   Spherelet artifacts are marked as type file, which causes the Supervisor
+   assign operation to fail. To fix this, the item type must be changed to type
+   other by using the DCLI tool." **[documented]**
+5. On the library, open the **Publication** card and copy the **subscription
+   URL**; subscribe to it from the vCenter(s) that need it.
+
+> Step 4 is the one that ambushes people — everything uploads cleanly, the
+> library looks healthy, and the assign fails with nothing pointing at item type.
+
+### 5.4 Offline depot: configured is not the same as populated
+
+**The most likely way to end up with a library that syncs cleanly and contains
+nothing.** A configured Software Depot gives you the plumbing; it does not follow
+that the depot holds the content.
+
+- The offline-depot documentation describes what it downloads as "VCF component
+  binaries and ESX component data" and "installation, upgrade binaries, ESX
+  binaries, and metadata" — with **no mention** of Supervisor, VKS or Kubernetes
+  release images anywhere **[documented, by absence]**.
+- Practitioners report that in 9.1 the download tool **does not retrieve the
+  Supervisor OVA or the Kubernetes release artifacts**, with a fix expected in
+  **9.1.1** **[field-reported]**.
+
+So treat "does the depot actually contain the content?" as its own pre-flight
+question. **Check before activation:** fetch the depot `lib.json` for the
+**SUPERVISOR** path first (that is the one that blocks enablement), then the
+**VKR** path, and confirm each lists items. An empty response is your answer, and
+it is far cheaper to find now. If it is empty, either use the air-gapped
+publisher flow in [§5.3](#53-air-gapped-publish-locally-and-fix-the-item-type) or
+the community script that walks `lib.json` / `items.json`.
+
+> **Credit:** the offline-depot content gap and the download-script workaround
+> were documented by the community ahead of the vendor — see
+> [Amaya Citta on VKS and Supervisor content libraries with an offline depot](https://amayacitta.co.uk/vcf-9-1-vks-supervisor-content-libraries-with-offline-depot/)
+> and [William Lam on HTTP offline depot support in 9.1](https://williamlam.com/2026/05/vcf-9-1-new-http-offline-depot-support-for-vcf-installer-fleet-depot-service.html).
 
 > **A synced library is not a populated one.** Check the item count and that a
-> usable release is actually listed — not just that the sync reported success.
-> An empty-but-healthy library fails you late, after the control plane is up.
+> release is actually listed — not just that the sync reported success.
 
 > **It also blocks teardown.** "Supervisor disablement fails and remains stuck in
 > a removing phase if an associated Content Library cannot be deleted"
-> **[documented]** — the fix is to delete the content-library usage association
-> via REST.
+> **[documented]** — delete the content-library usage association via REST.
+
+*Sources: [Supervisor 9.1 release notes][relnotes] · [Configure a subscribed content library for Supervisor images][cl-sup] · [Create a vCenter publisher for the Supervisor releases library (air-gapped)][cl-airgap] · [Create a subscribed content library (VKS)][cl-create] · [Add or update VKS content libraries on a Supervisor][cl-edit]*
 
 ---
+
 
 ## 6. Activate the Supervisor
 
@@ -408,11 +587,18 @@ the **5 consecutive IPs / floating IP**, subnet mask, gateway, **DNS servers**
 > deployed, and it is the input for "Deploy a Supervisor by Importing a JSON
 > Configuration File" later. Do it every time.
 
+> **The wizard never asks about content libraries** — which is exactly why the
+> Supervisor Images library catches people out. It is assigned beforehand, on a
+> different screen (*Supervisor Management → Content Distribution*), so there is
+> nothing here to remind you. See [§5.1](#51-the-supervisor-images-library--the-one-you-need-first).
+
 Activation then performs "deployment of control plane VMs, ESX host configuration
 as Kubernetes nodes, virtual IP preparation on the load balancer, and core
 Supervisor Services deployment" **[documented]**. Status moves through
 **Configuring** to **Running** in the Workload Management Supervisor table
 (*config status* and *host config status* columns).
+
+*Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [NSX VPC workflow for Supervisor][workflow]*
 
 ---
 
@@ -450,23 +636,51 @@ Supervisor enablement"** — the *API Server DNS Names* field from
 > validation checklist. The table above is assembled from the troubleshooting and
 > connection pages rather than quoted from one.
 
+*Sources: [Connect to the Supervisor as a vCenter SSO user][vcf-cli] · [Troubleshooting the core Supervisor][ts-core]*
+
 ---
 
 ## 8. Field notes
 
 ### Failure signatures worth recognising
 
-| Symptom | Cause and fix |
-| ------- | ------------- |
-| Enablement halts at **"Configured Supervisor Control plane VM's Workload Network"**; **eth1 never configured**; CoreDNS one pod CrashLoopBackOff and two Pending | `nsx-ncp` stuck in **"Restore mode"** after a previous NSX Manager restore, so the workload segment is never created. Patch `ncpconfig nsx-restore-status` with the NSX `restore_end_time`, restart nsx-ncp (KB 406786) |
-| Cluster provisioning hangs; *"call timeout expired … http2: client connection lost"*; Avi shows **"Unable to acquire IP address for network"**; a direct `curl` to the control-plane VM **succeeds** | The load balancer, not the Supervisor. Create a new Service Engine Group and reassign the virtual service to it (KB 442187) |
-| Stuck on the load-balancer step: *"Configured Load Balancer fronting the Kubernetes API Server — Timed out waiting for LB service update"* | Foundation LB instance **naming conflict** when more than one Supervisor exists in a single vCenter (KB 405115) |
-| Load balancer service traffic fails when endpoints sit outside the VPC | Documented 9.1 issue; workaround is auto-SNAT |
-| vSphere Namespace creation fails against a 9.1 NSX | NSX 9.1 introduces the **`cidr_list`** parameter on IPBlock; a 9.0 Supervisor consumes the old **`cidr`**. Version-mismatch, not misconfiguration |
-| Re-enabling a Supervisor on a previously decommissioned cluster fails | Documented, and the workaround is to **build a new cluster**. Decommissioning is one-way for this purpose |
-| Deployment never completes at the transit-gateway stage | Suspect the private transit-gateway block size — see [§3.3](#33-the-ip-blocks-and-the-16-question) **[field-reported]** |
+Each entry is **what you see** followed by **what it is**. All are
+**[documented]** in release notes or KBs except where marked otherwise.
 
-All rows above are **[documented]** in release notes or KBs except where marked.
+**Enablement halts at "Configured Supervisor Control plane VM's Workload
+Network".** `eth1` is never configured on the Supervisor nodes, and CoreDNS shows
+one pod in CrashLoopBackOff with two Pending.
+→ `nsx-ncp` is stuck in "Restore mode" after a previous NSX Manager restore, so
+the workload segment is never created. Patch `ncpconfig nsx-restore-status` with
+the NSX `restore_end_time` and restart nsx-ncp. (KB 406786)
+
+**Cluster provisioning hangs, and a direct `curl` to the control-plane VM
+succeeds.** Logs show *"call timeout expired … http2: client connection lost"*;
+Avi raises *"Unable to acquire IP address for network"*.
+→ The load balancer, not the Supervisor — the successful `curl` is the tell.
+Create a new Service Engine Group and reassign the virtual service to it.
+(KB 442187)
+
+**Stuck on the load-balancer step** with *"Configured Load Balancer fronting the
+Kubernetes API Server — Timed out waiting for LB service update"*.
+→ A Foundation LB instance naming conflict when more than one Supervisor exists
+in a single vCenter. (KB 405115)
+
+**Load balancer service traffic fails** when the endpoints sit outside the VPC.
+→ A documented 9.1 issue; the workaround is to configure auto-SNAT.
+
+**vSphere Namespace creation fails against a 9.1 NSX.**
+→ NSX 9.1 introduces the `cidr_list` parameter on IPBlock while a 9.0 Supervisor
+still consumes the old `cidr`. A version mismatch, not a misconfiguration — stop
+re-checking your CIDRs.
+
+**Re-enabling a Supervisor on a previously decommissioned cluster fails.**
+→ Documented, and the workaround is to build a new cluster. Decommissioning is
+one-way for this purpose.
+
+**Deployment never completes at the transit-gateway stage.**
+→ Suspect the private transit-gateway block size — see
+[§3.3](#33-the-ip-blocks-and-the-16-question). **[field-reported]**
 
 ### Traps that are requirements, not symptoms
 
@@ -496,18 +710,71 @@ satisfies both.
   `journalctl -u kubelet -n 100 --no-pager`, `journalctl -u containerd -n 100`,
   and `tail -n 200 /var/log/vmware/wcp/wcpsvc.log` **[documented]**.
 
+*Sources: [Supervisor 9.1 release notes][relnotes] · [KB 442187][kb442187] · [KB 406786][kb406786] · [Troubleshooting the core Supervisor][ts-core]*
+
 ---
 
 ## 9. The other networking paths
 
 ### 9.1 Distributed Transit Gateway
 
-Same VPC wizard, different connectivity mode. Requires a **VLAN-backed network
-with outside connectivity** and a **VNA (Virtual Network Appliance) cluster**
-providing NAT and load balancing, instead of an Edge cluster and Tier-0
-**[documented]**. It "scales out as you add hosts" and needs no additional
-physical-network configuration. Everything in [§5](#5-content-library-for-supervisor--vks-images)
-through [§8](#8-field-notes) still applies.
+Same VPC wizard and the same Supervisor activation — only [§3](#3-build-the-centralized-transit-gateway)
+is replaced. Everything from [§4](#4-avi-load-balancer-only-if-used) onward
+(Avi, content library, activation, validation, field notes) applies unchanged.
+
+**What it is** **[documented]**:
+
+> "The Distributed Transit Gateway does not require Edge Nodes, dynamic routing,
+> or any specific configuration on the physical network."
+
+> "It allows a distributed model which scales out as you add hosts since traffic
+> directly goes from the host to the VLAN."
+
+**What it needs instead of an Edge cluster and Tier-0** **[documented]**:
+
+> "A VPC with a Distributed Transit Gateway requires a VLAN available on all ESX
+> hosts spanned by the Transit Gateway and connected VPCs."
+
+That VLAN requirement is the one to check early — it must be present on **every**
+host the Transit Gateway and its VPCs span, which on a stretched or multi-cluster
+domain means every host on both sites.
+
+**Where the VNA fits.** Not everything is distributed **[documented]**:
+
+> "Services like DHCP or the ability to expose a workload with an external IP
+> (1:1 NAT) are also distributed."
+
+> "For networking services like Load Balancer or outbound SNAT, the Virtual
+> Network Appliance (VNA) is used."
+
+> "The VNA is multi-tenant and the same VMs can be used for multiple namespaces
+> and multiple VCF Automation Organizations."
+
+So DHCP and 1:1 NAT run distributed on the hosts, while **load balancing and
+outbound SNAT land on the VNA** — which is therefore in the data path for
+anything egressing by SNAT or fronted by the built-in load balancer. Size and
+place it accordingly; being multi-tenant, one cluster serves multiple namespaces
+and Automation organizations.
+
+**Configuration fields** — the VNA cluster is configured in the **VPC
+connectivity profile**; gateway type is **Distributed Connection**
+**[documented]**:
+
+| Scope | Fields |
+| ----- | ------ |
+| VNA cluster | Cluster name, **form factor**, then ADD one or more VNA nodes |
+| Per VNA node | Node name, target cluster, resource pool, datastore, management network IP assignment (DHCP or static), management port group |
+| External connectivity | **VLAN ID** (0–4094); Gateway CIDR — "must be the same as the VLAN configured for the external router" |
+| IP blocks | **External IP Blocks**; **Private - Transit Gateway IP Blocks** |
+
+The same two IP blocks as the centralized path, so the sizing caveat in
+[§3.3](#33-the-ip-blocks-and-the-16-question) applies here too.
+
+> **Not documented:** minimum VNA node count, form-factor sizing guidance, and
+> the VLAN attachment detail for the VNA cluster itself. The configuration page
+> states none of these. Plan for a cluster rather than a single node on anything
+> production, and confirm the form factor against the release notes for your
+> build.
 
 ### 9.2 Classic NSX segment networking (API only in 9.1)
 
@@ -545,33 +812,71 @@ management traffic. An FQDN is mandatory for Supervisor access on this path too,
 pointing at the floating IP when there is no load balancer, or at the VIP when
 there is.
 
----
+*Sources: [Configure the Distributed Transit Gateway][dtgw] · [Supervisor architecture with VPC networking][arch] · [Deploying Supervisor with a simplified flow][easy] · [Requirements for simplified deployment][easy-req] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90]*
 
+---
 ## 10. References
 
-**VCF 9.1 Supervisor**
+Each section above ends with a compact **Sources** line naming the exact pages
+behind it. This section is the consolidated list — the books to start from when
+you need something this page does not cover.
 
-- [vSphere Supervisor Installation and Configuration (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html)
-- [Supervisor Networking with Virtual Private Clouds](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds.html) — architecture, the NSX VPC workflow, Configure the Centralized Gateway, and Deploy a Supervisor with NSX VPC
-- [vSphere Supervisor 9.1 Release Notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-1/release-notes/vmware-vsphere-supervisor-release-notes.html) — the classic-NSX UI removal and the content-library change
-- [Deploying Supervisor with a Simplified Deployment Flow](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor.html)
-- [Connect to the Supervisor as a vCenter Single Sign-On User](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/connecting-to-vsphere-with-tanzu-clusters/connect-to-the-supervisor-cluster-as-a-vcenter-single-sign-on-user.html) — the VCF CLI
-- [Supervisor on a vSAN Stretched Cluster](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/overview-of-running-vsphere-iaas-control-plane-on-vsan-stretched-cluster.html)
-- [Troubleshooting the Supervisor](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes.html)
+**VCF 9.1 Supervisor** — [Installation and Configuration][book] is the root.
+Within it: [Supervisor networking with VPC][vpc-book] (architecture, the
+workflow, both Transit Gateway wizards, and the activation wizard),
+[connecting to clusters][vcf-cli] (the VCF CLI),
+[the stretched-cluster overview][stretched], and [troubleshooting][ts].
+The [9.1 release notes][relnotes] carry the two changes that invalidate older
+procedures — the classic-NSX UI removal and the content-library move off the
+public CDN.
 
-**Avi Load Balancer**
+**Avi Load Balancer** — the [9.1 book][avi91] for licence management and the
+32.1.1 licence-format transition; the [9.0 book][avi90] for the NSX + Avi
+procedure itself, the Service Engine Group and NSX Cloud configuration, and the
+documented limitations. The 9.1 Supervisor book points at the 9.0 book by design,
+not by oversight.
 
-- [Avi Load Balancer for VCF 9.1](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1.html) — including licence management and the 32.1.1 licence-format transition
-- [Avi Load Balancer for VCF 9.0](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0.html) — where the 9.1 Supervisor book sends you for the NSX + Avi procedure, including the Service Engine Group and NSX Cloud configuration and the documented limitations
+**Classic NSX segment networking (9.0 sources)** — [requirements][req-nsx90] and
+the [three-zone wizard walkthrough][nsx-wizard90]. These are the current
+documentation for that path even in 9.1; see [§9.2](#92-classic-nsx-segment-networking-api-only-in-91).
 
-**KBs**
+**KBs** — [442187][kb442187] (deployment hangs on Avi virtual-service placement),
+[406786][kb406786] (enablement stuck at the workload-network step after an NSX
+restore), and KB 405115 / KB 406096 (Foundation LB naming conflict and the
+related upgrade timeout).
 
-- [KB 442187](https://knowledge.broadcom.com/external/article/442187/vks-guest-cluster-deployment-hangs-with.html) — cluster deployment hangs on Avi virtual-service placement
-- [KB 406786](https://knowledge.broadcom.com/external/article/406786/vks-supervisor-enablement-stuck-at-confi.html) — enablement stuck at the workload-network step after an NSX restore
-- KB 405115 / KB 406096 — Foundation LB naming conflict and the related upgrade timeout
+**In this repo** — [prerequisites.md → vSphere Supervisor](prerequisites.md#vsphere-supervisor-only-if-in-scope)
+is the planning-time input gate, [06-deployment-plan.md](06-deployment-plan.md)
+carries the E9 stories and their ordering, and [09-binary-depot.md](09-binary-depot.md)
+covers the Software Depot that now feeds the VKS content library.
 
-**In this repo**
+<!-- Link definitions for the per-section Sources lines. Keep alphabetical. -->
 
-- [prerequisites.md → vSphere Supervisor](prerequisites.md#vsphere-supervisor-only-if-in-scope) — the planning-time input gate
-- [06-deployment-plan.md](06-deployment-plan.md) — the E9 stories and their ordering
-- [09-binary-depot.md](09-binary-depot.md) — the Software Depot that now feeds the VKS content library
+[arch]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/supervisor-architecture-with-vpc-networking.html
+[avi-install]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer.html
+[avi-lic]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html
+[avi-limits]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer/install-and-configure-the-nsx-advanced-load-balancer-for-nsx/limitations-of-using-the-nsx-advanced-load-balancer.html
+[avi-seg]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer/install-and-configure-the-nsx-advanced-load-balancer-for-nsx/configure-service-engine-group.html
+[avi90]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0.html
+[avi91]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1.html
+[book]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html
+[cl-create]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-1/managing-vsphere-kubernetes-service/administering-kubernetes-releases-for-tkg-service-clusters/create-a-subscribed-content-library.html
+[cl-edit]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-0/managing-vsphere-kubernetes-service/administering-kubernetes-releases-for-tkg-service-clusters/edit-an-existing-content-library.html
+[cl-airgap]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/updating-vsphere-supervisor/updating-the-vsphere-with-tanzu-environment/configuring-a-subscribed-content-library-for-supervisor-images-in-air-gapped-environment/create-a-vcenter-publisher-for-supervisor-releases-content-library.html
+[cl-sup]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/updating-vsphere-supervisor/updating-the-vsphere-with-tanzu-environment/create-a-supervisor-asynchrounious-releases-content-library.html
+[ctgw]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/configure-the-centralized-gateway.html
+[deploy-vpc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/deploy-a-supervisor-with-nsx-vpc.html
+[dtgw]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/configure-the-distributed-transit-gateway.html
+[easy]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor.html
+[easy-req]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor/requirements-for-simplified-supervisor-deployment.html
+[kb406786]: https://knowledge.broadcom.com/external/article/406786/vks-supervisor-enablement-stuck-at-confi.html
+[kb442187]: https://knowledge.broadcom.com/external/article/442187/vks-guest-cluster-deployment-hangs-with.html
+[nsx-wizard90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/deploy-a-thee-zone-supervisor-with-nsx-t-data-center-networking.html
+[relnotes]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-1/release-notes/vmware-vsphere-supervisor-release-notes.html
+[req-nsx90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/requirements-for-cluster-supervisor-deployment-with-nsx.html
+[stretched]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/overview-of-running-vsphere-iaas-control-plane-on-vsan-stretched-cluster.html
+[ts]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes.html
+[ts-core]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes/troubleshooting-core-supervisor.html
+[vcf-cli]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/connecting-to-vsphere-with-tanzu-clusters/connect-to-the-supervisor-cluster-as-a-vcenter-single-sign-on-user.html
+[vpc-book]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds.html
+[workflow]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor.html
