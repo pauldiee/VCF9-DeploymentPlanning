@@ -41,6 +41,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/07-firewall-ports.md`      | Curated firewall flows by zone + links to the authoritative Ports & Protocols tools |
 | `docs/08-backup-target.md`       | Build guide — SFTP backup target (build, verify, field-notes gotchas) |
 | `docs/09-binary-depot.md`        | Build guide — offline depot / VCF Download Tool (feed the depot, connect VCF, fleet proxy) |
+| `docs/10-supervisor-enablement.md` | Build guide — enable a vSphere Supervisor on a WLD (CTGW + Avi, content library, validation, field notes) |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |

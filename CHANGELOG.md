@@ -1,5 +1,38 @@
 # Changelog
 
+## v2.5.7 — 2026-07-22
+- **New build guide: `docs/10-supervisor-enablement.md`** (#216). `prerequisites.md`
+  said *what* a Supervisor needs and `06-deployment-plan.md` carried the stories,
+  but nothing covered *how to enable one*. The guide follows the shape of `08`/`09`:
+  decide the shape → pre-flight gate → build the Centralized Transit Gateway →
+  Avi (only if used) → content library → the wizard screen by screen → validate →
+  field notes. Primary path is **VPC networking with a Centralized Transit
+  Gateway plus Avi**; Distributed TGW, classic NSX segment and vDS are documented
+  as alternatives.
+- **"Centralized" is ambiguous, and getting it wrong changes the day** (#216).
+  The guide opens by separating the **Centralized Transit Gateway** (a VPC
+  connectivity mode, UI-driven and fully 9.1-documented) from **classic NSX
+  Segment Networking**, which per the 9.1 release notes is **no longer deployable
+  from the vSphere Client UI — API only**, and whose only current requirements
+  documentation is the 9.0 Avi book.
+- **The 9.1 content-library change is called out as its own section** (#216).
+  The public CDN (`wp-content.vmware.com` / `wp-content.broadcom.com`) is no
+  longer used; with the VCF Software Depot configured the default VKS library is
+  created **automatically on first enablement**, so the real pre-flight question
+  is whether the depot is configured — not whether someone built a library.
+  Manual creation is the fallback.
+- **Claims are marked `[documented]` or `[field-reported]`** (#216). The widely
+  repeated `/16` private-transit-gateway requirement has **no TechDocs or KB
+  backing** — the 9.0 page that might have carried it has been withdrawn — so it
+  is recorded as field-reported with the reasoning for sizing `/16` anyway, and
+  explicitly not to be presented to a customer as documented.
+- **Ordering traps that cannot be fixed afterwards** (#216): the Avi
+  Default-Group must be correct **before** activation (AKO creates one SE Group
+  per Supervisor and later Default-Group edits do not propagate), Avi is
+  unsupported in **vCenter Enhanced Linked Mode**, a stretched vSAN cluster gives
+  a **single-zone** Supervisor with no conversion path, and the control-plane
+  size can **only scale up**.
+
 ## v2.5.6 — 2026-07-22
 - **`06-deployment-plan.md` had drifted from the export tool, and nothing was
   watching** (#215). The doc gains **story `8.2a`** (License Hub — deploy and
