@@ -5,6 +5,10 @@ import data from '../data/vcf-versions.json';
 // Data is refreshed daily by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
 // commits it back to main, which rebuilds Pages). See issue #179.
 const { _updated, _sourceErrors, components } = data;
+// Rows whose build came from a recorded human-verified reconciliation because the upstream
+// release notes render a malformed build string (#214). Current, not stale - so these are
+// footnoted, never folded into the "could not be read" warning above.
+const pinned = components.filter((c) => c.pinned);
 
 // Group by category, preserving manifest order within each group. Rows with a `parent`
 // (the VCF Operations sub-components, #180) are rendered indented beneath their parent row as a
@@ -61,6 +65,19 @@ const fmtDate = (iso) =>
     }
 
     {
+      pinned.length > 0 && (
+        <p class="vo-note vo-note--pin">
+          <i class="fa-solid fa-circle-info" aria-hidden="true" />
+          <strong>&dagger;</strong> {pinned.length === 1 ? 'One build is' : `${pinned.length} builds are`}{' '}
+          shown from a <strong>human-verified value</strong> because Broadcom's release notes render
+          it malformed ({pinned.map((c) => c.name).join(', ')}). The row is <em>current</em>, not
+          stale &mdash; hover the &dagger; for what upstream prints. If Broadcom changes the string,
+          the scrape stops trusting the pin and flags it instead.
+        </p>
+      )
+    }
+
+    {
       groups.map((g) => (
         <>
           <h2 class="vo-cat">{g.cat}</h2>
@@ -90,7 +107,17 @@ const fmtDate = (iso) =>
                       {c.version ?? ''}
                       {c.patched === false && <span class="vo-pill">GA</span>}
                     </td>
-                    <td class="vo-build">{c.build ?? 'N/A'}</td>
+                    <td class="vo-build">
+                      {c.build ?? 'N/A'}
+                      {c.pinned && (
+                        <sup
+                          class="vo-pin"
+                          title={`Broadcom's release notes render this build as "${c.pinned.raw}", which is malformed. Showing the verified build ${c.pinned.build} (checked ${c.pinned.verified}). ${c.pinned.note}`}
+                        >
+                          &dagger;
+                        </sup>
+                      )}
+                    </td>
                     <td>{fmtDate(c.releaseDate)}</td>
                     <td>
                       {c.sourceUrl && (
@@ -184,6 +211,22 @@ const fmtDate = (iso) =>
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     font-size: var(--fs-small);
     margin-top: var(--space-2);
+  }
+
+  /* Informational, deliberately NOT the orange warning treatment: a pinned row is
+     current and verified, so it must not read as a failure (#214). */
+  .vo-note--pin {
+    margin-bottom: var(--space-4);
+  }
+  .vo-note--pin i {
+    color: var(--itq-royal);
+    margin-right: 0.4rem;
+  }
+  .vo-pin {
+    color: var(--itq-royal);
+    cursor: help;
+    font-weight: 700;
+    margin-left: 0.15rem;
   }
 
   .vo-pill {

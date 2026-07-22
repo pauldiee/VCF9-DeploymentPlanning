@@ -80,8 +80,15 @@ const COMPONENTS = [
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-master-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'salt-raas', name: 'Salt RaaS', category: 'Management', strategy: 'techdocs',
     index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/salt-raas-9-1-0-(\d{4})-release-notes\.html$/i },
+  // Broadcom publishes this one's build with an extra digit inserted after the third:
+  // "Build 255070105" where the real build is 25570105 (verified against live product
+  // inventory and the sequential family 25570100/103/104). We do NOT derive that -- the
+  // correct build below was reconciled by a human, and it is only used when the page renders
+  // this EXACT malformed string for this EXACT version. Any change and we throw again (#214).
   { key: 'software-depot', name: 'Software Depot', category: 'Management', strategy: 'techdocs',
-    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/software-depot-9-1-0-(\d{4})-release-notes\.html$/i },
+    index: `${PATCH}/vcf-operations.html`, nested: true, leaf: /\/software-depot-9-1-0-(\d{4})-release-notes\.html$/i,
+    knownBadRender: { version: '9.1.0.0400', raw: '255070105', build: '25570105', verified: '2026-07-22',
+      note: 'Broadcom inserts an extra 0 after the third digit; confirmed against product inventory' } },
   // Management components (#187): these live in the vcf-operations/<ver>/ patch tree and DO patch on
   // their own cadence, but not on every Express Patch - so walk the tree, and if no leaf exists yet
   // fall back to the 9.1.0.0 Bill-of-Materials build (rendered with the GA pill). This replaces the
@@ -171,7 +178,7 @@ function isoDate(s) {
 // First version-anchored "<ver> | <date> | Build <8-digit>" on a leaf page. Each leaf is a
 // single product, so the first hit is that product's own build (later hits on a bundle would
 // be sub-components).
-function extractLeafBuild(html) {
+function extractLeafBuild(html, c) {
   const text = plain(html);
   // Capture the WHOLE digit run after "Build", never a fixed-width slice of it.
   //
@@ -186,16 +193,28 @@ function extractLeafBuild(html) {
   //
   // A wrong build is worse than a missing one, so refuse to guess: anything that is not
   // exactly 8 digits throws, and main()'s handler keeps the last-known value and logs KEEP.
+  //
+  // The ONE exception (#214) is a `knownBadRender` on the component: a malformed string a
+  // human has already reconciled against the real product inventory. We still never guess --
+  // we only accept the recorded correct build when the page renders EXACTLY the recorded
+  // malformed string. The moment Broadcom changes it (a new patch, or a fix), the match
+  // fails and we are back to throwing, which is what re-alerts a human.
   const m = text.match(/(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*Build\s*(\d+)/i);
   if (!m) return null;
+  const version = m[1].trim();
   const build = m[3].trim();
   if (!/^\d{8}$/.test(build)) {
+    const kbr = c?.knownBadRender;
+    if (kbr && kbr.raw === build && kbr.version === version) {
+      return { version, releaseDate: isoDate(m[2]), build: kbr.build, pinned: kbr };
+    }
     throw new Error(
-      `implausible build "${build}" (${build.length} digits, expected 8) for ${m[1].trim()} -- ` +
-      `likely a typo in the Broadcom release notes; refusing to guess`
+      `implausible build "${build}" (${build.length} digits, expected 8) for ${version} -- ` +
+      `likely a typo in the Broadcom release notes; refusing to guess` +
+      (kbr ? ` (knownBadRender is recorded for ${kbr.version}/"${kbr.raw}" and does NOT match: upstream changed, re-verify)` : '')
     );
   }
-  return { version: m[1].trim(), releaseDate: isoDate(m[2]), build };
+  return { version, releaseDate: isoDate(m[2]), build };
 }
 
 async function scrapeTechdocs(c) {
@@ -230,7 +249,7 @@ async function scrapeTechdocs(c) {
   }
 
   const leafHtml = await fetchText(leafUrl);
-  const got = extractLeafBuild(leafHtml);
+  const got = extractLeafBuild(leafHtml, c);
   if (!got || !got.build) throw new Error('leaf carried no build');
   return { ...got, sourceUrl: leafUrl, patched: true };
 }
@@ -298,8 +317,14 @@ async function main() {
         : c.strategy === 'page' ? await scrapePage(c)
         : c.strategy === 'avi' ? await scrapeAvi(c)
         : await scrapeTechdocs(c);
-      components.push({ ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null, sourceUrl: r.sourceUrl, patched: r.patched ?? true });
-      console.log(`OK   ${c.key.padEnd(18)} ${r.version}  Build ${r.build}${r.patched === false ? '  (GA fallback)' : ''}`);
+      components.push({ ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null, sourceUrl: r.sourceUrl, patched: r.patched ?? true, ...(r.pinned ? { pinned: r.pinned } : {}) });
+      if (r.pinned) {
+        // Read fine, but the upstream build string is malformed and we substituted the
+        // human-verified value. Not a source error -- the row is current, not stale.
+        console.log(`PIN  ${c.key.padEnd(18)} ${r.version}  Build ${r.build}  (upstream renders "${r.pinned.raw}"; verified ${r.pinned.verified})`);
+      } else {
+        console.log(`OK   ${c.key.padEnd(18)} ${r.version}  Build ${r.build}${r.patched === false ? '  (GA fallback)' : ''}`);
+      }
     } catch (err) {
       const kept = prevByKey.get(c.key);
       errors.push({ key: c.key, source: c.url || c.index, error: String(err.message || err) });
