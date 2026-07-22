@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.5.0 — 2026-07-22
+- **The Avi controller has its own first-login wizard** (#209). The VCF deploy
+  is not the end: **WELCOME ADMIN → System Settings** asks for a
+  **Passphrase** (a **third** secret, separate from the controller `admin` and
+  VCF Ops admin passwords), **DNS Resolver(s)**, a **DNS Search Domain**, the
+  **CEIP** opt-in and a **Setup Cloud After** checkbox. Two of those are
+  planning items nothing on the VCF side asks for — a secret to have ready, and
+  the controller's **DNS configuration**, which belongs in the Step 1 plan even
+  though the VCF deploy never collects it. `prerequisites.md` and intake `E16`
+  updated.
+
 ## v2.4.9 — 2026-07-22
 - **Avi: reserve four IPs, type three** (#209). Settled after a wrong turn in
   v2.4.8 (now **withdrawn** — it claimed a VIP input exists; it does not). The

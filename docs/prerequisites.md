@@ -242,6 +242,25 @@ Prepare up front:
   but on a management cluster sized to the line, confirm the headroom in
   `04-sizing.md` before you get there.
 
+- **The controller has its own first-login wizard — the VCF deploy is not the
+  end.** Field-observed 2026-07-22. Logging into the new controller opens
+  **WELCOME ADMIN → System Settings**, *"Let's get started with some basic
+  questions"*, which asks for:
+
+  | Field | Notes |
+  | ----- | ----- |
+  | **Passphrase\*** + **Confirm Passphrase\*** | A **third secret**, separate from the controller `admin` and VCF Ops admin passwords above. Capture it with them |
+  | **DNS Resolver(s)** | Comma-separated list — set **here**, not in the VCF deploy wizard |
+  | **DNS Search Domain** | e.g. `abc.com` — single domain |
+  | **CEIP** | The Customer Experience Improvement Program opt-in decision |
+  | **Setup Cloud After** | A checkbox deferring cloud configuration to a later step |
+
+  Two planning consequences: there is **a secret to have ready that no
+  VCF-side document mentions**, and the controller's **DNS configuration is
+  entered at first login** — so the resolvers and search domain belong in the
+  Step 1 plan alongside everything else, even though the VCF deploy never asked
+  for them.
+
 > **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
 > *"This Avi Load Balancer will automatically be deployed and linked to other
 > workload domains sharing the same NSX manager associated with `<workload
