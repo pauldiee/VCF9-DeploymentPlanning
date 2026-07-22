@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.5.2 — 2026-07-22
+- **Avi 32.1.1 gives legacy licences 90 days, and that overrides their validity
+  dates** (#211). TechDocs, verbatim: 25-character serial keys and YAML licences
+  are **deprecated**; upgraded or newly deployed 32.1.1 controllers get *"a
+  strict grace period of 90 days"* commencing *"upon the initial boot or
+  completion of the upgrade"*, and *"this 90-day limit **overrides any existing
+  validity dates**"* — their example expires licences that were *"originally
+  valid until 2029"*. A site with paid-up legacy licences and years remaining
+  gets **90 days** after upgrading. Broadcom's instruction: *"Plan the
+  transition … **before initiating an upgrade**."* New intake row **`E16a`**
+  makes this a **pre-upgrade gate**.
+- **Corrects v2.5.1's reading of the two dates** (#211/#209). They are not a
+  general Broadcom cutoff — both are **per-controller clocks started by your own
+  deployment**: the licence row is the **30-day keyless evaluation**, the banner
+  is the **90-day legacy grace period** from that controller's initial boot.
+  That is why they sat two months apart.
+- **Licensing an Avi controller is four steps, and step 1 is not in any
+  appliance** (#211): upgrade the entitlement on the **Broadcom Support
+  Portal** → deploy and register License Hub → allocate the licence and generate
+  an activation code (connected) or signed file (disconnected) in the Avi Cloud
+  Console → assign it to the controller endpoint. The entitlement upgrade is
+  **one-way — an upgraded licence cannot be downgraded**.
+
 ## v2.5.1 — 2026-07-22
 - **The Avi Passphrase is restore-critical** (#209). Confirmed: it protects the
   controller's configuration backups, so it now gets the same treatment as the

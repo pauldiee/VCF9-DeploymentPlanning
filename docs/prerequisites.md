@@ -321,18 +321,48 @@ Prepare up front:
 > License Hub section). A green connectivity indicator is **not** evidence of a
 > licensed fleet. Check **LICENSE USAGE**, not *Connectivity Status*.
 
-> **Legacy licences are on a clock — and there may be two dates, not one.** The
-> controller banners a countdown, *"All legacy licenses are scheduled to expire
-> on `<date>` (in `<n>` day(s))"*, while the licence row carries **its own
-> Expiry**. Field-observed, those two were **different** — the individual
-> **Legacy / Eval** entry expired roughly two months before the banner's date —
-> so the banner appears to be a **general legacy-licence cutoff** rather than a
-> restatement of the licence in front of you. Read **both**: the row tells you
-> when *this* licence dies, the banner when the legacy model does. Either way
-> the direction of travel is toward **subscription licences through License
-> Hub** (see the [License Hub
-> section](#license-hub-only-if-vdefend-or-avi-is-in-scope)). Diary both dates on
-> deployment day — an Avi controller whose licences lapse is not a quiet problem.
+> **Upgrading to 32.1.1 starts a 90-day clock that overrides your licence
+> validity — decide this BEFORE you upgrade.** This is the single most
+> time-critical item in this section. TechDocs, verbatim: *"Starting with Avi
+> Load Balancer version 32.1.1, **25-character serial key (legacy license) and
+> YAML-based licenses are deprecated**."* … *"Newly deployed or upgraded Avi
+> Controllers on 32.1.1 are allowed to use legacy licenses for a **strict grace
+> period of 90 days**. This period **commences upon the initial boot or
+> completion of the upgrade**."* … *"**This 90-day limit overrides any existing
+> validity dates**"* — with the worked example that *"an upgrade performed on
+> May 31 will cause all legacy licenses to expire on August 28, 2026, **even if
+> they were originally valid until 2029**."*
+>
+> So a site with **valid, paid-up legacy licences and years left on them** gets
+> **90 days** after the upgrade, and then they stop. The clock starts silently at
+> upgrade completion. Broadcom's own instruction is unambiguous: *"**Plan the
+> transition to one of Cloud Licensing or On-premise License Hub deployment
+> models before initiating an upgrade**."* If the site already runs Avi, treat
+> entitlement migration as a **pre-upgrade gate**, not a follow-up.
+
+> **Two dates on a fresh controller, and they mean different things.** A newly
+> deployed 32.1.1 controller shows both, roughly two months apart, which reads
+> as a contradiction until you know the cause:
+>
+> | Where | What it is |
+> | ----- | ---------- |
+> | The licence row's **Expiry**, ~30 days out | The *"built-in **30-day** keyless evaluation mode upon installation"* |
+> | The banner, *"All legacy licenses are scheduled to expire on `<date>`"*, ~90 days out | The **90-day legacy grace period**, counted from that controller's own **initial boot** |
+>
+> Neither is a general Broadcom cutoff — both are **per-controller clocks
+> started by your own deployment**. Diary both on the day you deploy.
+
+- **Licensing an Avi controller is a four-step sequence, and step 1 is not in
+  any appliance.** TechDocs, verbatim: *"**Upgrade Entitlement:** Log in to the
+  Broadcom Support Portal and upgrade your Avi license to the new subscription
+  format."* → *"Deploy License Hub on-premises (if applicable) and
+  onboard/register it with the Avi Cloud Console."* → *"Use the Avi Cloud
+  Console to allocate the license ID and generate an activation code (connected)
+  or signed license file (disconnected)."* → *"From the License Hub, assign the
+  validated license file directly to your Avi Controller endpoints."* Note that
+  the entitlement upgrade is a **portal action taken before any appliance work**,
+  and that **once upgraded a licence cannot be downgraded** — so it is a
+  one-way step to schedule deliberately, not to discover mid-deployment.
 
 > **Email/SMTP defaults to None — so nothing is alerting anyone.** Avi raises
 > its own events, and out of the box there is no path for them to reach a human.

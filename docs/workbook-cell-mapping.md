@@ -232,6 +232,7 @@ before wiring a generator.
 | F9     | Identity Sources         | SSO bind password                        |
 | F10    | Backups                  | Backup encryption passphrase             |
 | B18    | Backups                  | SFTP host / port / account / path        |
+| E16a   | —                        | — (**no workbook fields**: legacy-licence migration is a Broadcom Support Portal action taken **before** the upgrade — capture the decision and the 90-day date in the Step 1 plan / intake) |
 | E16    | AVI Load Balancer {SDDC} | Version / Edge Cluster form factor / Admin Password / Node 1–3 IP Address / Cluster VIP / Cluster FQDN / Cluster Name — **only the Cluster FQDN needs DNS** (nodes + VIP are IP-only fields). The section holds **one** controller set; a fleet with more than one **NSX instance** needs a set each (`prerequisites.md` → Avi Load Balancer) and the workbook has nowhere to put the second — capture it in the Step 1 plan |
 | E17    | —                        | — (**no workbook fields**: License Hub is deployed from the **SSP Installer**, outside the P&P workbook's scope — capture its ~9 IPs (two contiguous pools), its **3 FQDNs** (installer + instance + messaging) and the connected/disconnected mode in the Step 1 plan / intake instead) |
 
