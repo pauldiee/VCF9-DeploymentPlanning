@@ -23,6 +23,12 @@
   only in the global Configure-CA wizard, and a bulk generate submits every CSR
   at once — an **approval-gated Microsoft CA template stalls the queue** rather
   than erroring. All added to `prerequisites.md` → Certificate Authority.
+- **A failure does not stop the batch** (#194). Lab-verified 2026-07-22: one
+  component's replacement failed and the rest kept progressing. A batch is
+  **partial-success by design**, so the *n/total* counter is the only signal
+  something did not land — read the final count and the task list rather than
+  treating "the batch finished" as "the fleet is certified", and re-run the
+  failed components as their own batch once the current one has settled.
 - **Auto-renewal is not on by default** (#194). The certificate list carries an
   **Auto-renewal Status** column, observed **Deactivated** across a fresh 9.1
   fleet. Noted in `prerequisites.md` so expiry ownership is assigned rather than
