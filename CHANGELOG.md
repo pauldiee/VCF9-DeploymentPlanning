@@ -36,6 +36,13 @@
   enough for it. Documented as an observation with a mitigation (check for a
   running/scheduled NSX backup, give NSX Manager its own batch), not as a
   mechanism.
+- **Corrected: the #189 / #190 / #192 VCF Automation findings were field, not
+  lab.** The v2.3.0, v2.3.1 and v2.3.5 entries and the matching passages in
+  `05-day2-deployments.md` said "Lab-verified" / "Confirmed in the lab"; that
+  work was done on a **real deployment**. Reworded to `Field-verified` /
+  `Field-confirmed` in nine places. No environment-identifying detail added —
+  the evidential weight is the only thing that changes. (Older `Lab-verified`
+  claims elsewhere in this file predate that work and are untouched.)
 - **Auto-renewal is not on by default** (#194). The certificate list carries an
   **Auto-renewal Status** column, observed **Deactivated** across a fresh 9.1
   fleet. Noted in `prerequisites.md` so expiry ownership is assigned rather than
@@ -43,7 +50,7 @@
 
 ## v2.3.5 — 2026-07-21
 - **"There is no NSX VPC option" was wrong** (#192). `05-day2-deployments.md`
-  section C stated flatly that VPC placement did not exist. **Lab-verified
+  section C stated flatly that VPC placement did not exist. **Field-verified
   2026-07-21:** VCF Automation deployed onto an **NSX VPC subnet** via the Fleet
   LCM API — validation passed, node VMs landed on the VPC portgroup, the cluster
   came up and the Provider Management UI serves at `/provider`. Broadcom's design
@@ -167,7 +174,7 @@
   `/29` — `+2` VM Mgmt IPs** (#190, follow-up to #189). The *Add VCF Automation*
   → **Parameters** step states it inline: *"VCF Automation FQDN and VCF services
   runtime FQDN must resolve to IP addresses that fall outside of the provided
-  CIDR."* Lab-confirmed that the **VCF services runtime nodes CIDR** field takes
+  CIDR."* Field-confirmed that the **VCF services runtime nodes CIDR** field takes
   a **routable `/29` from the VM Management subnet** — so the `/29` is for the
   **nodes only** (IP-only, **no DNS records**) and the Automation appliance FQDN
   and Automation's own services-runtime FQDN each need a **discrete VM Mgmt IP
@@ -187,7 +194,7 @@
 
 ## v2.3.0 — 2026-07-21
 - **Two VCF services-runtime FQDNs, not one — v1.4.2 reversed** (#189).
-  Lab-verified and confirmed verbatim against the TechDocs
+  Field-verified and confirmed verbatim against the TechDocs
   [First VCF Instance FQDNs and IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)
   table, which lists the row *"VCF services runtime — 1 FQDN\*"* **twice**: once
   under **VCF Automation** and once under **VCF Management Services**. The

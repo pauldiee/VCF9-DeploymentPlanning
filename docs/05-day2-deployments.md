@@ -102,7 +102,7 @@ This is the decision behind the "VCF Automation on a VPC network" question. The
 Day-N sheet offers **four** placements and a VPC is **not** one of them — but
 that is a limitation of the sheet and the wizard, **not of the platform**, so
 the table below carries **five**: the sheet's four, plus the **NSX VPC subnet**
-(lab-verified, API-only — see the subsection after the table).
+(field-verified, API-only — see the subsection after the table).
 
 The first four line up
 with the Broadcom design library's four *fleet-level components* network models
@@ -122,7 +122,7 @@ and the [custom-networking deployment guidance](https://techdocs.broadcom.com/us
 | **Dedicated Management Network** | Dedicated VLAN                                    | Fleet components on a **separate, dedicated** vDS port group / VLAN — create it first. **Cloud Proxy stays on the VM-mgmt network.** Physical firewall can secure it; for DR/stretched the VLAN must be routable across AZs/regions (IP mobility). |
 | **NSX Overlay Segment**          | Dedicated VLAN **+** NSX Overlay Segment (hybrid) | VCF management **services** on a VLAN; **VCF Operations, Automation, Ops-for-Networks, License Server** on an NSX **overlay** (Geneve) segment; **Cloud Proxy stays on VM-mgmt**. Needs an **NSX Edge cluster + Tier-0** (BGP to physical, advertise segments), a **Tier-1** linked to it, and the segment on the management overlay transport zone. |
 | **NSX VLAN Segment**             | (VLAN-backed NSX segment)                          | Fleet components on an NSX **VLAN-backed** segment (NSX-managed, no overlay/Edge routing).          |
-| **NSX VPC subnet** — **not on the sheet** | VPC-based patterns in the design library (DMZ VPC + Mgmt App VPC + Transit Gateway) | VCF Automation on an **NSX VPC subnet**. **Not offered by the Day-N sheet or the wizard** — deploy via the **Fleet LCM API** (section D). Create the VPC + subnet first and let it realise in vCenter, where it appears as an ordinary **distributed portgroup** with a MoRef. Use when you need VPC isolation or the DMZ / Transit Gateway pattern. **Lab-verified 2026-07-21.** See *NSX VPC — one of the non-management placements* below |
+| **NSX VPC subnet** — **not on the sheet** | VPC-based patterns in the design library (DMZ VPC + Mgmt App VPC + Transit Gateway) | VCF Automation on an **NSX VPC subnet**. **Not offered by the Day-N sheet or the wizard** — deploy via the **Fleet LCM API** (section D). Create the VPC + subnet first and let it realise in vCenter, where it appears as an ordinary **distributed portgroup** with a MoRef. Use when you need VPC isolation or the DMZ / Transit Gateway pattern. **Field-verified 2026-07-21.** See *NSX VPC — one of the non-management placements* below |
 
 The sheet and the wizard offer no NSX VPC option — but the platform does
 support it, via the API (below). The design
@@ -135,7 +135,7 @@ region failover (no DNS repoint); see the design library's
 The point of the non-shared options is to **separate user-facing networks from
 management networks** for regulatory / security requirements.
 
-> **At Day-N, every non-shared placement is API-only.** Lab-verified
+> **At Day-N, every non-shared placement is API-only.** Field-verified
 > 2026-07-21: the Day-N *Add VCF Automation* wizard (Fleet LCM, via VCF
 > Operations) has **no network picker at all** — it asks only for the services
 > runtime nodes CIDR and the FQDNs, and always uses the management network. So
@@ -184,7 +184,7 @@ other non-management placements — the VPC subnet is referenced by its
 `networkMoId` like any portgroup. See *Deploying VCF Automation to a
 non-management network — API only* in section D for the full procedure.
 
-> **Lab-verified 2026-07-21.** VCF Automation deployed onto an NSX VPC subnet
+> **Field-verified 2026-07-21.** VCF Automation deployed onto an NSX VPC subnet
 > via the Fleet LCM API: validation passed, the node VMs landed on the VPC
 > portgroup, the cluster came up and the Provider Management UI serves at
 > `/provider`. Budget generous time — the platform returns `404`, then `500`,
@@ -281,7 +281,7 @@ network placement (section C) together.
 > **Both Automation FQDNs must resolve *outside* the CIDR you provide.** The
 > *Add VCF Automation* → **Parameters** step states it inline: *"VCF Automation
 > FQDN and VCF services runtime FQDN must resolve to IP addresses that fall
-> outside of the provided CIDR."* Lab-confirmed that the **VCF services runtime
+> outside of the provided CIDR."* Field-confirmed that the **VCF services runtime
 > nodes CIDR** field takes a routable **`/29` from the VM Management subnet** —
 > so that `/29` covers the **nodes only** (IP-only, no DNS records) and the two
 > FQDNs each need their **own discrete VM Mgmt IP on top of it**. Budget
@@ -427,7 +427,7 @@ Run it with `$ValidateOnly = $true` first, and set `$OutputJsonPayload = $true`
 to inspect the payload before anything is sent — note that the printed payload
 contains the passwords in cleartext.
 
-> **Verification status (2026-07-21).** Confirmed in the lab through three
+> **Verification status (2026-07-21).** Confirmed on a real deployment through three
 > stages: the validation task returned `SUCCEEDED`, the deployment task was
 > accepted and progressed, and **the bootstrap VM appeared in vCenter attached
 > to the target VPC portgroup** — which is the stage that actually proves the
