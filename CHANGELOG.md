@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.6.4 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: note the Avi SE-image content library in
+  §4.5** (#216). Field-verified — the NSX Cloud connector's vCenter/compute config
+  requires a **content library holding the Service Engine OVA** (Avi clones SEs
+  from it; no library = no SE deployment). Flagged as a *third* content library,
+  distinct from §5's Supervisor Images and VKS libraries, and pre-created on the
+  VCF-Ops path. Short-version summary updated to include it and the data-network
+  transport zone.
+
 ## v2.6.3 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: correct the data-network line in §4.5**
   (#216). Field-verified — the Avi NSX Cloud config *does* require a **data-network
