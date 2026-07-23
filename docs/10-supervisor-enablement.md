@@ -647,24 +647,38 @@ interface onto the **management VLAN**. If the Edges can carry it, both work; a
 dedicated T0 is the tidier choice for a management peering that should be
 independent.
 
-Two settings that bite on the dedicated-T0 route:
+Three settings that bite on the dedicated-T0 route:
 
 1. **Make it Active/Active.** Unlike the CTGW Transit Gateway (Active/Standby,
    because it carries stateful NAT), this T0 does pure routing — no stateful
    services — so A/A gives both Edges forwarding. Only use A/S if you have a
    specific stateful reason here (you usually do not).
-2. **Advertise in *both* directions — the usual miss.** Advertise the
+2. **Route re-distribution is OFF by default on a hand-built T0 — turn it on, or
+   BGP advertises nothing** **[field-verified 2026-07-23]**. The guided CTGW wizard
+   sets redistribution for you; **a T0 you create by hand does not**, so the BGP
+   session comes up *Established* and advertises an **empty route set**. Two gates:
+   - **Tier-1** (SE-mgmt T1) → **Route Advertisement** → enable **All Connected
+     Segments & Service Ports**.
+   - **Tier-0** (new T0) → **Route Re-distribution** → add a rule for **BGP** that
+     includes **Tier-1 Connected / Connected Interfaces & Segments**.
+   Verify with `get bgp neighbor <peer-ip> advertised-routes` on the Edge — your
+   SE-management subnet must appear there. Established with an empty advertised-set
+   is exactly this gap.
+3. **Advertise in *both* directions — the usual miss.** Advertise the
    **SE-management subnet outbound** to the management VRF, **and** accept the
    **Controller / vCenter / NSX management prefixes inbound**. One-way advertisement
    looks like a mystery timeout: SEs reach the Controller but replies have no route
-   back (or vice-versa).
+   back (or vice-versa). Confirm the far side with the network team — the mgmt VRF
+   must learn your SE subnet.
 
 Build order: management-VLAN **uplink segments** → **new T0 (A/A)** with per-Edge
 uplink interfaces → **BGP** to the management-VRF gateway (peer IP + remote ASN +
 MD5, from the network team in writing, same discipline as [§3.2](#32-gateway-and-bgp))
-with bidirectional advertisement → **Tier-1** for SE management, connected to the new
-T0, advertising connected segments → **overlay segment** for SE management on that T1
-→ select it in the Avi cloud's Management Network with an IP pool.
+with bidirectional advertisement → **enable route re-distribution on the T0 (BGP,
+Tier-1 Connected)** — it is OFF by default → **Tier-1** for SE management, connected
+to the new T0, **advertising All Connected Segments** → **overlay segment** for SE
+management on that T1 → select it in the Avi cloud's Management Network with an IP
+pool.
 
 > **Test reachability before you touch Avi.** From an Edge or a node on the
 > SE-management subnet, confirm you can reach the **Controller's management IP**

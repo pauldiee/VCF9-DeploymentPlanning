@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.7.2 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: hand-built T0 has route re-distribution OFF
+  by default** (#216). Field-verified: the guided CTGW wizard sets redistribution,
+  but a Tier-0 created by hand for the SE-management overlay does not — so BGP comes
+  up Established and advertises an empty route set. §4.5's overlay routing tail now
+  makes this the middle of three T0 gotchas, with the two config gates (T1 → Route
+  Advertisement → All Connected Segments; T0 → Route Re-distribution → BGP / Tier-1
+  Connected) and the `get bgp neighbor <peer> advertised-routes` verification.
+
 ## v2.7.1 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: activation-walkthrough learnings** (#216).
   Field-verified end to end today. New **§3.4** — creating the VPC External IP
