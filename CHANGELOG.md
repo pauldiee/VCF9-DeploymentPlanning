@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.6.9 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: document the VKR-vs-Supervisor download
+  asymmetry in §5.4** (#216). Unlike the Supervisor content (a support-portal zip),
+  **VKR has no support-portal bundle** — the Kubernetes release images live on the
+  CDN (`wp-content.broadcom.com`) and are mirrored with a lib.json/items.json
+  walker script, hosted under `PROD/COMP/VKR/`; only the VKS Configuration
+  Manifests / AddonRepository YAML are on the portal. Notes that the job shrinks by
+  scoping to shipped-version→latest (≈ v1.34.2, not the full back-catalogue) and
+  that 9.1.1 removes the manual mirror. Same web-worker ownership (403) caveat
+  applies.
+
 ## v2.6.8 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: §5.4 gains the offline-depot seeding
   recipe** (#216). Field-verified today. Concrete steps to seed the Supervisor

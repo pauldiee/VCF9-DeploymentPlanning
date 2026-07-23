@@ -840,6 +840,33 @@ Field-verified 2026-07-23, following the Amaya Citta write-up credited below.
 > they do not stop the Supervisor reaching Running. Do not let a half-terabyte
 > download gate the activation.
 
+**VKR is not a support-portal zip — it is a CDN mirror.** This is the one
+asymmetry in the offline story, and it catches people who expect a second bundle
+next to the Supervisor one **[field-verified 2026-07-23]**:
+
+- **Supervisor** — a discrete zip on the **support portal** (the step above).
+- **VKR** — **no support-portal bundle.** The Kubernetes release images live on the
+  **CDN** (`wp-content.broadcom.com`) as a content library (`lib.json` / `items.json`);
+  you **mirror them with a script** that walks those JSONs (William Lam's PowerShell
+  walker, or the `vkr-mirror.sh` from the Amaya post) and host the result under
+  `PROD/COMP/VKR/`. Only the **Configuration Manifests / AddonRepository YAML** for
+  VKS are on the support portal — not the release images.
+
+Two things shrink the job:
+
+- **Scope it to shipped-version → latest.** You need only from the Kubernetes
+  release that shipped with your 9.1 build (≈ **v1.34.2**) forward — not the full
+  back-catalogue. A script that grabs everything from v1.16 is where the ~500 GB
+  comes from; scoping cuts it to a fraction.
+- **9.1.1 removes the chore entirely** — the download tool gains an option to fetch
+  the VKS/Supervisor artifacts to the offline depot automatically **[field-reported]**.
+  This manual mirror is a **9.1.0-only** workaround.
+
+Same operational caveats as the Supervisor path: fix ownership to the **web
+worker** user (the `chown apache:apache`-on-nginx **403** trap applies equally),
+then subscribe the VKS library at
+`…/depot-service/content-gateway/PROD/COMP/VKR/lib.json`.
+
 > **Community-script caution.** A `vkr-mirror.sh`-style walker of `lib.json` /
 > `items.json` is fine for a lab, but on a customer engagement read it first and
 > prefer a sanctioned flow where one exists.
