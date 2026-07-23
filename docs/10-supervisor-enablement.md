@@ -516,6 +516,11 @@ for mandatory because a popular field walkthrough includes them.
      not create this one.** Make an (empty) **content library on the vCenter** and
      point the cloud's vCenter config at it; Avi uploads the **Service Engine OVA**
      into it and clones SEs from it. No library means no SE deployment.
+     **The push is immediate, not lazy** **[field-verified 2026-07-23]** — as soon
+     as you save the vCenter/content-library config on the cloud, Avi pushes the SE
+     OVA into the library. Use it as a checkpoint: after saving, confirm the SE OVA
+     item appears in the library and the SE image path is proven *before*
+     activation, not discovered mid-activation.
    - Set the **Template Service Engine Group** on the cloud. **Infrastructure →
      Clouds**.
 

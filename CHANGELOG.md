@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.6.6 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: SE OVA is pushed immediately on save**
+  (#216). Field-verified: as soon as you save the vCenter/content-library config on
+  the NSX Cloud connector, Avi pushes the Service Engine OVA into the library — it
+  is not deferred to first SE deployment. Documented in §4.5 as a pre-activation
+  checkpoint (confirm the SE OVA item appears in the library before activating).
+  The full §4.5 required config set is now field-validated to bring a
+  VCF-Ops-managed NSX VPC cloud connector green.
+
 ## v2.6.5 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: correct the SE content library — it is
   hand-built, not VCF-Ops-created** (#216). Field-verified: v2.6.4 said VCF
