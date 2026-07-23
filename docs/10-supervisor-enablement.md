@@ -1096,10 +1096,11 @@ Stop and fix if any step fails — they build on each other.
   > same offline-content gap as [§5.4](#54-offline-depot-configured-is-not-the-same-as-populated)
   > (the offline path doesn't populate everything in 9.1.0), **not a step you
   > missed** — the Supervisor normally self-populates the CLI store, but the offline
-  > setup doesn't. **Download the VCF Consumption CLI for your OS from the Broadcom
-  > Support Portal** and install it on the jumphost; the `vcf` binary talks to the
-  > Supervisor over the API regardless of where you sourced it.
-  > **[field-verified 2026-07-23]**
+  > setup doesn't. Follow the **VCF CLI install guide** ([Installing and Using VCF
+  > CLI v9][vcf-cli-install]) — it splits into *Internet Connected* and ***Internet
+  > Restricted Environments*** subpages; use the restricted one for an air-gapped
+  > site. The `vcf` binary talks to the Supervisor over the API regardless of where
+  > you sourced it. Verify with `vcf version`. **[field-verified 2026-07-23]**
 
 **1. Supervisor health (UI)**
 Workload Management → Supervisors → *Config Status* = **Running**, *Host Config
@@ -1405,6 +1406,7 @@ covers the Software Depot that now feeds the VKS content library.
 [ts]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes.html
 [ts-core]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes/troubleshooting-core-supervisor.html
 [vcf-cli]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/connecting-to-vsphere-with-tanzu-clusters/connect-to-the-supervisor-cluster-as-a-vcenter-single-sign-on-user.html
+[vcf-cli-install]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-cloud-applications/getting-started-with-the-tools-for-building-applications/installing-and-using-vcf-cli-v9.html
 [vpc-book]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds.html
 [vpc-profile]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/virtual-private-cloud-in-nsx/add-a-vpc-connectivity-profile.html
 [workflow]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor.html
