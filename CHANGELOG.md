@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.5.8 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: added the Avi Controller certificate step**
+  (§4.4, #216). Supervisor requires a **custom** Controller certificate — the
+  default cannot be used, and a private-CA-signed one can make the deployment hang
+  with the Avi config silently unapplied, so self-signed is the low-risk path. The
+  section pins down the field that actually gates activation: the **SAN** must
+  contain the exact IP/FQDN you give Supervisor as the Controller endpoint (put
+  **both**), while the **Common Name** is just the Controller's access FQDN
+  (cluster VIP for a 3-node deployment). Pre-flight gate updated to check the cert
+  is created and assigned.
+
 ## v2.5.7 — 2026-07-22
 - **New build guide: `docs/10-supervisor-enablement.md`** (#216). `prerequisites.md`
   said *what* a Supervisor needs and `06-deployment-plan.md` carried the stories,

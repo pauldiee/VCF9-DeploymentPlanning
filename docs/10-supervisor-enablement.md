@@ -221,7 +221,9 @@ Verify — do not accept assurances. Each of these has failed a real activation.
 
 - [ ] Load balancer decision made per [§1.2](#12-load-balancer--you-may-not-need-avi)
 - [ ] If Avi: Controller cluster healthy **in the management domain**, licensed,
-      registered, and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
+      registered, **custom certificate created and assigned** (CN + SAN matching
+      the endpoint you give Supervisor — [§4.4](#44-the-controller-certificate--cn-and-san)),
+      and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
 - [ ] **Supervisor Images content library created and assigned** — a hard
       prerequisite: since VCF 9 the Supervisor release images ship separately
       from vCenter ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first))
@@ -363,7 +365,53 @@ afterwards does nothing for the Supervisor that already exists. Set HA mode
 existing SEs; **Distributed** spreads across new ones). At least two Service
 Engine VMs are deployed per Supervisor.
 
-### 4.4 Documented limitations that bite
+### 4.4 The Controller certificate — CN and SAN
+
+**You must give the Controller a custom certificate before you activate the
+Supervisor** — and the fields on that screen are easy to fill in wrong, because
+the one that matters is not the obvious one. Verbatim **[documented]**:
+
+> "You must provide a custom certificate to enable Supervisor. You cannot use the
+> default certificate."
+
+> "If you use a private Certificate Authority (CA) signed certificate, the
+> Supervisor deployment might not complete and the Avi Load Balancer
+> configuration might not be applied."
+
+So a **self-signed** Controller certificate is the low-risk path for enablement;
+a private-CA-signed one can make the deployment hang with the Avi side silently
+unapplied. Create it in the Controller dashboard under **Templates → Security →
+SSL/TLS Certificates → Create → Controller Certificate**.
+
+**Common Name** — the fully-qualified name clients use to *reach the Controller*,
+not the Supervisor and not a wildcard. The doc: "this entry must match the
+hostname that the client entered in the browser" **[documented]**.
+
+- **Single-node Controller** → the Controller VM's management FQDN
+  (e.g. `avi01.sfo.example.io`).
+- **3-node cluster** → the **cluster VIP** FQDN, never an individual node.
+
+**Subject Alternate Name (SAN) — this is the field that actually gates
+activation.** It must contain the address you later type into the Supervisor
+wizard as the Avi Controller endpoint. Verbatim **[documented]**: "Enter the
+cluster IP address or FQDN, or both, of the Avi Load Balancer Controller … it
+must match the IP address or FQDN that you specify during deployment."
+
+> **The rule that keeps you out of trouble:** whatever value you give Supervisor
+> as the Controller endpoint must appear in the certificate's **SAN**. The docs
+> explicitly allow "or both", so put **both the FQDN and the IP** in the SAN and
+> you cannot mismatch it — for a single node use its FQDN + IP, for a cluster use
+> the VIP FQDN + VIP IP.
+
+Algorithm **EC** is recommended (2048-bit if RSA); add the SAN entries, enter the
+cluster IP/FQDN, **Validate**, then **Save**. You reference this certificate again
+when you configure the Supervisor to enable Supervisor Management — it is not a
+throwaway.
+
+> Source is the **9.0** Avi book (the 9.1 Supervisor book points at it by
+> design); the certificate flow is unchanged in 9.1.
+
+### 4.5 Documented limitations that bite
 
 - **"You cannot deploy the Avi Load Balancer Controller in a vCenter Enhanced
   Linked Mode deployment. You can only deploy the Avi Load Balancer Controller in
