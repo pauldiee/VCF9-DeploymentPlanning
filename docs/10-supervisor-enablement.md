@@ -222,6 +222,10 @@ Verify — do not accept assurances. Each of these has failed a real activation.
 - [ ] Load balancer decision made per [§1.2](#12-load-balancer--you-may-not-need-avi)
 - [ ] If Avi: Controller cluster healthy **in the management domain**, licensed,
       registered, and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
+- [ ] If Avi via **VCF Operations**: the required post-deploy config is done —
+      **IPAM profile**, **NSX Cloud connector (VPC)**, and the **Service Engine
+      Group Default-Group** ([§4.5](#45-post-deploy-configuration-vcf-ops-path--what-is-left-to-do)).
+      Verify what VCF Ops already created before hand-building
 - [ ] If Avi: the certificate is correct **for your deployment model** — on
       **VCF-Ops-managed** Avi, VCF Operations generated it and the NSX cloud
       connector is **green** (do not touch it by hand); on **standalone** Avi, you
@@ -452,7 +456,54 @@ throwaway.
 > Source is the **9.0** Avi book (the 9.1 Supervisor book points at it by
 > design); the certificate flow is unchanged in 9.1.
 
-### 4.5 Documented limitations that bite
+### 4.5 Post-deploy configuration (VCF-Ops path) — what is left to do
+
+VCF Operations deploys the Controller, creates the service account, generates the
+certificate and propagates its trust, and wires the base cloud connector and
+Supervisor registration **[documented — 9.1 Avi release notes]**. That leaves a
+**short, required** list of Avi-side configuration you still do by hand before
+activation — and a longer set of steps that are **optional** and often mistaken
+for mandatory because a popular field walkthrough includes them.
+
+> **Verify before you build.** VCF Operations does "cloud connector setup", so
+> parts of the NSX cloud may already exist. Open **Infrastructure → Clouds** and
+> **Templates → IPAM/DNS Profiles** and check what is already there before
+> hand-creating anything — verify-then-fill, do not blind-rebuild.
+
+**Required — the gate for a working Supervisor load balancer:**
+
+1. **A placeholder IPAM profile** **[documented]**. Avi cannot allocate a VIP to a
+   virtual service without IPAM, so this is non-negotiable. **Templates →
+   IPAM/DNS Profiles**. A *DNS profile* is only needed if you want Avi to be the
+   DNS provider for virtual services — optional (see below).
+2. **The NSX Cloud connector, in VPC mode** **[documented]**. Lighter than the
+   classic-NSX version: "Because the VPC handles the Data Network Segment, you do
+   not need to configure it." Mostly confirm the connector and set the **Template
+   Service Engine Group** on it. **Infrastructure → Clouds**.
+3. **The Service Engine Group — configure the Default-Group as the template**
+   **[documented]**. "vSphere Supervisor uses the Default-Group as a template to
+   configure a Service Engine Group per Supervisor … If no template Service Engine
+   Group is configured in the cloud, the Default-Group is used." Set storage
+   policy, placement, HA mode and scaling **before** activation — AKO clones it
+   per Supervisor and will not retro-apply later changes (see [§4.3](#43-service-engine-group--set-it-before-activation)).
+
+**Optional — skip for a basic Supervisor:**
+
+- **DNS profile + an Avi DNS listener virtual service + external DNS delegation**
+  to the Avi VIP — only if you want Avi as a DNS provider or you need GSLB. A
+  Supervisor VIP is reached by IP, so none of this is required to activate.
+- **The VCF Operations Avi Management Pack** — monitoring/observability
+  integration; useful, not a Supervisor prerequisite.
+- **The single-node feature flag** (SSH to SDDC Manager) — only if you are
+  deliberately deploying a single-node Controller instead of a cluster.
+
+> **The short version:** IPAM profile + NSX Cloud (VPC) + Service Engine Group
+> Default-Group. Everything else a fuller walkthrough shows is either done for you
+> by VCF Operations or optional.
+
+*Post-deploy config sources: [Configure the NSX Cloud connector (Avi 9.1)][avi-nsxcloud] · [Getting Started with Avi (9.1)][avi-gettingstarted] · [Amaya Citta — VKS 9.1 with Avi and NSX VPC][amaya-vks] (the fuller manual walkthrough, incl. the optional DNS/GSLB steps)*
+
+### 4.6 Documented limitations that bite
 
 - **"You cannot deploy the Avi Load Balancer Controller in a vCenter Enhanced
   Linked Mode deployment. You can only deploy the Avi Load Balancer Controller in
@@ -946,6 +997,8 @@ covers the Software Depot that now feeds the VKS content library.
 [avi-lic]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html
 [avi-limits]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer/install-and-configure-the-nsx-advanced-load-balancer-for-nsx/limitations-of-using-the-nsx-advanced-load-balancer.html
 [avi-seg]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer/install-and-configure-the-nsx-advanced-load-balancer-for-nsx/configure-service-engine-group.html
+[avi-gettingstarted]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/overview/getting-started-with-avi.html
+[avi-nsxcloud]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/configure-the-cloud-connector-for-the-nsx-cloud.html
 [avi-relnotes]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/release-notes/vmware-avi-load-balancer-for-vcf-91-release-notes.html
 [avi-vcfops]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html
 [amaya-vks]: https://amayacitta.co.uk/vks-9-1-with-avi-load-balancer-and-nsx-vpc/

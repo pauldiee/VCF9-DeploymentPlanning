@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.6.0 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: new §4.5 "Post-deploy configuration
+  (VCF-Ops path)"** (#216). Answers "how much Avi setup do we actually have to
+  do?" On the VCF-Operations path the required manual list is short and
+  Broadcom-documented — **IPAM placeholder profile, NSX Cloud connector (VPC
+  mode), and the Service Engine Group Default-Group** — with a verify-before-build
+  note because VCF Ops pre-creates parts of the cloud connector. The longer field
+  walkthroughs also include **DNS profile / Avi DNS listener / external DNS
+  delegation** (GSLB only), the **Avi Management Pack** (monitoring), and the
+  **single-node feature flag** — all fenced here as optional, not Supervisor
+  prerequisites. Limitations subsection renumbered §4.5 → §4.6; pre-flight gate
+  gains the post-deploy line. Sources: Configure the NSX Cloud connector (Avi
+  9.1), Getting Started with Avi (9.1), Amaya Citta's VKS-9.1 write-up.
+
 ## v2.5.9 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: split §4 by Avi deployment model** (#216).
   Field-verified today: §4 previously read as one manual runbook (from the 9.0
