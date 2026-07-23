@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.7 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: clarify the SE storage policy is on the
+  Service Engine Group, not the Cloud** (#216). Field-verified — the NSX Cloud
+  object has no storage-policy field; it lives on the Service Engine Group
+  (Infrastructure → Cloud Resources → Service Engine Group), alongside placement
+  scope and affinity. §4.5 #3 updated with the location and the not-on-the-cloud
+  note.
+
 ## v2.6.6 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: SE OVA is pushed immediately on save**
   (#216). Field-verified: as soon as you save the vCenter/content-library config on

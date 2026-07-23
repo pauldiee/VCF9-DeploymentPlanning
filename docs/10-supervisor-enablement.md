@@ -533,10 +533,16 @@ for mandatory because a popular field walkthrough includes them.
 3. **The Service Engine Group — configure the Default-Group as the template**
    **[documented]**. "vSphere Supervisor uses the Default-Group as a template to
    configure a Service Engine Group per Supervisor … If no template Service Engine
-   Group is configured in the cloud, the Default-Group is used." Set the **vSphere
-   storage policy** (SEs are VMs — no policy, nowhere to deploy), placement, HA
-   mode and scaling **before** activation — AKO clones it per Supervisor and will
-   not retro-apply later changes (see [§4.3](#43-service-engine-group--set-it-before-activation)).
+   Group is configured in the cloud, the Default-Group is used." Under
+   **Infrastructure → Cloud Resources → Service Engine Group**, set the **vSphere
+   storage policy** (SEs are VMs — no policy, nowhere to deploy), placement scope
+   (compute cluster + datastore; optional VM-group/host-group affinity), HA mode
+   and scaling **before** activation — AKO clones it per Supervisor and will not
+   retro-apply later changes (see [§4.3](#43-service-engine-group--set-it-before-activation)).
+
+   > **The storage policy lives on the Service Engine Group, not on the Cloud
+   > object** **[field-verified 2026-07-23]** — there is no storage-policy field on
+   > the NSX Cloud itself, which is a common place to go looking for it.
 
 > **IPAM is NOT required for VPC networking** **[documented]** — an earlier draft
 > of this guide listed a placeholder IPAM profile as mandatory; that is wrong for
