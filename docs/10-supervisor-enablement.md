@@ -507,21 +507,24 @@ for mandatory because a popular field walkthrough includes them.
      network" **[documented]**, and it must be present in the **transport node
      profile of the ESXi hosts where the SEs run** (the workload cluster) or the
      SE data NICs cannot attach.
-2. **The NSX Cloud connector, in VPC mode — confirm vCenter, its content library,
-   and the template SE group** **[documented; field-verified 2026-07-23]**. Beyond
-   the management network above, verify the cloud has a **vCenter registered for SE
-   placement** (where the SE *VMs* land — the workload cluster; VCF Ops usually sets
-   this, but confirm it), that the vCenter config points at a **content library
-   holding the Service Engine OVA** — Avi clones SEs from it, so no library means no
-   SE deployment — and set the **Template Service Engine Group** on the cloud.
-   **Infrastructure → Clouds**.
+2. **The NSX Cloud connector, in VPC mode — vCenter, a hand-built SE content
+   library, and the template SE group** **[documented; field-verified 2026-07-23]**.
+   Beyond the management network above:
+   - Verify the cloud has a **vCenter registered for SE placement** (where the SE
+     *VMs* land — the workload cluster; VCF Ops usually sets this, but confirm it).
+   - **Create the Service Engine content library by hand** — **VCF Operations does
+     not create this one.** Make an (empty) **content library on the vCenter** and
+     point the cloud's vCenter config at it; Avi uploads the **Service Engine OVA**
+     into it and clones SEs from it. No library means no SE deployment.
+   - Set the **Template Service Engine Group** on the cloud. **Infrastructure →
+     Clouds**.
 
    > **This SE-image content library is a *third* library, unrelated to §5.** The
    > two in [§5](#5-content-libraries-for-supervisor-and-vks-images) (Supervisor
    > Images, VKS) feed Supervisor/Kubernetes; this one holds the **Avi Service
-   > Engine OVA** and lives on the vCenter/compute side of the NSX Cloud config. On
-   > the VCF-Ops path it is pre-created with the rest of the vCenter wiring — just
-   > confirm the cloud points at it.
+   > Engine OVA** and lives on the vCenter/compute side of the NSX Cloud config.
+   > Unlike the certificate and the base cloud connector, VCF Operations does **not**
+   > pre-create it — it is a manual step you do before the cloud can deploy SEs.
 3. **The Service Engine Group — configure the Default-Group as the template**
    **[documented]**. "vSphere Supervisor uses the Default-Group as a template to
    configure a Service Engine Group per Supervisor … If no template Service Engine
@@ -552,8 +555,8 @@ for mandatory because a popular field walkthrough includes them.
   deliberately deploying a single-node Controller instead of a cluster.
 
 > **The short version:** SE management network on NSX (built there, selected in the
-> Avi cloud) + a data-network transport zone + confirm vCenter (with its SE-image
-> content library) + Service Engine Group Default-Group with a storage policy. VIPs
+> Avi cloud) + a data-network transport zone + vCenter with a **hand-built SE
+> content library** + Service Engine Group Default-Group with a storage policy. VIPs
 > come from the VPC External IP Block ([§3.3](#33-the-ip-blocks-and-the-16-question)),
 > not IPAM. Everything else a fuller walkthrough shows is done for you by VCF
 > Operations or optional.

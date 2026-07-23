@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.6.5 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: correct the SE content library — it is
+  hand-built, not VCF-Ops-created** (#216). Field-verified: v2.6.4 said VCF
+  Operations pre-creates the Avi Service Engine content library; it does not. You
+  create an (empty) content library on the vCenter by hand and point the NSX Cloud
+  connector's vCenter config at it — Avi then uploads the SE OVA and clones SEs
+  from it. §4.5 requirement #2 and the short-version summary corrected.
+
 ## v2.6.4 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: note the Avi SE-image content library in
   §4.5** (#216). Field-verified — the NSX Cloud connector's vCenter/compute config
