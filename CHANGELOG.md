@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.6.1 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: SE management network is a hard
+  prerequisite; IPAM correction** (#216). Field-verified on a live VCF-Ops-managed
+  Avi today. §4.5's required list was reworked: **you must build a management
+  network on NSX for the Service Engines** (a management transport zone + overlay
+  segment behind a Tier-1, or a VLAN segment, with an IP pool) and select it on
+  the Avi NSX Cloud connector — **VCF Operations leaves this blank**, so the
+  connector sits red with *"Configured management transport zone ''"* and no SEs
+  can deploy until it is set. Corrected the earlier error that listed a
+  **placeholder IPAM profile as required**: IPAM is **not** required for VPC
+  networking — the VIP comes from the **VPC External IP Block**, which is therefore
+  a pre-activation dependency built in the §3.3 connectivity profile (the wizard
+  only selects it). §3.3 now notes the External IP Block doubles as the Avi VIP
+  source; pre-flight gate line corrected to match.
+
 ## v2.6.0 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: new §4.5 "Post-deploy configuration
   (VCF-Ops path)"** (#216). Answers "how much Avi setup do we actually have to

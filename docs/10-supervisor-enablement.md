@@ -223,9 +223,13 @@ Verify — do not accept assurances. Each of these has failed a real activation.
 - [ ] If Avi: Controller cluster healthy **in the management domain**, licensed,
       registered, and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
 - [ ] If Avi via **VCF Operations**: the required post-deploy config is done —
-      **IPAM profile**, **NSX Cloud connector (VPC)**, and the **Service Engine
-      Group Default-Group** ([§4.5](#45-post-deploy-configuration-vcf-ops-path--what-is-left-to-do)).
-      Verify what VCF Ops already created before hand-building
+      an **SE management network built on NSX and selected in the Avi cloud** (the
+      NSX Cloud connector goes **red** until it is — *"management transport zone ''"*),
+      **vCenter registered** on the cloud for SE placement, and the **Service
+      Engine Group Default-Group** with a **storage policy**
+      ([§4.5](#45-post-deploy-configuration-vcf-ops-path--what-is-left-to-do)).
+      IPAM is **not** required in VPC — the VIP comes from the **VPC External IP
+      Block** ([§3.3](#33-the-ip-blocks-and-the-16-question))
 - [ ] If Avi: the certificate is correct **for your deployment model** — on
       **VCF-Ops-managed** Avi, VCF Operations generated it and the NSX cloud
       connector is **green** (do not touch it by hand); on **standalone** Avi, you
@@ -304,7 +308,11 @@ ASN**, and **BGP peer password**.
 Two blocks are configured here **[documented]**:
 
 - **VPC External IP Blocks** — "Advertised CIDRs that allow outside connectivity
-  to VPC workloads". These must be routable and advertised upstream.
+  to VPC workloads". These must be routable and advertised upstream. **With Avi in
+  VPC mode this block is also the load-balancer VIP source** — Avi IPAM is not used
+  in VPC, so the Supervisor API VIP and every LoadBalancer Service VIP come from
+  here. Size it for the VIPs you expect, and make sure it exists and has free
+  space *before* activation (see [§4.5](#45-post-deploy-configuration-vcf-ops-path--what-is-left-to-do)).
 - **Private (Transit Gateway) IP Blocks** — "Private CIDRs that are available for
   inter-VPC communication".
 
@@ -472,20 +480,49 @@ for mandatory because a popular field walkthrough includes them.
 
 **Required — the gate for a working Supervisor load balancer:**
 
-1. **A placeholder IPAM profile** **[documented]**. Avi cannot allocate a VIP to a
-   virtual service without IPAM, so this is non-negotiable. **Templates →
-   IPAM/DNS Profiles**. A *DNS profile* is only needed if you want Avi to be the
-   DNS provider for virtual services — optional (see below).
-2. **The NSX Cloud connector, in VPC mode** **[documented]**. Lighter than the
-   classic-NSX version: "Because the VPC handles the Data Network Segment, you do
-   not need to configure it." Mostly confirm the connector and set the **Template
-   Service Engine Group** on it. **Infrastructure → Clouds**.
+1. **Prepare a management network on NSX for the Service Engines — this is the
+   piece people miss** **[documented; field-verified 2026-07-23]**. The SE
+   management NICs need their own network, and **VCF Operations does not create
+   it** — it leaves the NSX Cloud connector's *Management Network* blank for you
+   to fill, because it cannot guess which segment your SEs should sit on. Two
+   parts:
+   - **On NSX, build the segment first.** A **management transport zone** plus an
+     **overlay segment behind a Tier-1** (or a **VLAN-backed segment**), with an
+     **IP pool / allocation** for the SE management NICs. This does not exist until
+     you make it.
+   - **In Avi, select it on the cloud.** **Infrastructure → Clouds →** the NSX
+     cloud **→ Management Network →** pick that transport zone + segment + IP
+     allocation. Until this is set the cloud sits **red** with the tell-tale
+     *"Configured management transport zone '' of type ''"* (empty quotes = never
+     set), and **no Service Engines can deploy** — which surfaces at activation as
+     the load-balancer step stalling (*"Unable to acquire IP address for network"*,
+     KB 442187). The empty-quotes state is a *missing-config* error, not a
+     trust/cert error — a cert problem shows as a connection/auth failure instead.
+   - **You do not configure the data network** — "Because the VPC handles the Data
+     Network Segment, you do not need to configure it" **[documented]**.
+2. **The NSX Cloud connector, in VPC mode — confirm vCenter and the template SE
+   group** **[documented]**. Beyond the management network above, verify the cloud
+   has a **vCenter registered for SE placement** (where the SE *VMs* land — the
+   workload cluster; VCF Ops usually sets this, but confirm it), and set the
+   **Template Service Engine Group** on the cloud. **Infrastructure → Clouds**.
 3. **The Service Engine Group — configure the Default-Group as the template**
    **[documented]**. "vSphere Supervisor uses the Default-Group as a template to
    configure a Service Engine Group per Supervisor … If no template Service Engine
-   Group is configured in the cloud, the Default-Group is used." Set storage
-   policy, placement, HA mode and scaling **before** activation — AKO clones it
-   per Supervisor and will not retro-apply later changes (see [§4.3](#43-service-engine-group--set-it-before-activation)).
+   Group is configured in the cloud, the Default-Group is used." Set the **vSphere
+   storage policy** (SEs are VMs — no policy, nowhere to deploy), placement, HA
+   mode and scaling **before** activation — AKO clones it per Supervisor and will
+   not retro-apply later changes (see [§4.3](#43-service-engine-group--set-it-before-activation)).
+
+> **IPAM is NOT required for VPC networking** **[documented]** — an earlier draft
+> of this guide listed a placeholder IPAM profile as mandatory; that is wrong for
+> the VPC path. The VPC-specific docs state plainly *"IPAM profiles are: Not
+> required for VPC networking"*, because **the VIP comes from the VPC External IP
+> Block, not from Avi IPAM**. That External IP Block is therefore a real
+> pre-activation dependency — it is the VIP source — and it lives in the **VPC
+> connectivity profile you build in [§3.3](#33-the-ip-blocks-and-the-16-question)**,
+> not in the activation wizard (the wizard only *selects* it; an empty *VPC
+> Connectivity Profile* dropdown means it was never built). The generic *Getting
+> Started* page's "placeholder IPAM" line applies to non-VPC clouds.
 
 **Optional — skip for a basic Supervisor:**
 
@@ -497,9 +534,11 @@ for mandatory because a popular field walkthrough includes them.
 - **The single-node feature flag** (SSH to SDDC Manager) — only if you are
   deliberately deploying a single-node Controller instead of a cluster.
 
-> **The short version:** IPAM profile + NSX Cloud (VPC) + Service Engine Group
-> Default-Group. Everything else a fuller walkthrough shows is either done for you
-> by VCF Operations or optional.
+> **The short version:** SE management network on NSX (built there, selected in the
+> Avi cloud) + confirm vCenter + Service Engine Group Default-Group with a storage
+> policy. VIPs come from the VPC External IP Block ([§3.3](#33-the-ip-blocks-and-the-16-question)),
+> not IPAM. Everything else a fuller walkthrough shows is done for you by VCF
+> Operations or optional.
 
 *Post-deploy config sources: [Configure the NSX Cloud connector (Avi 9.1)][avi-nsxcloud] · [Getting Started with Avi (9.1)][avi-gettingstarted] · [Amaya Citta — VKS 9.1 with Avi and NSX VPC][amaya-vks] (the fuller manual walkthrough, incl. the optional DNS/GSLB steps)*
 
