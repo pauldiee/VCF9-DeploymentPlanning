@@ -730,11 +730,18 @@ one-shot.
 > **VM Service** tile; and if a library is deleted from vCenter while still linked
 > to VKS, remove the link before other operations will succeed.
 
-### 5.3 Air-gapped: publish locally, and fix the item type
+### 5.3 Air-gapped fallback: publish a local library, and fix the item type
 
-For a full air-gapped site there is a documented publisher flow — build a
-**local, published** library on a connected side, then subscribe to it from the
-air-gapped vCenter **[documented]**:
+> **Prefer the offline-depot seeding in [§5.4](#54-offline-depot-configured-is-not-the-same-as-populated) if you have a depot.** This
+> section is the **no-offline-depot** path — a pure vCenter-to-vCenter publisher.
+> If you run a VCF offline depot (most sites do), seeding the bundle onto it
+> (§5.4) is simpler and avoids this section's manual **item-type / DCLI** fix
+> entirely, because the depot bundle ships proper `lib.json`/`items.json`. Use
+> §5.3 only when there is no depot to seed. **[field-verified 2026-07-23]**
+
+For a full air-gapped site with **no offline depot**, there is a documented
+publisher flow — build a **local, published** library on a connected side, then
+subscribe to it from the air-gapped vCenter **[documented]**:
 
 > "In a full air-gapped environment, where direct internet access is restricted,
 > you must first download the vSphere Supervisor release artifacts on a separate,
@@ -780,13 +787,17 @@ So treat "does the depot actually contain the content?" as its own pre-flight
 question. **Check before activation:** fetch the depot `lib.json` for the
 **SUPERVISOR** path first (that is the one that blocks enablement), then the
 **VKR** path, and confirm each lists items. An empty response is your answer, and
-it is far cheaper to find now. If it is empty, either use the air-gapped
-publisher flow in [§5.3](#53-air-gapped-publish-locally-and-fix-the-item-type) or
-seed the depot by hand as below.
+it is far cheaper to find now. If it is empty, **seed the depot by hand as below**
+(preferred), or use the no-depot publisher flow in
+[§5.3](#53-air-gapped-fallback-publish-a-local-library-and-fix-the-item-type).
 
 #### Seeding the Supervisor library onto the offline depot — the recipe
 
 Field-verified 2026-07-23, following the Amaya Citta write-up credited below.
+**This is the preferred air-gapped path** — simpler than the local-publisher flow
+in [§5.3](#53-air-gapped-fallback-publish-a-local-library-and-fix-the-item-type),
+and it needs no DCLI item-type fix because the bundle ships proper
+`lib.json`/`items.json`. Use §5.3 only when there is no depot to seed.
 
 1. **Download the bundle** from the Broadcom Support Portal: *My Downloads → VMware
    Cloud Foundation → 9.1.0.0 → Primary Downloads → VMware vSphere Supervisor* →

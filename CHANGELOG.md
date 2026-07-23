@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.7.0 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: reframe §5.3 as the no-depot fallback**
+  (#216). The offline-depot seeding recipe (§5.4) is simpler than §5.3's
+  local-publisher flow and avoids the manual DCLI item-type fix (the depot bundle
+  ships proper lib.json/items.json), so §5.3 is now clearly the path for sites
+  **without** an offline depot, with reciprocal signposts between the two and the
+  heading/anchor updated ("Air-gapped fallback"). Stale in-page link to the old
+  §5.3 anchor fixed.
+
 ## v2.6.9 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: document the VKR-vs-Supervisor download
   asymmetry in §5.4** (#216). Unlike the Supervisor content (a support-portal zip),
