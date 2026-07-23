@@ -1088,7 +1088,18 @@ Stop and fix if any step fails — they build on each other.
 - Get the **API/Control-Plane VIP**: vCenter → Workload Management → Supervisors →
   your Supervisor → *Control Plane Node Address*.
 - Create DNS **A** (`supervisor-fqdn → API VIP`) and matching **PTR**.
-- Install the **VCF CLI** (`vcf`) — it replaces `kubectl vsphere` in 9.1.
+- Install the **VCF Consumption CLI** (`vcf`) on your test host / jumphost — it
+  replaces `kubectl vsphere` in 9.1, and it must be on whatever host runs steps 4–6.
+  > **In an air-gapped / offline-depot deployment the Supervisor may not stage the
+  > CLI** — its landing page (`https://<API-VIP-or-FQDN>/`) shows *"VCF Consumption
+  > CLI is not found / requested version not available on the server."* This is the
+  > same offline-content gap as [§5.4](#54-offline-depot-configured-is-not-the-same-as-populated)
+  > (the offline path doesn't populate everything in 9.1.0), **not a step you
+  > missed** — the Supervisor normally self-populates the CLI store, but the offline
+  > setup doesn't. **Download the VCF Consumption CLI for your OS from the Broadcom
+  > Support Portal** and install it on the jumphost; the `vcf` binary talks to the
+  > Supervisor over the API regardless of where you sourced it.
+  > **[field-verified 2026-07-23]**
 
 **1. Supervisor health (UI)**
 Workload Management → Supervisors → *Config Status* = **Running**, *Host Config

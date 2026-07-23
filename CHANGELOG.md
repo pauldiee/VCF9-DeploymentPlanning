@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.7.4 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: air-gapped VCF Consumption CLI note** (#216).
+  Field-verified: in an offline-depot deployment the Supervisor landing page reports
+  "VCF Consumption CLI is not found / requested version not available on the server"
+  — the same offline-content gap as §5.4, not a missed step. §7.1 step 0 now says to
+  download the VCF Consumption CLI from the Broadcom Support Portal and install it on
+  the jumphost.
+
 ## v2.7.3 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: §7.1 followable validation runbook** (#216).
   Field-verified against a working Supervisor. Seven ordered steps with do/pass for
