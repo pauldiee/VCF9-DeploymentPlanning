@@ -1101,6 +1101,12 @@ Stop and fix if any step fails — they build on each other.
   > Restricted Environments*** subpages; use the restricted one for an air-gapped
   > site. The `vcf` binary talks to the Supervisor over the API regardless of where
   > you sourced it. Verify with `vcf version`. **[field-verified 2026-07-23]**
+- Also have **`kubectl`** on the same host — it is a **separate, standard tool**,
+  not part of the VCF CLI (the install guide does not mention it). The split in 9.1:
+  **`vcf context create` authenticates and writes the kubeconfig context**, then
+  **standard `kubectl` uses that context** for everything in steps 4–6. Get
+  `kubectl` from your usual mirror or the Supervisor's Kubernetes CLI Tools download
+  (same landing page, same air-gapped staging caveat). **[field-verified 2026-07-23]**
 
 **1. Supervisor health (UI)**
 Workload Management → Supervisors → *Config Status* = **Running**, *Host Config
