@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.6.8 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: §5.4 gains the offline-depot seeding
+  recipe** (#216). Field-verified today. Concrete steps to seed the Supervisor
+  Images library onto an offline depot: download the `VMware-vSphere-Supervisor`
+  bundle, extract under `PROD/COMP/SUPERVISOR`, fix ownership, prove it serves,
+  subscribe and assign, verify the tree. Calls out two traps: **copying
+  `chown apache:apache` onto an nginx depot** (owner must match the web worker —
+  `apache` / `nginx` / `www-data`, else 403 and an empty "synced" library), and
+  **VKR being a ~500 GB mirror that is not an activation prerequisite** (it is for
+  VKS guest clusters). Community-script caution added.
+
 ## v2.6.7 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: clarify the SE storage policy is on the
   Service Engine Group, not the Cloud** (#216). Field-verified — the NSX Cloud

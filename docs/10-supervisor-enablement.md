@@ -782,7 +782,67 @@ question. **Check before activation:** fetch the depot `lib.json` for the
 **VKR** path, and confirm each lists items. An empty response is your answer, and
 it is far cheaper to find now. If it is empty, either use the air-gapped
 publisher flow in [§5.3](#53-air-gapped-publish-locally-and-fix-the-item-type) or
-the community script that walks `lib.json` / `items.json`.
+seed the depot by hand as below.
+
+#### Seeding the Supervisor library onto the offline depot — the recipe
+
+Field-verified 2026-07-23, following the Amaya Citta write-up credited below.
+
+1. **Download the bundle** from the Broadcom Support Portal: *My Downloads → VMware
+   Cloud Foundation → 9.1.0.0 → Primary Downloads → VMware vSphere Supervisor* →
+   `VMware-vSphere-Supervisor-9.1.0.0100-<build>.zip`.
+2. **Extract it under the `SUPERVISOR` path** on the depot web root — this is the
+   path that gates enablement, **not** `VKR`:
+   ```bash
+   mkdir SUPERVISOR && unzip VMware-vSphere-Supervisor-*.zip -d SUPERVISOR
+   mv SUPERVISOR /var/www/html/PROD/COMP/
+   ```
+   The bundle carries its own layout, so `lib.json` and `items.json` are generated
+   from it — you do not hand-write them.
+3. **Fix ownership to your web server's worker user — and read this before copying
+   a `chown` from any blog.** The files are set owner-read-only (`0400` files,
+   `0500` dirs), so the owner **must** be the account the web server runs as:
+   - **Apache** → `apache`
+   - **nginx** → `nginx` (RHEL/Rocky) or `www-data` (Debian/Ubuntu) — check
+     `grep -E '^\s*user' /etc/nginx/nginx.conf`
+   ```bash
+   chown <web-worker>:<web-worker> -R /var/www/html/     # apache | nginx | www-data
+   find /var/www/html -type d -exec chmod 0500 {} \;
+   find /var/www/html -type f -exec chmod 0400 {} \;
+   chmod 755 /var/www/ /var/www/html/
+   ```
+   > **Copying `chown apache:apache` onto an nginx depot is a real trap.** nginx
+   > then cannot read a single file, every request returns **403**, and the content
+   > library "syncs" to **empty** — straight back into the configured-not-populated
+   > state this section warns about. Match the owner to the worker user.
+4. **Prove the depot serves it** *before* trusting the sync — expect **200**, not
+   403 (wrong owner) or 404 (wrong path):
+   ```bash
+   curl -I https://<Fleet-LCM-FQDN>/depot-service/content-gateway/PROD/COMP/SUPERVISOR/lib.json
+   ```
+5. **Subscribe** in vCenter with the resolved URL (the concrete form of §5.1's
+   `{VcenterLcmDepotServicesAddress}{base_url}/…`):
+   ```
+   https://<Fleet-LCM-FQDN>/depot-service/content-gateway/PROD/COMP/SUPERVISOR/lib.json
+   ```
+   Create a **subscribed** content library, default OVF security policy, a
+   datastore, sync — then **assign** it ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first)).
+6. **Verify the tree** lists real items: `lib.json`, `items.json`,
+   `spherelet-v1.30/…v1.32/`, and `supervisor-9.1.0.0100-<build>/`; the vCenter
+   library should show the OVA + spherelet artifacts after sync.
+
+> **VKR is a separate ~500 GB mirror, and NOT an activation prerequisite.** The
+> `VKR` path holds the Kubernetes releases for **VKS guest clusters**
+> ([§5.2](#52-the-vks-library--for-guest-clusters-afterwards)), not the Supervisor
+> itself. Seed **SUPERVISOR** to activate; do **VKR** only when you will actually
+> run VKS guest clusters. The reported "repeated deployment errors" without VKR are
+> the auto-created VKS library erroring on *guest-cluster* work post-activation —
+> they do not stop the Supervisor reaching Running. Do not let a half-terabyte
+> download gate the activation.
+
+> **Community-script caution.** A `vkr-mirror.sh`-style walker of `lib.json` /
+> `items.json` is fine for a lab, but on a customer engagement read it first and
+> prefer a sanctioned flow where one exists.
 
 > **Credit:** the offline-depot content gap and the download-script workaround
 > were documented by the community ahead of the vendor — see
