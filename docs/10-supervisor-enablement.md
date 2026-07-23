@@ -540,6 +540,61 @@ for mandatory because a popular field walkthrough includes them.
 > not IPAM. Everything else a fuller walkthrough shows is done for you by VCF
 > Operations or optional.
 
+#### Building the overlay SE-management network — the routing tail
+
+Choosing **overlay** for the SE management network (rather than a VLAN-backed
+segment) has a consequence worth planning for: the segment sits behind a **Tier-1**,
+and the SEs must still reach the **Avi Controller — and vCenter/NSX — on the
+management network**. Broadcom's docs say "identify a segment within *either* the
+overlay or VLAN-backed transport zones"; they do not prescribe the routing, because
+that is your network design. **[field-verified 2026-07-23]**
+
+**If the management network is its own VRF** (common), the SE-management overlay has
+to be routed *into* that VRF. Your existing CTGW Tier-0 lives in the workload VRF and
+peers with the workload upstream, not the management VRF — so it is the wrong path.
+Two ways to give the SE-management network a route into the management VRF:
+
+- **A dedicated Tier-0** peering the management VRF, on the existing Edge cluster
+  and uplinks (add management-VLAN uplink interfaces). Cleaner isolation —
+  independent BGP and failover from the CTGW T0.
+- **A VRF gateway** (VRF-lite) as a child of an existing T0, sharing its uplinks via
+  VLAN sub-interfaces. Lighter, but coupled to the parent T0.
+
+The deciding factor is purely **Edge uplinks**: whichever you pick needs an Edge
+interface onto the **management VLAN**. If the Edges can carry it, both work; a
+dedicated T0 is the tidier choice for a management peering that should be
+independent.
+
+Two settings that bite on the dedicated-T0 route:
+
+1. **Make it Active/Active.** Unlike the CTGW Transit Gateway (Active/Standby,
+   because it carries stateful NAT), this T0 does pure routing — no stateful
+   services — so A/A gives both Edges forwarding. Only use A/S if you have a
+   specific stateful reason here (you usually do not).
+2. **Advertise in *both* directions — the usual miss.** Advertise the
+   **SE-management subnet outbound** to the management VRF, **and** accept the
+   **Controller / vCenter / NSX management prefixes inbound**. One-way advertisement
+   looks like a mystery timeout: SEs reach the Controller but replies have no route
+   back (or vice-versa).
+
+Build order: management-VLAN **uplink segments** → **new T0 (A/A)** with per-Edge
+uplink interfaces → **BGP** to the management-VRF gateway (peer IP + remote ASN +
+MD5, from the network team in writing, same discipline as [§3.2](#32-gateway-and-bgp))
+with bidirectional advertisement → **Tier-1** for SE management, connected to the new
+T0, advertising connected segments → **overlay segment** for SE management on that T1
+→ select it in the Avi cloud's Management Network with an IP pool.
+
+> **Test reachability before you touch Avi.** From an Edge or a node on the
+> SE-management subnet, confirm you can reach the **Controller's management IP**
+> across the new peering. If it works, the Avi side is just selecting the segment;
+> if it does not, it is a routing/advertisement gap at the fabric, not an Avi
+> problem — far cheaper to catch there.
+
+> **The no-T0 alternative:** a **VLAN-backed SE-management segment placed directly on
+> the management VLAN** puts the SEs *in* the management network with no T1/T0/peering
+> at all. If the overlay route turns into a fabric project, this sidesteps it — at
+> the cost of consuming a management VLAN on the hosts/Edges.
+
 *Post-deploy config sources: [Configure the NSX Cloud connector (Avi 9.1)][avi-nsxcloud] · [Getting Started with Avi (9.1)][avi-gettingstarted] · [Amaya Citta — VKS 9.1 with Avi and NSX VPC][amaya-vks] (the fuller manual walkthrough, incl. the optional DNS/GSLB steps)*
 
 ### 4.6 Documented limitations that bite

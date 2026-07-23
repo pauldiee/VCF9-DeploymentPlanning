@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.6.2 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: §4.5 gains "Building the overlay
+  SE-management network — the routing tail"** (#216). Field-verified today.
+  Choosing an overlay SE-management segment means it sits behind a Tier-1 and
+  still has to reach the Avi Controller/vCenter/NSX on the management network — so
+  if the management network is its own VRF, you need a route into it: a **dedicated
+  Tier-0** peering the management VRF (or a VRF gateway), on the existing Edge
+  uplinks. Documents the two settings that bite (make the T0 **Active/Active**
+  since it carries no stateful services, unlike the CTGW A/S Transit Gateway; and
+  **advertise BGP in both directions**), the build order, a reachability test to
+  run before touching Avi, and the **VLAN-backed no-T0 alternative**.
+
 ## v2.6.1 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: SE management network is a hard
   prerequisite; IPAM correction** (#216). Field-verified on a live VCF-Ops-managed
