@@ -498,8 +498,15 @@ for mandatory because a popular field walkthrough includes them.
      the load-balancer step stalling (*"Unable to acquire IP address for network"*,
      KB 442187). The empty-quotes state is a *missing-config* error, not a
      trust/cert error — a cert problem shows as a connection/auth failure instead.
-   - **You do not configure the data network** — "Because the VPC handles the Data
-     Network Segment, you do not need to configure it" **[documented]**.
+   - **The data network still needs a transport zone — but no segments.** The cloud
+     config *requires* you to select a **data-network transport zone** (pick your
+     workload **overlay** TZ), but you do **not** configure data segments or IP
+     pools under it: "Because the VPC handles the Data Network Segment, you do not
+     need to configure it" **[documented]**. So: data TZ **yes**, data segments
+     **no**. The data TZ "does not need to match the zone used for the management
+     network" **[documented]**, and it must be present in the **transport node
+     profile of the ESXi hosts where the SEs run** (the workload cluster) or the
+     SE data NICs cannot attach.
 2. **The NSX Cloud connector, in VPC mode — confirm vCenter and the template SE
    group** **[documented]**. Beyond the management network above, verify the cloud
    has a **vCenter registered for SE placement** (where the SE *VMs* land — the

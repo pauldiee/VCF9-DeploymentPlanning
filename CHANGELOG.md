@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.6.3 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: correct the data-network line in §4.5**
+  (#216). Field-verified — the Avi NSX Cloud config *does* require a **data-network
+  transport zone** (select the workload overlay TZ), even in VPC mode; what the VPC
+  handles is the data **segments/IP pools**, not the transport zone. Earlier text
+  said "you do not configure the data network", which was too broad. Now: data TZ
+  yes, data segments no — plus the notes that the data TZ need not match the
+  management TZ and must be in the transport node profile of the ESXi hosts where
+  the SEs run.
+
 ## v2.6.2 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: §4.5 gains "Building the overlay
   SE-management network — the routing tail"** (#216). Field-verified today.
