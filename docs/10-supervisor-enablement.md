@@ -1079,6 +1079,74 @@ Supervisor enablement"** — the *API Server DNS Names* field from
 > validation checklist. The table above is assembled from the troubleshooting and
 > connection pages rather than quoted from one.
 
+### 7.1 Followable validation runbook
+
+Run these in order. Each has a **do** and a **pass**. Field-verified 2026-07-23.
+Stop and fix if any step fails — they build on each other.
+
+**0. One-time prep**
+- Get the **API/Control-Plane VIP**: vCenter → Workload Management → Supervisors →
+  your Supervisor → *Control Plane Node Address*.
+- Create DNS **A** (`supervisor-fqdn → API VIP`) and matching **PTR**.
+- Install the **VCF CLI** (`vcf`) — it replaces `kubectl vsphere` in 9.1.
+
+**1. Supervisor health (UI)**
+Workload Management → Supervisors → *Config Status* = **Running**, *Host Config
+Status* clean, **3** control-plane VMs healthy.
+
+**2. API by IP**
+```
+curl -k https://<API-VIP>:6443/healthz      # pass: ok  (Avi VIP → API server works)
+```
+
+**3. API by FQDN (DNS + cert SAN)**
+```
+nslookup <supervisor-fqdn>                   # resolves to the API VIP
+curl -k https://<supervisor-fqdn>:6443/healthz   # pass: ok
+```
+
+**4. CLI login (the 9.1 way)**
+```
+vcf context create --endpoint <supervisor-fqdn> --username administrator@vsphere.local
+vcf context list
+kubectl get nodes                            # pass: control-plane + ESX nodes Ready
+```
+
+**5. Namespace + workload schedules**
+Create a namespace (Workload Management → Namespaces → Create; add storage + a VM
+class), then:
+```
+kubectl config use-context <namespace>
+kubectl run testpod --image=<reachable-registry>/pause:latest --restart=Never
+kubectl get pod testpod -w                   # pass: Running (or ContainerCreating)
+```
+> Use an image reachable from your environment (internal/offline registry if
+> air-gapped), not a public one.
+
+**6. LoadBalancer VIP from outside — the full Avi chain**
+```
+kubectl create deployment nginx --image=<reachable-registry>/nginx
+kubectl expose deployment nginx --port=80 --type=LoadBalancer
+kubectl get svc nginx -w                      # pass: EXTERNAL-IP from the External IP Block
+curl http://<EXTERNAL-IP>                      # pass: responds from outside the VPC
+```
+This proves the whole path: Avi allocates a VIP from the **External IP Block**, an
+SE serves it, and it is reachable north-south.
+
+**7. Avi side**
+Avi UI → Applications → Virtual Services (API VS + nginx VS **green/placed**) and
+Infrastructure → Service Engine (**both SEs healthy**, VS assigned to an SE).
+
+**Cleanup**
+```
+kubectl delete svc nginx; kubectl delete deployment nginx; kubectl delete pod testpod
+```
+Delete the test namespace if it was throwaway.
+
+> **All seven passing** means control plane, DNS/cert, CLI, scheduling, storage,
+> image path, and the Avi load-balancer chain are all validated end to end — the
+> point at which the enablement is genuinely done, not just *Running*.
+
 *Sources: [Connect to the Supervisor as a vCenter SSO user][vcf-cli] · [Troubleshooting the core Supervisor][ts-core]*
 
 ---

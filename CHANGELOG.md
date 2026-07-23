@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.7.3 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: §7.1 followable validation runbook** (#216).
+  Field-verified against a working Supervisor. Seven ordered steps with do/pass for
+  each: UI health → API by IP → API by FQDN (DNS + cert SAN) → VCF CLI login →
+  namespace + workload scheduling → LoadBalancer VIP reachable from outside (the
+  full Avi/External-IP-Block chain) → Avi VS/SE check, plus cleanup. Complements the
+  existing summary table.
+
 ## v2.7.2 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: hand-built T0 has route re-distribution OFF
   by default** (#216). Field-verified: the guided CTGW wizard sets redistribution,
