@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.7.1 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: activation-walkthrough learnings** (#216).
+  Field-verified end to end today. New **§3.4** — creating the VPC External IP
+  Block (NSX *IP Address Blocks*, Visibility = External, or the vSphere Network
+  connectivity page) and **attaching it to the VPC Connectivity Profile** (the
+  object the wizard reads), the External-Connection allow-list gotcha, and the
+  **Default Outbound NAT** decision (on = workload SNAT egress; off = routed
+  workloads; VIP comes from External IP Blocks either way; not a Supervisor
+  requirement), plus the wizard-caches-NSX-state note (relaunch after changes).
+  **§6** gains the big one: **the API FQDN points at the load-balancer VIP from the
+  External IP Block, not the management network** — with the enter-FQDN-now →
+  activate → read-VIP → create-A/PTR timing.
+
 ## v2.7.0 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: reframe §5.3 as the no-depot fallback**
   (#216). The offline-depot seeding recipe (§5.4) is simpler than §5.3's

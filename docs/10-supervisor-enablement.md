@@ -330,7 +330,57 @@ and 9.1 books.
 > **size it `/16`** and treat a hang at this stage as evidence. Do not present it
 > to a customer as a documented requirement.
 
-*Sources: [Configure the Centralized Gateway][ctgw] · [Supervisor architecture with VPC networking][arch]*
+### 3.4 Creating the External IP Block and attaching it to the profile
+
+The External IP Block is the VIP source (§3.3), and it must both **exist** and be
+**referenced by the VPC Connectivity Profile** before activation, or the wizard
+marks the profile *(incompatible)* and the External IP Blocks table shows *No
+items found*. **[field-verified 2026-07-23]**
+
+**Create the block** — two routes, same result:
+
+- **NSX Manager** — **Networking → IP Management → IP Address Pools → IP Address
+  Blocks → Add IP Address Block**: Name, **CIDR** (routable external range),
+  **Visibility = External** (the tooltip: *"Required for blocks to be consumed in
+  Projects and VPCs"*), leave *Reserved for Specific Subnet = No*.
+- **vSphere (VCF-integrated)** — vCenter → **Networking → Network connectivity**;
+  this creates the NSX block **and** wires it into the profile in one place, which
+  is the cleaner route on a VCF-Ops-managed NSX.
+
+**Attach it to the VPC Connectivity Profile** (the object the activation wizard
+reads — do this if you created the block directly in NSX): **VPCs → Profiles → VPC
+Connectivity Profile →** edit the **Default VPC Connectivity Profile** → add your
+block to **External IP Blocks** (max 5), confirm the **Private (Transit Gateway) IP
+Blocks** lists your `Day0 Private Tgw Ip Block`, and set the **Edge Cluster**.
+
+> The same block can also appear on the Transit Gateway's **External Connection**
+> (VPC Connectivity → External Connections → External IP Blocks). That field
+> defaults to *"All External IP blocks allowed"* — adding one block there turns it
+> into an **allow-list of only the listed blocks**, so make sure every external
+> block the TGW needs is present, not just the new one.
+
+**Default Outbound NAT — a decision, not a requirement.** On the profile's *VPC
+Service Gateway Configurations*, **Default Outbound NAT** governs **workload/pod
+egress SNAT** only (not the Supervisor control plane, which rides the management
+network) **[field-verified 2026-07-23]**:
+
+- **On** → workloads are SNAT'd outbound via an external IP; you must then set
+  **External IP Block for Default Outbound NAT**. Use this when workloads have
+  private IPs and need outbound reach.
+- **Off** → workloads egress with their own private/transit IPs, which must be
+  **routable/advertised** to whatever they need. Cleaner for a routed or air-gapped
+  estate, and it removes the NAT-block field.
+
+Either way the **VIP still comes from the External IP Blocks field** — NAT is
+orthogonal. If On but the NAT block is unset, that alone makes the profile
+*(incompatible)*.
+
+> **The wizard caches NSX state.** After any of these NSX/profile changes,
+> **cancel and relaunch the activation wizard** — an *(incompatible)* profile or an
+> empty External IP Blocks table is very often just stale wizard state from before
+> the change.
+
+*Sources: [Configure the Centralized Gateway][ctgw] · [Supervisor architecture with VPC networking][arch] · [Add a VPC Connectivity Profile][vpc-profile]*
 
 ---
 
@@ -944,7 +994,7 @@ the **5 consecutive IPs / floating IP**, subnet mask, gateway, **DNS servers**
 | Field | Note |
 | ----- | ---- |
 | Supervisor Control Plane Size | Tiny (2 vCPU / 8 GB) · Small (4 / 16) · Medium (8 / 16) · Large (16 / 32). **Can only scale up** |
-| API Server DNS Names | The FQDN(s) used to reach the Supervisor. **Set this now** — FQDN login requires it to have been configured at enablement |
+| API Server DNS Names | The FQDN(s) used to reach the Supervisor, resolving to the **LB VIP** (not the mgmt network — see callout below). **Set this now** — FQDN login requires it to have been configured at enablement |
 | Export Configuration | Exports a JSON file of the whole configuration |
 
 > **Export the configuration.** It is one click, it documents exactly what was
@@ -955,6 +1005,21 @@ the **5 consecutive IPs / floating IP**, subnet mask, gateway, **DNS servers**
 > Supervisor Images library catches people out. It is assigned beforehand, on a
 > different screen (*Supervisor Management → Content Distribution*), so there is
 > nothing here to remind you. See [§5.1](#51-the-supervisor-images-library--the-one-you-need-first).
+
+> **The API FQDN points at the load-balancer VIP, not the management network.**
+> **[field-verified 2026-07-23]** This is a common confusion. The Kubernetes API
+> server is fronted by the **Avi load-balancer VIP**, which is allocated from your
+> **VPC External IP Block** ([§3.3](#33-the-ip-blocks-and-the-16-question)) — *not*
+> from the management network where the control-plane VMs live (that network is
+> only control-plane↔vCenter connectivity). The *API Server DNS Names* field takes
+> just the **FQDN**, which goes into the cert's `SubjectAltName.DNS`; the wizard's
+> own tooltip notes the **LB IP is added to the cert automatically and must not be
+> typed here**. Timing wrinkle: the VIP is assigned *during* activation, so you
+> usually cannot pre-create the DNS record. The clean order is — **enter the FQDN
+> now** (activation does not require it to resolve yet) → activate → read the
+> assigned **API/Control-Plane VIP** from the Supervisor summary → create the DNS
+> **A** (`FQDN → VIP`) and **PTR** records. FQDN login (`vcf context create
+> --endpoint <FQDN>`) then works because the name is already in the SAN.
 
 Activation then performs "deployment of control plane VMs, ESX host configuration
 as Kubernetes nodes, virtual IP preparation on the load balancer, and core
@@ -1248,4 +1313,5 @@ covers the Software Depot that now feeds the VKS content library.
 [ts-core]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes/troubleshooting-core-supervisor.html
 [vcf-cli]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/connecting-to-vsphere-with-tanzu-clusters/connect-to-the-supervisor-cluster-as-a-vcenter-single-sign-on-user.html
 [vpc-book]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds.html
+[vpc-profile]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/virtual-private-cloud-in-nsx/add-a-vpc-connectivity-profile.html
 [workflow]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor.html
