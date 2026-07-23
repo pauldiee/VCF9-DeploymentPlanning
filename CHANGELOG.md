@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.5.9 — 2026-07-23
+- **`docs/10-supervisor-enablement.md`: split §4 by Avi deployment model** (#216).
+  Field-verified today: §4 previously read as one manual runbook (from the 9.0
+  standalone book), but the 9.1 default is **VCF-Operations-managed Avi**, where
+  VCF Ops owns the whole lifecycle — controller deploy, NSX cloud connector,
+  Supervisor registration, and **certificate generation + trust propagation to
+  NSX and vCenter**. A new callout at the top of §4 distinguishes the two models
+  and warns that on a VCF-Ops-managed controller **replacing the certificate in
+  the Avi UI breaks NSX trust** (re-importing the thumbprint by hand does not
+  restore it); the clean recovery is to **revert to the VCF-Ops-generated cert**,
+  else re-drive via VCF Operations. §4.4's manual CN/SAN steps are now fenced as
+  **standalone-only**, and the pre-flight cert line is model-aware (VCF-Ops:
+  NSX cloud connector green; standalone: hand-built CN/SAN). Adds the 9.1 Avi
+  release notes, the "deploy from VCF Operations" page, and Amaya Citta's VKS-9.1
+  write-up as sources.
+
 ## v2.5.8 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: added the Avi Controller certificate step**
   (§4.4, #216). Supervisor requires a **custom** Controller certificate — the

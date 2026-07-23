@@ -221,9 +221,12 @@ Verify — do not accept assurances. Each of these has failed a real activation.
 
 - [ ] Load balancer decision made per [§1.2](#12-load-balancer--you-may-not-need-avi)
 - [ ] If Avi: Controller cluster healthy **in the management domain**, licensed,
-      registered, **custom certificate created and assigned** (CN + SAN matching
-      the endpoint you give Supervisor — [§4.4](#44-the-controller-certificate--cn-and-san)),
-      and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
+      registered, and **Default-Group configured** — see [§4](#4-avi-load-balancer-only-if-used)
+- [ ] If Avi: the certificate is correct **for your deployment model** — on
+      **VCF-Ops-managed** Avi, VCF Operations generated it and the NSX cloud
+      connector is **green** (do not touch it by hand); on **standalone** Avi, you
+      created it with CN + SAN matching the endpoint you give Supervisor
+      ([§4.4](#44-the-controller-certificate--cn-and-san))
 - [ ] **Supervisor Images content library created and assigned** — a hard
       prerequisite: since VCF 9 the Supervisor release images ship separately
       from vCenter ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first))
@@ -323,6 +326,38 @@ and 9.1 books.
 
 Skip entirely if you are using the built-in NSX Edge load balancer.
 
+> **First, decide *which Avi* you are running — this changes everything below.**
+> There are two deployment models, and most of this section's manual steps apply
+> to only one of them:
+>
+> - **VCF-Operations-managed Avi (the 9.1 default).** VCF Operations deploys the
+>   Controller cluster and owns its **whole lifecycle** — service-account
+>   creation, the NSX cloud connector, **Supervisor registration**, and
+>   **certificate generation and trust propagation to NSX Manager and vCenter**
+>   **[documented — 9.1 Avi release notes]**. On this model you do **not** set the
+>   VIP in NSX, do **not** register with NSX by hand, and do **not** replace the
+>   certificate in the Avi UI. The NSX tab *System → Appliances → Avi Load
+>   Balancer* is the *NSX-native* deploy path — expect it to stay empty, and do
+>   not click *Set Virtual IP* / *Add Avi Load Balancer* there or you start a
+>   second, conflicting Controller. Deploy from **VCF Operations → Build →
+>   Lifecycle → VCF instances → Manage Components**.
+> - **Standalone / NSX-native Avi.** You deploy the Controller yourself and wire
+>   it up by hand. **§4.2–§4.5 below are written for this model.** They come from
+>   the 9.0 "Supervisor with NSX and Avi" book, which is the current documentation
+>   for the manual path.
+>
+> **The trap that follows from mixing them:** on a VCF-Ops-managed Controller,
+> **replacing the certificate manually in the Avi UI breaks the trust from NSX**,
+> and re-importing the thumbprint by hand does **not** reliably restore it
+> **[field-reported; consistent with the "managed by VCF Operations" banner NSX
+> shows]**. If you have already done it, the clean recovery is to **revert to the
+> original VCF-Ops-generated certificate** (it presents the thumbprint NSX and
+> vCenter already trust); if that cert object is gone, re-drive the certificate
+> **through VCF Operations**, which regenerates and re-propagates the chain. Only
+> TLS certs signed by **VMCA, Microsoft CA, or OpenSSL** are auto-renewable this
+> way **[documented]**. Do the cert lifecycle in VCF Operations, never in the Avi
+> or NSX UI, whenever VCF Operations deployed the Controller.
+
 ### 4.1 Ordering — this is a hard dependency
 
 > "If you want to use Avi Load Balancer in VCF Automation, or for vSphere
@@ -366,6 +401,12 @@ existing SEs; **Distributed** spreads across new ones). At least two Service
 Engine VMs are deployed per Supervisor.
 
 ### 4.4 The Controller certificate — CN and SAN
+
+> **Standalone Avi only.** On a **VCF-Operations-managed** Controller, VCF
+> Operations already generated this certificate and propagated its trust to NSX
+> and vCenter — **do not create or replace it here**; doing so breaks NSX trust
+> (see the callout at the top of [§4](#4-avi-load-balancer-only-if-used)). The
+> steps below are for the standalone path, where you supply the cert yourself.
 
 **You must give the Controller a custom certificate before you activate the
 Supervisor** — and the fields on that screen are easy to fill in wrong, because
@@ -427,7 +468,7 @@ throwaway.
 - Avi provides **L4 for Services in both Supervisor and VKS clusters**, but
   **L7 for Ingresses in Supervisor clusters only** **[documented]**.
 
-*Sources: [Avi for VCF 9.1 — licence management][avi-lic] · [Install and configure NSX and Avi (9.0)][avi-install] · [Configure the Service Engine Group][avi-seg] · [Limitations of using Avi][avi-limits]*
+*Sources: [Avi for VCF 9.1 — licence management][avi-lic] · [Avi for VCF 9.1 — deploy from VCF Operations][avi-vcfops] · [Avi for VCF 9.1 — release notes][avi-relnotes] · [Install and configure NSX and Avi (9.0)][avi-install] · [Configure the Service Engine Group][avi-seg] · [Limitations of using Avi][avi-limits] · [Amaya Citta — VKS 9.1 with Avi and NSX VPC][amaya-vks]*
 
 ---
 
@@ -905,6 +946,9 @@ covers the Software Depot that now feeds the VKS content library.
 [avi-lic]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html
 [avi-limits]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer/install-and-configure-the-nsx-advanced-load-balancer-for-nsx/limitations-of-using-the-nsx-advanced-load-balancer.html
 [avi-seg]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0/deploying-supervisor-with-nsx-and-avi-load-balancer/install-and-configure-nsx-and-nsx-advanced-load-balancer/install-and-configure-the-nsx-advanced-load-balancer-for-nsx/configure-service-engine-group.html
+[avi-relnotes]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/release-notes/vmware-avi-load-balancer-for-vcf-91-release-notes.html
+[avi-vcfops]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html
+[amaya-vks]: https://amayacitta.co.uk/vks-9-1-with-avi-load-balancer-and-nsx-vpc/
 [avi90]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-0.html
 [avi91]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1.html
 [book]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html
