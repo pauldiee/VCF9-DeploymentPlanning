@@ -10,6 +10,7 @@ const sampleHref = withBase('samples/01-network-dns-plan-rainpole/');
 const sizerHref = withBase('tools/mgmt-sizing/');
 const planExportHref = withBase('tools/deployment-plan/');
 const planTrackerHref = withBase('tools/plan-tracker/');
+const testPlanHref = withBase('tools/test-plan/');
 const versionOverviewHref = withBase('version-overview/');
 ---
 
@@ -69,6 +70,17 @@ const versionOverviewHref = withBase('version-overview/');
     <span class="sidebar__text">
       <span class="sidebar__step">Interactive</span>
       <span class="sidebar__label">Deployment Tracker</span>
+    </span>
+  </a>
+  <a
+    class:list={['sidebar__link', { 'is-active': active === 'tools/test-plan' }]}
+    href={testPlanHref}
+    aria-current={active === 'tools/test-plan' ? 'page' : undefined}
+  >
+    <i class="fa-solid fa-clipboard-check sidebar__icon" aria-hidden="true"></i>
+    <span class="sidebar__text">
+      <span class="sidebar__step">Interactive</span>
+      <span class="sidebar__label">Test Plan</span>
     </span>
   </a>
 
