@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.8.1 — 2026-07-24
+- **Test Plan cases now carry the actual commands and click paths** (#218). Feedback
+  from the first read-through: a step saying "send an unfragmented ping at 8972 bytes"
+  still makes the tester go and look up `vmkping -d -s`. Every step that has a command
+  now gives it — `vmkping -I vmk1 -d -s 8972 <peer>`, `vdq -q`,
+  `get bgp neighbor <peer> advertised-routes`, `iperf3 -c <ip> -P 4 -t 30`,
+  `kubectl vsphere login --server=<fqdn>`, plus PowerCLI one-liners that sweep a whole
+  cluster — and every GUI check names the exact path
+  (**Cluster → Monitor → vSAN → Skyline Health → Retest**). Roughly 400 commands across
+  104 cases; only the four genuine paperwork cases (sizing, as-built, results
+  completeness, sign-off) have neither, by design.
+- Checks sweep the whole estate rather than one host, because *"it worked on the first
+  host"* is the recurring false pass — the forward+reverse DNS sweep over a file of
+  FQDNs, the per-host datastore mount check, and the `Syslog.global.logHost` check
+  across every ESX host.
+- PowerShell snippets avoid PS7-only syntax, so they run on a Windows PowerShell 5.1
+  jumphost.
+- Commands render as inline `code` on the page and survive into the Markdown and CSV
+  exports; long one-liners wrap instead of pushing the page sideways.
+
 ## v2.8.0 — 2026-07-24
 - **New interactive Test Plan tool** at `/tools/test-plan/` (#218). The deployment
   plan says what to build and the tracker says how far you got; this says how you

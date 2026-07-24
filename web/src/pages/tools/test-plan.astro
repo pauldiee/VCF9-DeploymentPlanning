@@ -229,6 +229,10 @@ const phases = selectedPhases(defaultSelection());
   function esc(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  /** Steps carry their commands in `backticks`; render those as code so they stand out. */
+  function code(s: string): string {
+    return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
   function bar(done: number, total: number): string {
     const pct = total ? Math.round((done / total) * 100) : 0;
     return `<div class="tplan__bar" role="presentation"><span style="width:${pct}%"></span></div>`;
@@ -258,8 +262,8 @@ const phases = selectedPhases(defaultSelection());
           .map((c) => {
             const key = caseKey(p, c);
             const r = results[key];
-            const steps = c.steps.map((s) => `<li>${esc(s)}</li>`).join('');
-            const note = c.note ? `<p class="tplan__casenote">${esc(c.note)}</p>` : '';
+            const steps = c.steps.map((s) => `<li>${code(s)}</li>`).join('');
+            const note = c.note ? `<p class="tplan__casenote">${code(c.note)}</p>` : '';
             const buttons = TEST_STATUSES.map(
               (s) =>
                 `<button type="button" class="tplan__st tplan__st--${s.value.toLowerCase()}${
@@ -280,7 +284,7 @@ const phases = selectedPhases(defaultSelection());
                 <span class="tplan__ref">${esc(c.epic)} · Story ${esc(c.story)}</span>
               </div>
               <ol class="tplan__steps">${steps}</ol>
-              <p class="tplan__expected"><em>Expected:</em> ${esc(c.expected)}</p>
+              <p class="tplan__expected"><em>Expected:</em> ${code(c.expected)}</p>
               ${note}
               <div class="tplan__result">${buttons}${stamp}${actual}</div>
             </li>`;
@@ -550,6 +554,14 @@ const phases = selectedPhases(defaultSelection());
 
   .tplan__steps { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; font-size: 0.85rem; }
   .tplan__steps li { margin-bottom: 0.15rem; }
+  /* Commands are long one-liners — let them wrap rather than push the page sideways. */
+  .tplan__steps code,
+  .tplan__expected code,
+  .tplan__casenote code {
+    overflow-wrap: anywhere; word-break: break-word;
+    background: var(--itq-mist); padding: 0.05em 0.3em; border-radius: 2px;
+    font-size: 0.82em; line-height: 1.45;
+  }
   .tplan__expected { font-size: 0.85rem; margin: 0.3rem 0; color: var(--itq-royal-blue); }
   .tplan__expected em { color: var(--itq-orange); font-style: normal; font-weight: var(--fw-semibold); }
   .tplan__casenote {
