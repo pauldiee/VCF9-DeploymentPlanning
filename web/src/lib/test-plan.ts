@@ -26,9 +26,11 @@
 
 import {
   aviInScope,
+  includedEpicList,
   isVsanStorage,
   licenseHubNeeded,
   normalizeSelection,
+  typeLabel,
   type Selection,
   type Wld,
 } from './deployment-plan';
@@ -1779,6 +1781,172 @@ export function buildTestMarkdown(raw: Selection, results: TestResults = {}): st
     '- Every `NA` has a written reason.',
     '- Every `P` has an actual result and filed evidence.',
     '- The as-built is complete and every credential is in the secret store.',
+    '',
+  );
+  return out.join('\n');
+}
+
+/**
+ * Exit-criteria audit. The plan's own rule is that a tick on its own is not a
+ * pass and an exclusion needs a reason, so the report checks its own evidence
+ * rather than reporting a clean sheet that nobody can stand behind.
+ */
+export interface ReportIssues {
+  /** Cases marked P with no actual result / evidence reference recorded. */
+  passNoEvidence: { id: string; title: string; phase: string }[];
+  /** F2 / NA with no reason recorded — an unowned action or an unexplained exclusion. */
+  noReason: { id: string; title: string; phase: string; status: TestStatus }[];
+  /** In-scope cases never executed. */
+  notExecuted: { id: string; title: string; phase: string; critical: boolean }[];
+}
+
+export function reportIssues(raw: Selection, results: TestResults): ReportIssues {
+  const sel = normalizeSelection(raw);
+  const out: ReportIssues = { passNoEvidence: [], noReason: [], notExecuted: [] };
+  for (const p of selectedPhases(sel)) {
+    for (const c of p.cases) {
+      const r = results[caseKey(p, c)];
+      const where = `${p.id} — ${p.title}`;
+      if (!r?.status) {
+        out.notExecuted.push({ id: c.id, title: c.title, phase: where, critical: !!c.critical });
+        continue;
+      }
+      const hasReason = !!r.actual && r.actual.trim().length > 0;
+      if (r.status === 'P' && !hasReason) out.passNoEvidence.push({ id: c.id, title: c.title, phase: where });
+      if ((r.status === 'F2' || r.status === 'NA') && !hasReason)
+        out.noReason.push({ id: c.id, title: c.title, phase: where, status: r.status });
+    }
+  }
+  return out;
+}
+
+/**
+ * Delivery report. Shaped for handover: verdict, per-phase summary, the open
+ * items someone has to act on, and a full results appendix — WITHOUT the test
+ * steps, which belong in the runbook export rather than in a report.
+ */
+export function buildTestReport(raw: Selection, results: TestResults = {}, preparedOn = ''): string {
+  const sel = normalizeSelection(raw);
+  const phases = selectedPhases(sel);
+  const stats = testStats(sel, results);
+  const issues = reportIssues(sel, results);
+  const out: string[] = [];
+
+  const notExecuted = stats.total - stats.executed;
+  const f2 = phases.reduce(
+    (n, p) => n + p.cases.filter((c) => results[caseKey(p, c)]?.status === 'F2').length,
+    0,
+  );
+  const na = phases.reduce(
+    (n, p) => n + p.cases.filter((c) => results[caseKey(p, c)]?.status === 'NA').length,
+    0,
+  );
+  const passed = stats.passed - na;
+
+  out.push('# VCF 9.1 — Verification Report', '');
+  if (preparedOn) out.push(`**Prepared:** ${preparedOn}  `);
+  out.push(`**Scope:** ${typeLabel(sel)}  `, `**Deployment plan epics:** ${includedEpicList(sel)}`, '');
+
+  // Verdict first — the reader wants to know whether this environment is signed off.
+  const verdict =
+    stats.criticalOpen > 0
+      ? `**NOT ACCEPTED** — ${stats.criticalOpen} critical failure${stats.criticalOpen === 1 ? '' : 's'} open.`
+      : notExecuted > 0
+        ? `**INCOMPLETE** — ${notExecuted} of ${stats.total} case${stats.total === 1 ? '' : 's'} not executed.`
+        : f2 > 0
+          ? `**ACCEPTED WITH ACTIONS** — all critical cases pass; ${f2} non-critical failure${f2 === 1 ? ' carried as an action' : 's carried as actions'}.`
+          : '**ACCEPTED** — all in-scope cases pass or are recorded as not applicable.';
+  out.push('## Verdict', '', verdict, '');
+
+  out.push('| Result | Cases |', '| --- | ---: |');
+  out.push(`| Passed | ${passed} |`);
+  out.push(`| Critical failures (F1) | ${stats.criticalOpen} |`);
+  out.push(`| Non-critical failures (F2) | ${f2} |`);
+  out.push(`| Not applicable | ${na} |`);
+  out.push(`| Not executed | ${notExecuted} |`);
+  out.push(`| **Total in scope** | **${stats.total}** |`, '');
+
+  out.push('## Results by phase', '');
+  out.push('| Phase | Covers | Executed | Passed / N/A | Critical open |', '| --- | --- | ---: | ---: | ---: |');
+  for (const p of phases) {
+    const per = stats.perPhase[p.id];
+    out.push(
+      `| ${p.id} — ${p.title} | ${p.epics} | ${per.executed}/${per.total} | ${per.passed} | ${per.criticalOpen} |`,
+    );
+  }
+  out.push('');
+
+  // Everything below is an action list: what someone still has to do.
+  const section = (heading: string, lead: string, rows: string[]) => {
+    if (!rows.length) return;
+    out.push(`## ${heading}`, '', lead, '', '| Case | Phase | Detail |', '| --- | --- | --- |', ...rows, '');
+  };
+
+  section(
+    'Open critical failures',
+    'These block handover. Each must be resolved and retested.',
+    phases.flatMap((p) =>
+      p.cases
+        .filter((c) => results[caseKey(p, c)]?.status === 'F1')
+        .map((c) => `| ${c.id} — ${c.title} | ${p.id} | ${results[caseKey(p, c)]?.actual || '_(no detail recorded)_'} |`),
+    ),
+  );
+  section(
+    'Non-critical failures carried as actions',
+    'Handover proceeds, but each needs a named owner and an agreed date.',
+    phases.flatMap((p) =>
+      p.cases
+        .filter((c) => results[caseKey(p, c)]?.status === 'F2')
+        .map((c) => `| ${c.id} — ${c.title} | ${p.id} | ${results[caseKey(p, c)]?.actual || '_(no owner or date recorded)_'} |`),
+    ),
+  );
+  section(
+    'Not applicable',
+    'Cases excluded from scope, with the reason recorded.',
+    phases.flatMap((p) =>
+      p.cases
+        .filter((c) => results[caseKey(p, c)]?.status === 'NA')
+        .map((c) => `| ${c.id} — ${c.title} | ${p.id} | ${results[caseKey(p, c)]?.actual || '_(no reason recorded)_'} |`),
+    ),
+  );
+  section(
+    'Not executed',
+    'In-scope cases with no result. The report is incomplete until these are run or explicitly excluded.',
+    issues.notExecuted.map((i) => `| ${i.id} — ${i.title} | ${i.phase.split(' — ')[0]} | ${i.critical ? 'Critical' : ''} |`),
+  );
+
+  if (issues.passNoEvidence.length || issues.noReason.length) {
+    out.push('## Report quality', '');
+    out.push(
+      'The plan requires an actual result or evidence reference behind every pass, and a written reason behind every action or exclusion. The following entries are incomplete.',
+      '',
+    );
+    if (issues.passNoEvidence.length) {
+      out.push(`- **${issues.passNoEvidence.length} pass${issues.passNoEvidence.length === 1 ? '' : 'es'} with no evidence recorded:** ${issues.passNoEvidence.map((i) => i.id).join(', ')}`);
+    }
+    if (issues.noReason.length) {
+      out.push(`- **${issues.noReason.length} action${issues.noReason.length === 1 ? '' : 's'} or exclusion${issues.noReason.length === 1 ? '' : 's'} with no reason recorded:** ${issues.noReason.map((i) => i.id).join(', ')}`);
+    }
+    out.push('');
+  }
+
+  out.push('## Full results', '');
+  for (const p of phases) {
+    out.push(`### ${p.id} — ${p.title}`, '');
+    out.push('| Case | Title | Status | Date | Actual result / evidence |', '| --- | --- | --- | --- | --- |');
+    for (const c of p.cases) {
+      const r = results[caseKey(p, c)];
+      const status = r?.status ? STATUS_LABEL[r.status] : 'Not executed';
+      const title = `${c.title}${c.critical ? ' _(critical)_' : ''}`;
+      out.push(`| ${c.id} | ${title} | ${status} | ${r?.date || ''} | ${(r?.actual || '').replace(/\|/g, '\\|')} |`);
+    }
+    out.push('');
+  }
+
+  out.push('---', '');
+  out.push(
+    '_Test steps are omitted here by design; the executed procedure is in the runbook export. ' +
+      'Status codes: Pass · Critical fail (blocks handover) · Non-critical fail (action) · N/A (out of scope)._',
     '',
   );
   return out.join('\n');

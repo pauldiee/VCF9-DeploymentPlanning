@@ -9,8 +9,20 @@
   → TP-5.n per workload domain → TP-6 handover**. Every case names the epic and
   story it proves. Per-case `P` / `F1` / `F2` / `NA` with a date stamp and a free-text
   actual-result field; results persist in the browser and save/load as a JSON file
-  that carries the scope with it. Markdown and CSV export; critical-only and
-  hide-executed filters. 71 cases on the default scope, 96 on a full one.
+  that carries the scope with it. Critical-only and hide-executed filters.
+  71 cases on the default scope, 96 on a full one.
+- **Three exports, three jobs.** **Report** is the deliverable: a verdict
+  (`ACCEPTED` / `ACCEPTED WITH ACTIONS` / `NOT ACCEPTED` / `INCOMPLETE`), a
+  per-phase results table, the open critical failures, the non-critical failures
+  carried as actions, the recorded exclusions, and a full results table — with
+  the test steps deliberately left out. It also audits itself against the plan's
+  own exit criteria and lists passes with no evidence and actions or exclusions
+  with no reason, so a clean sheet nobody can stand behind does not leave the
+  building. **CSV** is the working sheet (every field including the steps).
+  **Runbook** is the full procedure to follow while testing.
+- **On-page "How to run this"** — the six-step working method: set the scope once,
+  work a phase at a time and respect the gates, run TP-0 before bring-up, record a
+  status per case, always fill the actual-result box, then hand over.
 - **Written to close the gaps in vendor verification material**, which is
   post-deployment only and silent on: the pre-bring-up readiness gate (E1–E4),
   **Distributed connectivity** (Transit Gateway / VNA — the NSX cases all assume an
