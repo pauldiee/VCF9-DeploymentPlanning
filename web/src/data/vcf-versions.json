@@ -1,5 +1,5 @@
 {
-  "_updated": "2026-07-23",
+  "_updated": "2026-07-24",
   "_sourceErrors": [],
   "_sources": {
     "techdocs": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x",
@@ -174,14 +174,7 @@
       "build": "25570105",
       "releaseDate": "2026-07-13",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/software-depot-9-1-0-0400-release-notes.html",
-      "patched": true,
-      "pinned": {
-        "version": "9.1.0.0400",
-        "raw": "255070105",
-        "build": "25570105",
-        "verified": "2026-07-22",
-        "note": "Broadcom inserts an extra 0 after the third digit; confirmed against product inventory"
-      }
+      "patched": true
     },
     {
       "key": "vsp",
