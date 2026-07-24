@@ -1,0 +1,507 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/path';
+import { defaultSelection } from '../../lib/deployment-plan';
+import { selectedPhases } from '../../lib/test-plan';
+
+const exportHref = withBase('tools/deployment-plan/');
+const trackerHref = withBase('tools/plan-tracker/');
+
+// Pre-render the default scope so the plan is readable (and indexable) before
+// the client script swaps in the saved scope and results.
+const phases = selectedPhases(defaultSelection());
+---
+
+<BaseLayout
+  title="Test Plan | VCF 9.1 Planning"
+  description="Scope-driven verification test plan for a VCF 9.1 deployment: phased test cases mapped to the deployment plan's epics and stories, with pass/fail tracking and Markdown or CSV export."
+  active="tools/test-plan"
+>
+  <article class="tplan">
+    <header class="tplan__head">
+      <p class="itq-eyebrow">Verification</p>
+      <h1>Test Plan</h1>
+      <p class="tplan__lede">
+        The <a href={exportHref}>Deployment Plan</a> says what to build and the
+        <a href={trackerHref}>Tracker</a> says how far you got. This says <strong>how you prove it
+        works</strong>. Every case names the epic and story it verifies, so a green test plan maps
+        one-to-one onto a finished deployment plan. The scope follows what you set in the export
+        tool &mdash; adjust it there and this page picks it up. Results are remembered by this browser;
+        use <strong>Save results</strong> to keep the file with the engagement (it is customer data:
+        store it with the customer's files, not in a repo). Everything runs in your browser.
+      </p>
+    </header>
+
+    <section class="tplan__scopebox">
+      <p class="tplan__scope" id="scopeSummary"><strong>Scope:</strong> (loading)</p>
+      <a class="tplan__scopelink" href={exportHref}
+        ><i class="fa-solid fa-sliders" aria-hidden="true"></i> Adjust scope in the export tool</a
+      >
+    </section>
+
+    <div class="tplan__toolbar">
+      <button type="button" id="btnSave"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save results</button>
+      <button type="button" id="btnLoad"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Load results</button>
+      <button type="button" id="btnReset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset results</button>
+      <span class="tplan__toolbar-sep" aria-hidden="true"></span>
+      <button type="button" id="btnCopyMd"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy Markdown</button>
+      <button type="button" id="btnDlMd"><i class="fa-solid fa-download" aria-hidden="true"></i> Download .md</button>
+      <button type="button" id="btnDlCsv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Download CSV</button>
+      <input type="file" id="fileResults" accept=".json,application/json" hidden />
+      <span id="toolbarMsg" class="tplan__toolbar-msg" role="status"></span>
+    </div>
+
+    <div class="tplan__filters">
+      <label class="tplan__filter">
+        <input type="checkbox" id="fltCritical" /> Critical cases only
+      </label>
+      <label class="tplan__filter">
+        <input type="checkbox" id="fltOpen" /> Hide executed
+      </label>
+      <span class="tplan__legend">
+        <b>P</b> pass · <b>F1</b> critical fail (blocks the gate) · <b>F2</b> non-critical fail · <b>NA</b> not applicable
+      </span>
+    </div>
+
+    <p class="tplan__note">
+      A phase does not start until the prior phase has no open <code>F1</code>. A pass needs an
+      actual result and filed evidence &mdash; a tick on its own is not a pass. The CSV carries the
+      full steps, expected result, status, date and actual result, so it drops into a test-management
+      tool or a customer's own sheet.
+    </p>
+
+    <section class="tplan__list" id="plan">
+      {
+        phases.map((p) => (
+          <section class="tplan__phase">
+            <h2>
+              {p.id} — {p.title}
+              <span class="tplan__epics">{p.epics}</span>
+              <span class="tplan__phaseprog">0/{p.cases.length}</span>
+            </h2>
+            <div class="tplan__bar" role="presentation"><span style="width:0%" /></div>
+            <p class="tplan__gate"><strong>Gate:</strong> {p.gate}</p>
+            <ul class="tplan__cases">
+              {p.cases.map((c) => (
+                <li class="tplan__case">
+                  <div class="tplan__casehead">
+                    <span class="tplan__caseid">{c.id}</span>
+                    <strong>{c.title}</strong>
+                    {c.critical && <span class="tplan__crittag">Critical</span>}
+                    <span class="tplan__ref">
+                      {c.epic} · Story {c.story}
+                    </span>
+                  </div>
+                  <ol class="tplan__steps">
+                    {c.steps.map((s) => (
+                      <li>{s}</li>
+                    ))}
+                  </ol>
+                  <p class="tplan__expected">
+                    <em>Expected:</em> {c.expected}
+                  </p>
+                  {c.note && <p class="tplan__casenote">{c.note}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </section>
+
+    <p class="tplan__source">
+      Cases are written for this guide and cover the whole deployment, including the parts vendor
+      verification material tends to leave out: the pre-bring-up readiness gate, distributed
+      (Transit Gateway / VNA) connectivity, stretched clusters, backup verification, License Hub and
+      load-balancer licensing, non-vSAN principal storage, and Supervisor beyond &ldquo;the control-plane
+      VMs booted&rdquo;. Build the scope on the
+      <a href={exportHref}>Deployment Plan Export</a> page.
+    </p>
+  </article>
+</BaseLayout>
+
+<script>
+  import {
+    defaultSelection,
+    typeLabel,
+    includedEpicList,
+    coerceSelection,
+    SELECTION_STORE_KEY,
+    type Selection,
+  } from '../../lib/deployment-plan';
+  import {
+    selectedPhases,
+    testStats,
+    caseKey,
+    buildTestMarkdown,
+    buildTestCsv,
+    coerceResults,
+    RESULTS_STORE_KEY,
+    TEST_STATUSES,
+    type TestResults,
+    type TestStatus,
+  } from '../../lib/test-plan';
+
+  const $ = (id: string) => document.getElementById(id)!;
+
+  let results: TestResults = loadLocalResults();
+  let sel: Selection = loadScope();
+  let onlyCritical = false;
+  let hideExecuted = false;
+
+  function loadLocalResults(): TestResults {
+    try {
+      const raw = localStorage.getItem(RESULTS_STORE_KEY);
+      if (!raw) return {};
+      return coerceResults(JSON.parse(raw).results);
+    } catch {
+      return {};
+    }
+  }
+  function saveLocalResults() {
+    try {
+      localStorage.setItem(RESULTS_STORE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), results }));
+    } catch {
+      /* storage may be unavailable (private mode); the page still works in-session */
+    }
+  }
+  function loadScope(): Selection {
+    try {
+      return coerceSelection(JSON.parse(localStorage.getItem(SELECTION_STORE_KEY) || 'null')) ?? defaultSelection();
+    } catch {
+      return defaultSelection();
+    }
+  }
+  function saveScope(s: Selection) {
+    try {
+      localStorage.setItem(SELECTION_STORE_KEY, JSON.stringify(s));
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function bar(done: number, total: number): string {
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    return `<div class="tplan__bar" role="presentation"><span style="width:${pct}%"></span></div>`;
+  }
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  function render() {
+    const phases = selectedPhases(sel);
+    const stats = testStats(sel, results);
+
+    $('scopeSummary').innerHTML =
+      `<strong>Scope:</strong> ${esc(typeLabel(sel))} · ${esc(includedEpicList(sel))}<br />` +
+      `<strong>Test plan:</strong> ${stats.total} cases in ${phases.length} phases — ` +
+      `${stats.executed} executed, ${stats.passed} passed or N/A` +
+      (stats.criticalOpen ? `, <span class="tplan__crit">${stats.criticalOpen} critical open</span>` : '') +
+      bar(stats.executed, stats.total);
+
+    const html = phases
+      .map((p) => {
+        const per = stats.perPhase[p.id];
+        const visible = p.cases.filter((c) => {
+          if (onlyCritical && !c.critical) return false;
+          if (hideExecuted && results[caseKey(p, c)]?.status) return false;
+          return true;
+        });
+        const cases = visible
+          .map((c) => {
+            const key = caseKey(p, c);
+            const r = results[key];
+            const steps = c.steps.map((s) => `<li>${esc(s)}</li>`).join('');
+            const note = c.note ? `<p class="tplan__casenote">${esc(c.note)}</p>` : '';
+            const buttons = TEST_STATUSES.map(
+              (s) =>
+                `<button type="button" class="tplan__st tplan__st--${s.value.toLowerCase()}${
+                  r?.status === s.value ? ' is-on' : ''
+                }" data-key="${esc(key)}" data-status="${s.value}" title="${esc(s.hint)}">${esc(s.value)}</button>`,
+            ).join('');
+            const actual = `<input type="text" class="tplan__actual" data-key="${esc(key)}" value="${esc(
+              r?.actual ?? '',
+            )}" placeholder="Actual result / measured value / evidence reference${
+              r?.status === 'NA' || r?.status === 'F2' ? ' — required' : ''
+            }" />`;
+            const stamp = r?.date ? `<span class="tplan__date">${esc(r.date)}</span>` : '';
+            return `<li class="tplan__case${r?.status ? ` is-${r.status.toLowerCase()}` : ''}">
+              <div class="tplan__casehead">
+                <span class="tplan__caseid">${esc(c.id)}</span>
+                <strong>${esc(c.title)}</strong>
+                ${c.critical ? '<span class="tplan__crittag">Critical</span>' : ''}
+                <span class="tplan__ref">${esc(c.epic)} · Story ${esc(c.story)}</span>
+              </div>
+              <ol class="tplan__steps">${steps}</ol>
+              <p class="tplan__expected"><em>Expected:</em> ${esc(c.expected)}</p>
+              ${note}
+              <div class="tplan__result">${buttons}${stamp}${actual}</div>
+            </li>`;
+          })
+          .join('');
+        const hidden = p.cases.length - visible.length;
+        const body = visible.length
+          ? `<ul class="tplan__cases">${cases}</ul>`
+          : `<p class="tplan__empty">No cases match the current filter.</p>`;
+        return `<section class="tplan__phase">
+          <h2>${esc(p.id)} — ${esc(p.title)}
+            <span class="tplan__epics">${esc(p.epics)}</span>
+            <span class="tplan__phaseprog">${per.executed}/${per.total}${
+              per.criticalOpen ? ` · <span class="tplan__crit">${per.criticalOpen} F1</span>` : ''
+            }</span>
+          </h2>
+          ${bar(per.executed, per.total)}
+          <p class="tplan__gate"><strong>Gate:</strong> ${esc(p.gate)}</p>
+          ${body}
+          ${hidden ? `<p class="tplan__empty">${hidden} case${hidden === 1 ? '' : 's'} hidden by the filter.</p>` : ''}
+        </section>`;
+      })
+      .join('');
+    $('plan').innerHTML = html;
+  }
+
+  function toolbarMsg(msg: string) {
+    const el = $('toolbarMsg');
+    el.textContent = msg;
+    setTimeout(() => {
+      if (el.textContent === msg) el.textContent = '';
+    }, 2500);
+  }
+  function download(name: string, text: string, mime: string) {
+    const blob = new Blob([text], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  async function copy(text: string, ok: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toolbarMsg(ok);
+    } catch {
+      toolbarMsg('Copy failed (clipboard blocked)');
+    }
+  }
+
+  // Status buttons (delegated: the list re-renders on every change).
+  $('plan').addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest('.tplan__st') as HTMLButtonElement | null;
+    if (!t || !t.dataset.key || !t.dataset.status) return;
+    const key = t.dataset.key;
+    const status = t.dataset.status as TestStatus;
+    if (results[key]?.status === status) {
+      // Clicking the active status again clears the case back to not-executed.
+      delete results[key];
+    } else {
+      results[key] = { status, date: today(), actual: results[key]?.actual };
+    }
+    saveLocalResults();
+    render();
+  });
+
+  // Free-text actual result. Kept out of render() so typing is not interrupted.
+  $('plan').addEventListener('input', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (!t.classList.contains('tplan__actual') || !t.dataset.key) return;
+    const key = t.dataset.key;
+    const v = t.value.trim();
+    if (!results[key]) {
+      if (!v) return;
+      results[key] = { status: 'P', date: today(), actual: v };
+      saveLocalResults();
+      render();
+      return;
+    }
+    results[key].actual = v || undefined;
+    saveLocalResults();
+  });
+
+  ($('fltCritical') as HTMLInputElement).addEventListener('change', (e) => {
+    onlyCritical = (e.target as HTMLInputElement).checked;
+    render();
+  });
+  ($('fltOpen') as HTMLInputElement).addEventListener('change', (e) => {
+    hideExecuted = (e.target as HTMLInputElement).checked;
+    render();
+  });
+
+  $('btnCopyMd').addEventListener('click', () => copy(buildTestMarkdown(sel, results), 'Test plan copied (Markdown)'));
+  $('btnDlMd').addEventListener('click', () => {
+    download('vcf9-test-plan.md', buildTestMarkdown(sel, results), 'text/markdown');
+    toolbarMsg('Downloaded vcf9-test-plan.md');
+  });
+  $('btnDlCsv').addEventListener('click', () => {
+    download('vcf9-test-plan.csv', buildTestCsv(sel, results), 'text/csv');
+    toolbarMsg('Downloaded vcf9-test-plan.csv');
+  });
+
+  $('btnSave').addEventListener('click', () => {
+    const payload = {
+      tool: 'vcf9-test-plan',
+      version: 1,
+      savedAt: new Date().toISOString(),
+      selection: sel,
+      results,
+    };
+    download('vcf9-test-results.json', JSON.stringify(payload, null, 2), 'application/json');
+    toolbarMsg('Results saved to vcf9-test-results.json');
+  });
+  $('btnLoad').addEventListener('click', () => ($('fileResults') as HTMLInputElement).click());
+  $('fileResults').addEventListener('change', async () => {
+    const input = $('fileResults') as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || data.tool !== 'vcf9-test-plan') throw new Error('shape');
+      results = coerceResults(data.results);
+      saveLocalResults();
+      // The file carries the scope too, so the restored results match the plan they were taken against.
+      const loadedSel = coerceSelection(data.selection);
+      if (loadedSel) {
+        sel = loadedSel;
+        saveScope(sel);
+      }
+      render();
+      toolbarMsg(`Results loaded (${Object.keys(results).length} cases)`);
+    } catch {
+      toolbarMsg('Not a valid results file');
+    }
+  });
+
+  // Reset needs a second click within 3 seconds (no modal dialogs).
+  let resetArmedAt = 0;
+  $('btnReset').addEventListener('click', () => {
+    if (Date.now() - resetArmedAt > 3000) {
+      resetArmedAt = Date.now();
+      toolbarMsg('Click Reset again to clear all results');
+      return;
+    }
+    resetArmedAt = 0;
+    results = {};
+    saveLocalResults();
+    render();
+    toolbarMsg('Results cleared');
+  });
+
+  // Follow scope changes made in the export tool in another tab.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== SELECTION_STORE_KEY) return;
+    sel = loadScope();
+    render();
+  });
+
+  render();
+</script>
+
+<style is:global>
+  .tplan { max-width: 960px; }
+  .tplan__head h1 { margin: 0.2rem 0 0.6rem; }
+  .tplan__lede { color: var(--itq-royal-40); max-width: 74ch; }
+
+  .tplan__scopebox {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+    margin: 0 0 0.8rem; padding: 0.55rem 0.7rem;
+    background: var(--itq-mist); border-radius: var(--radius-sm);
+  }
+  .tplan__scope { margin: 0; font-size: 0.88rem; color: var(--itq-royal-blue); line-height: 1.5; flex: 1; min-width: 16rem; }
+  .tplan__scopelink { flex: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem; }
+  .tplan__crit { color: var(--itq-orange); font-weight: var(--fw-semibold); }
+
+  .tplan__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.3rem 0 0.5rem; }
+  .tplan__toolbar button {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white); color: var(--itq-royal-blue); cursor: pointer;
+  }
+  .tplan__toolbar button:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .tplan__toolbar-sep { width: 1px; height: 1.4rem; background: var(--border-default); margin: 0 0.25rem; }
+  .tplan__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
+
+  .tplan__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 0 0 0.5rem; font-size: 0.8rem; }
+  .tplan__filter { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--itq-royal-blue); cursor: pointer; }
+  .tplan__filter input { accent-color: var(--itq-orange); cursor: pointer; margin: 0; }
+  .tplan__legend { color: var(--itq-royal-40); font-size: 0.76rem; }
+  .tplan__legend b { color: var(--itq-royal-blue); }
+
+  .tplan__note { font-size: 0.78rem; color: var(--itq-royal-40); margin: 0 0 1rem; max-width: 74ch; }
+  .tplan__note code { font-size: 0.72rem; }
+
+  .tplan__list { border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+  .tplan__bar {
+    height: 4px; background: var(--itq-mist); border: var(--border-width) solid var(--border-default);
+    border-radius: 3px; overflow: hidden; margin-top: 0.3rem;
+  }
+  .tplan__scopebox .tplan__bar { background: var(--itq-white); }
+  .tplan__bar span { display: block; height: 100%; background: var(--itq-orange); transition: width 0.25s ease; }
+
+  .tplan__phase { margin-bottom: 1.8rem; }
+  .tplan__phase h2 {
+    font-size: 1.05rem; margin: 0.6rem 0 0.3rem; color: var(--itq-royal-blue);
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem;
+  }
+  .tplan__epics { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-orange); }
+  .tplan__phaseprog { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-royal-40); margin-left: auto; }
+  .tplan__gate { font-size: 0.8rem; color: var(--itq-royal-40); margin: 0.4rem 0 0.6rem; }
+
+  .tplan__cases { list-style: none; margin: 0; padding: 0; }
+  /* The site stylesheet draws a square marker on list items; the case cards carry
+     their own status colour on the left border, so suppress it here. */
+  .tplan__cases > li::before { display: none; }
+  .tplan__case {
+    border: var(--border-width) solid var(--border-default); border-left-width: 3px;
+    border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; margin-bottom: 0.6rem;
+  }
+  .tplan__case.is-p { border-left-color: #2e7d32; }
+  .tplan__case.is-f1 { border-left-color: #c62828; }
+  .tplan__case.is-f2 { border-left-color: var(--itq-orange); }
+  .tplan__case.is-na { border-left-color: var(--itq-royal-40); opacity: 0.72; }
+
+  .tplan__casehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+  .tplan__caseid { font-size: 0.72rem; font-weight: var(--fw-semibold); color: var(--itq-orange); font-variant-numeric: tabular-nums; }
+  .tplan__crittag {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+    background: var(--itq-orange); color: var(--itq-white);
+    padding: 0.05rem 0.35rem; border-radius: 2px; font-weight: var(--fw-semibold);
+  }
+  .tplan__ref { font-size: 0.72rem; color: var(--itq-royal-40); margin-left: auto; }
+
+  .tplan__steps { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; font-size: 0.85rem; }
+  .tplan__steps li { margin-bottom: 0.15rem; }
+  .tplan__expected { font-size: 0.85rem; margin: 0.3rem 0; color: var(--itq-royal-blue); }
+  .tplan__expected em { color: var(--itq-orange); font-style: normal; font-weight: var(--fw-semibold); }
+  .tplan__casenote {
+    font-size: 0.78rem; color: var(--itq-royal-40); margin: 0.3rem 0 0;
+    border-left: 2px solid var(--border-default); padding-left: 0.6rem;
+  }
+
+  .tplan__result { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-top: 0.55rem; }
+  .tplan__st {
+    font: inherit; font-size: 0.72rem; font-weight: var(--fw-semibold);
+    min-width: 2.2rem; padding: 0.2rem 0.4rem; cursor: pointer;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white); color: var(--itq-royal-40);
+  }
+  .tplan__st:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .tplan__st--p.is-on { background: #2e7d32; border-color: #2e7d32; color: var(--itq-white); }
+  .tplan__st--f1.is-on { background: #c62828; border-color: #c62828; color: var(--itq-white); }
+  .tplan__st--f2.is-on { background: var(--itq-orange); border-color: var(--itq-orange); color: var(--itq-white); }
+  .tplan__st--na.is-on { background: var(--itq-royal-40); border-color: var(--itq-royal-40); color: var(--itq-white); }
+  .tplan__date { font-size: 0.72rem; color: var(--itq-royal-40); font-variant-numeric: tabular-nums; }
+  .tplan__actual {
+    flex: 1; min-width: 14rem; font: inherit; font-size: 0.78rem; padding: 0.25rem 0.4rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--itq-white); color: var(--itq-royal-blue);
+  }
+  .tplan__actual:focus { outline: none; border-color: var(--itq-orange); }
+
+  .tplan__empty { font-size: 0.8rem; color: var(--itq-royal-40); margin: 0.3rem 0; }
+  .tplan__source {
+    font-size: 0.78rem; color: var(--itq-royal-40); margin-top: 2rem;
+    border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; max-width: 74ch;
+  }
+</style>

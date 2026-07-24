@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.8.0 — 2026-07-24
+- **New interactive Test Plan tool** at `/tools/test-plan/` (#218). The deployment
+  plan says what to build and the tracker says how far you got; this says how you
+  prove it works. `web/src/lib/test-plan.ts` takes the **same `Selection`** as
+  `deployment-plan.ts`, so the scope set in the export tool drives it, and emits
+  phases **TP-0 readiness → TP-1 bring-up → TP-2 config → TP-3 stretch → TP-4 Day-2
+  → TP-5.n per workload domain → TP-6 handover**. Every case names the epic and
+  story it proves. Per-case `P` / `F1` / `F2` / `NA` with a date stamp and a free-text
+  actual-result field; results persist in the browser and save/load as a JSON file
+  that carries the scope with it. Markdown and CSV export; critical-only and
+  hide-executed filters. 71 cases on the default scope, 96 on a full one.
+- **Written to close the gaps in vendor verification material**, which is
+  post-deployment only and silent on: the pre-bring-up readiness gate (E1–E4),
+  **Distributed connectivity** (Transit Gateway / VNA — the NSX cases all assume an
+  edge cluster and a Tier-0), **stretched clusters** (no witness, no AZ-isolation
+  failover), **backup verification** (including the per-vCenter VAMI file-based
+  backup VCF does not configure for you), **License Hub and load-balancer
+  licensing** (where a *Connected* status still reads 0 used / 0 available),
+  **non-vSAN principal storage** (every vendor storage case is vSAN-only), and
+  **Supervisor** beyond "the control-plane VMs booted". All case text is original.
+
 ## v2.7.4 — 2026-07-23
 - **`docs/10-supervisor-enablement.md`: air-gapped VCF Consumption CLI note** (#216).
   Field-verified: in an offline-depot deployment the Supervisor landing page reports

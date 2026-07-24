@@ -36,10 +36,12 @@ This repo flips the order:
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/pages/tools/plan-tracker.astro` | Interactive deployment tracker — the plan as a checklist (story checkboxes, per-epic progress, save/load progress file); follows the scope set in the export tool |
+| `web/src/pages/tools/test-plan.astro` | Interactive test plan — scope-driven verification cases in phases TP-0…TP-6 with P/F1/F2/NA tracking, actual-result capture, and Markdown/CSV export; follows the scope set in the export tool |
 | `web/src/pages/version-overview.astro` | Reference — auto-updating VCF 9.1 Version Overview (latest version + build per component); data refreshed weekly from Broadcom |
 | `web/scripts/scrape-versions.mjs`   | Node scraper behind the Version Overview — reads vCenter build KB + Broadcom TechDocs patch tree, emits `web/src/data/vcf-versions.json`; run weekly by `.github/workflows/scrape-versions.yml` |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters + progress tracking |
+| `web/src/lib/test-plan.ts`          | Test-plan engine — scope-driven verification cases in phases TP-0…TP-6, each mapped to the epic/story it proves, + Markdown/CSV exporters and result tracking |
 | `docs/prerequisites.md`             | Environment prerequisites (gate before any inputs)     |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request) — downloadable from the site; feed the workbook / Coscia planner |
