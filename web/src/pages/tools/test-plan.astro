@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { withBase } from '../../lib/path';
 import { defaultSelection } from '../../lib/deployment-plan';
-import { selectedPhases } from '../../lib/test-plan';
+import { selectedPhases, stepHtml } from '../../lib/test-plan';
 
 const exportHref = withBase('tools/deployment-plan/');
 const trackerHref = withBase('tools/plan-tracker/');
@@ -139,13 +139,13 @@ const phases = selectedPhases(defaultSelection());
                   </div>
                   <ol class="tplan__steps">
                     {c.steps.map((s) => (
-                      <li>{s}</li>
+                      <li set:html={stepHtml(s)} />
                     ))}
                   </ol>
                   <p class="tplan__expected">
-                    <em>Expected:</em> {c.expected}
+                    <em>Expected:</em> <Fragment set:html={stepHtml(c.expected)} />
                   </p>
-                  {c.note && <p class="tplan__casenote">{c.note}</p>}
+                  {c.note && <p class="tplan__casenote" set:html={stepHtml(c.note)} />}
                 </li>
               ))}
             </ul>
@@ -184,6 +184,7 @@ const phases = selectedPhases(defaultSelection());
     coerceResults,
     RESULTS_STORE_KEY,
     TEST_STATUSES,
+    stepHtml,
     type TestResults,
     type TestStatus,
   } from '../../lib/test-plan';
@@ -229,10 +230,8 @@ const phases = selectedPhases(defaultSelection());
   function esc(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  /** Steps carry their commands in `backticks`; render those as code so they stand out. */
-  function code(s: string): string {
-    return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
-  }
+  /** Commands/UI paths render identically here and in the server-side prerender. */
+  const code = stepHtml;
   function bar(done: number, total: number): string {
     const pct = total ? Math.round((done / total) * 100) : 0;
     return `<div class="tplan__bar" role="presentation"><span style="width:${pct}%"></span></div>`;

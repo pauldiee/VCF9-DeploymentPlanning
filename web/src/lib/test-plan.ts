@@ -85,6 +85,21 @@ export interface TestResult {
 }
 export type TestResults = Record<string, TestResult>;
 
+/**
+ * Steps carry their commands in `backticks`. Render them as <code>, escaping first.
+ * Shared by the server-side prerender and the client re-render so the page does not
+ * flash raw backticks before hydration.
+ */
+export function stepHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
+
 /** Stable key for a result. Per-WLD phases append the domain index so each domain tracks separately. */
 export function caseKey(phase: TestPhase, c: TestCase): string {
   return phase.wld ? `${c.id}#${phase.wld.index}` : c.id;
