@@ -156,9 +156,8 @@ const TP0: Entry[] = [
     story: '1.1',
     steps: [
       'List every planned subnet: management, vMotion, vSAN/storage, host overlay, edge/uplink or external, the fleet component ranges, the VCF services-runtime cluster CIDR, and on Distributed connectivity the private transit-gateway block.',
-      'Check them for overlap against each other and against the existing routed network. A quick pass in PowerShell — paste your CIDRs and it flags any pair that overlaps:',
-      '`$c=@("10.0.0.0/24","10.0.1.0/24"); $n=$c|%{ $p=$_.Split("/"); $b=([ipaddress]$p[0]).GetAddressBytes(); [array]::Reverse($b); $i=[bitconverter]::ToUInt32($b,0); $m=[uint32]([math]::Pow(2,32)-[math]::Pow(2,32-$p[1])); [pscustomobject]@{Cidr=$_;Start=$i-band $m;End=($i-band $m)+([math]::Pow(2,32-$p[1])-1)} }; foreach($a in $n){foreach($b in $n){if($a.Cidr -ne $b.Cidr -and $a.Start -le $b.End -and $b.Start -le $a.End){"OVERLAP: $($a.Cidr) <-> $($b.Cidr)"}}}`',
-      'Ask the network team to confirm none of the ranges is already routed elsewhere — an overlap with something you cannot see from the build network is the one this check cannot catch.',
+      'Lay the ranges side by side — sorting them by network address makes an overlap obvious to the eye, which is enough for the handful of subnets a deployment uses. A subnet calculator (e.g. an online CIDR tool, offline) resolves any case you are unsure of.',
+      'Ask the network team to confirm none of the ranges is already routed elsewhere — an overlap with something you cannot see from the build network is the one a desk check cannot catch.',
       'Confirm the static IP carve-outs are reserved in the IPAM system so nobody is handed one mid-build.',
     ],
     expected:
@@ -353,8 +352,8 @@ const TP0: Entry[] = [
     story: '4.3',
     steps: [
       'Confirm each planned domain controller answers on the LDAPS port from the management network: `Test-NetConnection <dc-fqdn> -Port 636` (and 389 if plain LDAP is in the design).',
-      'Bind with the service account and search the planned base DN — this proves the credential AND the base DN in one go: `$c = Get-Credential; $e = New-Object System.DirectoryServices.DirectoryEntry("LDAP://<dc-fqdn>:636/<base-dn>", $c.UserName, $c.GetNetworkCredential().Password); $s = New-Object System.DirectoryServices.DirectorySearcher($e); $s.Filter = "(objectClass=user)"; $s.SizeLimit = 5; $s.FindAll() | ForEach-Object { $_.Path }`',
-      'From Linux: `ldapsearch -x -H ldaps://<dc-fqdn>:636 -D "<bind-dn>" -W -b "<base-dn>" "(objectClass=user)" dn`',
+      'Bind with the service account and read the planned base DN — this proves the credential and the base DN in one go. From Linux: `ldapsearch -x -H ldaps://<dc-fqdn>:636 -D "<bind-dn>" -W -b "<base-dn>" "(objectClass=user)" dn`',
+      'From Windows without the AD tools, use `ldp.exe` (Connection → Connect on 636, then Bind with the service account, then View → Tree on the base DN). A successful bind and a populated tree is the pass.',
       'Check the bind account will not expire underneath the fleet: `Get-ADUser <svc-account> -Properties PasswordNeverExpires,PasswordExpired,PasswordLastSet,Enabled | Select Name,Enabled,PasswordNeverExpires,PasswordExpired,PasswordLastSet`',
       'Confirm the planned groups exist and hold the expected members: `Get-ADGroup -Filter "Name -like \'<vcf-group-prefix>*\'" | ForEach-Object { $_.Name; Get-ADGroupMember $_ | Select -Expand SamAccountName }`',
       'Record the bind credential in the secret store, and record WHO owns it.',
@@ -1303,9 +1302,9 @@ const TP4: Entry[] = [
     critical: true,
     steps: [
       'Confirm the replacement was run in STAGGERED batches, letting each finish before starting the next. Each rotation triggers automated retrust across dependent components, and the UI makes you acknowledge exactly that.',
-      'Check every endpoint from the command line rather than clicking through browsers — issuer, subject, SANs and expiry in one pass: `@("<vcenter>","<nsx-vip>","<sddc-manager>","<vcf-ops>","<vcfa>") | ForEach-Object { $u=$_; try { $t=[Net.Sockets.TcpClient]::new($u,443); $s=[Net.Security.SslStream]::new($t.GetStream(),$false,{$true}); $s.AuthenticateAsClient($u); $c=[Security.Cryptography.X509Certificates.X509Certificate2]$s.RemoteCertificate; "{0,-35} {1,-45} {2}" -f $u,$c.Issuer,$c.NotAfter; $s.Dispose(); $t.Close() } catch { "{0,-35} ** FAILED: $($_.Exception.Message)" -f $u } }`',
-      'Confirm the issuer is the intended CA on every line — anything still showing a self-signed or VMCA issuer was missed by the batch.',
-      'Check the SANs carried through, especially any load-balancer VIP FQDN: `openssl s_client -connect <fqdn>:443 -servername <fqdn> < NUL 2>NUL | openssl x509 -noout -text | findstr /i "DNS:"`',
+      'Check each endpoint from the command line rather than clicking through browsers — issuer, dates and SANs in one call: `openssl s_client -connect <fqdn>:443 -servername <fqdn> < NUL 2>NUL | openssl x509 -noout -issuer -dates -ext subjectAltName`',
+      'Confirm the issuer is the intended CA on every endpoint — anything still showing a self-signed or VMCA issuer was missed by the batch.',
+      'Confirm the SANs carried through, especially any load-balancer VIP FQDN.',
       'Confirm no browser trust warning on each endpoint (this is what the customer will see).',
       'Now confirm inter-component trust SURVIVED the rotation, which browsers cannot tell you: **VCF Operations → Fleet Management → Lifecycle** should still show every instance connected, and **Administration → Connections** in VCF Automation should still show vCenter and NSX connected.',
     ],

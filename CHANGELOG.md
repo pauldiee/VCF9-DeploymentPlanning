@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.9.1 — 2026-07-25
+- **Simplified three test-plan commands that had grown into programs** (#218). A test
+  plan should give the command, not a script to reason about. Replaced: the CIDR-overlap
+  PowerShell blob (bit-shifting subnet math) with "sort the ranges and eyeball it, or use
+  a subnet calculator"; the `System.DirectoryServices.DirectoryEntry` bind loop with plain
+  `ldapsearch` / `ldp.exe`; and the `TcpClient`/`SslStream`/`X509Certificate2` certificate
+  loop with a per-endpoint `openssl s_client … -issuer -dates -ext subjectAltName`. The
+  remaining PowerCLI / `Test-NetConnection` / `Resolve-DnsName` sweeps stay — those are
+  idiomatic and just automate repetitive lookups.
+
 ## v2.9.0 — 2026-07-25
 - **Test Plan exports to a real Excel workbook** (#219). New **Download Excel** button
   (primary) on `/tools/test-plan/`, alongside Report / CSV / Runbook. The `.xlsx` is
