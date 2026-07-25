@@ -61,7 +61,34 @@ export interface TestCase {
   critical?: boolean;
   /** Field note: a trap, a sequencing constraint, or why this case exists at all. */
   note?: string;
+  /**
+   * This case can be verified by automated tooling rather than by hand — set from
+   * AUTOMATABLE below, stamped at assembly time. Deliberately generic: the public
+   * tool only signals "automatable", it does not name which tool or which checks.
+   */
+  automatable?: boolean;
 }
+
+/**
+ * Cases an automated post-deployment check can verify, so a tester runs the tool and
+ * reads the result instead of clicking through the steps by hand. Kept as a plain id
+ * set — the specific tool/check mapping is maintained separately (and privately), so
+ * nothing here ties the public plan to an internal tool.
+ */
+const AUTOMATABLE = new Set<string>([
+  // TP-1 bring-up
+  'TP-104', 'TP-105', 'TP-107', 'TP-108', 'TP-109', 'TP-110', 'TP-111',
+  // TP-2 config
+  'TP-201', 'TP-202', 'TP-203', 'TP-204', 'TP-206', 'TP-212', 'TP-213', 'TP-215', 'TP-216', 'TP-217',
+  // TP-3 stretch
+  'TP-304',
+  // TP-4 day-2
+  'TP-402', 'TP-415', 'TP-416', 'TP-417', 'TP-418', 'TP-420', 'TP-422', 'TP-424',
+  // TP-5 workload domain
+  'TP-503', 'TP-504', 'TP-505', 'TP-506', 'TP-509', 'TP-510', 'TP-511', 'TP-512',
+  // TP-6 handover
+  'TP-601', 'TP-602',
+]);
 
 export interface TestPhase {
   id: string; // "TP-2"
@@ -1747,11 +1774,15 @@ const TP6: Entry[] = [
 // ---------------------------------------------------------------------------
 
 function pick(entries: Entry[], sel: Selection): TestCase[] {
-  return entries.filter((e) => !e.when || e.when(sel)).map(({ when: _when, ...c }) => c);
+  return entries
+    .filter((e) => !e.when || e.when(sel))
+    .map(({ when: _when, ...c }) => (AUTOMATABLE.has(c.id) ? { ...c, automatable: true } : c));
 }
 
 function pickWld(entries: WldEntry[], w: Wld, sel: Selection): TestCase[] {
-  return entries.filter((e) => !e.when || e.when(w, sel)).map(({ when: _when, ...c }) => c);
+  return entries
+    .filter((e) => !e.when || e.when(w, sel))
+    .map(({ when: _when, ...c }) => (AUTOMATABLE.has(c.id) ? { ...c, automatable: true } : c));
 }
 
 /** The phases — and within them, the cases — that apply to this scope. */
@@ -1917,7 +1948,10 @@ export function buildTestMarkdown(raw: Selection, results: TestResults = {}): st
       const r = results[caseKey(p, c)];
       const status = r?.status ? `${STATUS_LABEL[r.status]}${r.date ? ` (${r.date})` : ''}` : 'Not executed';
       out.push(`### ${c.id} — ${c.title}`, '');
-      out.push(`**Epic ${c.epic} · Story ${c.story}**${c.critical ? ' · **Critical**' : ''} · Status: ${status}`, '');
+      out.push(
+        `**Epic ${c.epic} · Story ${c.story}**${c.critical ? ' · **Critical**' : ''}${c.automatable ? ' · _Automatable_' : ''} · Status: ${status}`,
+        '',
+      );
       out.push('Steps:', '');
       for (const s of c.steps) out.push(`1. ${s}`);
       out.push('', `**Expected:** ${c.expected}`, '');
@@ -2113,7 +2147,7 @@ function csvCell(v: string): string {
 export function buildTestCsv(raw: Selection, results: TestResults = {}): string {
   const sel = normalizeSelection(raw);
   const rows: string[] = [
-    ['Phase', 'Phase Title', 'Domain', 'Case ID', 'Title', 'Epic', 'Story', 'Critical', 'Steps', 'Expected', 'Note', 'Status', 'Date', 'Actual Results']
+    ['Phase', 'Phase Title', 'Domain', 'Case ID', 'Title', 'Epic', 'Story', 'Critical', 'Automatable', 'Steps', 'Expected', 'Note', 'Status', 'Date', 'Actual Results']
       .map(csvCell)
       .join(','),
   ];
@@ -2130,6 +2164,7 @@ export function buildTestCsv(raw: Selection, results: TestResults = {}): string 
           c.epic,
           c.story,
           c.critical ? 'Yes' : 'No',
+          c.automatable ? 'Yes' : 'No',
           c.steps.map((s, i) => `${i + 1}. ${s}`).join('\n'),
           c.expected,
           c.note ?? '',

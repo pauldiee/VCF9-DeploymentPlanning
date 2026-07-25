@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.9.2 — 2026-07-25
+- **"Automatable" hint on test-plan cases** (#218). Cases that can be verified by automated
+  tooling rather than by hand now carry an **Automatable** badge — so a tester knows which
+  post-deployment checks to run through a tool and which to work by hand. Flows into the CSV
+  (new `Automatable` column), the runbook (`_Automatable_`), and the Excel workbook (`[AUTO]`).
+  Deliberately generic: the public tool only signals *that* a case is automatable, it does not
+  name any specific tool or checks — that mapping is maintained privately.
+
 ## v2.9.1 — 2026-07-25
 - **Simplified three test-plan commands that had grown into programs** (#218). A test
   plan should give the command, not a script to reason about. Replaced: the CIDR-overlap

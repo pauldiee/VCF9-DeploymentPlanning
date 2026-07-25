@@ -104,6 +104,7 @@ const phases = selectedPhases(defaultSelection());
       </label>
       <span class="tplan__legend">
         <b>P</b> pass · <b>F1</b> critical fail (blocks the gate) · <b>F2</b> non-critical fail · <b>NA</b> not applicable
+        · <span class="tplan__autotag">Automatable</span> can be verified by tooling rather than by hand
       </span>
     </div>
 
@@ -137,6 +138,11 @@ const phases = selectedPhases(defaultSelection());
                     <span class="tplan__caseid">{c.id}</span>
                     <strong>{c.title}</strong>
                     {c.critical && <span class="tplan__crittag">Critical</span>}
+                    {c.automatable && (
+                      <span class="tplan__autotag" title="Can be verified with automated tooling rather than by hand">
+                        Automatable
+                      </span>
+                    )}
                     <span class="tplan__ref">
                       {c.epic} · Story {c.story}
                     </span>
@@ -284,6 +290,7 @@ const phases = selectedPhases(defaultSelection());
                 <span class="tplan__caseid">${esc(c.id)}</span>
                 <strong>${esc(c.title)}</strong>
                 ${c.critical ? '<span class="tplan__crittag">Critical</span>' : ''}
+                ${c.automatable ? '<span class="tplan__autotag" title="Can be verified with automated tooling rather than by hand">Automatable</span>' : ''}
                 <span class="tplan__ref">${esc(c.epic)} · Story ${esc(c.story)}</span>
               </div>
               <ol class="tplan__steps">${steps}</ol>
@@ -574,6 +581,12 @@ const phases = selectedPhases(defaultSelection());
     font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
     background: var(--itq-orange); color: var(--itq-white);
     padding: 0.05rem 0.35rem; border-radius: 2px; font-weight: var(--fw-semibold);
+  }
+  .tplan__autotag {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+    background: var(--itq-mist); color: var(--itq-royal-blue);
+    border: var(--border-width) solid var(--border-default);
+    padding: 0.05rem 0.35rem; border-radius: 2px; font-weight: var(--fw-semibold); cursor: help;
   }
   .tplan__ref { font-size: 0.72rem; color: var(--itq-royal-40); margin-left: auto; }
 

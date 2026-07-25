@@ -246,7 +246,7 @@ export async function buildTestPlanWorkbook(
       const r = results[caseKey(p, c)];
       body.push([
         { v: c.id, s: STYLE.MONO },
-        { v: plain(c.title) + (c.critical ? '  [CRITICAL]' : ''), s: STYLE.BODY },
+        { v: plain(c.title) + (c.critical ? '  [CRITICAL]' : '') + (c.automatable ? '  [AUTO]' : ''), s: STYLE.BODY },
         { v: c.steps.map((s, i) => `${i + 1}. ${plain(s)}`).join('\n'), s: STYLE.BODY },
         { v: plain(c.expected), s: STYLE.BODY },
         { v: r?.actual ?? '', s: STYLE.BODY },
