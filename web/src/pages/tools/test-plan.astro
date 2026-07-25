@@ -69,9 +69,10 @@ const phases = selectedPhases(defaultSelection());
           box is not a pass, and the report will list it as incomplete.
         </li>
         <li>
-          <strong>Hand over.</strong> Download the <strong>Report</strong> for the customer, the
-          <strong>CSV</strong> for their test-management tool, and keep the
-          <strong>Results file</strong> with the engagement so a colleague can carry on.
+          <strong>Hand over.</strong> Download the <strong>Excel</strong> workbook as the artefact the
+          customer fills in and keeps, the <strong>Report</strong> as the write-up, and keep the
+          <strong>Results file</strong> with the engagement so a colleague can carry on. Once you are
+          filling the workbook in Excel, Excel is the source of truth &mdash; it does not sync back.
         </li>
       </ol>
       <p>
@@ -85,7 +86,8 @@ const phases = selectedPhases(defaultSelection());
       <button type="button" id="btnLoad"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Load results</button>
       <button type="button" id="btnReset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset results</button>
       <span class="tplan__toolbar-sep" aria-hidden="true"></span>
-      <button type="button" id="btnDlReport" class="tplan__primary"><i class="fa-solid fa-file-contract" aria-hidden="true"></i> Download report</button>
+      <button type="button" id="btnDlXlsx" class="tplan__primary"><i class="fa-solid fa-file-excel" aria-hidden="true"></i> Download Excel</button>
+      <button type="button" id="btnDlReport"><i class="fa-solid fa-file-contract" aria-hidden="true"></i> Download report</button>
       <button type="button" id="btnDlCsv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Download CSV</button>
       <button type="button" id="btnDlMd"><i class="fa-solid fa-download" aria-hidden="true"></i> Download runbook</button>
       <button type="button" id="btnCopyMd"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy runbook</button>
@@ -106,13 +108,15 @@ const phases = selectedPhases(defaultSelection());
     </div>
 
     <p class="tplan__note">
-      Three exports, three jobs. <strong>Report</strong> is the deliverable: a verdict, per-phase
-      results, the open critical failures and carried actions, and a full results table &mdash; no test
-      steps. <strong>CSV</strong> is the working sheet: every field including the steps, for a
-      test-management tool or the customer's own spreadsheet. <strong>Runbook</strong> is the
-      procedure in full, to follow while testing. <strong>Save results</strong> keeps the JSON with
-      the engagement (it is customer data &mdash; store it with the customer's files, not in a repo);
-      it carries the scope too, so loading it restores the exact plan.
+      Four exports, four jobs. <strong>Excel</strong> is the one to take on site: a workbook laid out
+      the way field verification workbooks are &mdash; a sheet per phase, <code>Status</code> as a
+      dropdown, and a live percentage block and summary that recalculate as it is filled in.
+      <strong>Report</strong> is the write-up: a verdict, per-phase results, the open critical
+      failures and carried actions &mdash; no test steps. <strong>CSV</strong> is the flat import path
+      for a test-management tool. <strong>Runbook</strong> is the procedure in full.
+      <strong>Save results</strong> keeps the JSON with the engagement (it is customer data &mdash;
+      store it with the customer's files, not in a repo); it carries the scope too, so loading it
+      restores the exact plan.
     </p>
 
     <section class="tplan__list" id="plan">
@@ -317,13 +321,15 @@ const phases = selectedPhases(defaultSelection());
       if (el.textContent === msg) el.textContent = '';
     }, 2500);
   }
-  function download(name: string, text: string, mime: string) {
-    const blob = new Blob([text], { type: mime });
+  function downloadBlob(name: string, blob: Blob) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+  function download(name: string, text: string, mime: string) {
+    downloadBlob(name, new Blob([text], { type: mime }));
   }
   async function copy(text: string, ok: string) {
     try {
@@ -385,6 +391,26 @@ const phases = selectedPhases(defaultSelection());
     download('vcf9-test-plan.csv', buildTestCsv(sel, results), 'text/csv');
     toolbarMsg('Downloaded vcf9-test-plan.csv');
   });
+  // The workbook builder is only pulled in when it is actually wanted, so it costs
+  // nothing on page load.
+  $('btnDlXlsx').addEventListener('click', async () => {
+    const btn = $('btnDlXlsx') as HTMLButtonElement;
+    btn.disabled = true;
+    toolbarMsg('Building workbook…');
+    try {
+      const { buildTestPlanWorkbook } = await import('../../lib/test-plan-xlsx');
+      const blob = await buildTestPlanWorkbook(sel, results, today());
+      downloadBlob('vcf9-test-plan.xlsx', blob);
+      const stats = testStats(sel, results);
+      toolbarMsg(`Downloaded vcf9-test-plan.xlsx (${stats.total} cases)`);
+    } catch (err) {
+      toolbarMsg('Excel export failed — use CSV instead');
+      console.error('[test-plan] xlsx export failed', err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   $('btnDlReport').addEventListener('click', () => {
     const stats = testStats(sel, results);
     download('vcf9-verification-report.md', buildTestReport(sel, results, today()), 'text/markdown');
