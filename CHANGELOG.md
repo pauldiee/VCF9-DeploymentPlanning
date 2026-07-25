@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.9.0 — 2026-07-25
+- **Test Plan exports to a real Excel workbook** (#219). New **Download Excel** button
+  (primary) on `/tools/test-plan/`, alongside Report / CSV / Runbook. The `.xlsx` is
+  laid out like a field verification workbook so anyone who has filled one in can pick
+  it up cold: **Title**, **Summary**, **Version** sheets plus **one sheet per phase**
+  (TP-0…TP-6, per-WLD sheets suffixed with the domain). Each phase sheet has the
+  familiar stats header block (Completed / % Actioned / % Passing / % Critical Failure
+  / …) as **live COUNTIF formulas**, a **Status dropdown** (P / F1 / F2 / NA), green/
+  red/amber/grey conditional formatting, section band rows from the epic/story
+  grouping, a frozen header and an autofilter. The **Summary** sheet rolls every phase
+  up with cross-sheet formulas and a verdict — so the whole workbook recalculates as
+  the customer fills it in, not just at export time.
+- **Zero new dependencies.** `web/src/lib/xlsx.ts` is a minimal writer built on the
+  browser's `CompressionStream` + hand-written OOXML parts; `web/` still has exactly
+  one runtime dependency (astro). The builder is lazy-loaded, so it costs nothing on
+  page load. Verified in real Excel (browser-generated file opens with no repair
+  prompt; dropdowns, freeze, conditional formats and formulas all live).
+- Export only — CSV stays for flat imports into test-management tools. Once the
+  workbook is being filled in Excel, Excel is the source of truth; it does not sync
+  back into the tool.
+
 ## v2.8.1 — 2026-07-24
 - **Test Plan cases now carry the actual commands and click paths** (#218). Feedback
   from the first read-through: a step saying "send an unfragmented ping at 8972 bytes"
