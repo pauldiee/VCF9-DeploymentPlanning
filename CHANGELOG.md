@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.9.6 — 2026-07-27
+- **New: Set-ESXCoredump.ps1** (#221). Automates the per-host half of the new
+  coredump build guide — points every host in a vCenter (or a chosen subset)
+  at a Dump Collector via `esxcli`/PowerCLI, checks the firewall ruleset,
+  supports `-WhatIf`. Deliberately does **not** enable the Dump Collector
+  service itself (that's a one-time, manual step on vCenter) — the script
+  says so loudly at startup and in its help.
+
 ## v2.9.5 — 2026-07-27
 - **New: ESX Coredump / Dump Collector build guide** (#221). `docs/11-esx-coredump.md`
   covers a manual, post-bring-up host config step that's in neither the VCF

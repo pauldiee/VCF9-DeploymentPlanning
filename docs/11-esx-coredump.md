@@ -69,7 +69,23 @@ that actually routes to vCenter if the management network isn't `vmk0` on
 your build. `network check` validates the config against the target
 without triggering a real crash.
 
-**Fleet sweep with PowerCLI** (`Get-EsxCli -V2`):
+**Fleet sweep — a script does this for you.** [**Set-ESXCoredump.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Set-ESXCoredump.ps1)
+runs the same `Get-EsxCli -V2` calls above against every host in a vCenter (or
+a chosen subset), plus the firewall ruleset check from section 3, with
+`-WhatIf` support and a per-host results table. **It does not enable the Dump
+Collector service itself** — that's section 1, done once, manually, before
+you run this:
+
+```console
+.\Set-ESXCoredump.ps1 -VCenter vc01.sfo.example.io -CollectorAddress vc01.sfo.example.io -WhatIf
+```
+
+Drop `-WhatIf` to apply once the plan looks right. `-VMHost` (or piping
+`Get-VMHost` in) narrows it to a subset instead of every host; `-CollectorAddress`
+can point at a standalone Dump Collector instead of vCenter's own.
+
+If you'd rather do it by hand, or on a single host without PowerCLI, the
+underlying commands are:
 
 ```powershell
 $dumpCollectorIP = '<vcenter-or-dedicated-collector-ip>'
