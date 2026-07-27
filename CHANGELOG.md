@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.9.4 — 2026-07-27
+- **VCFA VCFMS remove-and-reinstall procedure** (#220). `05-day2-deployments.md`
+  now documents the remove path when the VCFMS `admin@vsp.local` credential
+  cannot be recovered: the three-delete order (VCF Automation component,
+  Migration service engine component, then the `vsp-cluster` delete for VCFMS)
+  via Broadcom's `cleanup_component.py` (KB 441333), following William Lam's
+  worked example. Field-verified 2026-07-27 that VCFA's VCFMS runs its own
+  separate Services Runtime, distinct from the fleet-wide one — a broken
+  fleet-wide `admin@vsp.local` does not block this cleanup.
+
+## v2.9.3 — 2026-07-27
+- **Simplified TP-006's DNS check one-liner** (#218). The `Resolve-DnsName`
+  `ForEach-Object` blob had grown into a program, same issue as the three
+  commands fixed in v2.9.1. Replaced with the plain two-call sequence
+  (`Resolve-DnsName -Type A` then `-Type PTR`).
+
 ## v2.9.2 — 2026-07-25
 - **"Automatable" hint on test-plan cases** (#218). Cases that can be verified by automated
   tooling rather than by hand now carry an **Automatable** badge — so a tester knows which
