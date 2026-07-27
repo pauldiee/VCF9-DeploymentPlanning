@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.9.5 — 2026-07-27
+- **New: ESX Coredump / Dump Collector build guide** (#221). `docs/11-esx-coredump.md`
+  covers a manual, post-bring-up host config step that's in neither the VCF
+  Installer nor the workbook: enabling the vSphere ESXi Dump Collector service
+  on vCenter, then pointing every host at it (`esxcli`, plus a PowerCLI
+  fleet-sweep), the firewall ruleset, verification, and field notes.
+
 ## v2.9.4 — 2026-07-27
 - **VCFA VCFMS remove-and-reinstall procedure** (#220). `05-day2-deployments.md`
   now documents the remove path when the VCFMS `admin@vsp.local` credential

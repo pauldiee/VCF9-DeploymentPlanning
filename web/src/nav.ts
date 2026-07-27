@@ -89,6 +89,13 @@ export const NAV: NavItem[] = [
     blurb: 'Enable a vSphere Supervisor on a workload domain: the pre-flight gate, the Centralized Transit Gateway, Avi, the content library, and the wizard screen by screen.',
   },
   {
+    slug: '11-esx-coredump',
+    step: 'Reference',
+    label: 'ESX Coredump',
+    icon: 'bug',
+    blurb: 'Build guide for the ESXi network Dump Collector: enable the service on vCenter, point every host at it, verify.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',
