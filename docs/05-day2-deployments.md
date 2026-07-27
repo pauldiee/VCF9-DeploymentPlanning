@@ -649,15 +649,37 @@ from VCF Operations](https://knowledge.broadcom.com/external/article/441333/scri
 VCF Automation removal is **three deletes, in order** — the first two use
 `vsp-component`, the last uses `vsp-cluster`:
 
-1. **Delete the "VCF Automation" component:**
+1. **List `vsp-component` to find the "VCF Automation" and "Migration service
+   engine" component IDs:**
    ```bash
-   python cleanup_component.py list vsp-component --fleet-fqdn=<fleet-lcm-fqdn> ...
-   python cleanup_component.py delete vsp-component --component-id=<id> --fleet-fqdn=<fleet-lcm-fqdn> ...
+   python cleanup_component.py list vsp-component \
+     --fleet-fqdn=${VCF_FLEET_FQDN} \
+     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
+     --vcf-services-runtime-username=${VCFMS_USERNAME} \
+     --vcf-services-runtime-password=${VCFMS_PASSWORD}
    ```
-2. **Delete the "Migration service engine" component** the same way — VCFA
-   brings its own migration engine, which is a separate component from
-   Automation itself and does not get removed with it.
-3. **Delete the VCFA's own VCFMS cluster**, as **root**, from inside the SDDC
+2. **Delete the "Migration service engine" component first** — VCFA brings
+   its own migration engine, which is a separate component from Automation
+   itself and does not get removed with it:
+   ```bash
+   python cleanup_component.py delete vsp-component \
+     --fleet-fqdn=${VCF_FLEET_FQDN} \
+     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
+     --vcf-services-runtime-username=${VCFMS_USERNAME} \
+     --vcf-services-runtime-password=${VCFMS_PASSWORD} \
+     --component-id=<migration-service-engine-component-id>
+   ```
+3. **Then delete the "VCF Automation" component**, with its own component ID
+   from the list output:
+   ```bash
+   python cleanup_component.py delete vsp-component \
+     --fleet-fqdn=${VCF_FLEET_FQDN} \
+     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
+     --vcf-services-runtime-username=${VCFMS_USERNAME} \
+     --vcf-services-runtime-password=${VCFMS_PASSWORD} \
+     --component-id=<vcf-automation-component-id>
+   ```
+4. **Delete the VCFA's own VCFMS cluster**, as **root**, from inside the SDDC
    Manager VM:
    ```bash
    python cleanup_component.py list vsp-cluster \
