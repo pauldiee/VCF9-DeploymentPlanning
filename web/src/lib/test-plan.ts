@@ -250,8 +250,7 @@ const TP0: Entry[] = [
     critical: true,
     steps: [
       'Put every planned FQDN in a text file, one per line: every ESX host, vCenter, SDDC Manager, the NSX Manager VIP and all three nodes, the Edge nodes (Centralized) or VNA appliances (Distributed), the VCF Operations nodes and any external LB VIP, the Cloud Proxy, the License Server, every VCF Management Services FQDN, and any Day-2 appliance FQDNs already known.',
-      'Check forward AND reverse in one pass from a client on the management network — this prints a line per name and flags anything that fails either way:',
-      '`Get-Content .\\fqdns.txt | ForEach-Object { $a=(Resolve-DnsName $_ -Type A -ErrorAction SilentlyContinue).IPAddress; $p=if($a){(Resolve-DnsName $a -Type PTR -ErrorAction SilentlyContinue).NameHost}; $ok=if($a -and $p -eq $_){"OK"}else{"** FAIL **"}; "{0,-45} {1,-16} {2,-45} {3}" -f $_,$a,$p,$ok }`',
+      'Check forward AND reverse from a client on the management network. For each name: `Resolve-DnsName <fqdn> -Type A`, then feed the returned IP back in: `Resolve-DnsName <ip> -Type PTR`. The PTR must return the same name you started with.',
       'From Linux or a shell: `while read f; do ip=$(dig +short A "$f"); ptr=$(dig +short -x "$ip"); echo "$f -> $ip -> $ptr"; done < fqdns.txt`',
       'Spot-check a couple of names from an ESX host too, since it uses its own resolver config: `nslookup <fqdn>` and `esxcli network ip dns server list`',
       'Run this from the management network, NOT on the DNS server itself — a record that resolves locally but is not served to the management subnet still fails bring-up.',
