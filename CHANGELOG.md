@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.0.1 — 2026-07-28
+- **Set-ESXCoredump.ps1: new -SkipInvalidCertificateCheck switch** (#221).
+  Self-signed/untrusted vCenter certs (common in lab/PoC environments) hard-
+  failed `Connect-VIServer` with only a suggestion to fix it manually. v1.2.0
+  adds `-SkipInvalidCertificateCheck` (prompted for if not passed) that sets
+  `Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session`
+  before connecting.
+
 ## v3.0.0 — 2026-07-28
 - **Set-ESXCoredump.ps1: clearer guidance on SSL connection failures** (#221).
   A self-signed/untrusted vCenter certificate previously surfaced as a raw

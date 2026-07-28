@@ -30,13 +30,18 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.1.3
+    Version : 1.2.0
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.2.0  2026-07-28  PD  Added -SkipInvalidCertificateCheck (prompted for
+                            if not passed) -- sets Set-PowerCLIConfiguration
+                            -InvalidCertificateAction Ignore -Scope Session
+                            before connecting, for lab/PoC vCenters with a
+                            self-signed cert (#221)
     v1.1.3  2026-07-28  PD  Connect-VIServer SSL failures now suggest
                             Set-PowerCLIConfiguration -InvalidCertificateAction
                             Ignore instead of just printing the raw exception
@@ -90,6 +95,13 @@
     Skip confirming/enabling the vSphereCoredumpClient firewall ruleset per
     host.
 
+.PARAMETER SkipInvalidCertificateCheck
+    Ignore untrusted/self-signed vCenter certificates for this session
+    (sets Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope
+    Session before connecting). Use for lab/PoC vCenters with a self-signed
+    cert; leave off in production, where you should trust the CA chain
+    instead.
+
 .EXAMPLE
     .\Set-ESXCoredump.ps1 -VCenter vc01.sfo.example.io -CollectorAddress vc01.sfo.example.io -WhatIf
 
@@ -106,6 +118,12 @@
 
     Uses an existing PowerCLI session (already connected) and only touches
     the hosts in Cluster01, piped in.
+
+.EXAMPLE
+    .\Set-ESXCoredump.ps1 -VCenter vc01.sfo.example.io -CollectorAddress vc01.sfo.example.io -SkipInvalidCertificateCheck
+
+    Connects to a lab/PoC vCenter with a self-signed certificate, ignoring
+    the invalid-certificate error for this session.
 #>
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
@@ -115,11 +133,12 @@ param(
     [int]$CollectorPort,
     [string]$InterfaceName,
     [Parameter(ValueFromPipeline)] [string[]]$VMHost,
-    [switch]$SkipFirewallCheck
+    [switch]$SkipFirewallCheck,
+    [switch]$SkipInvalidCertificateCheck
 )
 
 begin {
-    $scriptVersion = '1.1.3'
+    $scriptVersion = '1.2.0'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -172,6 +191,16 @@ begin {
         if (-not $Credential) {
             $Credential = Get-Credential -Message "vCenter credentials for $VCenter"
         }
+
+        if (-not $PSBoundParameters.ContainsKey('SkipInvalidCertificateCheck')) {
+            $certInput = Read-Host "Ignore untrusted/self-signed vCenter certificate for this session? (y/N) [default: N]"
+            if ($certInput -and $certInput.Trim() -match '^y') { $SkipInvalidCertificateCheck = $true }
+        }
+        if ($SkipInvalidCertificateCheck) {
+            Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session -Confirm:$false | Out-Null
+            Write-Host "Ignoring invalid/self-signed certificates for this session." -ForegroundColor Yellow
+        }
+
         try {
             Connect-VIServer -Server $VCenter -Credential $Credential -ErrorAction Stop | Out-Null
             $ownsConnection = $true
@@ -179,11 +208,10 @@ begin {
         }
         catch {
             Write-Host "`nCould not connect to $VCenter : $($_.Exception.Message)" -ForegroundColor Red
-            if ($_.Exception.Message -match 'SSL connection could not be established') {
+            if (-not $SkipInvalidCertificateCheck -and $_.Exception.Message -match 'SSL connection could not be established') {
                 Write-Host "  This is usually a self-signed/untrusted vCenter certificate. If that's" -ForegroundColor DarkGray
-                Write-Host "  expected in this environment, allow it for this PowerShell session with:" -ForegroundColor DarkGray
-                Write-Host "    Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session -Confirm:`$false" -ForegroundColor White
-                Write-Host "  then re-run this script." -ForegroundColor DarkGray
+                Write-Host "  expected in this environment, re-run with -SkipInvalidCertificateCheck" -ForegroundColor DarkGray
+                Write-Host "  (or answer 'y' at the certificate prompt)." -ForegroundColor DarkGray
             }
             exit 1
         }
