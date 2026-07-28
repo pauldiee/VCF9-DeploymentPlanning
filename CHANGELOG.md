@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.3 — 2026-07-28
+- **Set-ESXCoredump.ps1: interactive cluster/host picker** (#221). Previously
+  the host-scope prompt was a blind free-text "type a comma list" with nothing
+  to pick from. v1.3.0 lists every cluster (with host counts) and host (with
+  its cluster) it found in the vCenter, then accepts `A` for all or a
+  comma-separated list of cluster/host numbers or names from that list.
+
 ## v3.0.2 — 2026-07-28
 - **docs/11-esx-coredump.md: script download in the same table format as the
   other build guides** (#221), matching `08-backup-target.md` /

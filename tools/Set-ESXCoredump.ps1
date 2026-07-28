@@ -30,13 +30,18 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.2.0
+    Version : 1.3.0
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.3.0  2026-07-28  PD  Interactive host/cluster picker: when no -VMHost is
+                            given, lists every cluster (with host counts) and
+                            host (with its cluster) it found, and prompts for
+                            'A' or a comma-separated list of numbers/names
+                            instead of a blind free-text host list (#221)
     v1.2.0  2026-07-28  PD  Added -SkipInvalidCertificateCheck (prompted for
                             if not passed) -- sets Set-PowerCLIConfiguration
                             -InvalidCertificateAction Ignore -Scope Session
@@ -88,8 +93,9 @@
 .PARAMETER VMHost
     One or more host names/FQDNs to target instead of every host in the
     vCenter. Accepts pipeline input. If not supplied (and nothing is piped
-    in), the script prompts whether to target every host or a comma-
-    separated subset.
+    in), the script lists every cluster and host it found and prompts for
+    'A' (all), or a comma-separated list of cluster/host numbers or names
+    from that list.
 
 .PARAMETER SkipFirewallCheck
     Skip confirming/enabling the vSphereCoredumpClient firewall ruleset per
@@ -138,7 +144,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.2.0'
+    $scriptVersion = '1.3.0'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -270,11 +276,50 @@ process {
 end {
     try {
         if ($targets.Count -eq 0 -and -not $vmHostParamBound) {
-            $scopeInput = Read-Host "Target ALL hosts in the vCenter, or a SUBSET? Enter 'A' for all, or a comma-separated list of host names/FQDNs [default: A]"
+            $allHosts = @(Get-VMHost | Sort-Object -Property @{Expression = { $_.Parent.Name } }, Name)
+
+            if (-not $allHosts -or $allHosts.Count -eq 0) {
+                Write-Host "`nNo hosts found to configure." -ForegroundColor Yellow
+                return
+            }
+
+            $clusters = @($allHosts | Group-Object -Property { $_.Parent.Name } | Sort-Object Name)
+
+            Write-Host "`nClusters:" -ForegroundColor White
+            for ($i = 0; $i -lt $clusters.Count; $i++) {
+                Write-Host ("  [{0}] {1} ({2} host(s))" -f ($i + 1), $clusters[$i].Name, $clusters[$i].Count) -ForegroundColor Cyan
+            }
+
+            Write-Host "`nHosts:" -ForegroundColor White
+            for ($i = 0; $i -lt $allHosts.Count; $i++) {
+                Write-Host ("  [{0}] {1}  ({2})" -f ($i + 1), $allHosts[$i].Name, $allHosts[$i].Parent.Name) -ForegroundColor Cyan
+            }
+
+            $scopeInput = Read-Host "`nEnter 'A' for all, or a comma-separated list of cluster/host numbers or names [default: A]"
             if ($scopeInput -and $scopeInput.Trim() -notmatch '^(a|all)$') {
-                foreach ($h in ($scopeInput -split ',')) {
-                    $h = $h.Trim()
-                    if ($h) { $targets.Add($h) }
+                foreach ($token in ($scopeInput -split ',')) {
+                    $token = $token.Trim()
+                    if (-not $token) { continue }
+
+                    $clusterIndex = 0
+                    if ([int]::TryParse($token, [ref]$clusterIndex) -and $clusterIndex -ge 1 -and $clusterIndex -le $clusters.Count) {
+                        $clusters[$clusterIndex - 1].Group | ForEach-Object { $targets.Add($_.Name) }
+                        continue
+                    }
+
+                    $hostIndex = 0
+                    if ([int]::TryParse($token, [ref]$hostIndex) -and $hostIndex -ge 1 -and $hostIndex -le $allHosts.Count) {
+                        $targets.Add($allHosts[$hostIndex - 1].Name)
+                        continue
+                    }
+
+                    $matchedCluster = $clusters | Where-Object { $_.Name -eq $token }
+                    if ($matchedCluster) {
+                        $matchedCluster.Group | ForEach-Object { $targets.Add($_.Name) }
+                        continue
+                    }
+
+                    $targets.Add($token)
                 }
             }
         }
