@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.0.8 — 2026-07-29
+- **Confirmed VCF Roles is the actual fleet-wide role mechanism** (#222),
+  screenshot-verified against the same 9.1.0.0200 lab: assigning an AD group
+  to a VCF Role (built-in: SDDC Viewer/Administrator, VCF Viewer/
+  Administrator, or a custom role) grants **vCenter and NSX access
+  directly** via "Access Management" on the broker — it's not merely
+  layered on top of separate per-product logins as the doc previously
+  hedged. Documented the four built-in roles, clarified that `vCenter
+  Custom Roles` is a distinct, narrower feature (syncing vCenter's own
+  native RBAC roles across every vCenter in the instance, not VCF-Roles
+  group assignment), and reframed the NSX-native manual role-assignment
+  steps as a fallback rather than the primary path.
+
 ## v3.0.7 — 2026-07-29
 - **Corrected docs/12-sso-configuration.md against a real 9.1.0.0200 lab**
   (#222). The doc's navigation was sourced from blog write-ups against an

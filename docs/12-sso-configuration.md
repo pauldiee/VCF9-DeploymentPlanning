@@ -138,9 +138,13 @@ Two very different behaviours once you do configure each:
   it.
 - **NSX Manager** — reported **not automatic** — click its row in the
   Components list to configure it explicitly, separate from vCenter. This
-  pushes the identity configuration to NSX, but **role assignment is a
-  separate manual step performed inside NSX Manager itself**, not on the
-  broker:
+  pushes the identity configuration to NSX. **Role assignment for NSX is
+  covered by `VCF Roles` (Step 6, confirmed 9.1 behaviour)** — assigning an AD
+  group to a VCF Role there grants NSX access directly, without a separate
+  login to NSX Manager. The NSX-native manual method below is still
+  documented in community write-ups and may still work as a fallback or for
+  finer-grained NSX-only roles, but confirm you actually need it before doing
+  both:
   1. Log into NSX Manager directly (switch to the **local account**, e.g.
      `admin`).
   2. **System → User Management → User Role Assignment → Add Role for VCF SSO
@@ -270,25 +274,49 @@ this page; see the References below for their dedicated TechDocs pages.
 
 **Connecting a product to the broker does not grant anyone access.** Every
 product above warns about this explicitly, and it is easy to walk the whole
-wizard, declare victory, and then have nobody able to log in. In VCF 9.0/9.1,
-role assignment is **per-product**, done by logging into each component's own
-UI and mapping the synced AD group to that product's own role model — there
-is no single fleet-wide "assign this group as admin everywhere" screen. Plan
-which AD groups map to which roles **before** you start federating (§1's
-table), not after.
+wizard, declare victory, and then have nobody able to log in. Plan which AD
+groups map to which roles **before** you start federating (§1's table), not
+after.
 
-> **9.1 "VCF Roles" — confirmed real, workflow not yet walked through here.**
-> VCF 9.1 release notes describe a new fleet-wide **VCF Roles** capability:
-> custom roles built by combining permissions from multiple components,
-> assignable **once** during SSO configuration rather than per-product, plus
-> automatic **vCenter custom-role sync** (with drift detection) across
-> multiple vCenter/VCF instances. This is **screenshot-confirmed as a real UI
-> section** (2026-07-29, build 9.1.0.0200) — **Identity & Access** has its own
-> **VCF Roles** and **vCenter Custom Roles** entries alongside VCF SSO
-> Overview, not just release-notes text. What's still unverified is the
-> *behaviour*: whether it fully replaces per-product role assignment or
-> layers on top of it. Confirm that in your own environment before designing
-> a role model around it.
+**In 9.1, `VCF Roles` is the confirmed fleet-wide mechanism — not just
+release-notes text, and not merely layered on top of per-product logins.**
+Screenshot-verified 2026-07-29, build 9.1.0.0200: **Identity & Access → VCF
+Roles** states plainly, *"VCF Role defines access across VCF component
+including vCenter, NSX, VCF Operations and VCF Automation. Assign roles under
+Access Management within the identity broker details on the VCF SSO
+Overview."* Assigning an AD group to a VCF Role there is what grants that
+group **vCenter and NSX access directly** — you do not have to separately log
+into NSX Manager and map the group there as well (superseding the "log into
+NSX Manager directly" sub-steps described in Step 3, which may be an
+older/9.0 fallback rather than the current recommended path — worth
+confirming which one you actually need once you've assigned roles this way).
+
+**Built-in roles** (VCF Roles page, four rows, not user-editable):
+
+| Role | Scope |
+| ---- | ----- |
+| **SDDC Viewer** | Read-only across SDDC components |
+| **SDDC Administrator** | Administrator across SDDC components |
+| **VCF Viewer** | Read-only across **all** components **except Automation** |
+| **VCF Administrator** | Administrator across **all** components |
+
+**Custom Roles** — a separate section on the same page (**CREATE NEW CUSTOM
+ROLE**) for building a role that combines specific permissions rather than
+using one of the four built-ins wholesale — this is the mechanism the 9.1
+release notes describe as "custom roles built by combining permissions from
+multiple components."
+
+**`vCenter Custom Roles` is a different, narrower feature — don't confuse the
+two.** It does not assign VCF Roles to AD groups at all. Per its own page
+text: *"Configure automatic provisioning of selected roles to vCenters within
+your VCF instance. This ensures that any new vCenter added to the instance
+will automatically receive the specified roles... This automatic provisioning
+also applies to Single Sign-On (SSO) configurations."* It's for **syncing
+vCenter's own native custom RBAC roles** across every vCenter in the
+instance (via **IMPORT & PROVISION ROLES**) — e.g. so a bespoke vCenter role
+you built by hand gets pushed to every new vCenter automatically, rather than
+recreating it each time. Confirmed to exist as a real, working provisioning
+table; not yet exercised end-to-end in this repo.
 
 ---
 
@@ -343,8 +371,10 @@ table), not after.
   external URL — this is why some claims above are marked "confirmed" and
   others still "sourced from community write-ups"): the overall
   navigation structure (§ intro), the Other Components tab's example list
-  including VCF Operations for Networks (§1, §5), and the existence of the
-  VCF Roles / vCenter Custom Roles sections (§7).
+  including VCF Operations for Networks (§1, §5), the existence of the
+  VCF Roles / vCenter Custom Roles sections and their built-in role list
+  (§6), and that VCF Roles is the actual mechanism granting vCenter and NSX
+  access — not merely per-product logins (§3, §6).
 - TechDocs (the 9.1 doc set does not republish the SSO setup section, so
   these are the newest published pages — 9.0 is current for this workflow):
   [Setting Up SSO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso.html),
