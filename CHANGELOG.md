@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.0.6 — 2026-07-28
+- **New field note: manually decrypting a VCSA `.enc` backup piece** (#223).
+  `docs/08-backup-target.md` section 7. Field-verified 2026-07-28: neither
+  the commonly-blogged PBKDF2 approach nor the legacy-KDF default (MD5) could
+  decrypt a real VCF 9.1 `vpxd.gz.enc` backup piece — both failed with `bad
+  decrypt` even with the confirmed-correct encryption passphrase. The working
+  command uses the **legacy KDF with `-md sha512`**, matching the hash
+  algorithm named in the backup's own manifest metadata. Also flags that an
+  unexpectedly small `.enc` file is worth questioning before spending time on
+  the decrypt command at all.
+
 ## v3.0.5 — 2026-07-28
 - **New: fleet SSO configuration build guide** (#222). `docs/12-sso-configuration.md`
   covers the Day-2 *configuration* half that neither `prerequisites.md` (prep

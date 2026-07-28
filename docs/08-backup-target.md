@@ -30,7 +30,8 @@ from.
 | | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
 | 6 | [Cold backup / cold maintenance](#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
-| 7 | [References](#7-references) | The TechDocs and KBs behind the above |
+| 7 | [Manually decrypting a backed-up file](#7-manually-decrypting-a-backed-up-file-for-inspection) | Inspecting a `.enc` piece — the KDF/digest combination that actually works |
+| 8 | [References](#8-references) | The TechDocs and KBs behind the above |
 
 ---
 
@@ -474,7 +475,43 @@ component the proxy scripts read); override with `export GOVC_URL=https://<vcent
   runtime restarts its components. KB 440874 documents the *shutdown*; verify
   recovery **in-product** rather than assuming an order.
 
-## 7. References
+## 7. Manually decrypting a backed-up file (for inspection)
+
+**Field-verified 2026-07-28.** Every documented recipe for decrypting a VCSA
+`.enc` backup file with plain `openssl enc` (Broadcom's own File-Based Backup
+TechDocs page doesn't cover manual decryption at all — this comes entirely
+from community write-ups) assumes either PBKDF2 or the legacy
+`EVP_BytesToKey` key derivation with its **MD5** default digest. Neither
+worked against a real VCF 9.1 vCenter backup, **even with the confirmed-
+correct encryption passphrase** — both failed with `bad decrypt`. The actual
+working combination was the **legacy KDF with SHA-512** as the digest:
+
+```bash
+openssl aes-256-cbc -d -salt -md sha512 -in vpxd.gz.enc -out vpxd.gz
+```
+
+Neither `-pbkdf2 -md sha512` nor plain `-md sha512` with the default cipher
+guess got there directly — it took confirming the **hash algorithm from the
+backup's own manifest metadata** (SHA-512, in this case) and mapping that to
+`-md sha512` on the **legacy** (no `-pbkdf2`) path. If your manifest names a
+different hash algorithm, try that as `-md <algorithm>` first, both with and
+without `-pbkdf2`, before concluding the passphrase is wrong — a `bad
+decrypt` here is at least as likely to be a **KDF/digest mismatch** as an
+actual wrong password, and troubleshooting the two looks identical from the
+error message alone.
+
+> **This is for inspecting/verifying a backup piece, not restoring one.** The
+> supported restore path is still the VAMI / Recovery ISO wizard, entering
+> the encryption passphrase there. Use the manual `openssl` route to confirm
+> a backup file is genuinely readable, or to extract a single piece for
+> troubleshooting, not as a substitute for a real restore.
+>
+> **A file far smaller than you expect** (a few dozen bytes where you
+> expected megabytes) is worth questioning **before** you spend time on the
+> decrypt command at all — confirm you've got the actual data piece and not
+> a manifest fragment, stub, or symlink that happens to share the name.
+
+## 8. References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
   and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
@@ -488,4 +525,9 @@ component the proxy scripts read); override with `export GOVC_URL=https://<vcent
 - Community walkthroughs: [SFTP server on Photon OS for VCF 9.1 backups](https://topvcf.com/2026/05/19/5685/)
   (chroot jail, end to end) and [SFTP on Ubuntu Server](https://www.velements.net/2024/10/12/setup-sftp-on-ubuntu-server/)
   (includes re-enabling `ssh-rsa` host-key algorithms for older VMware
-  components).
+  components); on manually decrypting `.enc` backup pieces (§7), see
+  [Confirm that you have the right password for encrypted VCSA backups](https://malyshev.net/2020/12/confirm-that-you-have-the-right-password-for-encrypted-vcsa-backups/)
+  and [vCenter File Level Restore](https://ygerber.online/post/vcenter-file-level-restore/)
+  for the general `openssl enc` approach — neither documents the SHA-512
+  digest requirement found here, which is why it's field-noted above rather
+  than just linked.
