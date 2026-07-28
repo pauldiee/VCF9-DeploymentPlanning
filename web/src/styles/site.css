@@ -133,6 +133,19 @@ body {
   padding-top: var(--space-4);
   border-top: var(--border-width) solid var(--border-default);
 }
+.sidebar__reference-summary {
+  cursor: pointer;
+  list-style: none;
+}
+.sidebar__reference-summary::-webkit-details-marker { display: none; }
+.sidebar__reference-summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: var(--space-2);
+  transition: transform 0.15s ease;
+}
+details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); }
+.sidebar__reference > a { margin-top: var(--space-2); }
 .sidebar__list {
   list-style: none;
   padding: 0;

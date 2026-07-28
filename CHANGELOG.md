@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.1.1 — 2026-07-29
+- **Reference section is now collapsible** (native `<details>`/`<summary>`,
+  no JS). Closed by default, but auto-opens when the active page is one of
+  the Reference docs (or Version Overview) so you're never looking at a
+  collapsed section hiding your own current page.
+
 ## v3.1.0 — 2026-07-29
 - **Leaner sidebar: build guides moved into the Reference section.** The 7
   `step: 'Reference'` docs (Firewall & Ports, Backup Target, Binary Depot,

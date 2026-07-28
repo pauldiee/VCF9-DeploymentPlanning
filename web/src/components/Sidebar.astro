@@ -86,33 +86,35 @@ const referenceItems = NAV.filter((item) => item.step === 'Reference');
     </span>
   </a>
 
-  <p class="sidebar__eyebrow itq-eyebrow sidebar__eyebrow--spaced">Reference</p>
-  <a
-    class:list={['sidebar__link', { 'is-active': active === 'version-overview' }]}
-    href={versionOverviewHref}
-    aria-current={active === 'version-overview' ? 'page' : undefined}
-  >
-    <i class="fa-solid fa-layer-group sidebar__icon" aria-hidden="true"></i>
-    <span class="sidebar__text">
-      <span class="sidebar__step">Live</span>
-      <span class="sidebar__label">VCF 9.1 Version Overview</span>
-    </span>
-  </a>
-  {
-    referenceItems.map((item) => (
-      <a
-        class:list={['sidebar__link', { 'is-active': active === item.slug }]}
-        href={href(item.slug)}
-        aria-current={active === item.slug ? 'page' : undefined}
-      >
-        <i class={`fa-solid fa-${item.icon} sidebar__icon`} aria-hidden="true" />
-        <span class="sidebar__text">
-          <span class="sidebar__step">{item.step}</span>
-          <span class="sidebar__label">{item.label}</span>
-        </span>
-      </a>
-    ))
-  }
+  <details class="sidebar__reference sidebar__eyebrow--spaced" open={referenceItems.some((item) => active === item.slug) || active === 'version-overview'}>
+    <summary class="sidebar__eyebrow itq-eyebrow sidebar__reference-summary">Reference</summary>
+    <a
+      class:list={['sidebar__link', { 'is-active': active === 'version-overview' }]}
+      href={versionOverviewHref}
+      aria-current={active === 'version-overview' ? 'page' : undefined}
+    >
+      <i class="fa-solid fa-layer-group sidebar__icon" aria-hidden="true"></i>
+      <span class="sidebar__text">
+        <span class="sidebar__step">Live</span>
+        <span class="sidebar__label">VCF 9.1 Version Overview</span>
+      </span>
+    </a>
+    {
+      referenceItems.map((item) => (
+        <a
+          class:list={['sidebar__link', { 'is-active': active === item.slug }]}
+          href={href(item.slug)}
+          aria-current={active === item.slug ? 'page' : undefined}
+        >
+          <i class={`fa-solid fa-${item.icon} sidebar__icon`} aria-hidden="true" />
+          <span class="sidebar__text">
+            <span class="sidebar__step">{item.step}</span>
+            <span class="sidebar__label">{item.label}</span>
+          </span>
+        </a>
+      ))
+    }
+  </details>
 
   <p class="sidebar__eyebrow itq-eyebrow sidebar__eyebrow--spaced">Example</p>
   <a class="sidebar__link" href={sampleHref}>
