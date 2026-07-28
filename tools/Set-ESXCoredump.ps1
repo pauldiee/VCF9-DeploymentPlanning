@@ -30,39 +30,49 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.0.0
+    Version : 1.1.0
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.1.0  2026-07-28  PD  Prompt clearly for every input not supplied on the
+                            command line, instead of relying on PowerShell's
+                            unlabeled default mandatory-parameter prompt (#221)
     v1.0.0  2026-07-27  PD  Initial release -- per-host esxcli coredump network sweep (#221)
 
 .PARAMETER VCenter
-    FQDN or IP of the vCenter to connect to. If omitted, the script uses an
-    existing PowerCLI connection (from Connect-VIServer) instead of making
-    its own -- in that case -VCenter is ignored and nothing is disconnected
-    when the script finishes.
+    FQDN or IP of the vCenter to connect to. If omitted and no existing
+    PowerCLI connection is found, the script prompts for it. Leave the
+    prompt blank to use an existing PowerCLI connection (from
+    Connect-VIServer) instead -- in that case nothing is disconnected when
+    the script finishes.
 
 .PARAMETER Credential
-    Credentials for -VCenter. Prompted for if -VCenter is given without it.
+    Credentials for -VCenter. Prompted for if -VCenter is given (or entered
+    at the prompt) without it.
 
 .PARAMETER CollectorAddress
     FQDN or IP of the Dump Collector server every host will be pointed at --
     typically the vCenter itself, or a standalone ESXi Dump Collector.
+    Prompted for if not supplied.
 
 .PARAMETER CollectorPort
-    UDP port the Dump Collector listens on. Defaults to 6500.
+    UDP port the Dump Collector listens on. Defaults to 6500. Prompted for
+    if not supplied (press Enter to accept the default).
 
 .PARAMETER InterfaceName
     VMkernel interface each host sends coredump traffic from. Defaults to
     vmk0 (the usual management interface) -- override if the management
-    VMkernel is not vmk0 on this build.
+    VMkernel is not vmk0 on this build. Prompted for if not supplied (press
+    Enter to accept the default).
 
 .PARAMETER VMHost
     One or more host names/FQDNs to target instead of every host in the
-    vCenter. Accepts pipeline input.
+    vCenter. Accepts pipeline input. If not supplied (and nothing is piped
+    in), the script prompts whether to target every host or a comma-
+    separated subset.
 
 .PARAMETER SkipFirewallCheck
     Skip confirming/enabling the vSphereCoredumpClient firewall ruleset per
@@ -89,15 +99,15 @@
 param(
     [string]$VCenter,
     [System.Management.Automation.PSCredential]$Credential,
-    [Parameter(Mandatory)] [string]$CollectorAddress,
-    [int]$CollectorPort = 6500,
-    [string]$InterfaceName = 'vmk0',
+    [string]$CollectorAddress,
+    [int]$CollectorPort,
+    [string]$InterfaceName,
     [Parameter(ValueFromPipeline)] [string[]]$VMHost,
     [switch]$SkipFirewallCheck
 )
 
 begin {
-    $scriptVersion = '1.0.0'
+    $scriptVersion = '1.1.0'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -107,8 +117,6 @@ begin {
     Write-Host ('=' * 62) -ForegroundColor DarkCyan
     Write-Host "  Set-ESXCoredump v$scriptVersion" -ForegroundColor Cyan
     Write-Host "  $scriptAuthor - $scriptBlogUrl" -ForegroundColor DarkCyan
-    Write-Host "  Collector      : $CollectorAddress`:$CollectorPort" -ForegroundColor Cyan
-    Write-Host "  Interface      : $InterfaceName" -ForegroundColor Cyan
     Write-Host ('=' * 62) -ForegroundColor DarkCyan
 
     Write-Host "`nAssumes the Dump Collector SERVICE is already enabled on the vCenter/collector" -ForegroundColor Yellow
@@ -123,6 +131,14 @@ begin {
         exit 1
     }
 
+    Write-Host "`n--- Inputs ---" -ForegroundColor White
+
+    # -VCenter: prompt only if not passed and there is no existing PowerCLI session.
+    if (-not $PSBoundParameters.ContainsKey('VCenter') -and
+        (-not $global:DefaultVIServers -or $global:DefaultVIServers.Count -eq 0)) {
+        $VCenter = Read-Host "vCenter FQDN or IP to connect to (leave blank to use an existing PowerCLI connection)"
+    }
+
     $ownsConnection = $false
     if ($VCenter) {
         if (-not $Credential) {
@@ -131,7 +147,7 @@ begin {
         try {
             Connect-VIServer -Server $VCenter -Credential $Credential -ErrorAction Stop | Out-Null
             $ownsConnection = $true
-            Write-Host "`nConnected to $VCenter." -ForegroundColor Green
+            Write-Host "Connected to $VCenter." -ForegroundColor Green
         }
         catch {
             Write-Host "`nCould not connect to $VCenter : $($_.Exception.Message)" -ForegroundColor Red
@@ -139,13 +155,48 @@ begin {
         }
     }
     elseif (-not $global:DefaultVIServers -or $global:DefaultVIServers.Count -eq 0) {
-        Write-Host "`nNo -VCenter given and no existing PowerCLI connection found." -ForegroundColor Red
+        Write-Host "`nNo vCenter given and no existing PowerCLI connection found." -ForegroundColor Red
         Write-Host "  Either pass -VCenter, or run Connect-VIServer first." -ForegroundColor DarkGray
         exit 1
     }
+    else {
+        Write-Host "Using existing PowerCLI connection: $($global:DefaultVIServers -join ', ')" -ForegroundColor Green
+    }
+
+    # -CollectorAddress: mandatory, so keep prompting until something is entered.
+    if (-not $PSBoundParameters.ContainsKey('CollectorAddress') -or -not $CollectorAddress) {
+        while (-not $CollectorAddress) {
+            $CollectorAddress = Read-Host "Dump Collector server address (FQDN or IP) -- this is REQUIRED"
+        }
+    }
+
+    # -CollectorPort: optional, defaults to 6500.
+    if (-not $PSBoundParameters.ContainsKey('CollectorPort')) {
+        $portInput = Read-Host "Dump Collector UDP port [default: 6500]"
+        $CollectorPort = if ($portInput) { [int]$portInput } else { 6500 }
+    }
+    elseif (-not $CollectorPort) {
+        $CollectorPort = 6500
+    }
+
+    # -InterfaceName: optional, defaults to vmk0.
+    if (-not $PSBoundParameters.ContainsKey('InterfaceName')) {
+        $ifaceInput = Read-Host "VMkernel interface to send coredump traffic from [default: vmk0]"
+        $InterfaceName = if ($ifaceInput) { $ifaceInput } else { 'vmk0' }
+    }
+    elseif (-not $InterfaceName) {
+        $InterfaceName = 'vmk0'
+    }
+
+    Write-Host "`n--- Confirmed settings ---" -ForegroundColor White
+    Write-Host "  vCenter        : $(if ($VCenter) { $VCenter } else { '(existing connection)' })" -ForegroundColor Cyan
+    Write-Host "  Collector      : $CollectorAddress`:$CollectorPort" -ForegroundColor Cyan
+    Write-Host "  Interface      : $InterfaceName" -ForegroundColor Cyan
+    Write-Host ('=' * 62) -ForegroundColor DarkCyan
 
     $targets = New-Object System.Collections.Generic.List[object]
     $results = New-Object System.Collections.Generic.List[object]
+    $vmHostParamBound = $PSBoundParameters.ContainsKey('VMHost')
 }
 
 process {
@@ -156,6 +207,21 @@ process {
 
 end {
     try {
+        if ($targets.Count -eq 0 -and -not $vmHostParamBound) {
+            $scopeInput = Read-Host "Target ALL hosts in the vCenter, or a SUBSET? Enter 'A' for all, or a comma-separated list of host names/FQDNs [default: A]"
+            if ($scopeInput -and $scopeInput.Trim() -notmatch '^(a|all)$') {
+                foreach ($h in ($scopeInput -split ',')) {
+                    $h = $h.Trim()
+                    if ($h) { $targets.Add($h) }
+                }
+            }
+        }
+
+        if (-not $PSBoundParameters.ContainsKey('SkipFirewallCheck')) {
+            $fwInput = Read-Host "Confirm/enable the vSphereCoredumpClient firewall ruleset on each host? (Y/n) [default: Y]"
+            if ($fwInput -and $fwInput.Trim() -match '^n') { $SkipFirewallCheck = $true }
+        }
+
         if ($targets.Count -gt 0) {
             $hosts = $targets | ForEach-Object { Get-VMHost -Name $_ }
         }

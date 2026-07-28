@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.9.7 — 2026-07-28
+- **Set-ESXCoredump.ps1 now prompts clearly for every input** (#221). Previously
+  `-CollectorAddress` relied on PowerShell's unlabeled default mandatory-parameter
+  prompt, and `-VCenter`/`-CollectorPort`/`-InterfaceName`/host scope/firewall
+  check had no interactive path at all if omitted. v1.1.0 prompts for each with
+  an explicit, labeled question (defaults shown, e.g. `[default: 6500]`) whenever
+  the corresponding parameter isn't passed on the command line — non-interactive
+  use (all params supplied, or hosts piped in) is unaffected.
+
 ## v2.9.6 — 2026-07-27
 - **New: Set-ESXCoredump.ps1** (#221). Automates the per-host half of the new
   coredump build guide — points every host in a vCenter (or a chosen subset)
