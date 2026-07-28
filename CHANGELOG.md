@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.0.2 — 2026-07-28
+- **docs/11-esx-coredump.md: script download in the same table format as the
+  other build guides** (#221), matching `08-backup-target.md` /
+  `09-binary-depot.md`'s `| Script | What it does |` layout.
+
 ## v3.0.1 — 2026-07-28
 - **Set-ESXCoredump.ps1: new -SkipInvalidCertificateCheck switch** (#221).
   Self-signed/untrusted vCenter certs (common in lab/PoC environments) hard-
