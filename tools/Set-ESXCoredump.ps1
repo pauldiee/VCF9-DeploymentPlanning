@@ -30,13 +30,18 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.1.1
+    Version : 1.1.2
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.1.2  2026-07-28  PD  Fixed: under Set-StrictMode, referencing
+                            $global:DefaultVIServers before PowerCLI has ever
+                            connected in the session threw "variable cannot be
+                            retrieved"; now read via a safe Get-Variable helper
+                            that tolerates it not existing yet (#221)
     v1.1.1  2026-07-28  PD  -VCenter now always prompts when not passed on the
                             command line, even with an existing PowerCLI
                             connection, instead of silently reusing it (#221)
@@ -110,7 +115,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.1.1'
+    $scriptVersion = '1.1.2'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -136,11 +141,16 @@ begin {
 
     Write-Host "`n--- Inputs ---" -ForegroundColor White
 
+    function Get-ExistingVIServers {
+        $var = Get-Variable -Name DefaultVIServers -Scope Global -ErrorAction SilentlyContinue
+        if ($var -and $var.Value) { $var.Value } else { @() }
+    }
+
     # -VCenter: always prompt if not passed on the command line, even when a
     # PowerCLI connection already exists -- don't silently assume it's the
     # right one.
     if (-not $PSBoundParameters.ContainsKey('VCenter')) {
-        $existing = $global:DefaultVIServers -join ', '
+        $existing = (Get-ExistingVIServers) -join ', '
         $prompt = if ($existing) {
             "vCenter FQDN or IP to connect to (leave blank to use the existing connection: $existing)"
         }
@@ -168,13 +178,13 @@ begin {
             exit 1
         }
     }
-    elseif (-not $global:DefaultVIServers -or $global:DefaultVIServers.Count -eq 0) {
+    elseif (@(Get-ExistingVIServers).Count -eq 0) {
         Write-Host "`nNo vCenter given and no existing PowerCLI connection found." -ForegroundColor Red
         Write-Host "  Either pass -VCenter, or run Connect-VIServer first." -ForegroundColor DarkGray
         exit 1
     }
     else {
-        Write-Host "Using existing PowerCLI connection: $($global:DefaultVIServers -join ', ')" -ForegroundColor Green
+        Write-Host "Using existing PowerCLI connection: $((Get-ExistingVIServers) -join ', ')" -ForegroundColor Green
     }
 
     # -CollectorAddress: mandatory, so keep prompting until something is entered.

@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.9.9 — 2026-07-28
+- **Fix: Set-ESXCoredump.ps1 crashed on first run in a fresh session** (#221).
+  Under `Set-StrictMode`, referencing `$global:DefaultVIServers` before
+  PowerCLI has ever connected in the session throws "variable cannot be
+  retrieved" instead of returning empty — hit immediately by the new
+  always-prompt-for-vCenter logic. v1.1.2 reads it through a
+  `Get-Variable -ErrorAction SilentlyContinue` helper that tolerates it not
+  existing yet.
+
 ## v2.9.8 — 2026-07-28
 - **Set-ESXCoredump.ps1: -VCenter always prompts, even with an existing
   connection** (#221). v2.9.7 only prompted for `-VCenter` when there was no
