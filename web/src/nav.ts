@@ -96,6 +96,13 @@ export const NAV: NavItem[] = [
     blurb: 'Build guide for the ESXi network Dump Collector: enable the service on vCenter, point every host at it, verify.',
   },
   {
+    slug: '12-sso-configuration',
+    step: 'Reference',
+    label: 'SSO Configuration',
+    icon: 'key',
+    blurb: 'Configure fleet SSO via the VCF Identity Broker: the identity provider, per-product federation, role mapping, and verification.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',
