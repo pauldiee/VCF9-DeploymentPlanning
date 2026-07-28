@@ -37,7 +37,7 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 | 1 | [Overview — what federates and what doesn't](#1-overview--what-federates-and-what-doesnt) | Deciding what this page will actually change for each product |
 | 2 | [Step 1 — Deployment mode](#step-1--deployment-mode) | Embedded vs. appliance-mode broker |
 | 3 | [Step 2 — Configure the identity provider](#step-2--configure-the-identity-provider) | Pointing the broker at AD/LDAP |
-| 4 | [Step 3 — Federate vCenter and NSX](#step-3--federate-vcenter-and-nsx) | vCenter is automatic; NSX is not |
+| 4 | [Step 3 — Federate vCenter and NSX](#step-3--federate-vcenter-and-nsx) | Both need an explicit click — neither auto-configures |
 | 5 | [Step 4 — Federate VCF Operations and VCF Automation](#step-4--federate-vcf-operations-and-vcf-automation) | Both need an explicit connect step |
 | 6 | [Step 5 — Federate everything else](#step-5--federate-everything-else) | Supervisor, Log Management, and the unsettled VCF Operations for Networks question |
 | 7 | [Step 6 — Assign roles per product](#step-6--assign-roles-per-product) | The step every product needs, done separately, every time |
@@ -55,7 +55,7 @@ sub-pages. Decide what you're actually federating before you start clicking:
 
 | Product | Federates with the broker? | Needs its own explicit step? |
 | ------- | --------------------------- | ----------------------------- |
-| **vCenter** (management domain) | Yes | **No** — auto-configured when you enable SSO. **Overrides any existing identity-provider config already on that vCenter** |
+| **vCenter** (management domain) | Yes | **Yes** — field-verified 2026-07-29: needs its own explicit click in the Components list, same as NSX; it does **not** auto-configure just because SSO/the IdP is enabled. **Overrides any existing identity-provider config already on that vCenter** once you do configure it |
 | **NSX Manager** | Yes | **Yes** — an explicit "Configure Component" click per NSX Manager, separate from vCenter |
 | **VCF Operations** | Yes | Yes — its own connect step under Fleet Management |
 | **VCF Automation** | Yes | Yes — its own connect step; **also has a separate native-LDAP path independent of the broker** (see §5) |
@@ -120,31 +120,30 @@ into an instance (e.g. `instance-a`) to see its **Components** list — each
 management-domain vCenter and NSX Manager, per VCF domain, each with its own
 **Configured / Not configured** status. (This replaces the "Component
 Configuration grid" wording from earlier community write-ups — in 9.1.0.0200
-it's this per-instance Components list.) Both components can show **Not
-configured** simultaneously until the identity provider itself is finished —
-seeing that doesn't yet confirm or contradict which of the two auto-configures
-once the IdP step completes; that distinction below is still sourced from
-blog write-ups pending a full walk-through in this repo.
+it's this per-instance Components list.)
 
-Two very different behaviours once you do configure each:
+**Field-verified 2026-07-29: neither one auto-configures.** Earlier
+community write-ups (and an earlier revision of this page) described vCenter
+as auto-configuring the moment SSO/the identity provider is enabled, with
+only NSX needing an explicit click. That's **not what happens in
+9.1.0.0200** — both vCenter and NSX Manager need their own explicit click in
+the Components list; neither one federates on its own.
 
-- **vCenter** — reported (not yet screenshot-confirmed end-to-end in this
-  repo) to be **already configured automatically** as part of enabling SSO;
-  nothing further to click for the management-domain vCenter. **Caveat:**
-  once SSO is enabled, **any existing identity-provider configuration already
-  on that vCenter is overridden** by the VCF SSO configuration — if you bound
-  vCenter SSO directly to AD earlier (the "optional, not recommended" path in
+- **vCenter** — click its row in the Components list to configure it
+  explicitly, same as NSX. **Caveat:** once configured, **any existing
+  identity-provider configuration already on that vCenter is overridden** by
+  the VCF SSO configuration — if you bound vCenter SSO directly to AD earlier
+  (the "optional, not recommended" path in
   [`06-deployment-plan.md` story 6.3](06-deployment-plan.md)), this replaces
   it.
-- **NSX Manager** — reported **not automatic** — click its row in the
-  Components list to configure it explicitly, separate from vCenter. This
-  pushes the identity configuration to NSX. **Role assignment for NSX is
-  covered by `VCF Roles` (Step 6, confirmed 9.1 behaviour)** — assigning an AD
-  group to a VCF Role there grants NSX access directly, without a separate
-  login to NSX Manager. The NSX-native manual method below is still
-  documented in community write-ups and may still work as a fallback or for
-  finer-grained NSX-only roles, but confirm you actually need it before doing
-  both:
+- **NSX Manager** — click its row in the Components list to configure it
+  explicitly, separate from vCenter. This pushes the identity configuration
+  to NSX. **Role assignment for NSX is covered by `VCF Roles` (Step 6,
+  confirmed 9.1 behaviour)** — assigning an AD group to a VCF Role there
+  grants NSX access directly, without a separate login to NSX Manager. The
+  NSX-native manual method below is still documented in community
+  write-ups and may still work as a fallback or for finer-grained NSX-only
+  roles, but confirm you actually need it before doing both:
   1. Log into NSX Manager directly (switch to the **local account**, e.g.
      `admin`).
   2. **System → User Management → User Role Assignment → Add Role for VCF SSO
@@ -373,8 +372,9 @@ table; not yet exercised end-to-end in this repo.
   navigation structure (§ intro), the Other Components tab's example list
   including VCF Operations for Networks (§1, §5), the existence of the
   VCF Roles / vCenter Custom Roles sections and their built-in role list
-  (§6), and that VCF Roles is the actual mechanism granting vCenter and NSX
-  access — not merely per-product logins (§3, §6).
+  (§6), that VCF Roles is the actual mechanism granting vCenter and NSX
+  access — not merely per-product logins (§3, §6), and that **vCenter needs
+  its own explicit click same as NSX — it does not auto-configure** (§1, §3).
 - TechDocs (the 9.1 doc set does not republish the SSO setup section, so
   these are the newest published pages — 9.0 is current for this workflow):
   [Setting Up SSO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso.html),

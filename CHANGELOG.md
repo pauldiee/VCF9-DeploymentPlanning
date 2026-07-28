@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.0.9 — 2026-07-29
+- **Corrected: vCenter does not auto-configure with the Identity Broker**
+  (#222). Field-verified 2026-07-29: the doc's earlier claim that vCenter
+  federates automatically once SSO/the identity provider is enabled — sourced
+  from community write-ups — does not hold in a real 9.1.0.0200 lab. Both
+  vCenter **and** NSX Manager need their own explicit click in the Components
+  list; neither one auto-configures.
+
 ## v3.0.8 — 2026-07-29
 - **Confirmed VCF Roles is the actual fleet-wide role mechanism** (#222),
   screenshot-verified against the same 9.1.0.0200 lab: assigning an AD group
