@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.1.5 — 2026-07-29
+- **Finished the test-plan command sweep** (#218), following a full audit of
+  the file. Fixed: TP-209's char-code VM naming (`[char](64+$_)` to generate
+  "A"/"B") split into two plain `New-VM` commands; the AD group-membership
+  check split into "list the groups" then "list a group's members" instead
+  of interleaving both in one block; the jump-host and BMC reachability
+  sweeps had their pointless `$r=`/format-string dropped in favour of reading
+  `Test-NetConnection`'s own table output; a no-op `Get-VIServer |
+  ForEach-Object { $_.Name }` replaced with `Select Name`; and the two
+  `while ($true)` polling loops (VM-restart-elsewhere, AZ-failover) got a
+  "Ctrl+C to stop" note so a customer isn't left wondering how to exit them.
+
 ## v3.1.4 — 2026-07-29
 - **Simplified six more test-plan commands that had grown into programs**
   (#218). Same issue as the ones fixed in v2.9.1/v2.9.3, missed in that
