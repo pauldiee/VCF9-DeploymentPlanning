@@ -30,13 +30,17 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.3.0
+    Version : 1.3.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.3.1  2026-07-28  PD  Dropped ConfirmImpact from High to Medium -- the
+                            per-host "Are you sure?" prompt was redundant on
+                            top of the interactive cluster/host picker.
+                            -WhatIf and an explicit -Confirm still work (#221)
     v1.3.0  2026-07-28  PD  Interactive host/cluster picker: when no -VMHost is
                             given, lists every cluster (with host counts) and
                             host (with its cluster) it found, and prompts for
@@ -131,7 +135,7 @@
     Connects to a lab/PoC vCenter with a self-signed certificate, ignoring
     the invalid-certificate error for this session.
 #>
-[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [string]$VCenter,
     [System.Management.Automation.PSCredential]$Credential,
@@ -144,7 +148,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.3.0'
+    $scriptVersion = '1.3.1'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

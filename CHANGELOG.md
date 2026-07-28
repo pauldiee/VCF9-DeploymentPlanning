@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.4 — 2026-07-28
+- **Set-ESXCoredump.ps1: dropped the redundant per-host confirm prompt** (#221).
+  `ConfirmImpact = 'High'` made PowerShell ask "Are you sure?" per host on top
+  of the interactive cluster/host picker the script already runs. v1.3.1 uses
+  `Medium`, which the default `$ConfirmPreference` doesn't auto-prompt for;
+  `-WhatIf` and an explicit `-Confirm` are unaffected.
+
 ## v3.0.3 — 2026-07-28
 - **Set-ESXCoredump.ps1: interactive cluster/host picker** (#221). Previously
   the host-scope prompt was a blind free-text "type a comma list" with nothing
