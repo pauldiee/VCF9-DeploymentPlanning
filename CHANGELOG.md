@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.0.5 — 2026-07-28
+- **New: fleet SSO configuration build guide** (#222). `docs/12-sso-configuration.md`
+  covers the Day-2 *configuration* half that neither `prerequisites.md` (prep
+  only) nor `06-deployment-plan.md` story 8.5 (a one-paragraph acceptance
+  item) actually walked through: the identity-provider wizard on the VCF
+  Identity Broker, federating vCenter (automatic, overrides existing IdP
+  config) and NSX (explicit, separate role step), VCF Operations and VCF
+  Automation (both explicit; Automation also has an independent native-LDAP
+  path, flagged as a fork in the road), Log Management and vSphere Supervisor
+  (both via a generic OIDC "Other Component"), the VCF Operations for
+  Networks exception (its own separate direct LDAP, no broker federation at
+  all), per-product role assignment, and troubleshooting. Cross-linked from
+  `prerequisites.md` and `06-deployment-plan.md` story 8.5.
+
 ## v3.0.4 — 2026-07-28
 - **Set-ESXCoredump.ps1: dropped the redundant per-host confirm prompt** (#221).
   `ConfirmImpact = 'High'` made PowerShell ask "Are you sure?" per host on top

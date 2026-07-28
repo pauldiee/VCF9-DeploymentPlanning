@@ -977,6 +977,11 @@ identity source up front; it has specific inputs and well-known gotchas.
 > on TechDocs. These are deliberately the **9.0** pages — the 9.1 doc set does
 > not republish the SSO setup section, so 9.0 is the newest published version.
 
+Once this prep is done, the actual configuration — the identity-provider
+wizard, federating vCenter/NSX/VCF Operations/VCF Automation/Supervisor/Log
+Management, and role assignment per product — is
+[`12-sso-configuration.md`](12-sso-configuration.md).
+
 ## Host Overlay TEP addressing (static IP pool recommended)
 
 *When needed: **Bring-up.*** The Installer asks for the pool (or expects DHCP)
