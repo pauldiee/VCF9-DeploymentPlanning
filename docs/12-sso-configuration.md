@@ -14,6 +14,22 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 > Management Services — no opt-in, nothing to install here. Everything below
 > is Day-2 *configuration* of an appliance that has been up since bring-up.
 
+> **Navigation confirmed against a real 9.1.0.0200 lab (screenshot-verified
+> 2026-07-29).** Everything below lives under one place: **VCF Operations →
+> Manage → Fleet Management → Identity & Access**, which has its own sub-nav
+> (**VCF SSO Overview**, **VCF Roles**, **vCenter Custom Roles**, **IAM
+> Settings** — all four are real, distinct sections, not just release-notes
+> vaporware). The **VCF SSO Overview** page itself is one screen with a
+> **Config View / Topology View** toggle, summary counters (VCF Instance
+> Status / VCF Management Status / Configured Other Components), a **VCF
+> SSO** table listing the Identity Broker(s) with a **CONFIGURE NEW VCF SSO**
+> button, and three tabs underneath — **VCF Instances**, **VCF Management**,
+> **Other Components** — each with its own **JOIN VCF SSO** / **ADD
+> COMPONENT** action and a **JOIN VCF SSO** bulk button. Some of the
+> per-component click-paths below are still sourced from blog write-ups
+> against an earlier UI revision and are flagged where that's the case — the
+> overall grouping above is what's actually on screen in 9.1.
+
 ## Contents
 
 | # | Section | Use it when |
@@ -23,7 +39,7 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 | 3 | [Step 2 — Configure the identity provider](#step-2--configure-the-identity-provider) | Pointing the broker at AD/LDAP |
 | 4 | [Step 3 — Federate vCenter and NSX](#step-3--federate-vcenter-and-nsx) | vCenter is automatic; NSX is not |
 | 5 | [Step 4 — Federate VCF Operations and VCF Automation](#step-4--federate-vcf-operations-and-vcf-automation) | Both need an explicit connect step |
-| 6 | [Step 5 — Federate everything else](#step-5--federate-everything-else) | Supervisor, Log Management, the Operations-for-Networks exception |
+| 6 | [Step 5 — Federate everything else](#step-5--federate-everything-else) | Supervisor, Log Management, and the unsettled VCF Operations for Networks question |
 | 7 | [Step 6 — Assign roles per product](#step-6--assign-roles-per-product) | The step every product needs, done separately, every time |
 | 8 | [Verification & troubleshooting](#8-verification--troubleshooting) | Login loops, invalid redirect URL, all-AD-fails-at-once |
 | 9 | [Field notes](#9-field-notes) | Gotchas that don't fit anywhere else above |
@@ -45,7 +61,7 @@ sub-pages. Decide what you're actually federating before you start clicking:
 | **VCF Automation** | Yes | Yes — its own connect step; **also has a separate native-LDAP path independent of the broker** (see §5) |
 | **VCF Operations for Logs** (Log Management) | Yes | Yes — an OIDC client generated on the broker side, pasted into the product's own Authentication settings |
 | **vSphere Supervisor** | Yes, but **not inherited from vCenter** | Yes — Supervisor has its own external-IdP config, added as a generic "Other Component" on the broker |
-| **VCF Operations for Networks** | **No** | Not applicable — it authenticates via its **own direct LDAP/AD** integration (`Profile → Settings → LDAP`), entirely separate from the broker |
+| **VCF Operations for Networks** | **Unclear — conflicting evidence** | Community write-ups describe a separate direct LDAP/AD integration (`Profile → Settings → LDAP`) with no broker federation at all. But the live 9.1.0.0200 **Other Components** tab explicitly names *"VCF Operations for Networks"* as an example product you can add there — screenshot-verified 2026-07-29. Don't assume either claim; try adding it as an Other Component first, and confirm in your own environment before writing this off as broker-incompatible |
 | **SDDC Manager** | No interactive login via SSO | Only local domain users can log into its UI; its **API** does accept SSO-authenticated tokens |
 
 > **Rainpole-style placeholders throughout:** `vc-mgmt-01.sfo.example.io`,
@@ -68,8 +84,8 @@ wizard:
   Services being rebuilt.
 
 Both are configured from the same place: **VCF Operations → Fleet Management
-→ Identity & Access**, select the **VCF Instance**, then pick the deployment
-mode before continuing to identity-provider configuration.
+→ Identity & Access → VCF SSO Overview → CONFIGURE NEW VCF SSO**. Pick the
+deployment mode before continuing to identity-provider configuration.
 
 ---
 
@@ -98,19 +114,31 @@ touch vCenter, NSX, or anything else — that's Steps 3–5.
 
 ## Step 3 — Federate vCenter and NSX
 
-Same screen, two very different behaviours:
+**VCF SSO Overview → VCF Instances tab** — a bulk **JOIN VCF SSO** button, and
+a table of VCF instances with a **# of Components Configured** count. Click
+into an instance (e.g. `instance-a`) to see its **Components** list — each
+management-domain vCenter and NSX Manager, per VCF domain, each with its own
+**Configured / Not configured** status. (This replaces the "Component
+Configuration grid" wording from earlier community write-ups — in 9.1.0.0200
+it's this per-instance Components list.) Both components can show **Not
+configured** simultaneously until the identity provider itself is finished —
+seeing that doesn't yet confirm or contradict which of the two auto-configures
+once the IdP step completes; that distinction below is still sourced from
+blog write-ups pending a full walk-through in this repo.
 
-- **vCenter** — pick it in the **Component Configuration** grid and it is
-  **already configured automatically** as part of enabling SSO; there is
+Two very different behaviours once you do configure each:
+
+- **vCenter** — reported (not yet screenshot-confirmed end-to-end in this
+  repo) to be **already configured automatically** as part of enabling SSO;
   nothing further to click for the management-domain vCenter. **Caveat:**
   once SSO is enabled, **any existing identity-provider configuration already
   on that vCenter is overridden** by the VCF SSO configuration — if you bound
   vCenter SSO directly to AD earlier (the "optional, not recommended" path in
   [`06-deployment-plan.md` story 6.3](06-deployment-plan.md)), this replaces
   it.
-- **NSX Manager** — **not automatic.** Select **NSX Manager** in the same
-  Component Configuration grid and click **Configure Component** explicitly.
-  This pushes the identity configuration to NSX, but **role assignment is a
+- **NSX Manager** — reported **not automatic** — click its row in the
+  Components list to configure it explicitly, separate from vCenter. This
+  pushes the identity configuration to NSX, but **role assignment is a
   separate manual step performed inside NSX Manager itself**, not on the
   broker:
   1. Log into NSX Manager directly (switch to the **local account**, e.g.
@@ -132,8 +160,15 @@ understand the requirement to perform role assignments…"*) before
 
 ## Step 4 — Federate VCF Operations and VCF Automation
 
-Neither inherits SSO automatically; each is its own connect flow under
-**Fleet Management → Identity & Access → VCF Management**:
+Neither inherits SSO automatically; both live together on **VCF SSO Overview
+→ VCF Management tab** — a table listing **Automation Appliance** and
+**Operations Appliance** side by side, each with its own **Status** (e.g.
+*Not configured*) and a **Client Secret** column with a **REGENERATE**
+action, plus a bulk **JOIN VCF SSO** button (screenshot-verified
+2026-07-29). The per-appliance click-through wizard steps below are still
+sourced from community write-ups against an earlier UI and haven't been
+walked screen-by-screen against 9.1.0.0200 in this repo yet — the table
+layout above is confirmed, the exact wizard screens it opens are not:
 
 **VCF Operations:**
 1. Select the **operations appliance** → **Continue**.
@@ -170,9 +205,16 @@ Neither inherits SSO automatically; each is its own connect flow under
 
 ## Step 5 — Federate everything else
 
+The real entry point (screenshot-verified 2026-07-29) is **VCF SSO Overview
+→ Other Components tab → ADD COMPONENT** — the tab's own subtitle names
+**VCF Operations HCX, Log Management, and VCF Operations for Networks** as
+example candidates, confirming this generic path covers more than just
+Supervisor. The click-through steps below for each are still sourced from
+community write-ups pending a full screen-by-screen walk-through here.
+
 **Log Management (VCF Operations for Logs)** — an OIDC client generated on
 the broker side, pasted into the product's own settings:
-1. **Identity & Access → VCF Other Components → Continue** — name it, pick
+1. **Other Components → ADD COMPONENT** — name it, pick
    **Identity Broker**, select the VCF instance, set the redirect URI to
    `https://<logs-fqdn>/login?authMethod=VIDB`, **Generate OIDC Client**, copy
    the **Issuer URL / Client ID / Client Secret**, **Save**.
@@ -187,10 +229,10 @@ the broker side, pasted into the product's own settings:
 inherit federation from vCenter even when vCenter itself is federated:
 1. **vSphere Client → Supervisor Cluster → Configure → Identity Providers** —
    note the callback/redirect URL shown here.
-2. **VCF Operations → Fleet Management → Identity & Access → VCF SSO
-   Overview → Other Components → Add Component** — name it, pick the
-   Identity Broker, paste the redirect URL, click **regenerate Client
-   ID/Secret**. Record the **Issuer URL**, **Client ID**, **Client Secret**.
+2. **VCF SSO Overview → Other Components tab → ADD COMPONENT** — name it,
+   pick the Identity Broker, paste the redirect URL, click **regenerate
+   Client ID/Secret**. Record the **Issuer URL**, **Client ID**, **Client
+   Secret**.
 3. Extract the broker's root CA (adjust for your shell):
    ```bash
    openssl s_client -connect vcf-idb-01.sfo.example.io:443 -showcerts </dev/null 2>/dev/null | openssl x509 -outform PEM
@@ -207,11 +249,15 @@ inherit federation from vCenter even when vCenter itself is federated:
    auto-generate the Kubernetes `ClusterRoleBindings` — there's no separate
    Supervisor RBAC step to configure.
 
-**VCF Operations for Networks — the exception.** This product does **not**
-federate with the Identity Broker at all in 9.1. It authenticates against AD
-directly and separately, under its own **Profile → Settings → LDAP** (LDAPS
-port 636). If you're expecting one login across the whole fleet, this is the
-one product that still needs its own credential.
+**VCF Operations for Networks — conflicting evidence, not a settled
+exception.** Community write-ups describe this product authenticating
+against AD directly and separately, under its own **Profile → Settings →
+LDAP** (LDAPS port 636), with no broker path at all. But the live 9.1.0.0200
+**Other Components** tab explicitly lists **VCF Operations for Networks** as
+an example you can add there via the same generic OIDC-client mechanism as
+Log Management and Supervisor. **Try the Other Components path first** and
+fall back to the direct-LDAP method only if that genuinely doesn't work in
+your build — don't assume the older blog claim still holds in 9.1.
 
 **Other components (HCX, VCF Operations Orchestrator) and scripted/PowerCLI
 access** follow the same generic pattern as Supervisor above — add them as an
@@ -231,16 +277,18 @@ is no single fleet-wide "assign this group as admin everywhere" screen. Plan
 which AD groups map to which roles **before** you start federating (§1's
 table), not after.
 
-> **9.1 "VCF Roles" — verify before you rely on it.** VCF 9.1 release notes
-> describe a new fleet-wide **VCF Roles** capability: custom roles built by
-> combining permissions from multiple components, assignable **once** during
-> SSO configuration rather than per-product, plus automatic vCenter
-> custom-role sync (with drift detection) across multiple vCenter/VCF
-> instances. No step-by-step TechDocs procedure for it was found at the time
-> of writing — this appears to **layer on top of**, not replace, the
-> per-product role assignment above. Confirm its actual behaviour in your own
-> environment before designing a role model around it; don't take this
-> paragraph's word for it.
+> **9.1 "VCF Roles" — confirmed real, workflow not yet walked through here.**
+> VCF 9.1 release notes describe a new fleet-wide **VCF Roles** capability:
+> custom roles built by combining permissions from multiple components,
+> assignable **once** during SSO configuration rather than per-product, plus
+> automatic **vCenter custom-role sync** (with drift detection) across
+> multiple vCenter/VCF instances. This is **screenshot-confirmed as a real UI
+> section** (2026-07-29, build 9.1.0.0200) — **Identity & Access** has its own
+> **VCF Roles** and **vCenter Custom Roles** entries alongside VCF SSO
+> Overview, not just release-notes text. What's still unverified is the
+> *behaviour*: whether it fully replaces per-product role assignment or
+> layers on top of it. Confirm that in your own environment before designing
+> a role model around it.
 
 ---
 
@@ -291,6 +339,12 @@ table), not after.
 
 ## 10. References
 
+- **Screenshot-verified 2026-07-29, build 9.1.0.0200** (Paul's own lab, no
+  external URL — this is why some claims above are marked "confirmed" and
+  others still "sourced from community write-ups"): the overall
+  navigation structure (§ intro), the Other Components tab's example list
+  including VCF Operations for Networks (§1, §5), and the existence of the
+  VCF Roles / vCenter Custom Roles sections (§7).
 - TechDocs (the 9.1 doc set does not republish the SSO setup section, so
   these are the newest published pages — 9.0 is current for this workflow):
   [Setting Up SSO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso.html),

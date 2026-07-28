@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.0.7 — 2026-07-29
+- **Corrected docs/12-sso-configuration.md against a real 9.1.0.0200 lab**
+  (#222). The doc's navigation was sourced from blog write-ups against an
+  earlier UI; screenshots from Paul's lab confirmed the actual structure —
+  everything lives under **Identity & Access** (sub-nav: VCF SSO Overview,
+  VCF Roles, vCenter Custom Roles, IAM Settings), with the overview page's
+  **VCF Instances / VCF Management / Other Components** tabs replacing the
+  blogged "Component Configuration grid" wording. Also corrected the VCF
+  Operations for Networks claim from a flat "doesn't federate with the
+  broker" to "conflicting evidence" — the live Other Components tab
+  explicitly lists it as an addable candidate, contradicting the blog
+  source. Confirmed **VCF Roles** and **vCenter Custom Roles** are real UI
+  sections, not just release-notes text (behaviour still unverified).
+
 ## v3.0.6 — 2026-07-28
 - **New field note: manually decrypting a VCSA `.enc` backup piece** (#223).
   `docs/08-backup-target.md` section 7. Field-verified 2026-07-28: neither
