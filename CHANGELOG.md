@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.2 — 2026-07-29
+- **Fix: Reference section now open by default.** v3.1.1 misread "not by
+  default" as "closed by default" — corrected to open unconditionally; still
+  a native, user-collapsible `<details>` element.
+
 ## v3.1.1 — 2026-07-29
 - **Reference section is now collapsible** (native `<details>`/`<summary>`,
   no JS). Closed by default, but auto-opens when the active page is one of

@@ -86,7 +86,7 @@ const referenceItems = NAV.filter((item) => item.step === 'Reference');
     </span>
   </a>
 
-  <details class="sidebar__reference sidebar__eyebrow--spaced" open={referenceItems.some((item) => active === item.slug) || active === 'version-overview'}>
+  <details class="sidebar__reference sidebar__eyebrow--spaced" open>
     <summary class="sidebar__eyebrow itq-eyebrow sidebar__reference-summary">Reference</summary>
     <a
       class:list={['sidebar__link', { 'is-active': active === 'version-overview' }]}
