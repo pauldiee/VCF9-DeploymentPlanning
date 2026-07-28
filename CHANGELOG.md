@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.1.0 — 2026-07-29
+- **Leaner sidebar: build guides moved into the Reference section.** The 7
+  `step: 'Reference'` docs (Firewall & Ports, Backup Target, Binary Depot,
+  Supervisor, ESX Coredump, SSO Configuration, Workbook Mapping) previously
+  rendered inline in the flat "Planning flow" list, pushing the actual
+  1-through-Delivery sequence down and making the nav feel oversized. They
+  now render under the existing "Reference" eyebrow (next to Version
+  Overview) instead, so "Planning flow" reads as the short intended sequence
+  again. `web/src/components/Sidebar.astro` now filters `NAV` by `step` into
+  two groups instead of rendering one flat list.
+
 ## v3.0.9 — 2026-07-29
 - **Corrected: vCenter does not auto-configure with the Identity Broker**
   (#222). Field-verified 2026-07-29: the doc's earlier claim that vCenter

@@ -12,6 +12,8 @@ const planExportHref = withBase('tools/deployment-plan/');
 const planTrackerHref = withBase('tools/plan-tracker/');
 const testPlanHref = withBase('tools/test-plan/');
 const versionOverviewHref = withBase('version-overview/');
+const flowItems = NAV.filter((item) => item.step !== 'Reference');
+const referenceItems = NAV.filter((item) => item.step === 'Reference');
 ---
 
 <aside class="sidebar" aria-label="Planning docs">
@@ -19,7 +21,7 @@ const versionOverviewHref = withBase('version-overview/');
   <nav>
     <ol class="sidebar__list">
       {
-        NAV.map((item) => (
+        flowItems.map((item) => (
           <li>
             <a
               class:list={['sidebar__link', { 'is-active': active === item.slug }]}
@@ -96,6 +98,21 @@ const versionOverviewHref = withBase('version-overview/');
       <span class="sidebar__label">VCF 9.1 Version Overview</span>
     </span>
   </a>
+  {
+    referenceItems.map((item) => (
+      <a
+        class:list={['sidebar__link', { 'is-active': active === item.slug }]}
+        href={href(item.slug)}
+        aria-current={active === item.slug ? 'page' : undefined}
+      >
+        <i class={`fa-solid fa-${item.icon} sidebar__icon`} aria-hidden="true" />
+        <span class="sidebar__text">
+          <span class="sidebar__step">{item.step}</span>
+          <span class="sidebar__label">{item.label}</span>
+        </span>
+      </a>
+    ))
+  }
 
   <p class="sidebar__eyebrow itq-eyebrow sidebar__eyebrow--spaced">Example</p>
   <a class="sidebar__link" href={sampleHref}>
