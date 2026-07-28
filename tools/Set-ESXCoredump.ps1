@@ -30,13 +30,27 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.3.1
+    Version : 1.4.0
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.4.0  2026-07-28  PD  Reworked every prompt: one shared question/hint/
+                            default layout, input validated and re-asked on bad
+                            answers (port range, vmk name, y/n) instead of
+                            throwing or silently accepting, -CollectorAddress
+                            now defaults to the vCenter, firewall question moved
+                            up with the other inputs so the settings summary
+                            covers it. Fixed: clusters and hosts shared one
+                            number range in the picker, so host numbers at or
+                            below the cluster count could never be selected --
+                            they are now C1..Cn and H1..Hn, unresolved entries
+                            are reported rather than passed through as a host
+                            name, duplicate picks are collapsed, and the
+                            selection is echoed back before anything is
+                            written (#221)
     v1.3.1  2026-07-28  PD  Dropped ConfirmImpact from High to Medium -- the
                             per-host "Are you sure?" prompt was redundant on
                             top of the interactive cluster/host picker.
@@ -82,7 +96,7 @@
 .PARAMETER CollectorAddress
     FQDN or IP of the Dump Collector server every host will be pointed at --
     typically the vCenter itself, or a standalone ESXi Dump Collector.
-    Prompted for if not supplied.
+    Prompted for if not supplied, defaulting to the vCenter being used.
 
 .PARAMETER CollectorPort
     UDP port the Dump Collector listens on. Defaults to 6500. Prompted for
@@ -97,13 +111,13 @@
 .PARAMETER VMHost
     One or more host names/FQDNs to target instead of every host in the
     vCenter. Accepts pipeline input. If not supplied (and nothing is piped
-    in), the script lists every cluster and host it found and prompts for
-    'A' (all), or a comma-separated list of cluster/host numbers or names
-    from that list.
+    in), the script lists every cluster (C1..Cn) and host (H1..Hn) it found
+    and prompts for 'A' (all), or a comma-separated list of those numbers or
+    of cluster/host names.
 
 .PARAMETER SkipFirewallCheck
     Skip confirming/enabling the vSphereCoredumpClient firewall ruleset per
-    host.
+    host. Prompted for if not supplied (default: check it).
 
 .PARAMETER SkipInvalidCertificateCheck
     Ignore untrusted/self-signed vCenter certificates for this session
@@ -148,7 +162,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.3.1'
+    $scriptVersion = '1.4.0'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -179,33 +193,117 @@ begin {
         if ($var -and $var.Value) { $var.Value } else { @() }
     }
 
+    # --- Prompt helpers -----------------------------------------------------
+    # Every interactive question goes through these so they all look the same:
+    # a bold question, dim explanatory lines, the default spelled out, and a
+    # bare "  >" input line. Nothing is accepted until it validates.
+
+    function Write-PromptBlock {
+        param([string]$Label, [string]$Hint, [string]$DefaultText)
+
+        Write-Host ''
+        Write-Host "  $Label" -ForegroundColor White
+        if ($Hint) {
+            foreach ($line in ($Hint -split "`n")) { Write-Host "    $line" -ForegroundColor DarkGray }
+        }
+        if ($DefaultText) { Write-Host "    $DefaultText" -ForegroundColor DarkGray }
+    }
+
+    function Read-PromptText {
+        param(
+            [Parameter(Mandatory)][string]$Label,
+            [string]$Hint,
+            [string]$Default,
+            [switch]$Required,
+            [scriptblock]$Validate,
+            [string]$ValidationHint
+        )
+
+        while ($true) {
+            $defaultText = if ($Default) { "Press Enter to accept the default: $Default" }
+                           elseif ($Required) { 'Required - there is no default.' }
+                           else { $null }
+            Write-PromptBlock -Label $Label -Hint $Hint -DefaultText $defaultText
+
+            $answer = (Read-Host '  >').Trim()
+
+            if (-not $answer) {
+                if ($Default) { return $Default }
+                if (-not $Required) { return '' }
+                Write-Host '    ! A value is required here.' -ForegroundColor Yellow
+                continue
+            }
+            if ($Validate -and -not (& $Validate $answer)) {
+                Write-Host "    ! $ValidationHint" -ForegroundColor Yellow
+                continue
+            }
+            return $answer
+        }
+    }
+
+    function Read-PromptYesNo {
+        param(
+            [Parameter(Mandatory)][string]$Label,
+            [string]$Hint,
+            [Parameter(Mandatory)][bool]$Default
+        )
+
+        $suffix      = if ($Default) { '[Y/n]' } else { '[y/N]' }
+        $defaultText = 'Press Enter to accept the default: {0}' -f $(if ($Default) { 'yes' } else { 'no' })
+
+        while ($true) {
+            Write-PromptBlock -Label "$Label $suffix" -Hint $Hint -DefaultText $defaultText
+            $answer = (Read-Host '  >').Trim()
+
+            if (-not $answer) { return $Default }
+            if ($answer -match '^(y|yes)$') { return $true }
+            if ($answer -match '^(n|no)$')  { return $false }
+            Write-Host '    ! Please answer y or n (or press Enter for the default).' -ForegroundColor Yellow
+        }
+    }
+
     # -VCenter: always prompt if not passed on the command line, even when a
     # PowerCLI connection already exists -- don't silently assume it's the
     # right one.
     if (-not $PSBoundParameters.ContainsKey('VCenter')) {
-        $existing = (Get-ExistingVIServers) -join ', '
-        $prompt = if ($existing) {
-            "vCenter FQDN or IP to connect to (leave blank to use the existing connection: $existing)"
+        $existing = @(Get-ExistingVIServers)
+        if ($existing.Count -gt 0) {
+            $VCenter = Read-PromptText -Label 'Which vCenter should the hosts be read from?' -Hint (
+                "Enter an FQDN or IP to connect to a vCenter now.`n" +
+                "Or press Enter to reuse the PowerCLI session already connected to:`n" +
+                "  $($existing -join ', ')`n" +
+                'A reused session is left connected when the script finishes.')
         }
         else {
-            "vCenter FQDN or IP to connect to (REQUIRED -- no existing PowerCLI connection found)"
-        }
-        $VCenter = Read-Host $prompt
-        while (-not $VCenter -and -not $existing) {
-            $VCenter = Read-Host $prompt
+            $VCenter = Read-PromptText -Label 'Which vCenter should the hosts be read from?' -Required -Hint (
+                "FQDN or IP, for example vc01.sfo.example.io.`n" +
+                'No PowerCLI session is connected yet, so this is needed to continue.'
+            ) -Validate { param($v) $v -notmatch '\s' -and $v -notmatch '^[a-z]+://' } `
+              -ValidationHint 'Enter a bare hostname or IP - no spaces, and no https:// prefix.'
         }
     }
 
     $ownsConnection = $false
     if ($VCenter) {
-        if (-not $Credential) {
-            $Credential = Get-Credential -Message "vCenter credentials for $VCenter"
+        if (-not $PSBoundParameters.ContainsKey('SkipInvalidCertificateCheck')) {
+            $SkipInvalidCertificateCheck = Read-PromptYesNo -Default $false -Label (
+                "Ignore an untrusted or self-signed certificate on $VCenter" + '?') -Hint (
+                "Answer yes for lab and PoC vCenters that still use their self-signed cert.`n" +
+                'Answer no in production, where the CA chain should be trusted instead.')
         }
 
-        if (-not $PSBoundParameters.ContainsKey('SkipInvalidCertificateCheck')) {
-            $certInput = Read-Host "Ignore untrusted/self-signed vCenter certificate for this session? (y/N) [default: N]"
-            if ($certInput -and $certInput.Trim() -match '^y') { $SkipInvalidCertificateCheck = $true }
+        if (-not $Credential) {
+            Write-Host ''
+            Write-Host "  Credentials for $VCenter" -ForegroundColor White
+            Write-Host '    A credential window follows - use an SSO account such as' -ForegroundColor DarkGray
+            Write-Host '    administrator@vsphere.local that may run esxcli on the hosts.' -ForegroundColor DarkGray
+            $Credential = Get-Credential -Message "vCenter credentials for $VCenter"
+            if (-not $Credential) {
+                Write-Host "`nNo credentials entered - nothing was changed." -ForegroundColor Red
+                exit 1
+            }
         }
+
         if ($SkipInvalidCertificateCheck) {
             Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session -Confirm:$false | Out-Null
             Write-Host "Ignoring invalid/self-signed certificates for this session." -ForegroundColor Yellow
@@ -237,33 +335,49 @@ begin {
 
     # -CollectorAddress: mandatory, so keep prompting until something is entered.
     if (-not $PSBoundParameters.ContainsKey('CollectorAddress') -or -not $CollectorAddress) {
-        while (-not $CollectorAddress) {
-            $CollectorAddress = Read-Host "Dump Collector server address (FQDN or IP) -- this is REQUIRED"
-        }
+        $collectorHint = "FQDN or IP of the machine running the ESXi Dump Collector service.`n" +
+                         'Usually the vCenter itself, or a standalone Dump Collector appliance.'
+        if ($VCenter) { $collectorHint += "`nPress Enter to use this vCenter: $VCenter" }
+
+        $CollectorAddress = Read-PromptText -Label 'Where should the hosts send their coredumps?' `
+            -Hint $collectorHint -Default $VCenter -Required:([bool](-not $VCenter)) `
+            -Validate { param($v) $v -notmatch '\s' -and $v -notmatch '^[a-z]+://' } `
+            -ValidationHint 'Enter a bare hostname or IP - no spaces, and no https:// prefix.'
     }
 
     # -CollectorPort: optional, defaults to 6500.
-    if (-not $PSBoundParameters.ContainsKey('CollectorPort')) {
-        $portInput = Read-Host "Dump Collector UDP port [default: 6500]"
-        $CollectorPort = if ($portInput) { [int]$portInput } else { 6500 }
-    }
-    elseif (-not $CollectorPort) {
-        $CollectorPort = 6500
+    if (-not $PSBoundParameters.ContainsKey('CollectorPort') -or -not $CollectorPort) {
+        $CollectorPort = [int](Read-PromptText -Label 'Which UDP port is the Dump Collector listening on?' `
+            -Hint 'Leave this alone unless the collector was set up on a non-standard port.' `
+            -Default '6500' `
+            -Validate { param($v) $n = 0; [int]::TryParse($v, [ref]$n) -and $n -ge 1 -and $n -le 65535 } `
+            -ValidationHint 'Enter a port number between 1 and 65535.')
     }
 
     # -InterfaceName: optional, defaults to vmk0.
-    if (-not $PSBoundParameters.ContainsKey('InterfaceName')) {
-        $ifaceInput = Read-Host "VMkernel interface to send coredump traffic from [default: vmk0]"
-        $InterfaceName = if ($ifaceInput) { $ifaceInput } else { 'vmk0' }
+    if (-not $PSBoundParameters.ContainsKey('InterfaceName') -or -not $InterfaceName) {
+        $InterfaceName = Read-PromptText -Label 'Which VMkernel interface should carry the coredump traffic?' `
+            -Hint ("vmk0 is the management interface on a standard build.`n" +
+                   'Override only if management lives on a different vmk on these hosts.') `
+            -Default 'vmk0' `
+            -Validate { param($v) $v -match '^vmk\d+$' } `
+            -ValidationHint 'Enter a VMkernel interface name such as vmk0 or vmk1.'
     }
-    elseif (-not $InterfaceName) {
-        $InterfaceName = 'vmk0'
+
+    # -SkipFirewallCheck: asked here with the other inputs so the summary below
+    # covers everything the run will do.
+    if (-not $PSBoundParameters.ContainsKey('SkipFirewallCheck')) {
+        $SkipFirewallCheck = -not (Read-PromptYesNo -Default $true `
+            -Label 'Also check the vSphereCoredumpClient firewall ruleset on each host?' `
+            -Hint ("Coredumps silently never arrive when this outgoing ruleset is disabled.`n" +
+                   'Answering yes enables it on any host where it is off.'))
     }
 
     Write-Host "`n--- Confirmed settings ---" -ForegroundColor White
     Write-Host "  vCenter        : $(if ($VCenter) { $VCenter } else { '(existing connection)' })" -ForegroundColor Cyan
-    Write-Host "  Collector      : $CollectorAddress`:$CollectorPort" -ForegroundColor Cyan
+    Write-Host "  Collector      : $CollectorAddress`:$CollectorPort  (UDP)" -ForegroundColor Cyan
     Write-Host "  Interface      : $InterfaceName" -ForegroundColor Cyan
+    Write-Host "  Firewall check : $(if ($SkipFirewallCheck) { 'skipped' } else { 'enable vSphereCoredumpClient if disabled' })" -ForegroundColor Cyan
     Write-Host ('=' * 62) -ForegroundColor DarkCyan
 
     $targets = New-Object System.Collections.Generic.List[object]
@@ -289,48 +403,87 @@ end {
 
             $clusters = @($allHosts | Group-Object -Property { $_.Parent.Name } | Sort-Object Name)
 
-            Write-Host "`nClusters:" -ForegroundColor White
+            # Clusters are C1..Cn and hosts H1..Hn: one shared number range made
+            # every host number below the cluster count unreachable.
+            Write-Host "`n--- Hosts found in this vCenter ---" -ForegroundColor White
+            Write-Host "`n  Clusters" -ForegroundColor White
             for ($i = 0; $i -lt $clusters.Count; $i++) {
-                Write-Host ("  [{0}] {1} ({2} host(s))" -f ($i + 1), $clusters[$i].Name, $clusters[$i].Count) -ForegroundColor Cyan
+                Write-Host ("    [C{0}] {1}  ({2} host(s))" -f ($i + 1), $clusters[$i].Name, $clusters[$i].Count) -ForegroundColor Cyan
             }
 
-            Write-Host "`nHosts:" -ForegroundColor White
+            Write-Host "`n  Hosts" -ForegroundColor White
             for ($i = 0; $i -lt $allHosts.Count; $i++) {
-                Write-Host ("  [{0}] {1}  ({2})" -f ($i + 1), $allHosts[$i].Name, $allHosts[$i].Parent.Name) -ForegroundColor Cyan
+                Write-Host ("    [H{0}] {1}  ({2})" -f ($i + 1), $allHosts[$i].Name, $allHosts[$i].Parent.Name) -ForegroundColor Cyan
             }
 
-            $scopeInput = Read-Host "`nEnter 'A' for all, or a comma-separated list of cluster/host numbers or names [default: A]"
-            if ($scopeInput -and $scopeInput.Trim() -notmatch '^(a|all)$') {
+            $selectHint = "A          every one of the $($allHosts.Count) host(s) listed above`n" +
+                          "C1,C3      every host in those clusters`n" +
+                          "H2,H5      just those hosts`n" +
+                          'Cluster or host names work too - mix and match, comma-separated.'
+
+            while ($targets.Count -eq 0) {
+                $scopeInput = Read-PromptText -Label 'Which hosts should be configured?' -Hint $selectHint -Default 'A'
+                if ($scopeInput -match '^(a|all)$') { break }
+
                 foreach ($token in ($scopeInput -split ',')) {
                     $token = $token.Trim()
                     if (-not $token) { continue }
 
-                    $clusterIndex = 0
-                    if ([int]::TryParse($token, [ref]$clusterIndex) -and $clusterIndex -ge 1 -and $clusterIndex -le $clusters.Count) {
-                        $clusters[$clusterIndex - 1].Group | ForEach-Object { $targets.Add($_.Name) }
+                    $index = 0
+                    if ($token -match '^[Cc](\d+)$') {
+                        $index = [int]$Matches[1]
+                        if ($index -ge 1 -and $index -le $clusters.Count) {
+                            $clusters[$index - 1].Group | ForEach-Object { $targets.Add($_.Name) }
+                        }
+                        else {
+                            Write-Host "    ! No cluster [C$index] in the list - ignored." -ForegroundColor Yellow
+                        }
                         continue
                     }
 
-                    $hostIndex = 0
-                    if ([int]::TryParse($token, [ref]$hostIndex) -and $hostIndex -ge 1 -and $hostIndex -le $allHosts.Count) {
-                        $targets.Add($allHosts[$hostIndex - 1].Name)
+                    if ($token -match '^[Hh]?(\d+)$') {
+                        $index = [int]$Matches[1]
+                        if ($index -ge 1 -and $index -le $allHosts.Count) {
+                            $targets.Add($allHosts[$index - 1].Name)
+                        }
+                        else {
+                            Write-Host "    ! No host [H$index] in the list - ignored." -ForegroundColor Yellow
+                        }
                         continue
                     }
 
-                    $matchedCluster = $clusters | Where-Object { $_.Name -eq $token }
-                    if ($matchedCluster) {
-                        $matchedCluster.Group | ForEach-Object { $targets.Add($_.Name) }
+                    $matchedCluster = @($clusters | Where-Object { $_.Name -eq $token })
+                    if ($matchedCluster.Count -gt 0) {
+                        $matchedCluster[0].Group | ForEach-Object { $targets.Add($_.Name) }
                         continue
                     }
 
-                    $targets.Add($token)
+                    $matchedHost = @($allHosts | Where-Object { $_.Name -eq $token })
+                    if ($matchedHost.Count -gt 0) {
+                        $targets.Add($matchedHost[0].Name)
+                        continue
+                    }
+
+                    Write-Host "    ! '$token' is not a cluster or host in the list - ignored." -ForegroundColor Yellow
+                }
+
+                if ($targets.Count -eq 0) {
+                    Write-Host '    ! Nothing selected. Pick at least one entry, or A for all.' -ForegroundColor Yellow
                 }
             }
-        }
 
-        if (-not $PSBoundParameters.ContainsKey('SkipFirewallCheck')) {
-            $fwInput = Read-Host "Confirm/enable the vSphereCoredumpClient firewall ruleset on each host? (Y/n) [default: Y]"
-            if ($fwInput -and $fwInput.Trim() -match '^n') { $SkipFirewallCheck = $true }
+            # Overlapping picks (a cluster plus one of its hosts) would configure
+            # the same host twice.
+            $unique = New-Object System.Collections.Generic.List[object]
+            foreach ($t in $targets) { if (-not $unique.Contains($t)) { $unique.Add($t) } }
+            $targets = $unique
+
+            if ($targets.Count -gt 0) {
+                Write-Host "`n  Selected $($targets.Count) host(s): $($targets -join ', ')" -ForegroundColor Green
+            }
+            else {
+                Write-Host "`n  Selected all $($allHosts.Count) host(s)." -ForegroundColor Green
+            }
         }
 
         if ($targets.Count -gt 0) {

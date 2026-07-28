@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.1.3 — 2026-07-29
+- **Set-ESXCoredump.ps1 v1.4.0 — prompt/picker rework** (#221). One shared
+  question/hint/default layout across every prompt, with input validated and
+  re-asked on a bad answer (port range, vmk name, y/n) instead of throwing or
+  silently accepting. `-CollectorAddress` now defaults to the vCenter being
+  used. The firewall question moved up with the other inputs so the settings
+  summary covers it. Fixed: clusters and hosts shared one number range in the
+  interactive picker, so host numbers at or below the cluster count could
+  never be selected — they're now `C1..Cn` / `H1..Hn`, unresolved entries are
+  reported instead of passed through as a host name, duplicate picks are
+  collapsed, and the selection is echoed back before anything is written.
+
 ## v3.1.2 — 2026-07-29
 - **Fix: Reference section now open by default.** v3.1.1 misread "not by
   default" as "closed by default" — corrected to open unconditionally; still
