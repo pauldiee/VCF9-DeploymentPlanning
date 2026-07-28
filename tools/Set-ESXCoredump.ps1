@@ -30,13 +30,17 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.1.2
+    Version : 1.1.3
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.1.3  2026-07-28  PD  Connect-VIServer SSL failures now suggest
+                            Set-PowerCLIConfiguration -InvalidCertificateAction
+                            Ignore instead of just printing the raw exception
+                            (self-signed/untrusted vCenter certs) (#221)
     v1.1.2  2026-07-28  PD  Fixed: under Set-StrictMode, referencing
                             $global:DefaultVIServers before PowerCLI has ever
                             connected in the session threw "variable cannot be
@@ -115,7 +119,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.1.2'
+    $scriptVersion = '1.1.3'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -175,6 +179,12 @@ begin {
         }
         catch {
             Write-Host "`nCould not connect to $VCenter : $($_.Exception.Message)" -ForegroundColor Red
+            if ($_.Exception.Message -match 'SSL connection could not be established') {
+                Write-Host "  This is usually a self-signed/untrusted vCenter certificate. If that's" -ForegroundColor DarkGray
+                Write-Host "  expected in this environment, allow it for this PowerShell session with:" -ForegroundColor DarkGray
+                Write-Host "    Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session -Confirm:`$false" -ForegroundColor White
+                Write-Host "  then re-run this script." -ForegroundColor DarkGray
+            }
             exit 1
         }
     }

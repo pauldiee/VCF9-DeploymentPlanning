@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.0 — 2026-07-28
+- **Set-ESXCoredump.ps1: clearer guidance on SSL connection failures** (#221).
+  A self-signed/untrusted vCenter certificate previously surfaced as a raw
+  `Connect-VIServer` exception. v1.1.3 recognizes that failure and points to
+  `Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session`
+  as the fix, when that's expected for the environment.
+
 ## v2.9.9 — 2026-07-28
 - **Fix: Set-ESXCoredump.ps1 crashed on first run in a fresh session** (#221).
   Under `Set-StrictMode`, referencing `$global:DefaultVIServers` before
