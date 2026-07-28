@@ -30,24 +30,27 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.1.0
+    Version : 1.1.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.1.1  2026-07-28  PD  -VCenter now always prompts when not passed on the
+                            command line, even with an existing PowerCLI
+                            connection, instead of silently reusing it (#221)
     v1.1.0  2026-07-28  PD  Prompt clearly for every input not supplied on the
                             command line, instead of relying on PowerShell's
                             unlabeled default mandatory-parameter prompt (#221)
     v1.0.0  2026-07-27  PD  Initial release -- per-host esxcli coredump network sweep (#221)
 
 .PARAMETER VCenter
-    FQDN or IP of the vCenter to connect to. If omitted and no existing
-    PowerCLI connection is found, the script prompts for it. Leave the
-    prompt blank to use an existing PowerCLI connection (from
-    Connect-VIServer) instead -- in that case nothing is disconnected when
-    the script finishes.
+    FQDN or IP of the vCenter to connect to. If omitted, the script always
+    prompts for it -- even when a PowerCLI connection already exists, so it
+    never silently assumes that's the right one. Leave the prompt blank to
+    use the existing connection instead (shown in the prompt); in that case
+    nothing is disconnected when the script finishes.
 
 .PARAMETER Credential
     Credentials for -VCenter. Prompted for if -VCenter is given (or entered
@@ -107,7 +110,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.1.0'
+    $scriptVersion = '1.1.1'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -133,10 +136,21 @@ begin {
 
     Write-Host "`n--- Inputs ---" -ForegroundColor White
 
-    # -VCenter: prompt only if not passed and there is no existing PowerCLI session.
-    if (-not $PSBoundParameters.ContainsKey('VCenter') -and
-        (-not $global:DefaultVIServers -or $global:DefaultVIServers.Count -eq 0)) {
-        $VCenter = Read-Host "vCenter FQDN or IP to connect to (leave blank to use an existing PowerCLI connection)"
+    # -VCenter: always prompt if not passed on the command line, even when a
+    # PowerCLI connection already exists -- don't silently assume it's the
+    # right one.
+    if (-not $PSBoundParameters.ContainsKey('VCenter')) {
+        $existing = $global:DefaultVIServers -join ', '
+        $prompt = if ($existing) {
+            "vCenter FQDN or IP to connect to (leave blank to use the existing connection: $existing)"
+        }
+        else {
+            "vCenter FQDN or IP to connect to (REQUIRED -- no existing PowerCLI connection found)"
+        }
+        $VCenter = Read-Host $prompt
+        while (-not $VCenter -and -not $existing) {
+            $VCenter = Read-Host $prompt
+        }
     }
 
     $ownsConnection = $false

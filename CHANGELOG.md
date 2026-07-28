@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.9.8 — 2026-07-28
+- **Set-ESXCoredump.ps1: -VCenter always prompts, even with an existing
+  connection** (#221). v2.9.7 only prompted for `-VCenter` when there was no
+  existing PowerCLI session; if one existed it was silently reused, which
+  could point the sweep at the wrong vCenter in a multi-connection session.
+  v1.1.1 always prompts unless `-VCenter` is passed, showing the existing
+  connection as the default to accept (blank) or override.
+
 ## v2.9.7 — 2026-07-28
 - **Set-ESXCoredump.ps1 now prompts clearly for every input** (#221). Previously
   `-CollectorAddress` relied on PowerShell's unlabeled default mandatory-parameter
