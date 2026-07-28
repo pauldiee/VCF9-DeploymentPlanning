@@ -362,7 +362,7 @@ const TP0: Entry[] = [
     steps: [
       'NFS — confirm the export is reachable and mounts on every host: `esxcli storage nfs add -H <nfs-server> -s <export-path> -v <datastore-name>` then `esxcli storage nfs list` (use `nfs41` in place of `nfs` for NFS 4.1).',
       'FC — rescan and confirm the LUN appears: `esxcli storage core adapter rescan --all` then `esxcli storage core device list | grep -E "Display Name|Size"`',
-      'Run the check across the WHOLE cluster in one go, because "it mounted on the first host" is the classic false pass: `Get-Cluster <name> | Get-VMHost | ForEach-Object { $m = $_ | Get-Datastore | Where-Object Name -eq "<datastore>"; "{0,-30} {1}" -f $_.Name, $(if ($m) { "MOUNTED" } else { "** MISSING **" }) }`',
+      'Run the check across the WHOLE cluster in one go, because "it mounted on the first host" is the classic false pass — list which hosts actually see it: `Get-Cluster <name> | Get-VMHost | Get-Datastore -Name <datastore>`. The row count must equal the cluster\'s host count; any host missing from the output can\'t see the datastore.',
       'Confirm the same volume presents with the same identifier everywhere: `Get-Cluster <name> | Get-VMHost | Get-Datastore <datastore> | Select Name,CapacityGB,@{n="Id";e={$_.ExtensionData.Info.Url}}`',
       'FC only — confirm full path redundancy, not a host quietly running on one path: `esxcli storage core path list -d <naa.id> | grep -E "Runtime Name|State"` and confirm every expected path is `active`.',
       'Prove it is writable: create a folder on the datastore from the vSphere Client (Datastore → Files → New Folder), or `touch /vmfs/volumes/<datastore>/writetest` from a host. Remove it afterwards.',
@@ -394,8 +394,8 @@ const TP0: Entry[] = [
     story: '4.3',
     steps: [
       'Build a host/port list per zone from `07-firewall-ports.md`, then test it from a machine ON the source subnet — a rule review is not a test.',
-      'Sweep a list in one pass: `@( @{h="<dc>";p=636}, @{h="<dns>";p=53}, @{h="<ca>";p=443}, @{h="<depot>";p=443} ) | ForEach-Object { $r = Test-NetConnection $_.h -Port $_.p -WarningAction SilentlyContinue; "{0,-30} {1,-6} {2}" -f $_.h, $_.p, $(if ($r.TcpTestSucceeded) { "OPEN" } else { "** BLOCKED **" }) }`',
-      'The Cloud Proxy path to VCF Operations specifically — three ports, all needed: `443, 4505, 4506 | ForEach-Object { $r = Test-NetConnection <vcf-ops-fqdn> -Port $_ -WarningAction SilentlyContinue; "{0,-6} {1}" -f $_, $r.TcpTestSucceeded }`',
+      'Test each flow directly, one command per zone: `Test-NetConnection <dc> -Port 636`, `Test-NetConnection <dns> -Port 53`, `Test-NetConnection <ca> -Port 443`, `Test-NetConnection <depot> -Port 443` — confirm `TcpTestSucceeded: True` for each.',
+      'The Cloud Proxy path to VCF Operations specifically — three ports, all needed: `Test-NetConnection <vcf-ops-fqdn> -Port 443`, `-Port 4505`, `-Port 4506`.',
       'From an ESX host where PowerShell is not available: `nc -z <host> <port>` or `esxcli network firewall ruleset list`',
       'Confirm UDP flows separately (DNS 53, NTP 123, syslog 514) — `Test-NetConnection` is TCP only, so use the protocol-level checks from TP-006 and TP-007 instead of assuming.',
     ],
@@ -513,7 +513,7 @@ const TP1: Entry[] = [
     critical: true,
     when: isExternalStorage,
     steps: [
-      'Confirm the datastore is mounted on every host: `Get-Cluster <name> | Get-VMHost | ForEach-Object { $m = $_ | Get-Datastore | Where-Object Name -eq "<datastore>"; "{0,-30} {1}" -f $_.Name, $(if ($m) { "MOUNTED" } else { "** MISSING **" }) }`',
+      'Confirm the datastore is mounted on every host — list which hosts see it: `Get-Cluster <name> | Get-VMHost | Get-Datastore -Name <datastore>`. The row count must equal the cluster\'s host count; any host missing from the output can\'t see the datastore.',
       'Confirm it is writable — create and remove a folder via **vSphere Client → Datastore → Files → New Folder**, or `touch /vmfs/volumes/<datastore>/writetest` from a host.',
       'FC only — confirm full path redundancy so no host is quietly on one path: `esxcli storage core path list -d <naa.id> | grep -E "Runtime Name|State"`',
       'Confirm capacity matches sizing: `Get-Datastore <datastore> | Select Name,CapacityGB,FreeSpaceGB`',
@@ -588,7 +588,7 @@ const TP1: Entry[] = [
     story: '5.4',
     steps: [
       'Confirm the Cloud Proxy VM exists and sits on the VM-Management network: `Get-VM | Where-Object Name -match "cloud-proxy|cloudproxy" | Select Name,PowerState,@{n="Network";e={($_ | Get-NetworkAdapter).NetworkName}}`',
-      'From the Cloud Proxy, confirm all three ports to VCF Operations: `443, 4505, 4506 | ForEach-Object { $r = Test-NetConnection <vcf-ops-fqdn> -Port $_ -WarningAction SilentlyContinue; "{0,-6} {1}" -f $_, $r.TcpTestSucceeded }`',
+      'From the Cloud Proxy, confirm all three ports to VCF Operations: `Test-NetConnection <vcf-ops-fqdn> -Port 443`, `-Port 4505`, `-Port 4506`.',
       'Confirm it is registered and collecting: **VCF Operations → Administration → Management → Collector Groups**, or **Data Sources → Cloud Proxies** — status should be connected with a recent heartbeat, not merely present.',
     ],
     expected: 'The Cloud Proxy is on the VM-Management network, connected, and actively collecting.',
@@ -1014,7 +1014,7 @@ const TP4: Entry[] = [
     steps: [
       'Confirm the chosen placement exists — shared management, dedicated management, an NSX overlay segment, or an NSX VLAN segment. For an NSX-backed placement: NSX Manager → **Networking → Segments**.',
       'If a non-shared network was built, confirm it is routed and reachable from the management network: `Test-NetConnection <an-ip-on-that-network> -Port 443`, and `tracert` to confirm the path is what you expect.',
-      'Confirm every Day-2 appliance FQDN resolves forward AND reverse onto that network: `@("<vcfa-fqdn>","<log-vip-fqdn>","<vcfon-fqdn>") | ForEach-Object { $a=(Resolve-DnsName $_ -Type A -ErrorAction SilentlyContinue).IPAddress; $p=if($a){(Resolve-DnsName $a -Type PTR -ErrorAction SilentlyContinue).NameHost}; "{0,-40} {1,-16} {2}" -f $_,$a,$p }`',
+      'Confirm every Day-2 appliance FQDN (VCF Automation, Log Management VIP, VCF Operations for Networks) resolves forward AND reverse onto that network — same method as TP-006: `Resolve-DnsName <fqdn> -Type A`, then `Resolve-DnsName <ip> -Type PTR`.',
     ],
     expected: 'The chosen placement is built and routed, and all Day-2 FQDNs resolve both ways onto it.',
     note: 'An overlay-segment placement needs an edge cluster and a Tier-0. Under Distributed connectivity there is none, so either build one for the fleet segment or pick a VLAN-backed placement.',
@@ -1242,7 +1242,7 @@ const TP4: Entry[] = [
     when: (sel) => sel.day2 && sel.day2Components.logs,
     steps: [
       'Confirm every appliance is powered on and on the right network: `Get-VM | Where-Object Name -match "<log-appliance-prefix>" | Select Name,PowerState,@{n="Network";e={($_ | Get-NetworkAdapter).NetworkName}},@{n="HW";e={$_.HardwareVersion}}`',
-      'Confirm forward and reverse DNS for the cluster VIP AND for every individual node — both matter, because clients hit the VIP but the nodes talk to each other by name: `@("<vip-fqdn>","<node1-fqdn>","<node2-fqdn>","<node3-fqdn>") | ForEach-Object { $a=(Resolve-DnsName $_ -Type A -ErrorAction SilentlyContinue).IPAddress; $p=if($a){(Resolve-DnsName $a -Type PTR -ErrorAction SilentlyContinue).NameHost}; "{0,-40} {1,-16} {2}" -f $_,$a,$p }`',
+      'Confirm forward and reverse DNS for the cluster VIP AND for every individual node — both matter, because clients hit the VIP but the nodes talk to each other by name. Same method as TP-006, run against each of `<vip-fqdn>`, `<node1-fqdn>`, `<node2-fqdn>`, `<node3-fqdn>`: `Resolve-DnsName <fqdn> -Type A`, then `Resolve-DnsName <ip> -Type PTR`.',
       'Confirm the virtual hardware version suits the appliance size — a large appliance needs a version that supports its vCPU count.',
       'Open `https://<log-vip-fqdn>` and confirm the integrated load balancer is serving it. Unlike VCF Operations, this product genuinely has a cluster VIP.',
     ],
@@ -1448,7 +1448,7 @@ const TP5: WldEntry[] = [
     steps: [
       'Confirm this domain\'s VLANs are trunked to ITS hosts at the correct MTU — on the ToRs `show interface trunk`, then prove the MTU from a host: `vmkping -I vmk1 -d -s 8972 <peer-vmk-ip>` (across both AZs if this domain is stretched).',
       'Confirm the addresses this domain consumes on the management VM-management subnet are reserved in IPAM — a workload domain takes several.',
-      'Confirm forward AND reverse DNS for this domain\'s vCenter, NSX components and hosts: `@("<wld-vcenter>","<wld-nsx-vip>","<wld-esxi-1>") | ForEach-Object { $a=(Resolve-DnsName $_ -Type A -ErrorAction SilentlyContinue).IPAddress; $p=if($a){(Resolve-DnsName $a -Type PTR -ErrorAction SilentlyContinue).NameHost}; "{0,-40} {1,-16} {2}" -f $_,$a,$p }`',
+      'Confirm forward AND reverse DNS for this domain\'s vCenter, NSX components and hosts — same method as TP-006, run against each of `<wld-vcenter>`, `<wld-nsx-vip>`, `<wld-esxi-1>`: `Resolve-DnsName <fqdn> -Type A`, then `Resolve-DnsName <ip> -Type PTR`.',
     ],
     expected: 'This domain’s VLANs, subnets, reservations and DNS records are all in place and resolve both ways.',
   },
@@ -1488,7 +1488,7 @@ const TP5: WldEntry[] = [
     critical: true,
     steps: [
       'vSAN — **Cluster → Monitor → vSAN → Skyline Health** → **Retest**, then resolve or document every failure. Run **Proactive Tests → VM Creation Test** and **Network Performance Test**.',
-      'NFS or FC — confirm the datastore mounts on every host in THIS cluster: `Get-Cluster <wld-cluster> | Get-VMHost | ForEach-Object { $m = $_ | Get-Datastore | Where-Object Name -eq "<datastore>"; "{0,-30} {1}" -f $_.Name, $(if ($m) { "MOUNTED" } else { "** MISSING **" }) }`',
+      'NFS or FC — confirm the datastore mounts on every host in THIS cluster — list which hosts see it: `Get-Cluster <wld-cluster> | Get-VMHost | Get-Datastore -Name <datastore>`. The row count must equal the cluster\'s host count; any host missing from the output can\'t see the datastore.',
       'FC — confirm full path redundancy: `esxcli storage core path list -d <naa.id> | grep -E "Runtime Name|State"`',
       'Confirm capacity matches the sizing for this domain: `Get-Cluster <wld-cluster> | Get-Datastore | Select Name,CapacityGB,FreeSpaceGB`',
     ],

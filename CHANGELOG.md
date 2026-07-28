@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.1.4 — 2026-07-29
+- **Simplified six more test-plan commands that had grown into programs**
+  (#218). Same issue as the ones fixed in v2.9.1/v2.9.3, missed in that
+  sweep: TP-015's firewall-flow check (a hashtable-array `ForEach-Object`
+  blob building a formatted OPEN/BLOCKED table) replaced with one plain
+  `Test-NetConnection` command per zone; the two Cloud Proxy 3-port sweeps
+  replaced with three plain per-port commands; three DNS forward/reverse
+  `ForEach-Object` blobs (each combining `Resolve-DnsName` twice, a
+  conditional, and a format string) replaced with a pointer to TP-006's
+  already-simplified two-call method; three datastore-mount-across-cluster
+  blobs (ternary + format string) replaced with a plain
+  `Get-Datastore -Name` listing and a row-count comparison.
+
 ## v3.1.3 — 2026-07-29
 - **Set-ESXCoredump.ps1 v1.4.0 — prompt/picker rework** (#221). One shared
   question/hint/default layout across every prompt, with input validated and
