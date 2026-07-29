@@ -24,8 +24,9 @@ const phases = selectedPhases(defaultSelection());
       <p class="tplan__lede">
         The <a href={exportHref}>Deployment Plan</a> says what to build and the
         <a href={trackerHref}>Tracker</a> says how far you got. This says <strong>how you prove it
-        works</strong>. Every case names the epic and story it verifies, so a green test plan maps
-        one-to-one onto a finished deployment plan. The scope follows what you set in the export
+        works</strong>. Every case names the <strong>component under test</strong> &mdash; the product you
+        log in to, and whose owner a failure goes to &mdash; plus the epic and story it verifies, so a
+        green test plan maps one-to-one onto a finished deployment plan. The scope follows what you set in the export
         tool &mdash; adjust it there and this page picks it up. Results are remembered by this browser;
         use <strong>Save results</strong> to keep the file with the engagement (it is customer data:
         store it with the customer's files, not in a repo). Everything runs in your browser.
@@ -136,6 +137,7 @@ const phases = selectedPhases(defaultSelection());
                 <li class="tplan__case">
                   <div class="tplan__casehead">
                     <span class="tplan__caseid">{c.id}</span>
+                    <span class="tplan__component" title="Component under test">{c.component}</span>
                     <strong>{c.title}</strong>
                     {c.critical && <span class="tplan__crittag">Critical</span>}
                     {c.automatable && (
@@ -288,6 +290,7 @@ const phases = selectedPhases(defaultSelection());
             return `<li class="tplan__case${r?.status ? ` is-${r.status.toLowerCase()}` : ''}">
               <div class="tplan__casehead">
                 <span class="tplan__caseid">${esc(c.id)}</span>
+                <span class="tplan__component" title="Component under test">${esc(c.component)}</span>
                 <strong>${esc(c.title)}</strong>
                 ${c.critical ? '<span class="tplan__crittag">Critical</span>' : ''}
                 ${c.automatable ? '<span class="tplan__autotag" title="Can be verified with automated tooling rather than by hand">Automatable</span>' : ''}
@@ -577,6 +580,14 @@ const phases = selectedPhases(defaultSelection());
 
   .tplan__casehead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
   .tplan__caseid { font-size: 0.72rem; font-weight: var(--fw-semibold); color: var(--itq-orange); font-variant-numeric: tabular-nums; }
+  /* The product under test. Solid royal so it reads as the primary routing label,
+     ahead of the Critical / Automatable tags next to it. */
+  .tplan__component {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+    background: var(--itq-royal-blue); color: var(--itq-white);
+    padding: 0.05rem 0.35rem; border-radius: 2px; font-weight: var(--fw-semibold);
+    white-space: nowrap; cursor: help;
+  }
   .tplan__crittag {
     font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
     background: var(--itq-orange); color: var(--itq-white);

@@ -25,9 +25,10 @@ import { caseKey, selectedPhases, type TestResults } from './test-plan';
 /** Case rows start here; everything above is the header block. */
 const DATA_START = 15;
 
-const COLS = [11, 42, 78, 52, 30, 9, 12, 40];
+const COLS = [11, 20, 42, 78, 52, 30, 9, 12, 40];
 const HEADERS = [
   'ID',
+  'Component',
   'Test Description',
   'Action / Input',
   'Expected Results',
@@ -36,8 +37,8 @@ const HEADERS = [
   'Date',
   'Notes',
 ];
-const LAST_COL = colName(HEADERS.length - 1); // 'H'
-const STATUS_COL = colName(5); // 'F'
+const LAST_COL = colName(HEADERS.length - 1); // 'I'
+const STATUS_COL = colName(6); // 'G'
 
 /**
  * Steps carry `backticks` and **bold** for the web page. Excel has no inline
@@ -246,6 +247,7 @@ export async function buildTestPlanWorkbook(
       const r = results[caseKey(p, c)];
       body.push([
         { v: c.id, s: STYLE.MONO },
+        { v: c.component, s: STYLE.BODY },
         { v: plain(c.title) + (c.critical ? '  [CRITICAL]' : '') + (c.automatable ? '  [AUTO]' : ''), s: STYLE.BODY },
         { v: c.steps.map((s, i) => `${i + 1}. ${plain(s)}`).join('\n'), s: STYLE.BODY },
         { v: plain(c.expected), s: STYLE.BODY },
@@ -269,7 +271,7 @@ export async function buildTestPlanWorkbook(
       cols: COLS,
       freezeAtRow: DATA_START,
       autoFilter: `A${DATA_START - 1}:${LAST_COL}${lastRow}`,
-      merges: ['A1:H1', `B4:${LAST_COL}4`],
+      merges: [`A1:${LAST_COL}1`, `B4:${LAST_COL}4`],
       rowHeights: { 1: 26, 4: 28, [DATA_START - 1]: 26 },
       validations: [{ sqref: statusRange, values: ['P', 'F1', 'F2', 'NA'] }],
       conditionalFormats: [

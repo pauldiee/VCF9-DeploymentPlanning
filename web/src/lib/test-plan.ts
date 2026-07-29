@@ -45,10 +45,57 @@ export const TEST_STATUSES: { value: TestStatus; label: string; hint: string }[]
   { value: 'NA', label: 'Not applicable', hint: 'Out of scope — record why' },
 ];
 
+/**
+ * The product or system a case is executed against — what a tester logs into, and
+ * who owns the failure. One per case, from the fixed list below, so the plan can be
+ * sorted and filtered by component and handed to the right person.
+ */
+export const TEST_COMPONENTS = [
+  // Physical and external prerequisites
+  'ToR fabric',
+  'IP plan',
+  'DNS',
+  'NTP',
+  'Active Directory',
+  'Certificate authority',
+  'Firewall',
+  'Jump host / BMC',
+  'Depot',
+  'Backup target',
+  // Infrastructure
+  'ESX',
+  'vCenter',
+  'vSAN',
+  'External storage',
+  'Principal storage',
+  'NSX',
+  'Avi Load Balancer',
+  // VCF platform
+  'VCF Installer',
+  'SDDC Manager',
+  'VCF Operations',
+  'Identity Broker',
+  'License Server',
+  'Cloud Proxy',
+  // Day-2 fleet
+  'Log Management',
+  'Ops for Networks',
+  'License Hub',
+  'VCF Automation',
+  'Supervisor',
+  // Non-product
+  'Design & documentation',
+  'Handover artefacts',
+] as const;
+
+export type TestComponent = (typeof TEST_COMPONENTS)[number];
+
 export interface TestCase {
   /** Stable id, e.g. "TP-206". Never renumbered when the scope changes. */
   id: string;
   title: string;
+  /** The product or system under test — see TEST_COMPONENTS. */
+  component: TestComponent;
   /** Epic this case proves, e.g. "E6". */
   epic: string;
   /** Story this case proves, e.g. "6.4". */
@@ -159,6 +206,7 @@ const isExternalStorage = (sel: Selection) => !isVsanStorage(sel.storage);
 const TP0: Entry[] = [
   {
     id: 'TP-001',
+    component: 'ToR fabric',
     title: 'Management VLANs trunked to every host uplink at the planned MTU',
     epic: 'E1',
     story: '1.1 / 4.2',
@@ -178,6 +226,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-002',
+    component: 'IP plan',
     title: 'Subnets and IP reservations do not overlap',
     epic: 'E1',
     story: '1.1',
@@ -193,6 +242,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-003',
+    component: 'ToR fabric',
     title: 'ToR BGP fabric is configured and ready to peer',
     epic: 'E1',
     story: '1.2 / 4.2',
@@ -211,6 +261,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-004',
+    component: 'ToR fabric',
     title: 'External VLAN reaches every host in the domain, and the fabric routes it',
     epic: 'E1',
     story: '1.2 / 4.2',
@@ -230,6 +281,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-005',
+    component: 'IP plan',
     title: 'Private transit-gateway block is a /16 and is free',
     epic: 'E1',
     story: '1.2',
@@ -244,6 +296,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-006',
+    component: 'DNS',
     title: 'Forward and reverse DNS resolve for every planned FQDN',
     epic: 'E1',
     story: '1.3 / 4.3',
@@ -261,6 +314,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-007',
+    component: 'NTP',
     title: 'NTP sources are reachable and serving from the management subnet',
     epic: 'E1',
     story: '1.3 / 4.3',
@@ -277,6 +331,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-008',
+    component: 'Certificate authority',
     title: 'Certificate authority is reachable and issues from the chosen template',
     epic: 'E1',
     story: '1.4',
@@ -295,6 +350,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-009',
+    component: 'Design & documentation',
     title: 'Sizing fits the proposed hosts at N-1',
     epic: 'E2',
     story: '2.2',
@@ -307,6 +363,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-010',
+    component: 'ESX',
     title: 'Hosts are on the compatibility guide, identically specified, and meet the cluster minimum',
     epic: 'E4',
     story: '4.1',
@@ -324,6 +381,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-011',
+    component: 'ESX',
     title: 'Even host split across availability zones',
     epic: 'E4',
     story: '4.1',
@@ -339,6 +397,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-012',
+    component: 'vSAN',
     title: 'vSAN disks are present, unclaimed, and eligible',
     epic: 'E4',
     story: '4.1',
@@ -354,6 +413,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-013',
+    component: 'External storage',
     title: 'External principal storage is presented and mountable from every host',
     epic: 'E4',
     story: '4.1',
@@ -373,6 +433,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-014',
+    component: 'Active Directory',
     title: 'Active Directory is reachable and the bind account authenticates',
     epic: 'E4',
     story: '4.3',
@@ -389,6 +450,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-015',
+    component: 'Firewall',
     title: 'Required firewall flows are open',
     epic: 'E4',
     story: '4.3',
@@ -403,6 +465,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-016',
+    component: 'Depot',
     title: 'Software depot is reachable, or the offline depot is staged and serving',
     epic: 'E4',
     story: '4.3',
@@ -419,6 +482,7 @@ const TP0: Entry[] = [
   },
   {
     id: 'TP-017',
+    component: 'Jump host / BMC',
     title: 'Build access: jump host and out-of-band consoles',
     epic: 'E4',
     story: '4.4',
@@ -438,6 +502,7 @@ const TP0: Entry[] = [
 const TP1: Entry[] = [
   {
     id: 'TP-101',
+    component: 'ESX',
     title: 'Hosts are imaged to the BOM build and correctly networked',
     epic: 'E5',
     story: '5.1',
@@ -455,6 +520,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-102',
+    component: 'VCF Installer',
     title: 'VCF Installer is staged on the VM-Management VLAN under the planned SDDC Manager identity',
     epic: 'E5',
     story: '5.2',
@@ -472,6 +538,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-103',
+    component: 'VCF Installer',
     title: 'Bring-up completes and the core components are healthy',
     epic: 'E5',
     story: '5.3',
@@ -490,6 +557,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-104',
+    component: 'vSAN',
     title: 'vSAN datastore is online and health checks are clean',
     epic: 'E5',
     story: '5.3',
@@ -507,6 +575,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-105',
+    component: 'External storage',
     title: 'External principal datastore is online across the cluster',
     epic: 'E5',
     story: '5.3',
@@ -522,6 +591,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-106',
+    component: 'VCF Installer',
     title: 'Auto-generated component passwords are captured',
     epic: 'E5',
     story: '5.3',
@@ -537,6 +607,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-107',
+    component: 'VCF Operations',
     title: 'VCF Operations cluster is online and consistent',
     epic: 'E5',
     story: '5.4',
@@ -556,7 +627,8 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-108',
-    title: 'Data collection is running',
+    component: 'VCF Operations',
+    title: 'VCF Operations data collection is running',
     epic: 'E5',
     story: '5.4',
     steps: [
@@ -568,6 +640,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-109',
+    component: 'License Server',
     title: 'License Server resolves outside the services-runtime range',
     epic: 'E5',
     story: '5.4',
@@ -583,6 +656,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-110',
+    component: 'Cloud Proxy',
     title: 'Cloud Proxy is collecting',
     epic: 'E5',
     story: '5.4',
@@ -595,6 +669,7 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-111',
+    component: 'VCF Operations',
     title: 'Fleet lifecycle sees the depot, the components and the instances',
     epic: 'E5',
     story: '5.4',
@@ -609,7 +684,8 @@ const TP1: Entry[] = [
   },
   {
     id: 'TP-112',
-    title: 'A support bundle can be generated and read',
+    component: 'VCF Operations',
+    title: 'A VCF Operations support bundle can be generated and read',
     epic: 'E5',
     story: '5.4',
     steps: [
@@ -628,6 +704,7 @@ const TP1: Entry[] = [
 const TP2: Entry[] = [
   {
     id: 'TP-201',
+    component: 'NSX',
     title: 'Edge cluster, Tier-0 and BGP are up with routes exchanged',
     epic: 'E6',
     story: '6.1',
@@ -649,6 +726,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-202',
+    component: 'NSX',
     title: 'Distributed Transit Gateway is up on the external VLAN and routed by the fabric',
     epic: 'E6',
     story: '6.1',
@@ -669,6 +747,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-203',
+    component: 'NSX',
     title: 'VNA cluster is healthy and stateful services work',
     epic: 'E6',
     story: '6.1',
@@ -689,6 +768,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-204',
+    component: 'NSX',
     title: 'Network segments match the plan',
     epic: 'E6',
     story: '6.1',
@@ -701,6 +781,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-205',
+    component: 'NSX',
     title: 'A VM on a segment reaches its gateway and the outside world',
     epic: 'E6',
     story: '6.1',
@@ -715,6 +796,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-206',
+    component: 'ToR fabric',
     title: 'Uplinks are clean and the expected VLANs egress the ToRs',
     epic: 'E6',
     story: '6.1',
@@ -728,6 +810,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-207',
+    component: 'ESX',
     title: 'East-west throughput between VMs on the same host',
     epic: 'E6',
     story: '6.1',
@@ -746,6 +829,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-208',
+    component: 'ESX',
     title: 'East-west throughput between VMs on different hosts',
     epic: 'E6',
     story: '6.1',
@@ -761,6 +845,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-209',
+    component: 'vCenter',
     title: 'VMs deploy and anti-affinity rules apply',
     epic: 'E6',
     story: '6.1',
@@ -777,6 +862,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-210',
+    component: 'vCenter',
     title: 'vMotion works between every pair of hosts',
     epic: 'E6',
     story: '6.1',
@@ -792,6 +878,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-211',
+    component: 'vCenter',
     title: 'vSphere HA restarts workloads after a host failure',
     epic: 'E6',
     story: '6.1',
@@ -811,6 +898,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-212',
+    component: 'SDDC Manager',
     title: 'SDDC Manager backup completes to the SFTP target',
     epic: 'E6',
     story: '6.4',
@@ -828,6 +916,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-213',
+    component: 'vCenter',
     title: 'Every vCenter file-based backup is scheduled and completes',
     epic: 'E6',
     story: '6.4',
@@ -846,6 +935,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-214',
+    component: 'Backup target',
     title: 'Backups are restorable, not merely present',
     epic: 'E6',
     story: '6.4',
@@ -860,6 +950,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-215',
+    component: 'Depot',
     title: 'Fleet lifecycle depot is connected and pending updates are understood',
     epic: 'E6',
     story: '6.4',
@@ -873,6 +964,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-216',
+    component: 'vSAN',
     title: 'Storage firmware and driver health is clean',
     epic: 'E6',
     story: '6.4',
@@ -888,6 +980,7 @@ const TP2: Entry[] = [
   },
   {
     id: 'TP-217',
+    component: 'vCenter',
     title: 'Early identity binding behaves as designed',
     epic: 'E6',
     story: '6.3',
@@ -909,6 +1002,7 @@ const TP2: Entry[] = [
 const TP3: Entry[] = [
   {
     id: 'TP-301',
+    component: 'ToR fabric',
     title: 'Inter-AZ link meets latency, bandwidth and MTU requirements',
     epic: 'E7',
     story: '7.1',
@@ -928,6 +1022,7 @@ const TP3: Entry[] = [
   },
   {
     id: 'TP-302',
+    component: 'ESX',
     title: 'Second-AZ hosts are imaged, networked and commissioned',
     epic: 'E7',
     story: '7.2',
@@ -943,6 +1038,7 @@ const TP3: Entry[] = [
   },
   {
     id: 'TP-303',
+    component: 'vSAN',
     title: 'Witness is deployed at the third site and serves only this cluster',
     epic: 'E7',
     story: '7.3',
@@ -959,6 +1055,7 @@ const TP3: Entry[] = [
   },
   {
     id: 'TP-304',
+    component: 'vSAN',
     title: 'Cluster is stretched with correct fault domains and storage policy',
     epic: 'E7',
     story: '7.4',
@@ -978,6 +1075,7 @@ const TP3: Entry[] = [
   },
   {
     id: 'TP-305',
+    component: 'vSAN',
     title: 'Isolating one availability zone keeps workloads running',
     epic: 'E7',
     story: '7.4',
@@ -1007,6 +1105,7 @@ const automation = (sel: Selection) => sel.day2 && sel.automation.deploy;
 const TP4: Entry[] = [
   {
     id: 'TP-401',
+    component: 'NSX',
     title: 'Fleet component network placement is built and reachable',
     epic: 'E8',
     story: '8.1',
@@ -1021,6 +1120,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-402',
+    component: 'VCF Automation',
     title: 'Automation appliances: identity, time and cluster state',
     epic: 'E8',
     story: '8.2',
@@ -1036,6 +1136,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-403',
+    component: 'VCF Automation',
     title: 'Automation is reachable on its cluster VIP',
     epic: 'E8',
     story: '8.2',
@@ -1052,6 +1153,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-404',
+    component: 'VCF Automation',
     title: 'Provider plane matches the design',
     epic: 'E8',
     story: '8.2',
@@ -1069,6 +1171,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-405',
+    component: 'VCF Automation',
     title: 'Content libraries and their items are ready',
     epic: 'E8',
     story: '8.2',
@@ -1082,6 +1185,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-406',
+    component: 'VCF Automation',
     title: 'Organizations, projects, quotas and membership are configured',
     epic: 'E8',
     story: '8.2',
@@ -1097,6 +1201,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-407',
+    component: 'VCF Automation',
     title: 'End-to-end provisioning: request, deploy and decommission',
     epic: 'E8',
     story: '8.2',
@@ -1117,6 +1222,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-408',
+    component: 'License Hub',
     title: 'License Hub is deployed, registered and holding licences',
     epic: 'E8',
     story: '8.2a',
@@ -1135,6 +1241,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-409',
+    component: 'NSX',
     title: 'License Hub VMs are excluded from the distributed firewall',
     epic: 'E8',
     story: '8.2a',
@@ -1148,6 +1255,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-410',
+    component: 'License Hub',
     title: 'SSP Installer is backed up',
     epic: 'E8',
     story: '8.2a',
@@ -1163,6 +1271,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-411',
+    component: 'Avi Load Balancer',
     title: 'Brownfield Avi licence entitlement was migrated before upgrade',
     epic: 'E8',
     story: '8.2a',
@@ -1180,6 +1289,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-412',
+    component: 'Avi Load Balancer',
     title: 'Load-balancer controller cluster is healthy and initialised',
     epic: 'E8',
     story: '8.3',
@@ -1200,6 +1310,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-413',
+    component: 'Avi Load Balancer',
     title: 'Controller is onboarded to License Hub with a non-zero licence count',
     epic: 'E8',
     story: '8.3a',
@@ -1218,6 +1329,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-414',
+    component: 'Avi Load Balancer',
     title: 'Load balancer fronts Automation and its published name resolves to the VIP',
     epic: 'E8',
     story: '8.3',
@@ -1236,6 +1348,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-415',
+    component: 'Log Management',
     title: 'Log Management appliances are deployed, networked and resolvable',
     epic: 'E8',
     story: '8.4',
@@ -1251,6 +1364,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-416',
+    component: 'Log Management',
     title: 'Log Management access control and integrations are correct',
     epic: 'E8',
     story: '8.4',
@@ -1269,7 +1383,8 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-417',
-    title: 'Every source is actually shipping logs',
+    component: 'Log Management',
+    title: 'Every source is actually shipping logs to Log Management',
     epic: 'E8',
     story: '8.4',
     critical: true,
@@ -1289,6 +1404,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-418',
+    component: 'Ops for Networks',
     title: 'Operations for Networks is paired, collecting and healthy',
     epic: 'E8',
     story: '8.4',
@@ -1306,6 +1422,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-419',
+    component: 'Ops for Networks',
     title: 'Operations for Networks detects a real change and is usable for analysis',
     epic: 'E8',
     story: '8.4',
@@ -1322,6 +1439,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-420',
+    component: 'VCF Operations',
     title: 'Fleet certificates are CA-signed with no trust warnings',
     epic: 'E8',
     story: '8.5',
@@ -1339,6 +1457,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-421',
+    component: 'VCF Operations',
     title: 'Certificate auto-renewal is configured',
     epic: 'E8',
     story: '8.5',
@@ -1353,6 +1472,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-422',
+    component: 'Identity Broker',
     title: 'Fleet SSO through the identity broker works end to end',
     epic: 'E8',
     story: '8.5',
@@ -1370,6 +1490,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-423',
+    component: 'VCF Operations',
     title: 'Negative test: an unprivileged user cannot administer',
     epic: 'E8',
     story: '8.5',
@@ -1387,6 +1508,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-424',
+    component: 'VCF Operations',
     title: 'Licensing is applied across the fleet',
     epic: 'E8',
     story: '8.5',
@@ -1403,6 +1525,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-425',
+    component: 'VCF Operations',
     title: 'Operations alerting and self-health are sound',
     epic: 'E8',
     story: '8.5',
@@ -1419,6 +1542,7 @@ const TP4: Entry[] = [
   },
   {
     id: 'TP-426',
+    component: 'VCF Operations',
     title: 'Operations content is usable by the customer',
     epic: 'E8',
     story: '8.5',
@@ -1442,6 +1566,7 @@ const TP4: Entry[] = [
 const TP5: WldEntry[] = [
   {
     id: 'TP-501',
+    component: 'ToR fabric',
     title: 'Workload domain network prep is complete',
     epic: 'E9',
     story: '9.1',
@@ -1454,6 +1579,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-502',
+    component: 'ESX',
     title: 'Workload domain hosts are imaged and commissioned',
     epic: 'E9',
     story: '9.2',
@@ -1467,6 +1593,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-503',
+    component: 'SDDC Manager',
     title: 'Workload domain is deployed and healthy',
     epic: 'E9',
     story: '9.3',
@@ -1482,6 +1609,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-504',
+    component: 'Principal storage',
     title: 'Workload domain principal storage is healthy',
     epic: 'E9',
     story: '9.3',
@@ -1496,6 +1624,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-505',
+    component: 'NSX',
     title: 'Workload domain north-south via edge cluster and BGP',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1512,6 +1641,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-506',
+    component: 'NSX',
     title: 'Workload domain north-south via transit gateway and VNA',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1530,6 +1660,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-507',
+    component: 'vCenter',
     title: 'Workload domain datapath and availability',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1545,6 +1676,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-508',
+    component: 'vSAN',
     title: 'Workload domain witness is deployed and dedicated',
     epic: 'E9',
     story: '9.4',
@@ -1562,6 +1694,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-509',
+    component: 'vSAN',
     title: 'Workload domain cluster is stretched and compliant',
     epic: 'E9',
     story: '9.5',
@@ -1580,6 +1713,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-510',
+    component: 'Supervisor',
     title: 'Supervisor prerequisites are routed and reserved',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1599,6 +1733,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-511',
+    component: 'Supervisor',
     title: 'Supervisor load balancer is serving',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1618,6 +1753,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-512',
+    component: 'Supervisor',
     title: 'Supervisor is enabled and the control plane is usable',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1642,6 +1778,7 @@ const TP5: WldEntry[] = [
   },
   {
     id: 'TP-513',
+    component: 'Supervisor',
     title: 'Kubernetes content is available and a guest cluster lifecycles cleanly',
     epic: 'E9',
     story: '9.4 / 9.6',
@@ -1665,6 +1802,7 @@ const TP5: WldEntry[] = [
 const TP6: Entry[] = [
   {
     id: 'TP-601',
+    component: 'SDDC Manager',
     title: 'Final health check of the complete environment',
     epic: 'E10',
     story: '10.1',
@@ -1680,6 +1818,7 @@ const TP6: Entry[] = [
   },
   {
     id: 'TP-602',
+    component: 'VCF Operations',
     title: 'No unexplained active alerts',
     epic: 'E10',
     story: '10.1',
@@ -1693,6 +1832,7 @@ const TP6: Entry[] = [
   },
   {
     id: 'TP-603',
+    component: 'Handover artefacts',
     title: 'As-built is complete',
     epic: 'E10',
     story: '10.2',
@@ -1706,6 +1846,7 @@ const TP6: Entry[] = [
   },
   {
     id: 'TP-604',
+    component: 'Handover artefacts',
     title: 'Every credential is in the secret store',
     epic: 'E10',
     story: '10.2',
@@ -1724,6 +1865,7 @@ const TP6: Entry[] = [
   },
   {
     id: 'TP-605',
+    component: 'Handover artefacts',
     title: 'Test results are complete and evidenced',
     epic: 'E10',
     story: '10.3',
@@ -1739,6 +1881,7 @@ const TP6: Entry[] = [
   },
   {
     id: 'TP-606',
+    component: 'ESX',
     title: 'Security baseline is applied or its deviations are accepted',
     epic: 'E10',
     story: '10.3',
@@ -1753,6 +1896,7 @@ const TP6: Entry[] = [
   },
   {
     id: 'TP-607',
+    component: 'Handover artefacts',
     title: 'Operations team walkthrough and sign-off',
     epic: 'E10',
     story: '10.3',
@@ -1948,7 +2092,7 @@ export function buildTestMarkdown(raw: Selection, results: TestResults = {}): st
       const status = r?.status ? `${STATUS_LABEL[r.status]}${r.date ? ` (${r.date})` : ''}` : 'Not executed';
       out.push(`### ${c.id} — ${c.title}`, '');
       out.push(
-        `**Epic ${c.epic} · Story ${c.story}**${c.critical ? ' · **Critical**' : ''}${c.automatable ? ' · _Automatable_' : ''} · Status: ${status}`,
+        `**Component: ${c.component}** · **Epic ${c.epic} · Story ${c.story}**${c.critical ? ' · **Critical**' : ''}${c.automatable ? ' · _Automatable_' : ''} · Status: ${status}`,
         '',
       );
       out.push('Steps:', '');
@@ -2120,12 +2264,17 @@ export function buildTestReport(raw: Selection, results: TestResults = {}, prepa
   out.push('## Full results', '');
   for (const p of phases) {
     out.push(`### ${p.id} — ${p.title}`, '');
-    out.push('| Case | Title | Status | Date | Actual result / evidence |', '| --- | --- | --- | --- | --- |');
+    out.push(
+      '| Case | Component | Title | Status | Date | Actual result / evidence |',
+      '| --- | --- | --- | --- | --- | --- |',
+    );
     for (const c of p.cases) {
       const r = results[caseKey(p, c)];
       const status = r?.status ? STATUS_LABEL[r.status] : 'Not executed';
       const title = `${c.title}${c.critical ? ' _(critical)_' : ''}`;
-      out.push(`| ${c.id} | ${title} | ${status} | ${r?.date || ''} | ${(r?.actual || '').replace(/\|/g, '\\|')} |`);
+      out.push(
+        `| ${c.id} | ${c.component} | ${title} | ${status} | ${r?.date || ''} | ${(r?.actual || '').replace(/\|/g, '\\|')} |`,
+      );
     }
     out.push('');
   }
@@ -2146,7 +2295,7 @@ function csvCell(v: string): string {
 export function buildTestCsv(raw: Selection, results: TestResults = {}): string {
   const sel = normalizeSelection(raw);
   const rows: string[] = [
-    ['Phase', 'Phase Title', 'Domain', 'Case ID', 'Title', 'Epic', 'Story', 'Critical', 'Automatable', 'Steps', 'Expected', 'Note', 'Status', 'Date', 'Actual Results']
+    ['Phase', 'Phase Title', 'Domain', 'Case ID', 'Component', 'Title', 'Epic', 'Story', 'Critical', 'Automatable', 'Steps', 'Expected', 'Note', 'Status', 'Date', 'Actual Results']
       .map(csvCell)
       .join(','),
   ];
@@ -2159,6 +2308,7 @@ export function buildTestCsv(raw: Selection, results: TestResults = {}): string 
           p.title,
           p.wld?.name ?? '',
           c.id,
+          c.component,
           c.title,
           c.epic,
           c.story,

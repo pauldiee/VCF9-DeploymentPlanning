@@ -1,5 +1,26 @@
 # Changelog
 
+## v3.2.1 — 2026-07-29
+- **Test Plan — every case now names the component under test** (#231), from the
+  first field run of the tool (#218). The feedback was that a case's title tells
+  you the *behaviour* and its steps name *commands*, but not which product you
+  actually log in to — so a sheet handed to a network engineer and a platform
+  engineer could not be split by eye, and a failure had no obvious owner. `epic`
+  / `story` point back at the deployment plan, not at a product, so they did not
+  fill that gap. Added a required `component` field on `TestCase`, from a fixed
+  29-value product-level vocabulary (`TEST_COMPONENTS`: ToR fabric, DNS, NTP,
+  Active Directory, Certificate authority, ESX, vCenter, vSAN, NSX, Avi Load
+  Balancer, VCF Operations, Log Management, License Hub, Supervisor, …) — one
+  primary component per case, so sorting an export by component yields disjoint
+  groups. Populated for all 97 cases across TP-0..TP-6. Shown as a badge in the
+  case header, ahead of the Critical / Automatable tags, and carried into every
+  export: a `Component` column in the CSV and in the XLSX phase sheets (which
+  shifts Status from column F to G), a `**Component:**` line in the Markdown
+  runbook, and a Component column in the verification report's full-results
+  tables. Three titles that were ambiguous on their own were tightened rather
+  than left to lean on the badge: TP-108, TP-112 and TP-417 now name their
+  product in the title. Case ids are unchanged.
+
 ## v3.2.0 — 2026-07-29
 - **Version page was missing vCenter patches — scraper now reads TechDocs, not
   the KB** (#230). vCenter was the only core component on `strategy: 'kb'`,
