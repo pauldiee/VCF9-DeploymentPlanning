@@ -648,6 +648,11 @@ without either does not need it.
 > step is not routine hygiene — it is the **only** migration path if the
 > management vCenter is ever renamed or re-addressed. A site with a vCenter
 > rename on its roadmap should know this before it deploys.
+>
+> Configuring that backup is **not** like the other components: the SSP Installer
+> authenticates to the SFTP target with a **public key**, not the password its own
+> dialog asks for, and a saved configuration is no proof it can write. See
+> [`08-backup-target.md` §6](08-backup-target.md#6-the-ssp-installer-is-the-odd-one-out).
 
 > **Ten characters that must not appear in your vCenter object names.**
 > TechDocs, verbatim: *"While naming the VMware vCenter resources, such as data

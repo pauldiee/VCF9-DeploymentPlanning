@@ -29,9 +29,12 @@ from.
 | | ↳ [Getting the fingerprint](#getting-the-fingerprint-not-with-windows-ssh-keyscan) | Windows `ssh-keyscan` is broken — read it on the server |
 | | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
-| 6 | [Cold backup / cold maintenance](#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
-| 7 | [Manually decrypting a backed-up file](#7-manually-decrypting-a-backed-up-file-for-inspection) | Inspecting a `.enc` piece — the KDF/digest combination that actually works |
-| 8 | [References](#8-references) | The TechDocs and KBs behind the above |
+| 6 | [The SSP Installer is the odd one out](#6-the-ssp-installer-is-the-odd-one-out) | **It authenticates by key, not by the password in its own dialog** |
+| | ↳ [Read the `[none publickey]` error](#read-the-none-publickey-error) | The message names the cause if you read the method list |
+| | ↳ [`authorized_keys` vs the chroot jail](#authorized_keys-vs-the-chroot-jail) | Ownership, and why the fix keeps coming undone |
+| 7 | [Cold backup / cold maintenance](#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
+| 8 | [Manually decrypting a backed-up file](#8-manually-decrypting-a-backed-up-file-for-inspection) | Inspecting a `.enc` piece — the KDF/digest combination that actually works |
+| 9 | [References](#9-references) | The TechDocs and KBs behind the above |
 
 ---
 
@@ -411,7 +414,108 @@ platform: it puts the username on the wire *explicitly*, so if the sshd log stil
 shows an identifier instead of the account, the substitution is happening
 server-side and you have a defect worth reporting.
 
-## 6. Cold backup / cold maintenance: safely shutting down the management services
+## 6. The SSP Installer is the odd one out
+
+Every client above points at the same target the same way. The **vDefend Security
+Services Platform (SSP) Installer** — the appliance behind vDefend and Avi
+licensing, see [`prerequisites.md` → License Hub](prerequisites.md) — does not.
+Its backup matters more than most: it "is the only migration path if the vCenter
+FQDN/IP ever changes", which is why
+[`06-deployment-plan.md`](06-deployment-plan.md) carries it as acceptance
+criteria.
+
+Three differences, all **[field-verified]**:
+
+**1. It authenticates with a public key, not the password in its own dialog.**
+*Backup and Restore* → *Add Backup and Restore Configuration* asks for Server,
+Port, Directory Path, Username, **Password**, SFTP Server SSH Public Host Key and
+a Passphrase. The Password field is a decoy — the appliance presents an **RSA
+key** (`rsa-sha2-256`). Its public key has to be in the SFTP account's
+`authorized_keys` before a backup will run. Nothing in the form says so.
+
+**2. There is no *Fetch Fingerprint* button.** SDDC Manager and VCF Operations
+retrieve and pin the server's host key for you ([§4](#4-verify-the-target-before-you-register-it));
+here you supply it. Use **BROWSE** with the server's `.pub` file rather than
+pasting into the textarea — a wrapped or truncated key is the usual reason the
+form will not validate.
+
+**3. SAVE validates the connection, not the ability to write.** The dialog saves
+cleanly on a configuration that cannot back up. The failure surfaces only when
+you press **BACKUP**, so "the config saved" is a false green — the same lesson as
+[a failed submit stores nothing](#a-failed-submit-stores-nothing), inverted.
+
+The Directory Path is **chroot-relative** here too, exactly as in
+[§3](#3-building-one-chrooted-openssh-example) — `/backups/`, not the server-side
+path. And the **Passphrase encrypts the backup**: without it the backup cannot be
+restored, so it belongs in the password vault at the moment you set it, not
+afterwards.
+
+### Read the `[none publickey]` error
+
+The failure message names the cause, if you read past the first clause:
+
+```
+failed to create SFTP client. Error: error creating sftp connection to server.
+Error: sftp: sftpConnect: ssh: handshake failed: ssh: unable to authenticate,
+attempted methods [none publickey], no supported methods remain
+```
+
+It says *handshake failed*, but key exchange and host-key verification already
+succeeded — this is the **user-authentication** stage. The useful part is
+`[none publickey]`: that is the list of methods the **client** attempted. Password
+is not in it. Read the error as *"this wants a key"*, not *"wrong password"*, and
+stop re-typing the credential.
+
+### `authorized_keys` vs the chroot jail
+
+With the key in place it can still fail. Server side, `sshd` at `-ddd`:
+
+```
+debug1: trying public key file /home/<user>/.ssh/authorized_keys
+Could not open user '<user>' authorized keys '/home/<user>/.ssh/authorized_keys':
+  Permission denied
+Failed publickey for <user> from <ip> port <n> ssh2: RSA SHA256:...
+```
+
+**Permission denied, not "no such file".** A few lines earlier the log shows
+`temporarily_use_uid: 1000/1000` — sshd drops to the *user's* uid to read
+`authorized_keys`. A file created with `sudo` is root-owned and therefore
+unreadable at that moment. The immediate fix:
+
+```bash
+chown <user>:<group> /home/<user>/.ssh/authorized_keys
+chmod 600 /home/<user>/.ssh/authorized_keys
+```
+
+**This collides with the chroot rule and will come undone.** [§3](#3-building-one-chrooted-openssh-example)
+requires the jail root to be **root-owned and not group/world-writable**, while
+`authorized_keys` beneath it must be **user-owned**. The two constraints fight,
+and anything that recreates the file as root reintroduces the fault. The durable
+fix is to move the file out of the jail entirely — in the **global** section of
+`sshd_config`, never inside the `Match` block (same trap as
+[the crypto directives](#two-sshd_config-traps)):
+
+```
+AuthorizedKeysFile /etc/ssh/authorized_keys/%u .ssh/authorized_keys
+```
+
+with `/etc/ssh/authorized_keys` as `root:root 755` and the per-user file
+`root:root 644`. Confirm what sshd actually resolved, since a `Match` block can
+override it:
+
+```bash
+sshd -T -C user=<user> | grep -i authorizedkeysfile
+```
+
+> If the appliance offers no way to export its public key, the `sshd -ddd` log
+> above contains the full base64 blob on the `userauth_pubkey: valid user ...
+> querying public key` line. Prefixing it with `ssh-rsa ` gives a valid
+> `authorized_keys` entry — workable, but reassembling it from a wrapped terminal
+> capture is error-prone. Prefer the export.
+
+---
+
+## 7. Cold backup / cold maintenance: safely shutting down the management services
 
 The SFTP target above is the platform's *online* backup. Some operations instead
 need the management plane **fully down** first: a **cold backup or VM-level
@@ -480,7 +584,7 @@ component the proxy scripts read); override with `export GOVC_URL=https://<vcent
   runtime restarts its components. KB 440874 documents the *shutdown*; verify
   recovery **in-product** rather than assuming an order.
 
-## 7. Manually decrypting a backed-up file (for inspection)
+## 8. Manually decrypting a backed-up file (for inspection)
 
 **Field-verified 2026-07-28.** Every documented recipe for decrypting a VCSA
 `.enc` backup file with plain `openssl enc` (Broadcom's own File-Based Backup
@@ -516,7 +620,7 @@ error message alone.
 > decrypt command at all — confirm you've got the actual data piece and not
 > a manifest fragment, stub, or symlink that happens to share the name.
 
-## 8. References
+## 9. References
 
 - TechDocs: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html)
   and [Configure SFTP Backup Target in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/configure-sftp-backup-target-in-vmware-cloud-foundation-operations.html).
@@ -525,12 +629,12 @@ error message alone.
   — a **5.2** page, but the 9.x *Configure SFTP Backup Target* page doesn't
   restate them, and they still apply.
 - FIPS-by-default in 9.x: [FIPS Configuration for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/fips-compliance-for-vcf-components.html).
-- Cold shutdown of the management plane (§6): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
+- Cold shutdown of the management plane (§7): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
   (Broadcom KB 440874 — the `vcf_services_runtime_shutdown.sh` script and its modes).
 - Community walkthroughs: [SFTP server on Photon OS for VCF 9.1 backups](https://topvcf.com/2026/05/19/5685/)
   (chroot jail, end to end) and [SFTP on Ubuntu Server](https://www.velements.net/2024/10/12/setup-sftp-on-ubuntu-server/)
   (includes re-enabling `ssh-rsa` host-key algorithms for older VMware
-  components); on manually decrypting `.enc` backup pieces (§7), see
+  components); on manually decrypting `.enc` backup pieces (§8), see
   [Confirm that you have the right password for encrypted VCSA backups](https://malyshev.net/2020/12/confirm-that-you-have-the-right-password-for-encrypted-vcsa-backups/)
   and [vCenter File Level Restore](https://ygerber.online/post/vcenter-file-level-restore/)
   for the general `openssl enc` approach — neither documents the SHA-512

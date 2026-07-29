@@ -144,7 +144,7 @@ these are optional.
 | 11 | **ESX hosts and vCenter** | vSAN wizard **or** the NFS/FC path |
 
 **Step 5 — VCF Management Services** is the one this repo already documents in
-detail: [`08-backup-target.md` §6](08-backup-target.md#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services).
+detail: [`08-backup-target.md` §7](08-backup-target.md#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services).
 The documented procedure **[documented]** is to find the control-plane node IPs
 in VCF Operations (*Build* → *Lifecycle VCF Management Components* → the *VCF
 services runtime* component → the *Nodes* table), download
@@ -261,4 +261,4 @@ workloads that rely on NSX services.
   (referenced by both the shutdown and startup pages)
 - Broadcom KB [**440874**](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html) —
   `vcf_services_runtime_shutdown.sh`, covered in detail in
-  [`08-backup-target.md` §6](08-backup-target.md#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
+  [`08-backup-target.md` §7](08-backup-target.md#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)

@@ -613,7 +613,7 @@ function licenseHubDeployStory(id: string, sel: Selection): Story {
       'REGISTERED IS NOT LICENSED: download the licence file from the Avi Cloud Console and add it under Licenses. Registration brings no entitlement with it.',
     ],
     acceptance:
-      'SSP Installer and the License Hub instance deployed and Healthy; the hub is registered with the Avi Cloud Console AND shows licences loaded under Licenses (not an empty list); the SSP Installer has been backed up — that backup is the only migration path if the vCenter FQDN/IP ever changes.',
+      'SSP Installer and the License Hub instance deployed and Healthy; the hub is registered with the Avi Cloud Console AND shows licences loaded under Licenses (not an empty list); the SSP Installer has been backed up — proven by RUNNING a backup, not by saving the configuration, because the SSP Installer authenticates to the SFTP target by public key rather than the password its dialog asks for and SAVE validates the connection only (08-backup-target.md, section 6). That backup is the only migration path if the vCenter FQDN/IP ever changes.',
   };
 }
 

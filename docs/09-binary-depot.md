@@ -518,7 +518,7 @@ misleading: *"the proxy server may be slow, overloaded, or network latency is to
 high."*
 
 What the precheck actually does — read it yourself. Get a `kubectl` session on the
-control-plane node ([recipe in Backup Target §6](08-backup-target.md#6-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
+control-plane node ([recipe in Backup Target §7](08-backup-target.md#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
 — SSH in as `root`, `kubectl` is already wired up), then:
 
 ```bash

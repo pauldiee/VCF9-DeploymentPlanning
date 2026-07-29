@@ -1,5 +1,25 @@
 # Changelog
 
+## v3.1.8 — 2026-07-29
+- **`08-backup-target.md` §6 — the SSP Installer is the odd one out** (#227),
+  field-verified. The repo required the SSP Installer backup in two places
+  (`prerequisites.md`, and `06-deployment-plan.md` as acceptance criteria, where
+  it is "the only migration path if the vCenter FQDN/IP ever changes") without
+  ever saying how to configure it. Three differences from every other client
+  pointed at the same SFTP target: it authenticates with a **public key**, not
+  the password its own dialog asks for; there is **no Fetch Fingerprint button**,
+  so you supply the host key yourself; and **SAVE validates the connection, not
+  the ability to write** — the failure surfaces only on BACKUP, making a saved
+  config a false green. Adds how to read the `[none publickey]` error (the client
+  never offered password auth — it wants a key) and the `authorized_keys`
+  ownership trap: sshd drops to the user's uid to read it, so a root-created file
+  fails with *Permission denied*, and under a chroot jail the fix fights the
+  root-owned-jail rule until you move the file out with `AuthorizedKeysFile
+  /etc/ssh/authorized_keys/%u`. Sections 6-8 renumbered to 7-9; inbound anchors in
+  `09-binary-depot.md` and `13-shutdown-startup.md` updated. Cross-linked from
+  `prerequisites.md` and `06-deployment-plan.md`, with the matching acceptance
+  text in the export tool's generator changed to require a *run* backup.
+
 ## v3.1.7 — 2026-07-29
 - **New `docs/13-shutdown-startup.md` — the ordered fleet shutdown / startup
   runbook** (#226), from Broadcom's new *Shutdown and Startup of VMware Cloud
