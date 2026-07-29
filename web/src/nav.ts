@@ -103,6 +103,13 @@ export const NAV: NavItem[] = [
     blurb: 'Configure fleet SSO via the VCF Identity Broker: the identity provider, per-product federation, role mapping, and verification.',
   },
   {
+    slug: '13-shutdown-startup',
+    step: 'Reference',
+    label: 'Shutdown / Startup',
+    icon: 'power-off',
+    blurb: 'The ordered fleet shutdown and startup runbook: the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, and the infrastructure VMs that go last.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

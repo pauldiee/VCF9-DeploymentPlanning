@@ -34,6 +34,7 @@ This repo flips the order:
 | `docs/10-supervisor-enablement.md`  | Reference — build guide for enabling a vSphere Supervisor on a workload domain (Centralized Transit Gateway + Avi, validation, field notes) |
 | `docs/11-esx-coredump.md`           | Reference — build guide for the ESXi network Dump Collector (enable on vCenter, point every host at it, verify) |
 | `docs/12-sso-configuration.md`      | Reference — build guide for configuring fleet SSO via the VCF Identity Broker (identity provider, per-product federation, role mapping, verification) |
+| `docs/13-shutdown-startup.md`       | Reference — the ordered fleet shutdown / startup runbook (the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, infrastructure VMs last) |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |

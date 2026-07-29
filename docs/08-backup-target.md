@@ -422,6 +422,11 @@ down the **VCF services runtime** — the same `VSP` cluster the proxy in
 Broadcom KB: [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
 (covers both the Fleet cluster and Instance clusters).
 
+> **This is one step of a larger sequence.** Shutting down the *whole* fleet has a
+> strict documented order in which VCF Management Services is **step 5 of 11** —
+> see [`13-shutdown-startup.md`](13-shutdown-startup.md). Use this section for the
+> runtime itself; use that page when the entire platform is going down.
+
 **Do not hand-stop the components.** The runtime has an internal shutdown order,
 and Broadcom ships the automation for it: **`vcf_services_runtime_shutdown.sh`**,
 which drives the sequence through the runtime API (**port 5480**) on the

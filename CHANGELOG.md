@@ -1,5 +1,24 @@
 # Changelog
 
+## v3.1.7 — 2026-07-29
+- **New `docs/13-shutdown-startup.md` — the ordered fleet shutdown / startup
+  runbook** (#226), from Broadcom's new *Shutdown and Startup of VMware Cloud
+  Foundation* pages under Fleet Management. The repo already documented **one
+  step of the sequence without the sequence**: `08-backup-target.md` §6 covers
+  `vcf_services_runtime_shutdown.sh` (KB 440874), which turns out to be step 5
+  of 11 in the management-domain order. The new page carries both orders per
+  domain, the pre-shutdown / pre-startup gates, and the three rules that catch
+  people — VCF Operations is last out and first in *at the fleet level*; shared
+  NSX moves with the first workload domain; infrastructure VMs (AD, DNS, NTP,
+  DHCP) stop last, which is a planning decision if those run inside the
+  management domain. Also flags the two hour-long waits (taking the VCF
+  Operations cluster offline, bringing it back online) that belong in a
+  maintenance-window estimate, and the *Restart Clusters* startup step that has
+  no shutdown-side equivalent. Cross-linked from `08-backup-target.md` §6 and
+  `05-day2-deployments.md` (the optional fleet you pick there determines the
+  sequence); added to the README contents table, the CLAUDE.md file layout —
+  which had drifted, missing docs 11 and 12 — and the site sidebar.
+
 ## v3.1.6 — 2026-07-29
 - **vSphere Zones are now a step and a build item** (#224, reported by Henk
   Ruis). The Supervisor guide described zones only as a *property* — single vs

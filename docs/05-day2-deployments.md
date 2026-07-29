@@ -18,6 +18,12 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 > stretch) can optionally be built, validated, and submitted with
 > [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators).
 
+> **The fleet you pick here sets your shutdown order.** Every optional component
+> on this page — VCF Automation, Operations for Networks, Cloud Proxy, License
+> Server — is a numbered step in the documented shutdown and startup sequence.
+> See [`13-shutdown-startup.md`](13-shutdown-startup.md); components you never
+> deploy simply drop out of it.
+
 > Placeholders below use Rainpole-style values (`sfo.example.io`,
 > `10.11.x.x`). Replace consistently. This is a planning checklist, not a
 > step-by-step deployment guide — follow the Broadcom deployment guidance for

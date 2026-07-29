@@ -42,6 +42,9 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/08-backup-target.md`       | Build guide — SFTP backup target (build, verify, field-notes gotchas) |
 | `docs/09-binary-depot.md`        | Build guide — offline depot / VCF Download Tool (feed the depot, connect VCF, fleet proxy) |
 | `docs/10-supervisor-enablement.md` | Build guide — enable a vSphere Supervisor on a WLD (CTGW + Avi, content library, validation, field notes) |
+| `docs/11-esx-coredump.md`        | Build guide — ESXi network Dump Collector (enable on vCenter, point hosts at it, verify) |
+| `docs/12-sso-configuration.md`   | Build guide — fleet SSO via the VCF Identity Broker (IdP, per-product federation, role mapping) |
+| `docs/13-shutdown-startup.md`    | Ordered fleet shutdown / startup runbook (11-step mgmt sequence, fleet-level VCF Ops rule, shared NSX, infra VMs last) |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |
