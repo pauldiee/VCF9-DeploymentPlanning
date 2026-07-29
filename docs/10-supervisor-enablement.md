@@ -146,6 +146,34 @@ extra failure domain.
 
 Latency between clusters in a zone: **100 ms maximum** **[documented]**.
 
+**A vSphere Zone is an object you create in vCenter — before activation, not
+during it.** The activation wizard only *selects* zones ([§6](#6-activate-the-supervisor),
+screen 2); it does not create them. Skip this and you reach screen 2 with an
+empty picker and no way forward. Create them first **[documented]**:
+
+> 1. "In the vSphere Client, navigate to **vCenter**"
+> 2. "Select **vSphere Zones**"
+> 3. "Click **Add New vSphere Zone**"
+> 4. "Name the zone, for example `zone1` and add an optional description"
+> 5. "Select a vSphere clusters to add to the zone and click **Finish**"
+> 6. "Repeat the steps to create three vSphere Zones"
+
+One cluster per zone. Two constraints that are easy to miss, both
+**[documented]**:
+
+- "All clusters in a zone must be connected to the same vSphere Distributed
+  Switch"
+- vSphere HA and DRS enabled per cluster — DRS on **Fully Automated** for the
+  Supervisor itself (see the [pre-flight gate](#2-pre-flight-gate))
+
+**Decide single vs three zone before you activate — there is no conversion.**
+"A Supervisor deployed in a single-zone configuration cannot be converted to a
+multi-zone deployment after enablement. You must determine the target deployment
+model before initiating the Supervisor enablement process" **[documented]**. You
+*can* add further zones to an already multi-zone Supervisor afterwards and assign
+them to vSphere Namespaces — up to three per namespace — but you cannot promote a
+single-zone Supervisor into one.
+
 **A stretched vSAN cluster does not give you a multi-zone Supervisor**
 **[documented]**:
 
@@ -168,7 +196,7 @@ sites, Avi Controller and Service Engine placement across AZs, and Service Engin
 Group host-group affinity per site. Decide these deliberately and record the
 reasoning.
 
-*Sources: [Supervisor architecture with VPC networking][arch] · [Supervisor 9.1 release notes][relnotes] · [Supervisor on a vSAN stretched cluster][stretched]*
+*Sources: [Supervisor architecture with VPC networking][arch] · [Supervisor 9.1 release notes][relnotes] · [Supervisor on a vSAN stretched cluster][stretched] · [Create vSphere Zones for a multi-zone deployment with VPC][zones]*
 
 ---
 
@@ -179,6 +207,12 @@ Verify — do not accept assurances. Each of these has failed a real activation.
 ### Platform
 
 - [ ] Workload domain healthy in SDDC Manager, no in-flight LCM tasks
+- [ ] **vSphere Zones created in vCenter** — one cluster per zone, three zones
+      for a multi-zone Supervisor or one compatible cluster for single-zone.
+      They must exist *before* activation; the wizard selects them, it does not
+      create them. All clusters in a zone on the **same vDS**. See
+      [§1.3](#13-zones--and-what-a-stretched-cluster-gives-you) — and note the
+      single- vs multi-zone choice is **irreversible**
 - [ ] **DRS enabled and in Fully Automated mode** — "must be in Fully Automated
       mode" **[documented]**. The failure symptom is *not* documented; treat the
       requirement as absolute
@@ -979,6 +1013,12 @@ VCF Networking with VPC**.
 **2 — Supervisor Location.** Supervisor name, data center, HA, and either three
 vSphere zones or one compatible zone.
 
+> The zones must already exist. This screen **selects** them; it does not create
+> them. An **empty zone picker** means you skipped
+> [§1.3](#13-zones--and-what-a-stretched-cluster-gives-you) — go create them in
+> *vCenter → vSphere Zones → Add New vSphere Zone*, one cluster per zone, then
+> come back. The single- vs multi-zone choice made here cannot be changed later.
+
 **3 — Storage.** Storage policy for control-plane VM placement.
 
 **4 — Management Network.** IP assignment mode (DHCP or **Static**), network,
@@ -1409,6 +1449,7 @@ covers the Software Depot that now feeds the VKS content library.
 [relnotes]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-1/release-notes/vmware-vsphere-supervisor-release-notes.html
 [req-nsx90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/requirements-for-cluster-supervisor-deployment-with-nsx.html
 [stretched]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/overview-of-running-vsphere-iaas-control-plane-on-vsan-stretched-cluster.html
+[zones]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/create-vsphere-zones-for-a-multi-zone-deployment-with-nsx-vpc.html
 [ts]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes.html
 [ts-core]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes/troubleshooting-core-supervisor.html
 [vcf-cli]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/connecting-to-vsphere-with-tanzu-clusters/connect-to-the-supervisor-cluster-as-a-vcenter-single-sign-on-user.html

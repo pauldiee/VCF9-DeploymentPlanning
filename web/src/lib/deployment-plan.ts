@@ -759,6 +759,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
       title: 'Enable vSphere Supervisor',
       tasks: [
         `Prerequisites first: this WLD's north-south connectivity must already be in place (${connPrereq}) and a load balancer is available — Supervisor activation requires both. Load balancer chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
+        `Create the vSphere Zones in vCenter (vCenter → vSphere Zones → Add New vSphere Zone), one cluster per zone: three zones for a multi-zone Supervisor, one compatible cluster for single-zone. Do this before activation — the wizard selects zones, it does not create them, and the single- vs multi-zone choice cannot be reversed afterwards. All clusters in a zone must be on the same vDS.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',

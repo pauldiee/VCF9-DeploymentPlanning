@@ -853,9 +853,16 @@ of it at once, and the workbook carries only **three** Supervisor fields
 - **Routing** — the Supervisor management network must reach vCenter and the
   ESX hosts' management vmkernel (Spherelet), and the workload network must
   reach the load-balancer VIPs.
-- **Zones** — a three-zone Supervisor needs **≤ 100 ms** latency between the
-  zone clusters (see [`03-multi-az-prep.md`](03-multi-az-prep.md) for the
-  stretch/AZ groundwork).
+- **Zones** — **vSphere Zones must be created in vCenter before activation**
+  (*vCenter → vSphere Zones → Add New vSphere Zone*), one cluster per zone:
+  three zones for a multi-zone Supervisor, one compatible cluster for
+  single-zone. The activation wizard selects zones, it does not create them, and
+  the single- vs multi-zone choice **cannot be reversed** afterwards. All
+  clusters in a zone must sit on the **same vDS**. A three-zone Supervisor also
+  needs **≤ 100 ms** latency between the zone clusters (see
+  [`03-multi-az-prep.md`](03-multi-az-prep.md) for the stretch/AZ groundwork,
+  and [`10-supervisor-enablement.md`](10-supervisor-enablement.md) §1.3 for the
+  procedure).
 
 > TechDocs: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html)
 > (per-networking-path requirements pages) and

@@ -262,6 +262,12 @@ checklist — 5 consecutive control-plane IPs, API FQDN + DNS, per-path IP
 blocks (9.1: VPC transit-gateway block must be a `/16`), DRS/HA, storage
 policies, Kubernetes content — is in
 [`prerequisites.md` → vSphere Supervisor](prerequisites.md).
+
+The *Enable vSphere Supervisor* story carries **creating the vSphere Zones** as
+its own task: they are built in vCenter (*vCenter → vSphere Zones → Add New
+vSphere Zone*), one cluster per zone, **before** activation — the wizard selects
+zones, it does not create them, and single- vs multi-zone cannot be reversed
+later. See [`10-supervisor-enablement.md`](10-supervisor-enablement.md) §1.3.
 Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html) ·
 [Requirements for Deploying Avi Load Balancer (VCF 9.1)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html).
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.1.6 — 2026-07-29
+- **vSphere Zones are now a step and a build item** (#224, reported by Henk
+  Ruis). The Supervisor guide described zones only as a *property* — single vs
+  three zone, 100 ms latency, what a stretched vSAN cluster does and does not
+  give you — and §6 screen 2 read as a wizard selection. Nothing said a vSphere
+  Zone is an object you create in vCenter *beforehand*, so following the guide
+  in order left you at screen 2 with an empty picker. Added: the creation
+  procedure in §1.3 (quoted from TechDocs, incl. the same-vDS constraint and the
+  irreversible single- vs multi-zone choice), a pre-flight gate checklist item,
+  a callout on §6 screen 2, an expanded Zones bullet in `prerequisites.md`, and
+  a dedicated task on the *Enable vSphere Supervisor* story in both
+  `06-deployment-plan.md` and the export tool's generator.
+
 ## v3.1.5 — 2026-07-29
 - **Finished the test-plan command sweep** (#218), following a full audit of
   the file. Fixed: TP-209's char-code VM naming (`[char](64+$_)` to generate
