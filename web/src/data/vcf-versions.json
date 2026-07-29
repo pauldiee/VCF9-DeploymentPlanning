@@ -10,10 +10,10 @@
       "key": "vcenter",
       "name": "vCenter Server",
       "category": "Core",
-      "version": "9.1.0.0200",
-      "build": "25573614",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://knowledge.broadcom.com/external/article/326316",
+      "version": "9.1.0.0300",
+      "build": "25629530",
+      "releaseDate": "2026-07-29",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/vcenter/vcenter-9-1-0-0300-release-notes.html",
       "patched": true
     },
     {

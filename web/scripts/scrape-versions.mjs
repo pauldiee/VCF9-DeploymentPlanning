@@ -34,8 +34,13 @@ const GA_DATE = '2026-05-12';
 // leaf regexes are tight so a sibling sub-component leaf can't be mistaken for the product
 // (e.g. `vcfoperations-` must not match `vcf-operations-orchestrator-`).
 const COMPONENTS = [
-  { key: 'vcenter', name: 'vCenter Server', category: 'Core', strategy: 'kb',
-    url: 'https://knowledge.broadcom.com/external/article/326316' },
+  // vCenter read the versions/builds KB until #230. On 2026-07-29 that KB had not picked up
+  // 9.1.0.0300 (build 25629530, released the same day, resolving CVE-2026-59310) while the
+  // TechDocs patch tree already carried the leaf -- so the page reported a superseded build no
+  // matter how often the scraper ran. TechDocs is the same source every other core component
+  // uses, and it was a full day ahead of the KB on a security patch.
+  { key: 'vcenter', name: 'vCenter Server', category: 'Core', strategy: 'techdocs',
+    index: `${PATCH}/vsphere/vcenter.html`, leaf: /vcenter-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'esxi', name: 'ESXi', category: 'Core', strategy: 'techdocs',
     index: `${PATCH}/vsphere/esx.html`, leaf: /esx-9-1-0-(\d{4})-release-notes\.html$/i },
   { key: 'nsx', name: 'NSX', category: 'Core', strategy: 'techdocs',
@@ -254,19 +259,6 @@ async function scrapeTechdocs(c) {
   return { ...got, sourceUrl: leafUrl, patched: true };
 }
 
-async function scrapeKb(c) {
-  const html = await fetchText(c.url);
-  const text = plain(html);
-  // KB table row shape: "9.1.0.0NNN  YYYY-MM-DD  <8-digit build>". Take the highest version.
-  const rows = [];
-  for (const m of text.matchAll(/(9\.1\.0\.0\d{3})\s+(\d{4}-\d{2}-\d{2})\s+(\d{8})(?!\d)/gi)) {
-    rows.push({ version: m[1], releaseDate: m[2], build: m[3] });
-  }
-  if (!rows.length) throw new Error('no version/build pair in KB');
-  rows.sort((a, b) => verNum(b.version) - verNum(a.version));
-  return { version: rows[0].version, build: rows[0].build, releaseDate: isoDate(rows[0].releaseDate), sourceUrl: c.url };
-}
-
 // Single rolling release-notes page (vDefend, DSM): read version + build (+ optional date) in place.
 // These pages are revised without minting per-patch leaves, so we re-read every run.
 async function scrapePage(c) {
@@ -313,8 +305,7 @@ async function main() {
     }
     try {
       const r =
-        c.strategy === 'kb' ? await scrapeKb(c)
-        : c.strategy === 'page' ? await scrapePage(c)
+        c.strategy === 'page' ? await scrapePage(c)
         : c.strategy === 'avi' ? await scrapeAvi(c)
         : await scrapeTechdocs(c);
       components.push({ ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null, sourceUrl: r.sourceUrl, patched: r.patched ?? true, ...(r.pinned ? { pinned: r.pinned } : {}) });

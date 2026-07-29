@@ -1,5 +1,22 @@
 # Changelog
 
+## v3.2.0 — 2026-07-29
+- **Version page was missing vCenter patches — scraper now reads TechDocs, not
+  the KB** (#230). vCenter was the only core component on `strategy: 'kb'`,
+  pointed at the versions/builds KB 326316. On 2026-07-29 that KB had not picked
+  up **9.1.0.0300 / build 25629530** — released the same day, resolving
+  **CVE-2026-59310** (VMSA-2026-0006) — while the TechDocs patch tree already
+  carried the leaf. The page therefore reported a superseded build no matter how
+  often the action ran, which is precisely the failure `extractLeafBuild` already
+  warns about: "A wrong build is worse than a missing one". Switched vCenter to
+  the `techdocs` strategy every other core component uses, against
+  `patch-releases-9-1-0-x/vsphere/vcenter.html`; verified locally that it now
+  resolves 9.1.0.0300 / 25629530 / 2026-07-29. `scrapeKb()` and its dispatch
+  branch removed — vCenter was its last consumer. Worth recording for future
+  source choices: the depot catalog (`vcf-download-tool binaries list`) had this
+  release first, TechDocs the same day, and the KB lagged by at least a day on a
+  critical security patch.
+
 ## v3.1.9 — 2026-07-29
 - **`09-binary-depot.md` §6 — filling the depot for a fleet upgrade** (#229),
   field-verified. The doc covered **install** binaries only; nothing described
