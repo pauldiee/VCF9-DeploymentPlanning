@@ -1,5 +1,24 @@
 # Changelog
 
+## v3.1.9 — 2026-07-29
+- **`09-binary-depot.md` §6 — filling the depot for a fleet upgrade** (#229),
+  field-verified. The doc covered **install** binaries only; nothing described
+  patching an already-deployed fleet. VCF Operations' *CHECK BINARY AVAILABILITY*
+  exports a `manage-binaries.json` and says to "use it with the VCF Download
+  Tool" **without naming the flag** — it is `--download-spec-file`. New section
+  documents the sync → check → export → download → re-check loop and three ways
+  to get the binaries: the spec file, a filtered catalog pull, or by binary
+  **ID**. States the size trade plainly — a bare release line returns *every*
+  patch line, so a `0300 → 0400` hop drags in four vCenter builds at 28.7 GiB
+  each, over 100 GiB total. Full filter table (`--vcf-version` accepts `a.b.c.d`
+  **and ranges**; `--type` is `INSTALL|UPGRADE` with no `PATCH` to pass;
+  `--component`, `--id`, `--lifecycle-managed-by`), plus `binaries cleanup` with
+  its three cautions: a short version matches broadly and *deletes* broadly,
+  there is no `--dry-run`, and never clean while a download is writing. Notes
+  that `binaries list` queries Broadcom's catalog rather than your depot. The
+  `N/A` lifecycle-metadata-sync → empty-spec link is flagged as **suspected, not
+  proven**, with the command to check the JSON. Sections 6 renumbered to 7.
+
 ## v3.1.8 — 2026-07-29
 - **`08-backup-target.md` §6 — the SSP Installer is the odd one out** (#227),
   field-verified. The repo required the SSP Installer backup in two places

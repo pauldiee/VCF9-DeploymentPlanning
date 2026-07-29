@@ -35,7 +35,11 @@ backs up to.
 | 4 | [Using the Download Tool standalone](#4-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
 | 5 | [Proxy for the VCF services runtime](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
 | | ↳ [Gotcha: precheck is a netcat test from the whole node block](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place) | **Precheck times out even with the documented access** — firewall the whole services-runtime block |
-| 6 | [References](#6-references) | The TechDocs behind the above |
+| 6 | [Upgrades — filling the depot for a fleet upgrade](#6-upgrades--filling-the-depot-for-a-fleet-upgrade) | The fleet is **already deployed** and you are patching it |
+| | ↳ [The loop](#the-loop-sync--check--export--download--re-check) | Sync → check → export → download → re-check |
+| | ↳ [Two ways to get the binaries](#two-ways-to-get-the-binaries) | The spec file, or a filtered catalog pull — and the size trade |
+| | ↳ [Reclaiming space: `binaries cleanup`](#reclaiming-space-binaries-cleanup) | The depot is full — pruning superseded lines safely |
+| 7 | [References](#7-references) | The TechDocs behind the above |
 
 ---
 
@@ -557,7 +561,153 @@ Then re-submit (`Set-VCFProxyConfig.ps1` again, or let the platform retry) and t
 or TLS (`tlsEnabled`) proxy still has to clear this reachability gate **first** —
 fix the firewall before chasing credentials or certificates.
 
-## 6. References
+## 6. Upgrades — filling the depot for a fleet upgrade
+
+Everything above is about **install** binaries. Once the fleet is running, patching it
+draws on a different set — and the UI does not tell you how to get them. In VCF
+Operations, *Build → Lifecycle → VCF Management → Upgrade → **CHECK BINARY
+AVAILABILITY*** offers **EXPORT DOWNLOAD SPECIFICATION**, which hands you a
+`manage-binaries.json` and the sentence "use it with the VCF Download Tool to obtain
+these binaries". It never names the flag. It is `--download-spec-file`
+**[field-verified]**.
+
+### The loop: sync → check → export → download → re-check
+
+1. **Sync the lifecycle metadata first.** The upgrade page shows *Last lifecycle
+   metadata sync time* with a **Sync** link. If it reads **`N/A`**, sync it and
+   confirm you get a real timestamp before going further — binary availability is
+   evaluated against that metadata.
+
+   > **Suspected, not proven.** A specification exported while the sync read `N/A`
+   > produced an empty result from the Download Tool. That is consistent with the
+   > spec being generated from the metadata, but we did not inspect the JSON to
+   > confirm it. Treat "sync first" as cheap insurance, and if a download returns
+   > nothing, **open the spec file** and see whether it actually lists components:
+   > `python3 -m json.tool manage-binaries.json | head -60`.
+
+2. **CHECK BINARY AVAILABILITY** — tells you what the fleet needs and what the depot
+   is missing. This is the authoritative answer, not anything the CLI reports.
+3. **Export the download specification** if you want the exact subset.
+4. **Download** (below), into the depot store the fleet is actually registered
+   against — easy to fill a staging directory nobody reads.
+5. **Re-run CHECK BINARY AVAILABILITY.** If it still reports gaps after a successful
+   download, suspect the metadata sync or the depot path, not the binaries.
+
+### Two ways to get the binaries
+
+**A — the specification file.** Exactly the components for your hop, no version
+guessing:
+
+```bash
+./vcf-download-tool binaries download \
+  --download-spec-file /root/manage-binaries.json \
+  --depot-download-activation-code-file /root/reg.txt \
+  --depot-store /depotdata \
+  --proxy-server <fqdn:port>
+```
+
+**B — a filtered catalog pull.** No spec file, but you must filter well or you will
+pull far more than you need:
+
+```bash
+./vcf-download-tool binaries download --sku VCF --vcf-version 9.1.0 \
+  --type UPGRADE --depot-store /depotdata \
+  --depot-download-activation-code-file /root/reg.txt \
+  --proxy-server <fqdn:port>
+```
+
+**The size trade is not small.** A bare release line returns **every patch line at
+once** — `9.1.0.0`, `.0100`, `.0200`, `.0300`, `.0400` — so a single point upgrade
+drags in four vCenter builds at **28.7 GiB each**, three VCF Automation at 14.9 GiB,
+three NSX at 6.4 GiB. Comfortably over 100 GiB for a `0300 → 0400` hop
+**[field-verified]**. Filter, or use the spec.
+
+**C — by binary ID.** The middle ground: no spec file, but no superfluous lines
+either. List first, take the IDs for the release you want, feed them back:
+
+```bash
+./vcf-download-tool binaries download \
+  --id=<id1>,<id2>,<id3> \
+  --depot-store /depotdata \
+  --depot-download-activation-code-file /root/reg.txt \
+  --proxy-server <fqdn:port>
+```
+
+The filters, from `--help` **[field-verified]**:
+
+| Filter | Notes |
+| ------ | ----- |
+| `--vcf-version` | Formats `a.b`, `a.b.c`, `a.b.c.d`, and **ranges** (`9.1.0..9.1.1`, or `9.1.0..` for everything higher). Short forms match **broadly** — `9.1.0` returns 9.1.0.0 *and* every 9.1.0.x maintenance release. `9.1.0.0400` matches that release exactly |
+| `--id` | One or more binary IDs, comma-separated or by repeating the flag. IDs come from the `ID` column of `binaries list` — the surgical option |
+| `--component` | `VCENTER`, `SDDC_MANAGER_VCF`, `NSX_T_MANAGER`, `ESX_HOST`, `VRA`, `VROPS`, `VRLI`, `VRNI`, `VSAN_FILE_SERVICES`, `VCF_FLEET_LCM`, `VCF_SDDC_LCM`, `VSP`, `DEPOT_SERVICE`, `HCX`, … |
+| `--component-version` | Narrow a single component |
+| `--type` | **`INSTALL` or `UPGRADE`** — there is no `PATCH` type to pass, though `UPGRADE` returns rows *displayed* as `PATCH` |
+| `--lifecycle-managed-by` | `SDDC_MANAGER_VCF`, `VRSLCM`, `VCF_FLEET_LCM`, `SELF` |
+| `--upgrades-only` / `--patches-only` | Additional narrowing |
+
+> **`binaries list` queries Broadcom's catalog, not your depot.** It needs the
+> activation code and the proxy, and it tells you nothing about what you already
+> hold locally. For local content, look at `--depot-store` on disk — and for "do I
+> have what I need", use CHECK BINARY AVAILABILITY. **[field-verified]**
+
+Run long pulls detached — `screen`, or `nohup … &` — and watch `<toolroot>/log/vdt.log`.
+The tool runs its own free-space precheck and refuses rather than filling the disk.
+
+### Reclaiming space: `binaries cleanup`
+
+Same three filter groups as `download` — `[VCF VERSION] | [BUNDLE ID] |
+[DOWNLOAD SPEC]` — and they are mutually exclusive. Documented examples, verbatim:
+
+```bash
+# install binaries for a version
+sh vcf-download-tool binaries cleanup --depot-store=<binaries_dir> \
+  --vcf-version=<VCF_version> --automated-install --sku=VCF --type=INSTALL
+
+# upgrade binaries managed by SDDC Manager
+vcf-download-tool binaries cleanup --depot-store=<binaries_dir> \
+  --vcf-version=<VCF_version> --lifecycle-managed-by=SDDC_MANAGER_VCF --type=UPGRADE
+
+# whatever a specification file describes
+vcf-download-tool binaries cleanup --depot-store=<binaries_dir> \
+  --download-spec-file=<download_spec_file_path>
+```
+
+**Prune a superseded patch line** — note the exact four-part version:
+
+```bash
+./vcf-download-tool binaries cleanup --depot-store=/depotdata \
+  --vcf-version=9.1.0.0100 --type=UPGRADE
+```
+
+**Delete specific artifacts by ID:**
+
+```bash
+./vcf-download-tool binaries cleanup --depot-store=/depotdata \
+  --id=1ed5da8d-...-3550bc51,0be4788c-...-2aadccc2
+```
+
+Get the IDs from a listing filtered the same way you intend to delete — **each
+component has a different ID per type**, so the `VCENTER` INSTALL row and the
+`VCENTER` UPGRADE row are different IDs.
+
+Three cautions **[field-verified]**:
+
+- **A short `--vcf-version` matches broadly.** On `download` that costs bandwidth; on
+  `cleanup` it *deletes* far more than you meant. Always use the exact `a.b.c.d` form
+  when pruning one line.
+- **There is no `--dry-run`.** Preview by running `binaries list` with the identical
+  filters first — imperfect, because `list` reads the catalog rather than your depot,
+  but it shows what the filter matches.
+- **Never clean while a download is writing to the same store.**
+
+What is safe to remove, in order of confidence: superseded patch lines you will not
+roll back to; `INSTALL` bundles for components already deployed (a running fleet
+upgrades from `UPGRADE` bundles) — **but keep the ESX install bundle** if you will
+ever commission a host or add a cluster.
+
+---
+
+## 7. References
 
 - TechDocs: [Set Up an Offline Depot Web Server for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/connect-to-an-offline-depot-to-download-binaries/set-up-an-offline-depot-web-server-for-vmware-cloud-foundation.html)
   (full Apache walk-through incl. certificate + basic-auth config),
