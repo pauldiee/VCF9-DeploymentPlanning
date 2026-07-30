@@ -1,5 +1,27 @@
 # Changelog
 
+## v3.2.2 — 2026-07-30
+- **Binary Depot — a fresh download lands root-owned, and the fleet reports it as
+  a vROps problem** (#232), field-verified during a 9.1 upgrade precheck. The VCF
+  Download Tool runs as root and writes new bundles root-owned; nginx runs as
+  `nginx`, cannot read them, and answers **403**. The `chown`/`chmod` in §2 Step 1
+  covers the store the day you build it, so the doc read as a one-time setup step
+  — every subsequent `binaries download` re-breaks it. What makes this expensive
+  is the distance between cause and symptom: the fleet surfaces no 403 at all, it
+  fails a **VCF Operations upgrade precheck** at subtask *Stage Precheck Binaries*
+  (`preCheckBinaryOnly=true`, component `OPS`) with failed stages
+  `download_bundle_file, stage_bundle_file` and a generic `ops.task.stage.failed`
+  — which reads as an environment-readiness failure when the precheck never ran
+  at all. Added a §6 gotcha section carrying the symptom, the re-apply commands
+  (with why `a+rX` and its capital `X`), a 401-vs-403 curl to separate an auth
+  failure from a permissions one on the auth-protected `/PROD/COMP` and
+  `/PROD/metadata`, and `namei -l` for the parent-directory traversal case where a
+  `700` mountpoint blocks a `755` tree beneath it. The durable fix is documented
+  two ways: a **systemd path unit** watching the store (recommended — catches every
+  writer, incl. `esx download` and a manual store transfer across the air gap),
+  and a simpler **download wrapper script**, with the caveats on each. §2 Step 1
+  now carries a forward pointer so the build step no longer reads as one-and-done.
+
 ## v3.2.1 — 2026-07-29
 - **Test Plan — every case now names the component under test** (#231), from the
   first field run of the tool (#218). The feedback was that a case's title tells

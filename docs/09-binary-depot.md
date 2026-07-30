@@ -38,6 +38,7 @@ backs up to.
 | 6 | [Upgrades — filling the depot for a fleet upgrade](#6-upgrades--filling-the-depot-for-a-fleet-upgrade) | The fleet is **already deployed** and you are patching it |
 | | ↳ [The loop](#the-loop-sync--check--export--download--re-check) | Sync → check → export → download → re-check |
 | | ↳ [Two ways to get the binaries](#two-ways-to-get-the-binaries) | The spec file, or a filtered catalog pull — and the size trade |
+| | ↳ [Gotcha: a fresh download lands root-owned](#gotcha-a-fresh-download-lands-root-owned--nginx-403s-and-the-precheck-fails) | **403 on a new file / precheck fails at Stage Precheck Binaries** — re-apply perms, and the post-download hook |
 | | ↳ [Reclaiming space: `binaries cleanup`](#reclaiming-space-binaries-cleanup) | The depot is full — pruning superseded lines safely |
 | 7 | [References](#7-references) | The TechDocs behind the above |
 
@@ -176,6 +177,12 @@ chown -R nginx:nginx /var/www/offline_depot && chmod -R a+rX /var/www/offline_de
 
 nginx runs as the **`nginx`** user, so it must be able to read the tree; Photon
 has **no SELinux**, so there is no doc-root labeling step you would hit on RHEL.
+
+> **This is not a one-time step.** Every later `binaries download` writes
+> root-owned files into the store and re-breaks it — see
+> [§6 Gotcha: a fresh download lands root-owned](#gotcha-a-fresh-download-lands-root-owned--nginx-403s-and-the-precheck-fails)
+> for the symptom (a VCF Ops precheck failing at *Stage Precheck Binaries*) and a
+> post-download hook that keeps it fixed.
 
 **3. Serve it over HTTPS with the Step 2 auth split.** Add a server block to the
 `http { }` of `/etc/nginx/nginx.conf` (or `/etc/nginx/conf.d/depot.conf` if it
@@ -652,6 +659,142 @@ The filters, from `--help` **[field-verified]**:
 
 Run long pulls detached — `screen`, or `nohup … &` — and watch `<toolroot>/log/vdt.log`.
 The tool runs its own free-space precheck and refuses rather than filling the disk.
+
+### Gotcha: a fresh download lands root-owned — nginx 403s and the precheck fails
+
+**Re-apply ownership and permissions after *every* download, not just at build
+time.** The Download Tool runs as **root** and writes the new bundles root-owned;
+nginx runs as the **`nginx`** user, cannot read them, and answers **403**. The
+`chown`/`chmod` in [§2 Step 1](#step-1--depot-web-server) covers the store the day
+you build it — every subsequent pull re-introduces the problem. **[field-verified]**
+
+```bash
+chown -R nginx:nginx /var/www/offline_depot
+chmod -R a+rX /var/www/offline_depot
+```
+
+`a+rX` is the form you want: **capital `X` sets execute on directories only**, so
+directories become traversable and files become readable, without marking bundle
+files executable. (Lower-case `x` would set it on everything.)
+
+> **The symptom is nowhere near the filesystem.** The fleet does not surface a 403.
+> A VCF Operations upgrade precheck fails at subtask **Stage Precheck Binaries**
+> — `preCheckBinaryOnly=true`, component type `OPS` — with failed stages
+> `download_bundle_file, stage_bundle_file` and a generic `ops.task.stage.failed`.
+> That task's only job is fetching bits, so a failure there is a binary-delivery
+> problem, **not** an environment-readiness one. Depot file permissions are on the
+> short list of causes, alongside the metadata sync, depot reachability from the
+> whole services-runtime block ([§5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)),
+> and depot credentials.
+
+**Is it permissions or is it auth?** `/PROD/COMP` and `/PROD/metadata` sit behind
+basic auth ([§2 Step 2](#step-2--auth-split)), so a 403 there is ambiguous. Separate
+the two by status code:
+
+```bash
+curl -k -u depotuser https://depot01.sfo.example.io/PROD/COMP/<new-file> \
+  -o /dev/null -w '%{http_code}\n'
+# 401 -> credentials / .htpasswd    403 -> filesystem permissions    200 -> fine
+```
+
+**Check the whole path, not just the store root.** nginx needs `+x` on *every*
+parent directory. If the depot store is on a dedicated disk, a `700` mountpoint
+blocks traversal even when everything beneath it is `755`:
+
+```bash
+namei -l /var/www/offline_depot/PROD/COMP/<new-file>
+```
+
+That prints each path component with its mode and owner, so the first line that
+lacks `x` for `nginx` is your answer.
+
+#### The durable fix: a post-download hook
+
+Re-running two commands by hand works until the one time somebody forgets — and
+the failure surfaces days later as a precheck error that looks like a vROps
+problem. Automate it instead. Two options; the systemd one is what I would deploy.
+
+**Option A — systemd path unit (recommended).** Watches the store and fixes
+permissions whenever it changes, regardless of who ran the download or how.
+
+Create the oneshot service, `/etc/systemd/system/depot-perms.service`:
+
+```ini
+[Unit]
+Description=Re-apply nginx-readable ownership/permissions to the VCF offline depot store
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/chown -R nginx:nginx /var/www/offline_depot
+ExecStart=/usr/bin/chmod -R a+rX /var/www/offline_depot
+```
+
+And the path unit that triggers it, `/etc/systemd/system/depot-perms.path`:
+
+```ini
+[Unit]
+Description=Watch the VCF offline depot store for new binaries
+
+[Path]
+PathChanged=/var/www/offline_depot
+Unit=depot-perms.service
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+systemctl daemon-reload
+systemctl enable --now depot-perms.path
+systemctl status depot-perms.path        # Active: waiting
+```
+
+Verify by touching a file in the store and confirming the service ran:
+
+```bash
+touch /var/www/offline_depot/.permcheck
+systemctl status depot-perms.service     # should show a recent successful run
+ls -l /var/www/offline_depot/.permcheck  # nginx:nginx
+rm /var/www/offline_depot/.permcheck
+```
+
+Two caveats worth knowing before you rely on it. `PathChanged` fires on changes to
+the **named directory itself**, not recursively into subtrees — but since a full
+`chown -R` runs on every trigger, the tree still converges; you just may not get a
+trigger for a write deep inside an existing subdirectory until something touches a
+watched level. And it fires *while* a long download is still writing, which is
+harmless (the `-R` simply runs again), but it means **you should still run the two
+commands once manually after a large pull completes** rather than assuming the last
+trigger caught the final file.
+
+**Option B — wrap the download.** Simpler, no systemd, but only covers downloads
+that go through the wrapper. Drop this next to the tool as `depot-pull.sh`:
+
+```bash
+#!/bin/sh
+set -e
+DEPOT_STORE=/var/www/offline_depot
+/root/vcf-download-tool/vcf-download-tool binaries download \
+  --depot-store "$DEPOT_STORE" "$@"
+chown -R nginx:nginx "$DEPOT_STORE"
+chmod -R a+rX "$DEPOT_STORE"
+echo "Permissions re-applied to $DEPOT_STORE"
+```
+
+```bash
+chmod 750 /root/depot-pull.sh
+./depot-pull.sh --download-spec-file /root/manage-binaries.json \
+  --depot-download-activation-code-file /root/reg.txt --proxy-server <fqdn:port>
+```
+
+`set -e` matters: if the download fails, you do not want the success message. Note
+this only catches `binaries download` — an `esx download` or a manual `scp` of the
+store across the air gap ([§2 Step 6](#step-6--transfer-to-the-air-gapped-server))
+bypasses it entirely, which is exactly why Option A is the better bet on a depot
+that several people touch.
+
+Whichever you pick, **re-run CHECK BINARY AVAILABILITY afterwards** — it is the
+authoritative answer on whether the fleet can actually see the new bundles.
 
 ### Reclaiming space: `binaries cleanup`
 
