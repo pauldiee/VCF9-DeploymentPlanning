@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.3.1 — 2026-08-04
+- **Version Overview — the pin marker now actually gets a colour** (#234), found
+  while tokenising for dark mode. Both `.vo-note--pin i` and `.vo-pin` named
+  `--itq-royal`, a token that does not exist (the palette defines
+  `--itq-royal-blue`). An undefined custom property is invalid at computed-value
+  time, and for an inherited property like `color` that resolves to *inherit* —
+  no build error, no console warning, the glyphs simply took the body colour. So
+  the informational-not-a-warning distinction #214 deliberately built for a
+  pinned row was never being drawn. Both now use `--text-muted`, which reads
+  quieter than body text (closer to the #214 intent than matching it) and follows
+  the dark scheme for free.
+
 ## v3.3.0 — 2026-08-04
 - **The site has a dark mode** (#233), built on a surface ramp rather than a
   palette inversion. Painting the page in ITQ Royal Blue was the obvious move and

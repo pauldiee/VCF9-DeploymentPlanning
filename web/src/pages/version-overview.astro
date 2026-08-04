@@ -214,16 +214,18 @@ const fmtDate = (iso) =>
   }
 
   /* Informational, deliberately NOT the orange warning treatment: a pinned row is
-     current and verified, so it must not read as a failure (#214). */
+     current and verified, so it must not read as a failure (#214). Quieter than
+     body text on purpose - it used to name an undefined token (--itq-royal) and
+     so silently inherited the body colour, drawing no distinction at all (#234). */
   .vo-note--pin {
     margin-bottom: var(--space-4);
   }
   .vo-note--pin i {
-    color: var(--itq-royal);
+    color: var(--text-muted);
     margin-right: 0.4rem;
   }
   .vo-pin {
-    color: var(--itq-royal);
+    color: var(--text-muted);
     cursor: help;
     font-weight: 700;
     margin-left: 0.15rem;
