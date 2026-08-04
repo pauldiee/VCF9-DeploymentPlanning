@@ -163,16 +163,16 @@ const fmtDate = (iso) =>
     gap: 0.5rem;
     flex-wrap: wrap;
     padding: var(--space-3) var(--space-4);
-    background: var(--itq-mist);
+    background: var(--surface-subtle);
     border-left: 4px solid var(--itq-orange);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     font-size: var(--fs-small);
   }
-  .vo-updated__note { color: var(--itq-royal-40); }
+  .vo-updated__note { color: var(--text-muted); }
 
   .vo-warn {
     padding: var(--space-3) var(--space-4);
-    background: #fff6f5;
+    background: var(--status-note-bg);
     border-left: 4px solid var(--itq-orange);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     font-size: var(--fs-small);
@@ -182,7 +182,7 @@ const fmtDate = (iso) =>
   .vo-cat {
     margin-top: var(--space-7);
     font-size: var(--fs-h4, 1.1rem);
-    color: var(--itq-royal-blue);
+    color: var(--text-body);
   }
   .vo-table { margin-top: var(--space-3); }
   .vo-name { font-weight: var(--fw-semibold); white-space: normal; }
@@ -192,7 +192,7 @@ const fmtDate = (iso) =>
   /* VCF Operations sub-components (#180): indented sub-rows under their parent (visual grouping). */
   .vo-child .vo-name {
     font-weight: var(--fw-regular);
-    color: var(--itq-royal-40);
+    color: var(--text-muted);
     padding-left: 1.9rem;
     position: relative;
   }
@@ -200,14 +200,14 @@ const fmtDate = (iso) =>
     content: "\21B3"; /* downwards arrow with tip rightwards */
     position: absolute;
     left: 0.7rem;
-    color: var(--itq-royal-40);
+    color: var(--text-muted);
   }
-  .vo-child .vo-ver, .vo-child .vo-build { color: var(--itq-royal-40); }
+  .vo-child .vo-ver, .vo-child .vo-build { color: var(--text-muted); }
 
   .vo-note {
     padding: var(--space-3) var(--space-4);
-    background: var(--itq-mist);
-    border-left: 4px solid var(--itq-royal-40);
+    background: var(--surface-subtle);
+    border-left: 4px solid var(--text-muted);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     font-size: var(--fs-small);
     margin-top: var(--space-2);
@@ -236,10 +236,10 @@ const fmtDate = (iso) =>
     font-size: 0.7rem;
     font-weight: var(--fw-semibold);
     letter-spacing: 0.03em;
-    color: var(--itq-royal-blue);
-    background: var(--itq-light-blue);
+    color: var(--text-body);
+    background: var(--surface-tag);
     border-radius: var(--radius-sm);
     vertical-align: middle;
   }
-  .vo-src { font-size: var(--fs-small); color: var(--itq-royal-40); }
+  .vo-src { font-size: var(--fs-small); color: var(--text-muted); }
 </style>

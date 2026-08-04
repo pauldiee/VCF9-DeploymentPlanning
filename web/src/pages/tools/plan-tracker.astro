@@ -319,14 +319,14 @@ const exportHref = withBase('tools/deployment-plan/');
 <style is:global>
   .plant { max-width: 900px; }
   .plant__head h1 { margin: 0.2rem 0 0.6rem; }
-  .plant__lede { color: var(--itq-royal-40); max-width: 72ch; }
+  .plant__lede { color: var(--text-muted); max-width: 72ch; }
 
   .plant__scopebox {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
     margin: 0 0 0.8rem; padding: 0.55rem 0.7rem;
-    background: var(--itq-mist); border-radius: var(--radius-sm);
+    background: var(--surface-subtle); border-radius: var(--radius-sm);
   }
-  .plant__scope { margin: 0; font-size: 0.88rem; color: var(--itq-royal-blue); line-height: 1.5; flex: 1; min-width: 16rem; }
+  .plant__scope { margin: 0; font-size: 0.88rem; color: var(--text-body); line-height: 1.5; flex: 1; min-width: 16rem; }
   .plant__scopelink {
     flex: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;
   }
@@ -336,33 +336,33 @@ const exportHref = withBase('tools/deployment-plan/');
     display: inline-flex; align-items: center; gap: 0.4rem;
     font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
     border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
-    background: var(--itq-white); color: var(--itq-royal-blue); cursor: pointer;
+    background: var(--surface-card); color: var(--text-body); cursor: pointer;
   }
   .plant__toolbar button:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
   .plant__toolbar-sep { width: 1px; height: 1.4rem; background: var(--border-default); margin: 0 0.25rem; }
   .plant__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
-  .plant__note { font-size: 0.78rem; color: var(--itq-royal-40); margin: 0 0 1rem; max-width: 72ch; }
+  .plant__note { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 1rem; max-width: 72ch; }
   .plant__note code { font-size: 0.72rem; }
 
   .plant__list { border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
   .plant__bar {
-    height: 4px; background: var(--itq-mist); border: var(--border-width) solid var(--border-default);
+    height: 4px; background: var(--surface-subtle); border: var(--border-width) solid var(--border-default);
     border-radius: 3px; overflow: hidden; margin-top: 0.3rem;
   }
-  .plant__scopebox .plant__bar { background: var(--itq-white); }
+  .plant__scopebox .plant__bar { background: var(--surface-card); }
   .plant__bar span { display: block; height: 100%; background: var(--itq-orange); transition: width 0.25s ease; }
-  .plant__epicprog { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-royal-40); margin-left: auto; }
+  .plant__epicprog { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--text-muted); margin-left: auto; }
 
   .plant__epic { margin-bottom: 1.3rem; }
   .plant__epic h2 {
-    font-size: 1.05rem; margin: 0.6rem 0 0.3rem; color: var(--itq-royal-blue);
+    font-size: 1.05rem; margin: 0.6rem 0 0.3rem; color: var(--text-body);
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem;
   }
   .plant__owner { font-size: 0.75rem; font-weight: var(--fw-semibold); color: var(--itq-orange); }
   .plant__epic ul { margin: 0.2rem 0 0; }
   .plant__epic > ul > li { margin-bottom: 0.35rem; }
   .plant__epic ul ul { margin: 0.15rem 0 0.4rem; }
-  .plant__accept { color: var(--itq-royal-40); font-size: 0.85rem; }
+  .plant__accept { color: var(--text-muted); font-size: 0.85rem; }
 
   .plant__story { display: flex; align-items: flex-start; gap: 0.55rem; }
   .plant__storycheck { flex: none; padding-top: 0.2rem; cursor: pointer; }
@@ -375,5 +375,5 @@ const exportHref = withBase('tools/deployment-plan/');
     text-decoration: line-through; text-decoration-color: var(--itq-orange); text-decoration-thickness: 2px;
   }
 
-  .plant__source { font-size: 0.78rem; color: var(--itq-royal-40); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+  .plant__source { font-size: 0.78rem; color: var(--text-muted); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
 </style>
