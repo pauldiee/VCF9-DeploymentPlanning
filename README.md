@@ -46,6 +46,7 @@ This repo flips the order:
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters + progress tracking |
 | `web/src/lib/test-plan.ts`          | Test-plan engine — scope-driven verification cases in phases TP-0…TP-6, each mapped to the epic/story it proves; result tracking + exporters (customer **report** with a verdict and an exit-criteria self-audit, working **CSV**, full **runbook**) |
 | `web/src/lib/test-plan-xlsx.ts`     | Builds the test plan as an `.xlsx` laid out like a field verification workbook (Title/Summary/Version + one sheet per phase, live COUNTIF stats, Status dropdown, conditional formatting) |
+| `web/src/styles/theme.css`          | Theme layer — semantic surface / text / border tokens defined once with `light-dark()`, giving the site its light **and** dark scheme; the toggle only flips `color-scheme` |
 | `web/src/lib/xlsx.ts`               | Minimal dependency-free `.xlsx` writer (ZIP via `CompressionStream` + OOXML parts). Narrow by design — inline strings, formulas, styles, merges, frozen panes, autofilter, list validation, conditional formatting |
 | `docs/prerequisites.md`             | Environment prerequisites (gate before any inputs)     |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |

@@ -28,6 +28,17 @@ const feedbackUrl =
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Before first paint: apply a stored theme choice so the page never
+        flashes the wrong scheme. No stored choice means no attribute, and
+        prefers-color-scheme decides. (#233) */}
+    <script is:inline>
+      try {
+        var t = localStorage.getItem('itq-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+      } catch (e) {
+        /* private mode / storage blocked: fall back to the media query */
+      }
+    </script>
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     <link rel="icon" type="image/svg+xml" href={asset('itq/assets/logo/itq-glasses-clean.svg')} />
@@ -43,7 +54,20 @@ const feedbackUrl =
     <header class="site-header">
       <div class="site-header__inner">
         <a class="site-header__brand" href={asset('')} aria-label="ITQ home">
-          <img src={asset('itq/assets/logo/itq-logo-primary.png')} alt="ITQ" height="30" />
+          <img
+            class="site-header__logo--light"
+            src={asset('itq/assets/logo/itq-logo-primary.png')}
+            alt=""
+            height="30"
+            aria-hidden="true"
+          />
+          <img
+            class="site-header__logo--dark"
+            src={asset('itq/assets/logo/itq-logo-white.png')}
+            alt=""
+            height="30"
+            aria-hidden="true"
+          />
           <span class="site-header__divider" aria-hidden="true"></span>
           <span class="site-header__product">VCF 9.1 Deployment Planning</span>
         </a>
@@ -51,6 +75,16 @@ const feedbackUrl =
           <a href={asset('search/')}><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search</a>
           <a href={asset('docs/prerequisites/')}>Docs</a>
           <a href={asset('version-overview/')}>Versions</a>
+          <button
+            type="button"
+            id="themeToggle"
+            class="theme-toggle"
+            title="Switch between light and dark"
+            aria-label="Switch between light and dark"
+          >
+            <i class="fa-solid fa-sun" aria-hidden="true"></i>
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
+          </button>
           <a
             class="site-header__blog"
             href="https://www.hollebollevsan.nl"
@@ -102,5 +136,39 @@ const feedbackUrl =
         </div>
       </div>
     </footer>
+
+    {/* The toggle sets an explicit choice that wins over prefers-color-scheme
+        in both directions, and remembers it. The icons themselves are swapped
+        by CSS, so nothing here has to touch them. (#233) */}
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('themeToggle');
+        if (!btn) return;
+        var root = document.documentElement;
+        var media = window.matchMedia('(prefers-color-scheme: dark)');
+        function current() {
+          return root.dataset.theme || (media.matches ? 'dark' : 'light');
+        }
+        function label() {
+          btn.setAttribute(
+            'aria-label',
+            current() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+          );
+          btn.setAttribute('title', btn.getAttribute('aria-label'));
+        }
+        btn.addEventListener('click', function () {
+          var next = current() === 'dark' ? 'light' : 'dark';
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem('itq-theme', next);
+          } catch (e) {
+            /* storage blocked: the choice just doesn't survive the page */
+          }
+          label();
+        });
+        media.addEventListener('change', label);
+        label();
+      })();
+    </script>
   </body>
 </html>

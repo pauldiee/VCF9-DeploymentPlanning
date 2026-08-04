@@ -2,7 +2,16 @@
    VCF 9.1 Deployment Planning: site styling.
    Built entirely on the ITQ design tokens (see /itq/styles.css). No hard-coded
    brand colors: everything references the --itq-* / semantic custom properties.
+
+   Surfaces, text and borders go through the SEMANTIC tokens defined in
+   theme.css (--surface-*, --text-*, --border-*), never straight at
+   --itq-white / --itq-mist / --itq-royal-blue, so the dark scheme has
+   something to flip (#233). Literal brand colours are still correct for
+   deliberate brand bands (hero, footer, orange accents) and for text sitting
+   ON those bands, because those keep their colour in both schemes.
    ========================================================================== */
+
+@import './theme.css';
 
 :root {
   --header-h: 64px;
@@ -78,13 +87,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--itq-royal-blue);
-  color: var(--itq-white) !important;
+  background: var(--surface-brand-btn);
+  color: var(--text-on-brand-btn) !important;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-control);
   transition: background var(--dur-fast) var(--ease-standard);
 }
-.site-header__cta:hover { background: var(--state-blue-hover); }
+.site-header__cta:hover { background: var(--state-brand-btn-hover); }
 .site-header__blog {
   display: inline-flex;
   align-items: center;
@@ -98,6 +107,59 @@ body {
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 .site-header__blog:hover { background: var(--itq-orange); color: var(--itq-white) !important; }
+
+/* ---------- Theme toggle ---------- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  background: transparent;
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.theme-toggle:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+.theme-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+/* One icon per scheme, and it shows the scheme you would switch TO, matching
+   the button's label. The CSS decides which is showing, so the button is
+   correct on first paint, before the toggle script runs. */
+.theme-toggle .fa-sun { display: none; }
+.theme-toggle .fa-moon { display: inline-block; }
+/* The header wordmark is the dark-blue logo; on a dark page it needs the
+   white one. Same swap pattern, driven by scheme rather than by script. */
+.site-header__logo--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .theme-toggle .fa-sun { display: inline-block; }
+  :root:not([data-theme='light']) .theme-toggle .fa-moon { display: none; }
+  :root:not([data-theme='light']) .site-header__logo--light { display: none; }
+  :root:not([data-theme='light']) .site-header__logo--dark { display: block; }
+}
+:root[data-theme='dark'] .theme-toggle .fa-sun { display: inline-block; }
+:root[data-theme='dark'] .theme-toggle .fa-moon { display: none; }
+:root[data-theme='dark'] .site-header__logo--light { display: none; }
+:root[data-theme='dark'] .site-header__logo--dark { display: block; }
+:root[data-theme='light'] .theme-toggle .fa-sun { display: none; }
+:root[data-theme='light'] .theme-toggle .fa-moon { display: inline-block; }
+:root[data-theme='light'] .site-header__logo--light { display: block; }
+:root[data-theme='light'] .site-header__logo--dark { display: none; }
+
+/* ---------- Form controls ----------
+   The tool pages set a background on their inputs but leave the text colour
+   to the UA. Pin both to the semantic tokens so a field is legible in either
+   scheme (and body-blue rather than black in light, per the ITQ rule). */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  color: var(--text-body);
+}
 
 /* ---------- Layout ---------- */
 .layout {
@@ -169,8 +231,8 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   color: var(--text-body);
 }
 .sidebar__link.is-active {
-  background: var(--itq-light-blue-soft);
-  border-color: var(--itq-light-blue);
+  background: var(--surface-active);
+  border-color: var(--border-active);
 }
 .sidebar__link.is-active .sidebar__label { color: var(--itq-orange); }
 .sidebar__icon {
@@ -238,7 +300,7 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   letter-spacing: 0.03em;
   text-transform: uppercase;
   text-decoration: none;
-  color: var(--itq-royal-40, #8a94b8);
+  color: var(--text-faint);
   margin-left: 0.75rem;
   padding-top: 0.5em;
 }
@@ -253,15 +315,15 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
 .prose code {
   font-family: var(--font-mono, "JetBrains Mono", monospace);
   font-size: 0.875em;
-  background: var(--itq-mist);
+  background: var(--surface-inset);
   border: var(--border-width) solid var(--border-default);
   border-radius: var(--radius-xs);
   padding: 0.1em 0.35em;
-  color: var(--itq-royal-blue);
+  color: var(--text-body);
 }
 .prose pre {
-  background: var(--itq-royal-blue);
-  color: var(--itq-white);
+  background: var(--surface-code);
+  color: var(--text-on-code);
   padding: var(--space-5);
   border-radius: var(--radius-md);
   overflow-x: auto;
@@ -277,7 +339,7 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
 .prose blockquote {
   margin: var(--space-5) 0;
   padding: var(--space-4) var(--space-5);
-  background: var(--itq-mist);
+  background: var(--surface-subtle);
   border-left: 4px solid var(--itq-orange);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
@@ -301,13 +363,13 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   line-height: var(--lh-snug);
 }
 .prose thead th {
-  background: var(--itq-royal-blue);
-  color: var(--itq-white);
+  background: var(--surface-code);
+  color: var(--text-on-code);
   text-align: left;
   font-weight: var(--fw-semibold);
   padding: var(--space-3) var(--space-4);
   vertical-align: bottom;
-  border-right: var(--border-width) solid rgba(255, 255, 255, 0.18);
+  border-right: var(--border-width) solid var(--border-on-code);
 }
 .prose thead th:last-child { border-right: 0; }
 .prose tbody td {
@@ -320,12 +382,12 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
 /* Faint dash so empty fill-in cells don't collapse the grid */
 .prose tbody td:empty::after {
   content: "–";
-  color: var(--itq-royal-40);
+  color: var(--text-faint);
 }
 /* Keep the leading "#" / index column tight and centered */
 .prose tbody td:first-child { white-space: nowrap; }
-.prose tbody tr:nth-child(even) { background: var(--itq-mist); }
-.prose tbody tr:hover { background: var(--itq-light-blue-soft); }
+.prose tbody tr:nth-child(even) { background: var(--surface-row-alt); }
+.prose tbody tr:hover { background: var(--surface-hover); }
 
 /* GFM task lists (the checklists in prerequisites / multi-AZ prep) */
 .prose ul.contains-task-list { padding-left: 0; }
@@ -363,7 +425,7 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   max-width: 48%;
 }
 .doc-pager__link:hover {
-  border-color: var(--itq-light-blue);
+  border-color: var(--border-active);
   box-shadow: var(--shadow-sm);
   color: var(--text-body);
 }
@@ -477,7 +539,7 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
 }
 
 /* ---------- Related ---------- */
-.related { background: var(--itq-mist); }
+.related { background: var(--surface-subtle); }
 .related__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -502,8 +564,8 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   font-weight: var(--fw-semibold);
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--itq-royal-blue);
-  background: var(--itq-light-blue-soft);
+  color: var(--text-body);
+  background: var(--surface-tag);
   border-radius: var(--radius-sm);
   padding: 0.12rem 0.45rem;
   margin-bottom: var(--space-2);

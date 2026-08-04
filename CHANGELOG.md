@@ -1,5 +1,32 @@
 # Changelog
 
+## v3.3.0 — 2026-08-04
+- **The site has a dark mode** (#233), built on a surface ramp rather than a
+  palette inversion. Painting the page in ITQ Royal Blue was the obvious move and
+  the wrong one twice over: at full saturation it glares across a screen of body
+  text, and if the page *is* Royal Blue then every card, callout and table sits on
+  the same colour and nothing can show elevation. So the dark scheme runs a ramp —
+  a near-neutral dark derived from Royal Blue for the page (`#14152b`), raised
+  surfaces stepping up from it (`#1c1d38`, `#232447`), and saturated Royal Blue
+  kept for deliberate bands (hero, footer). Orange stays the accent in both
+  schemes; body text is never pure white and never black.
+  - The bulk of the work was tokenising, not theming. Component styles reached
+    straight for `--itq-white` / `--itq-mist` / `--itq-royal-blue`, which are
+    light-mode-only by construction — flipping a palette underneath them changes
+    nothing. Surfaces, text and borders across `web/src/**` now go through
+    semantic tokens (`--surface-*`, `--text-*`, `--border-*`, plus `--status-*`
+    for the sizing verdicts and the test plan's P/F1/F2/NA chips).
+  - New `web/src/styles/theme.css` holds the scheme. Every token is defined once
+    with `light-dark()`, so one definition covers both the `prefers-color-scheme`
+    default and the explicit toggle. It lives in `web/src` on purpose:
+    `web/public/itq/` is a vendored copy of the ITQ design system and stays
+    untouched so it can still be re-synced from upstream.
+  - Header toggle (sun / moon) sets `data-theme` on the root, wins over the media
+    query in both directions, and persists to `localStorage`; an inline script in
+    `<head>` applies the stored choice before first paint, so there is no flash of
+    the wrong scheme. The wordmark swaps to the white logo in dark, and Pagefind's
+    search UI is driven off the same tokens.
+
 ## v3.2.2 — 2026-07-30
 - **Binary Depot — a fresh download lands root-owned, and the fleet reports it as
   a vROps problem** (#232), field-verified during a 9.1 upgrade precheck. The VCF

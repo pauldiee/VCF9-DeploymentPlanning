@@ -1,0 +1,114 @@
+/* ==========================================================================
+   Theme layer: semantic surface ramp, light + dark.  (#233)
+
+   Site-owned on purpose. `web/public/itq/` is a vendored copy of the ITQ
+   design system; adding a dark scheme there would drift from upstream, so
+   this file lives in web/src and overrides the semantic aliases that
+   itq/tokens/colors.css already defines. It is imported first by site.css,
+   which Astro emits AFTER the /itq/styles.css link, so these win.
+
+   Every value goes through light-dark(): one definition covers both the
+   `prefers-color-scheme` default and the explicit `data-theme` toggle,
+   because the toggle only has to flip `color-scheme` on the root.
+
+   The dark ramp is not "royal blue everywhere": full-saturation brand blue
+   glares across a page of body text and leaves no way to show elevation.
+   Instead a near-neutral dark derived from Royal Blue carries the page,
+   raised surfaces step up from it, and saturated Royal Blue is kept for
+   deliberate bands (hero, footer, buttons). Orange stays the accent in both
+   schemes; body text is never pure white and never black.
+   ========================================================================== */
+
+:root {
+  /* ---- Dark ramp constants (in production on the VCF Delivery Guide) ---- */
+  --dark-bg: #14152b;         /* page */
+  --dark-surface: #1c1d38;    /* cards, callouts, panels */
+  --dark-surface-2: #232447;  /* code blocks, insets, table headers */
+  --dark-surface-3: #2b2c54;  /* hover on a raised surface */
+  --dark-border: #2f3160;
+  --dark-border-strong: #3d3f78;
+  --dark-text: #e4e7f4;       /* softened, not pure white */
+  --dark-text-quiet: #a9aed0;
+  --dark-text-faint: #868bb0;
+
+  color-scheme: light dark;
+
+  /* ---- Surfaces ---- */
+  --surface-page: light-dark(var(--itq-white), var(--dark-bg));
+  --surface-card: light-dark(var(--itq-white), var(--dark-surface));
+  --surface-raised: light-dark(var(--itq-white), var(--dark-surface));
+  --surface-subtle: light-dark(var(--itq-mist), var(--dark-surface));
+  --surface-inset: light-dark(var(--itq-mist), var(--dark-surface-2));
+  --surface-secondary: light-dark(var(--itq-light-blue), var(--dark-surface-2));
+  --surface-hover: light-dark(var(--itq-light-blue-soft), var(--dark-surface-3));
+  --surface-active: light-dark(var(--itq-light-blue-soft), var(--dark-surface-2));
+  --surface-tag: light-dark(var(--itq-light-blue-soft), var(--dark-surface-2));
+  /* Zebra striping: barely-there in both schemes */
+  --surface-row-alt: light-dark(var(--itq-mist), #1a1b34);
+
+  /* Deliberate brand bands stay Royal Blue in both schemes */
+  --surface-brand: var(--itq-royal-blue);
+  --surface-inverse: var(--itq-royal-blue);
+
+  /* Solid Royal Blue buttons sitting on the PAGE (header CTA, toolbar
+     primaries) would nearly vanish against the dark ramp - #040559 and
+     #14152b are neighbours. Step them up instead; on the brand bands
+     (hero, footer) the literal brand colours still apply. */
+  --surface-brand-btn: light-dark(var(--itq-royal-blue), var(--dark-surface-2));
+  --state-brand-btn-hover: light-dark(var(--state-blue-hover), var(--dark-surface-3));
+  --text-on-brand-btn: light-dark(var(--itq-white), var(--dark-text));
+  /* Small solid-brand labels (test-plan component tag, sizing WLD badge) */
+  --surface-chip-brand: light-dark(var(--itq-royal-blue), #3a3d78);
+  --text-on-chip-brand: light-dark(var(--itq-white), var(--dark-text));
+
+  /* Code blocks + table headers: Royal Blue reads as a band in light, but on
+     a dark page it has to step UP from the surface, not sit on brand colour */
+  --surface-code: light-dark(var(--itq-royal-blue), var(--dark-surface-2));
+  --text-on-code: light-dark(var(--itq-white), var(--dark-text));
+  --border-on-code: light-dark(rgba(255, 255, 255, 0.18), var(--dark-border-strong));
+
+  /* ---- Text ---- */
+  --text-body: light-dark(var(--itq-royal-blue), var(--dark-text));
+  --text-heading: light-dark(var(--itq-royal-blue), var(--dark-text));
+  --text-muted: light-dark(var(--itq-dark-grey), var(--dark-text-quiet));
+  --text-quiet: light-dark(var(--itq-light-grey), var(--dark-text-faint));
+  --text-faint: light-dark(var(--itq-royal-40), var(--dark-text-faint));
+
+  /* ---- Borders ---- */
+  --border-default: light-dark(var(--itq-hairline), var(--dark-border));
+  --border-subtle: light-dark(var(--itq-hairline), var(--dark-border));
+  --border-strong: light-dark(var(--itq-royal-40), var(--dark-border-strong));
+  --border-active: light-dark(var(--itq-light-blue), var(--dark-border-strong));
+
+  /* ---- Interaction washes ---- */
+  --state-tint-hover: light-dark(rgba(4, 5, 90, 0.06), rgba(255, 255, 255, 0.06));
+  --state-tint-active: light-dark(rgba(4, 5, 90, 0.12), rgba(255, 255, 255, 0.12));
+
+  /* ---- Elevation: shadow needs to be near-black on a dark page ---- */
+  --shadow-xs: light-dark(0 1px 2px rgba(4, 5, 90, 0.06), 0 1px 2px rgba(0, 0, 0, 0.35));
+  --shadow-sm: light-dark(0 2px 6px rgba(4, 5, 90, 0.08), 0 2px 8px rgba(0, 0, 0, 0.40));
+  --shadow-md: light-dark(0 8px 24px rgba(4, 5, 90, 0.10), 0 10px 28px rgba(0, 0, 0, 0.50));
+
+  /* ---- Status colours (sizing verdicts, test-plan pass/fail, warnings) ---- */
+  --status-ok-bg: light-dark(#e9f6ec, #16301f);
+  --status-ok-border: light-dark(#2e9e4f, #3f9c5e);
+  --status-ok-text: light-dark(#1c5c30, #8ddba4);
+  --status-bad-bg: light-dark(#fdecec, #3a1a1c);
+  --status-bad-border: light-dark(#d13b3b, #d05a5a);
+  --status-bad-text: light-dark(#8a2222, #f3a6a6);
+  --status-warn-bg: light-dark(#fff4e5, #3a2a12);
+  --status-warn-border: light-dark(var(--itq-orange), var(--itq-orange));
+  --status-warn-text: light-dark(#8a5200, #f0c07a);
+  --status-note-bg: light-dark(#fff6f5, #33202c);
+  /* Pass / fail chips + card edges (test plan). The dark-scheme hues are
+     lifted so they read against #14152b; the chip label goes dark on them
+     rather than white, which at that lightness is unreadable. */
+  --status-pass: light-dark(#2e7d32, #3f9c5e);
+  --status-fail: light-dark(#c62828, #cf5555);
+  --text-on-status: light-dark(var(--itq-white), #10111f);
+}
+
+/* The explicit toggle wins over the media query in both directions: flipping
+   color-scheme is all light-dark() needs. */
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
