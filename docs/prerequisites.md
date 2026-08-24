@@ -482,6 +482,26 @@ Two things worth flagging while planning:
   broker."* — confirming NSX itself is a consumer of this endpoint, not just
   the hub's own internals.
 
+> **The Kafka FQDN's DNS record is validated at first boot, hard, before
+> anything else deploys — and the wizard tooltip's wording ("must resolve to
+> the second IP address") undersells how strictly this is enforced.**
+> Field-verified 2026-08-24: a mismatch here doesn't degrade gracefully or
+> warn — the appliance comes up, the 5480 admin UI works fine, but
+> **`vsx-license-hub-deploy.service` fails outright** (`systemctl status`
+> shows `failed (Result: exit-code)`), and the actual License Hub service
+> never gets created — the appliance-level UI just shows "No License Hub
+> instance configured" with no obvious error pointing at DNS. The journal
+> names the exact cause: *"ERROR: Kafka FQDN '\<fqdn\>' resolves to {'\<ip\>'}
+> but none match IP pool {'\<pool ip 1\>', '\<pool ip 2\>'}"*. So get the A
+> record right **before** powering on the appliance — if it's already up and
+> stuck in this state, fix the DNS record, then `sudo systemctl restart
+> vsx-license-hub-deploy`. Diagnose with:
+>
+> ```
+> systemctl status vsx-license-hub-deploy
+> sudo journalctl -u vsx-license-hub-deploy --no-pager -b | tail -150
+> ```
+
 TechDocs:
 [Deploy a License Hub Appliance](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/deploy-a-license-hub-appliance.html)
 ·

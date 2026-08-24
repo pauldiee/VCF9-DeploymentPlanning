@@ -10,6 +10,13 @@
   in place and now labelled by version rather than replaced, since it still
   applies to sites running 5.1.2 and the new section is pending field
   verification against a live 2.0 deploy.
+- **Field-verified (#236): a mismatched Kafka FQDN DNS record fails License
+  Hub 2.0 first boot silently.** `vsx-license-hub-deploy.service` hard-fails
+  if the Kafka FQDN doesn't resolve to the pool's second IP — the appliance
+  and its 5480 admin UI come up fine regardless, with no error surfaced there,
+  only in `journalctl -u vsx-license-hub-deploy`. Documented the exact log
+  line and recovery steps (fix DNS, `systemctl restart`) since the official
+  tooltip's wording undersold how strictly this is enforced.
 
 ## v3.3.2 — 2026-08-24
 - **Version Overview stopped updating on 4 August despite the daily scrape
