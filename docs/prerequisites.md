@@ -405,6 +405,70 @@ without either does not need it.
 > similar names, two unrelated appliances: don't plan one and assume it covers
 > the other.
 
+> **Everything below this point up to the TechDocs links describes License Hub
+> 5.1.2's deploy mechanics (SSP Installer + a separate `.tar` package, a 3-VM
+> installer/controller/worker instance, node + service IP pools).** Starting
+> with **License Hub 2.0** (GA 2026-08-05), the deploy path is different — see
+> [License Hub 2.0 (standalone OVA)](#license-hub-20-standalone-ova) directly
+> below. The 5.1.2 material still applies to sites running that version, and
+> the post-deploy licensing workflow (registration, endpoint onboarding,
+> connected/disconnected mode) is expected to carry over conceptually to 2.0,
+> but that has not been field-verified yet.
+
+### License Hub 2.0 (standalone OVA)
+
+*Per TechDocs (`vdefend/license-hub/2-0`), not yet field-verified against a
+live deploy — Paul is deploying to a 9.0.2 lab and will confirm these fields
+against the actual wizard.*
+
+**No dependency on the SSP Installer anymore.** TechDocs, verbatim: *"Starting
+with License Hub 2.0, installation no longer requires any dependency on
+Security Services Platform Installer."* It ships as **one standalone OVA**
+(`License-Hub-2.0.0.0.<build>.ova`, ~11 GB) instead of an installer `.ova` plus
+a separate `.tar` package, and deploys as a single appliance rather than a
+3-VM instance.
+
+**Download location has moved.** It is **not** under vDefend Security
+Services Platform in the Broadcom Support Portal, and there is no separate
+top-level "License Hub" product either — it is listed under **VMware Avi Load
+Balancer `<version>` → Primary Downloads**, alongside the Avi controller/SE
+OVAs.
+
+**No upgrade path from 5.1.2.** TechDocs is explicit: *"There is no direct
+upgrade path from License Hub 5.1.2 to License Hub 2.0."* A site with an
+existing 5.1.2 hub needs a fresh 2.0 deployment, not an in-place upgrade.
+
+**Deploy-wizard fields**, per *Deploy a License Hub Appliance*:
+
+| Group | Fields |
+| ----- | ------ |
+| VM placement | Name + datacenter folder; compute resource; datastore + virtual disk format; management network |
+| Customize template — passwords | GRUB root password; GRUB menu timeout; **`sysadmin`**, **`admin`**, **`audit`** passwords — **15–128 characters, at least one lowercase, one uppercase, one numeric and one special character** |
+| Network — appliance | **FQDN** (must resolve to the appliance's own IPv4 address); **IPv4 address**; **netmask**; **default gateway** |
+| Network — Kafka | **Kafka FQDN** (resolves to the **second** IP in a pool); **IP Pool** — two contiguous addresses |
+| Network — additional | **Internal Cluster Network** — a **non-routable CIDR supporting at least 512 addresses**, dedicated to this appliance |
+| DNS | DNS server list (up to 3, space-separated); domain search list |
+| Services | NTP server list (space-separated FQDNs or IPs); **Enable SSH** checkbox |
+
+**Immutable after deployment:** TechDocs, verbatim — *"You cannot change the
+FQDNs or IP addresses after deployment."*
+
+Two things worth flagging while planning:
+- **The internal cluster CIDR needing ≥512 addresses is new** — that is a
+  `/23` or larger, non-routable, reserved for this one appliance. Size that
+  block into the Step 1 plan now.
+- The **Kafka pool is only 2 addresses**, smaller than 5.1.2's 4-address
+  service pool, but still immutable — get the FQDN-to-second-IP mapping into
+  DNS before or immediately after deploying, same as 5.1.2's instance/messaging
+  pair.
+
+TechDocs:
+[Deploy a License Hub Appliance](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/deploy-a-license-hub-appliance.html)
+·
+[License Hub 2.0 Release Notes](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/release-notes/license-hub-20-for-vmware-vdefend-and-avi-load-balancer-release-notes.html).
+
+### License Hub 5.1.2 (SSP Installer flow)
+
 - **~9 IPs on one subnet, in two pools** — **installer 1**, **controller +
   worker nodes 4**, **License Hub services 4**. The **node and service pools
   cannot be modified after deployment**, so size them for scale-out up front.

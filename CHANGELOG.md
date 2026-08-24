@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.3.3 — 2026-08-24
+- **Added a License Hub 2.0 section to `docs/prerequisites.md`** (#236).
+  License Hub 2.0 (GA 2026-08-05) drops the SSP Installer/`.tar` dependency
+  and deploys as a single standalone OVA with different network/IP-pool
+  requirements (an appliance FQDN/IP, a 2-address Kafka pool, and a
+  non-routable internal cluster CIDR needing ≥512 addresses). The existing
+  5.1.2 material (SSP Installer, 3-VM instance, node/service pools) is left
+  in place and now labelled by version rather than replaced, since it still
+  applies to sites running 5.1.2 and the new section is pending field
+  verification against a live 2.0 deploy.
+
 ## v3.3.2 — 2026-08-24
 - **Version Overview stopped updating on 4 August despite the daily scrape
   running and committing successfully every day since** (#235). The scrape
