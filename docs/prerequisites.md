@@ -456,7 +456,21 @@ FQDNs or IP addresses after deployment."*
 Two things worth flagging while planning:
 - **The internal cluster CIDR needing ≥512 addresses is new** — that is a
   `/23` or larger, non-routable, reserved for this one appliance. Size that
-  block into the Step 1 plan now.
+  block into the Step 1 plan now. TechDocs gives no default for this field,
+  but the same non-routable requirement already exists for **VCF Automation's**
+  internal services-runtime CIDR (`05-day2-deployments.md` §D), which draws
+  from the IANA-reserved benchmarking ranges — reuse that same convention here
+  for consistency across the fleet:
+
+  | Option | Notes |
+  | ------ | ----- |
+  | `198.18.0.0/15` | Default used elsewhere in the fleet (VCF Automation) — first choice |
+  | `240.0.0.0/15`  | Fallback if `198.18.0.0/15` collides with something internal |
+  | `250.0.0.0/15`  | Second fallback |
+
+  If the License Hub wizard itself offers a default, take that instead of
+  picking one of the above — these are only a starting point pending
+  confirmation of what the wizard actually shows.
 - The **Kafka pool is only 2 addresses**, smaller than 5.1.2's 4-address
   service pool, but still immutable — get the FQDN-to-second-IP mapping into
   DNS before or immediately after deploying, same as 5.1.2's instance/messaging
