@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: scrape-versions
@@ -34,9 +35,11 @@ jobs:
         run: node web/scripts/scrape-versions.mjs
 
       - name: Commit refreshed data if changed
+        id: commit
         run: |
           if git diff --quiet -- web/src/data/vcf-versions.json; then
             echo "No version changes; nothing to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name  "vcf9-version-bot"
@@ -44,3 +47,14 @@ jobs:
           git add web/src/data/vcf-versions.json
           git commit -m "chore: refresh VCF 9.1 version overview data (#179)"
           git push
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Pages deploy
+        # A GITHUB_TOKEN-authored push does not fire other workflows' `push`
+        # triggers (GitHub's anti-recursion rule), so deploy.yml would never
+        # see this bot commit on its own. Dispatch it explicitly instead,
+        # only when there was actually a new commit to deploy.
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main

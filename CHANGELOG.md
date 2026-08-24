@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.3.2 — 2026-08-24
+- **Version Overview stopped updating on 4 August despite the daily scrape
+  running and committing successfully every day since** (#235). The scrape
+  workflow pushes with the default `GITHUB_TOKEN`, and GitHub deliberately
+  does not fire other workflows' `push` triggers for `GITHUB_TOKEN`-authored
+  commits (anti-recursion safeguard) — so `deploy.yml`'s `web/**` path filter
+  never saw the bot's commits, and the last real Pages deploy was 2026-08-04.
+  `scrape-versions.yml` now explicitly dispatches `deploy.yml` via
+  `gh workflow run` after a successful data commit (skipped on no-op days).
+
 ## v3.3.1 — 2026-08-04
 - **Version Overview — the pin marker now actually gets a colour** (#234), found
   while tokenising for dark mode. Both `.vo-note--pin i` and `.vo-pin` named
