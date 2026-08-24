@@ -301,6 +301,8 @@ same shape.
 | Virtual Network Appliance 1 (Distributed only) | `sfo-m01-vna01.sfo.example.io` | ESX Mgmt subnet — the VNA cluster that gives a Distributed Transit Gateway its stateful services (NAT); **not** a replacement for an Edge cluster (no Tier-0/Tier-1 runs on it) |
 | Virtual Network Appliance 2 (Distributed only) | `sfo-m01-vna02.sfo.example.io` | ESX Mgmt subnet — 2 nodes minimum for HA |
 | Avi Controller cluster FQDN (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet — the 3 controller nodes are **IP-only** (no DNS records). **Must resolve BEFORE the deploy** — field-confirmed; the wizard has no VIP-address input and reaches the VIP through this record. Also decide a separate **Cluster Name**, a distinct wizard field from this FQDN |
+| License Hub appliance FQDN (optional — 2.0) | `sfo-lichub01.sfo.example.io` | VM Mgmt subnet — deliberately **not** `lic`, which is already the **License Server** stem above; the two are unrelated appliances, see `prerequisites.md` → License Hub |
+| License Hub Kafka FQDN (optional — 2.0) | `sfo-lichub01-kafka.sfo.example.io` | Same subnet — resolves to the **second** IP in the Kafka IP pool, field-confirmed; NSX connects to the Kafka broker through this record |
 | Supervisor API FQDN (optional — per Supervisor-enabled WLD) | `sfo-w01-super01.sfo.example.io` | WLD mgmt network — points at the control plane's **floating IP** (or the LB VIP); FQDN login is required, see `prerequisites.md` → vSphere Supervisor |
 | Log Management VIP (optional) | `sfo-vcflogs01.sfo.example.io` | services-runtime block (integrated LB; the 6+ worker nodes need IPs, not FQDNs) |
 

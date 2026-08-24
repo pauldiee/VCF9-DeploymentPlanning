@@ -451,7 +451,11 @@ existing 5.1.2 hub needs a fresh 2.0 deployment, not an in-place upgrade.
 | Services | NTP server list (space-separated FQDNs or IPs); **Enable SSH** checkbox |
 
 **Immutable after deployment:** TechDocs, verbatim — *"You cannot change the
-FQDNs or IP addresses after deployment."*
+FQDNs or IP addresses after deployment."* Example naming for the two FQDNs
+(deliberately not sharing the `lic` stem already used by the unrelated
+License Server): see `01-network-dns-plan.md`'s DNS table —
+`sfo-lichub01.sfo.example.io` (appliance) and
+`sfo-lichub01-kafka.sfo.example.io` (Kafka).
 
 Two things worth flagging while planning:
 - **The internal cluster CIDR needing ≥512 addresses is new** — that is a
