@@ -417,9 +417,9 @@ without either does not need it.
 
 ### License Hub 2.0 (standalone OVA)
 
-*Per TechDocs (`vdefend/license-hub/2-0`), not yet field-verified against a
-live deploy — Paul is deploying to a 9.0.2 lab and will confirm these fields
-against the actual wizard.*
+*Per TechDocs (`vdefend/license-hub/2-0`); fields marked **Field-verified** below
+are confirmed against a live deploy on a 9.0.2 lab, 2026-08-24. Everything else
+in this subsection is TechDocs-sourced only, pending the rest of the wizard.*
 
 **No dependency on the SSP Installer anymore.** TechDocs, verbatim: *"Starting
 with License Hub 2.0, installation no longer requires any dependency on
@@ -455,26 +455,28 @@ FQDNs or IP addresses after deployment."*
 
 Two things worth flagging while planning:
 - **The internal cluster CIDR needing ≥512 addresses is new** — that is a
-  `/23` or larger, non-routable, reserved for this one appliance. Size that
-  block into the Step 1 plan now. TechDocs gives no default for this field,
-  but the same non-routable requirement already exists for **VCF Automation's**
-  internal services-runtime CIDR (`05-day2-deployments.md` §D), which draws
-  from the IANA-reserved benchmarking ranges — reuse that same convention here
-  for consistency across the fleet:
-
-  | Option | Notes |
-  | ------ | ----- |
-  | `198.18.0.0/15` | Default used elsewhere in the fleet (VCF Automation) — first choice |
-  | `240.0.0.0/15`  | Fallback if `198.18.0.0/15` collides with something internal |
-  | `250.0.0.0/15`  | Second fallback |
-
-  If the License Hub wizard itself offers a default, take that instead of
-  picking one of the above — these are only a starting point pending
-  confirmation of what the wizard actually shows.
+  `/23` or larger, non-routable, reserved for this one appliance. **Field-
+  verified 2026-08-24** (Deploy OVF Template, *Customize template* step): the
+  field ships with a real default, **`10.10.0.0/16`**, and its tooltip reads
+  *"The CIDR must support at least 512 IP addresses (prefix /23 or smaller).
+  Use non-routable IPs as this is for internal use only, and ensure the range
+  is not used elsewhere in your datacenter. Most deployments can leave this at
+  the default value."* So the product's own guidance is: **take the default
+  unless `10.10.0.0/16` is already in use somewhere in your datacenter** — no
+  need to invent a range. If it does collide, any non-routable block your
+  fabric doesn't already use works; the fleet elsewhere (VCF Automation's
+  internal services-runtime CIDR, `05-day2-deployments.md` §D) falls back to
+  the IANA benchmarking ranges (`198.18.0.0/15`, `240.0.0.0/15`,
+  `250.0.0.0/15`) for the same reason, which is a reasonable fallback choice
+  here too.
 - The **Kafka pool is only 2 addresses**, smaller than 5.1.2's 4-address
   service pool, but still immutable — get the FQDN-to-second-IP mapping into
   DNS before or immediately after deploying, same as 5.1.2's instance/messaging
-  pair.
+  pair. **Field-verified**: the Kafka FQDN tooltip gives a worked example —
+  *"This FQDN must resolve to the second IP address of the IP Pool below (for
+  example, `172.16.111.41`). NSX uses this FQDN to connect to the Kafka
+  broker."* — confirming NSX itself is a consumer of this endpoint, not just
+  the hub's own internals.
 
 TechDocs:
 [Deploy a License Hub Appliance](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/deploy-a-license-hub-appliance.html)
