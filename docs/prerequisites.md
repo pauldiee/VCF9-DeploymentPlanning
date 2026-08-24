@@ -412,8 +412,10 @@ without either does not need it.
 > [License Hub 2.0 (standalone OVA)](#license-hub-20-standalone-ova) directly
 > below. The 5.1.2 material still applies to sites running that version, and
 > the post-deploy licensing workflow (registration, endpoint onboarding,
-> connected/disconnected mode) is expected to carry over conceptually to 2.0,
-> but that has not been field-verified yet.
+> connected/disconnected mode) **has now been field-verified to carry over to
+> 2.0 unchanged**: same Connected/Disconnected choice, same Avi Cloud Console
+> backend for both vDefend and Avi. See the confirmation note further down in
+> the 2.0 subsection.
 
 ### License Hub 2.0 (standalone OVA)
 
@@ -502,8 +504,52 @@ Two things worth flagging while planning:
 > sudo journalctl -u vsx-license-hub-deploy --no-pager -b | tail -150
 > ```
 
+- **After first boot completes, the appliance shows two separate UIs — don't
+  expect the licensing product on the port you deployed with.** **Field-
+  verified 2026-08-24.** Port `5480` (the FQDN or IP, `https://<fqdn>:5480`)
+  is the **appliance/VAMI-style admin shell** — Home, Infrastructure →
+  License Hub Configuration (shows deployment status per-instance, expand a
+  row for a **Deployment Status** modal: Workload Cluster → Platform Service →
+  Metrics, each reporting task counts and a live percentage on the Helm chart
+  install, e.g. *"Triggering installation of chart `licensing-ssp` ....(34%)"*),
+  Lifecycle Management, Troubleshooting, Certificates, User Management. The
+  **actual License Hub product** — Get Started, registration, licensing — is a
+  **second, separate UI** on the **plain HTTPS port, and it requires the
+  FQDN, not the IP**: TechDocs, verbatim, *"To log in to the License Hub
+  service, from your browser, specify the FQDN of the License Hub appliance.
+  For example, `https://license-hub.example.com`. **You must use the FQDN and
+  not the IP address.**"* Bookmark both separately; going to the IP on the
+  default port gets you nowhere.
+- **First boot brings up an actual Kubernetes workload cluster internally**
+  (hence the ≥512-address non-routable CIDR requirement above) and installs
+  the License Hub product as a **Helm chart** (`licensing-ssp`) on top of it.
+  Budget real time for this — the workload-cluster stage alone ran 5/5 tasks
+  before the platform-service chart install even started.
+- **The post-deploy Get Started / registration flow is unchanged from 5.1.2.**
+  Field-verified: same **Connected Mode / Disconnected Mode** choice, same
+  four-stage chain (Registration → Licenses → Endpoint Management → Usage
+  Reporting and License Refresh) described in the 5.1.2 section below.
+  **"Avi Cloud Console" showing up as the only registration backend — even
+  though License Hub also licenses vDefend — is not a sign a second appliance
+  is needed.** It is the same shared cloud backend (`portal.pulse.broadcom.com`)
+  for **both** product lines; the name is a legacy holdover from before
+  vDefend licensing was folded into it. One License Hub instance, one
+  registration flow, covers both — vDefend's endpoints (NSX Manager, the
+  Security Services Platform) get onboarded through this same instance's
+  **Endpoint Management**, same as Avi Controllers.
+- **Reaching this screen without a real Broadcom entitlement is as far as a
+  credential-less lab can go**, and that is expected, not a fault: completing
+  either mode's Step 2 (Broadcom account login, or downloading/uploading a
+  registration file) requires an actual vDefend/Avi subscription behind the
+  account. A lab deploy that reaches **Get Started** cleanly has confirmed the
+  entire deploy chain works; registration itself needs real entitlement to
+  take further.
+
 TechDocs:
 [Deploy a License Hub Appliance](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/deploy-a-license-hub-appliance.html)
+·
+[License Hub Appliance overview](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance.html)
+(the two-UI / FQDN-only access note)
 ·
 [License Hub 2.0 Release Notes](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/release-notes/license-hub-20-for-vmware-vdefend-and-avi-load-balancer-release-notes.html).
 

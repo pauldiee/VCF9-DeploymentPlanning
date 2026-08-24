@@ -17,6 +17,15 @@
   only in `journalctl -u vsx-license-hub-deploy`. Documented the exact log
   line and recovery steps (fix DNS, `systemctl restart`) since the official
   tooltip's wording undersold how strictly this is enforced.
+- **Field-verified (#236): License Hub 2.0's post-deploy behaviour, fully
+  confirmed against a live lab deploy.** Two separate UIs (port `5480` admin
+  shell vs. the actual product on plain HTTPS, FQDN-only — the IP does not
+  work); first boot stands up a real Kubernetes workload cluster and installs
+  the product as a Helm chart (`licensing-ssp`); and the post-deploy
+  Registration → Licenses → Endpoint Management → Usage Reporting chain is
+  unchanged from 5.1.2, including "Avi Cloud Console" being the shared
+  registration backend for vDefend **and** Avi (not a sign a second appliance
+  is needed).
 
 ## v3.3.2 — 2026-08-24
 - **Version Overview stopped updating on 4 August despite the daily scrape
