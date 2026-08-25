@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.3.6 — 2026-08-25
+- **Code blocks across the site now wrap fully and get a copy button.**
+  Previously `.prose pre` used `overflow-x: auto`, so a long single-line
+  command was clipped behind a horizontal scrollbar rather than shown in
+  full. Switched to wrapping (`white-space: pre-wrap`), and added a small
+  inline script in `BaseLayout.astro` that adds a copy button (SVG icon,
+  swaps to a checkmark for 1.5s on click) to every code block in rendered
+  doc/sample content, site-wide.
+
 ## v3.3.5 — 2026-08-25
 - **Split the VCF Automation cleanup/reinstall procedure out of
   `docs/05-day2-deployments.md` into its own doc**,
