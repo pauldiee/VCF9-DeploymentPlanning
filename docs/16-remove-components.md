@@ -13,16 +13,12 @@ the only supported path.
 > which walks each component's sequence in concrete commands where the KB
 > only states the tool in general terms.
 
-## What this covers
-
-| Component | List/delete type | Notes |
-| --- | --- | --- |
-| Log Management (formerly VCF Operations for Logs) | `vsp-component` | Primary instance only |
-| Real-time Metrics | `vsp-component` | **Two** components — the metrics service and its store; both must be removed |
-| VCF Operations for Networks (VON) | `ova-component` | Deployed as a plain OVA, not on VCFMS; needs vCenter credentials to clean up the VMs |
-| Depot Service | `vsp-component` | Non-primary VCF instances only |
-| Identity Broker | `vsp-component` | Non-primary VCF instances only |
-| VCF Automation (VCFA) | `vsp-component` + `vsp-cluster` | Two components to unregister, then VCFA's own VCFMS cluster to delete — see [Uninstalling VCF Automation](#uninstalling-vcf-automation) below |
+Download `cleanup_component.py` from the KB and run it on any system with a
+Python runtime and network connectivity to your VCF environment. **Double-quote
+every substituted value**, even the ones that look safe — a password or FQDN
+containing a special character (`$`, spaces, `&`) silently mangles the
+argument rather than erroring, the same class of trap as the
+`$`-interpolation lockout documented elsewhere in this repo.
 
 The `list vsp-component` command only ever shows components that are
 actually eligible for removal on that instance: on the first/primary VCF
@@ -31,12 +27,16 @@ additional/non-primary VCF Instance it's Real-time Metrics, Depot Service and
 Identity Broker instead, since those are the components that ship as
 optional there.
 
-Download `cleanup_component.py` from the KB and run it on any system with a
-Python runtime and network connectivity to your VCF environment. **Double-quote
-every substituted value**, even the ones that look safe — a password or FQDN
-containing a special character (`$`, spaces, `&`) silently mangles the
-argument rather than erroring, the same class of trap as the
-`$`-interpolation lockout documented elsewhere in this repo.
+## Contents
+
+- [Setup: credentials](#setup-credentials)
+- [Log Management](#log-management)
+- [Real-time Metrics](#real-time-metrics)
+- [VCF Operations for Networks (VON)](#vcf-operations-for-networks-von)
+- [Depot Service](#depot-service)
+- [Identity Broker](#identity-broker)
+- [VCF Automation](#vcf-automation)
+- [References](#references)
 
 ## Setup: credentials
 
@@ -54,43 +54,87 @@ VMs for directly — VON and VCFA's `vsp-cluster` delete. Plain `vsp-component`
 deletes (Log Management, Real-time Metrics, Depot Service, Identity Broker)
 don't touch vCenter.
 
-## Uninstalling Log Management, Real-time Metrics, Depot Service, or Identity Broker
+## Log Management
 
-These are all plain `vsp-component` types — list to find the ID, then delete
-it:
+Log Management (formerly VCF Operations for Logs) is a plain `vsp-component`
+type, visible on the first/primary VCF Instance. List to find its ID, then
+delete it:
 
 ```bash
 python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
 ```
 
 ```bash
-python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<component-id-from-list-output>"
+python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<log-management-component-id>"
 ```
 
-**Real-time Metrics is two components** — "Real-time metrics" and the
-"Real-time metrics store" — both show up separately in the `list` output and
-both need their own `delete` run to fully remove the service.
+## Real-time Metrics
 
-## Uninstalling VCF Operations for Networks (VON)
+Also a `vsp-component` type, visible on any VCF Instance (primary or
+non-primary). **This is two separate components** — "Real-time metrics" and
+the "Real-time metrics store" — both show up separately in the `list`
+output and **both need their own delete run** to fully remove the service;
+deleting only one leaves the other behind.
+
+```bash
+python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+```
+
+```bash
+python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<real-time-metrics-component-id>"
+```
+
+```bash
+python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<real-time-metrics-store-component-id>"
+```
+
+## VCF Operations for Networks (VON)
 
 VON doesn't run on top of VCFMS — it's a traditional OVA appliance, so it
-uses the `ova-component` type instead:
+uses the `ova-component` type instead of `vsp-component`, and needs the
+vCenter credentials to clean up its VMs:
 
 ```bash
 python cleanup_component.py list ova-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
 ```
 
 ```bash
-python cleanup_component.py delete ova-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --vcenter-username="${VCENTER_USERNAME}" --vcenter-password="${VCENTER_PASSWORD}" --component-id="<von-component-id-from-list-output>"
+python cleanup_component.py delete ova-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --vcenter-username="${VCENTER_USERNAME}" --vcenter-password="${VCENTER_PASSWORD}" --component-id="<von-component-id>"
 ```
 
-This delete also cleans up VON's VMs in vCenter, which is why it needs the
-vCenter credentials. After it succeeds, one manual step is still required:
-remove the VON integration from inside VCF Operations at **Operate →
-Administration → Integrations → Accounts → Networks Adapter** — the script
-doesn't reach into VCF Operations' own integration registry.
+After that delete succeeds, one manual step is still required: remove the
+VON integration from inside VCF Operations at **Operate → Administration →
+Integrations → Accounts → Networks Adapter** — the script doesn't reach into
+VCF Operations' own integration registry.
 
-## Uninstalling VCF Automation
+## Depot Service
+
+A plain `vsp-component` type, but only visible (and only removable) on an
+**additional/non-primary VCF Instance** — it's one of the optional
+components that ships there:
+
+```bash
+python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+```
+
+```bash
+python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<depot-service-component-id>"
+```
+
+## Identity Broker
+
+Also a plain `vsp-component` type, and also **non-primary-instance only**,
+same as Depot Service above:
+
+```bash
+python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+```
+
+```bash
+python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<identity-broker-component-id>"
+```
+
+## VCF Automation
 
 VCF Automation removal is **three deletes, in order** — the first two use
 `vsp-component`, the last uses `vsp-cluster`. This applies regardless of

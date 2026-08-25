@@ -648,7 +648,7 @@ removing VCF Automation cleanly and deploying it fresh. That procedure — the
 credential to use, and the vsp-component/vsp-cluster delete order — is
 general-purpose (not specific to this non-management-network deployment
 path), so it now lives in its own doc:
-[`16-day-n-component-cleanup.md`](16-day-n-component-cleanup.md#uninstalling-vcf-automation).
+[`16-remove-components.md`](16-remove-components.md#vcf-automation).
 
 > **Verification status (2026-07-21).** Confirmed on a real deployment through three
 > stages: the validation task returned `SUCCEEDED`, the deployment task was

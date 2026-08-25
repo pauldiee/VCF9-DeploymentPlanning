@@ -2,7 +2,7 @@
 
 ## v3.3.8 — 2026-08-25
 - **Expanded `docs/16-vcf-automation-cleanup.md` into a general Day-N
-  component cleanup reference, renamed `docs/16-day-n-component-cleanup.md`**
+  component removal reference, renamed `docs/16-remove-components.md`**
   (#244) — `cleanup_component.py` isn't VCFA-specific; William Lam's [VCF 9.1
   Quick Tip: Uninstalling Optional Day-N
   Components](https://williamlam.com/2026/06/vcf-9-1-quick-tip-uninstalling-optional-day-n-components.html)
