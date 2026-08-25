@@ -25,6 +25,13 @@ the chosen load balancer for **vSphere Supervisor**, optionally in front of
 
 ## Deploying from VCF Operations
 
+**Before you start: a content library for Service Engine images is required
+and VCF Operations does not create it.** See [Service Engine
+infrastructure](#service-engine-infrastructure--cloud-content-library-and-se-group)
+below for the full, field-verified procedure — read it before you activate
+anything downstream (Supervisor or a virtual service), since this is the
+single most commonly missed step in the whole Avi deployment.
+
 **Where you deploy it from, and what "optional" means.** **VCF Operations →
 Build → Lifecycle → VCF Instances → *your domain* → Manage Components**, where
 **Avi Load Balancer** appears as a card beside **VCF Operations HCX**. That
@@ -96,6 +103,120 @@ Three planning consequences:
 > controller into it deliberately; if it does not, at least record that Avi
 > alerts live only in its own UI.
 
+## Service Engine infrastructure — Cloud, content library, and SE Group
+
+*Sourcing convention: **[documented]** = confirmed against TechDocs;
+**[field-verified 2026-07-23]** = confirmed against a live 9.1 lab, ported
+over from `10-supervisor-enablement.md` §4.5, which found this while
+enabling Supervisor with Avi — the same Cloud/content-library/SE-Group
+mechanism applies regardless of what consumes the load balancer (Supervisor,
+VCF Automation, tenant LBaaS), since it's all the same NSX Cloud object in
+Avi.*
+
+**VCF Operations deploys the Controller, creates its service account,
+generates the certificate, and propagates trust to NSX and vCenter, and
+wires the base NSX Cloud connector** **[documented — 9.1 Avi release
+notes]**. That leaves a **short, required** list of Avi-side configuration
+you still have to do by hand before anything can actually deploy a Service
+Engine — this is the gate almost everyone hits.
+
+> **Verify before you build.** VCF Operations does the base "cloud connector
+> setup", so parts of the NSX Cloud may already exist. Open **Infrastructure
+> → Clouds** and **Templates → IPAM/DNS Profiles** and check what's already
+> there before hand-creating anything.
+
+**1. The Service Engine management network — the piece people miss**
+**[documented; field-verified 2026-07-23]**. SE management NICs need their
+own network, and **VCF Operations does not create it** — it leaves the NSX
+Cloud connector's *Management Network* field blank, because it cannot guess
+which segment your SEs should sit on. Two parts:
+
+- **On NSX, build the segment first.** A **management transport zone** plus
+  an **overlay segment behind a Tier-1** (or a **VLAN-backed segment**),
+  with an **IP pool / allocation** for the SE management NICs. This does not
+  exist until you make it.
+- **In Avi, select it on the Cloud.** **Infrastructure → Clouds →** the NSX
+  cloud **→ Management Network →** pick that transport zone + segment + IP
+  allocation. Until this is set the Cloud sits **red** with the tell-tale
+  *"Configured management transport zone '' of type ''"* (empty quotes =
+  never set), and **no Service Engines can deploy** — surfacing later as the
+  load-balancer step stalling with *"Unable to acquire IP address for
+  network"* (KB 442187). The empty-quotes state is a **missing-config**
+  error, not a trust/cert error — a cert problem shows as a
+  connection/auth failure instead.
+- **The data network still needs a transport zone — but no segments.** The
+  Cloud config *requires* a **data-network transport zone** (the workload
+  overlay TZ), but you do **not** configure data segments or IP pools under
+  it in a VPC-networked cloud — the VPC handles the Data Network Segment
+  itself. The data TZ does not need to match the management-network TZ, and
+  it must be present in the **transport node profile of the ESXi hosts
+  where the Service Engines will run**, or the SE data NICs cannot attach.
+
+**2. The NSX Cloud connector — vCenter, a hand-built SE content library, and
+the template SE Group** **[documented; field-verified 2026-07-23]**. Beyond
+the management network above:
+
+- Verify the Cloud has a **vCenter registered for SE placement** (where the
+  SE *VMs* land — the target cluster; VCF Operations usually sets this, but
+  confirm it).
+- **Create the Service Engine content library by hand — VCF Operations does
+  not create this one.** Make an (empty) **content library on the vCenter**
+  and point the Cloud's vCenter config at it; Avi uploads the **Service
+  Engine OVA** into it and clones SEs from it. No library, no SE deployment.
+  **The push is immediate, not lazy** **[field-verified 2026-07-23]** — as
+  soon as you save the vCenter/content-library config on the Cloud, Avi
+  pushes the SE OVA into the library. Use that as a checkpoint: after
+  saving, confirm the SE OVA item actually appears in the library, proving
+  the SE image path works **before** you try to activate anything
+  downstream — not something to discover mid-activation.
+- Set the **Template Service Engine Group** on the Cloud. **Infrastructure
+  → Clouds**.
+
+**3. The Service Engine Group — configure Default-Group as the template,
+before first use** **[documented]**. Two statements that together make this
+a one-shot setting:
+
+> "\<Consumer\> creates one Service Engine Group for each \<instance\>." /
+> "If no template Service Engine Group is configured in the cloud, the
+> Default-Group is used." / "Changes made to the Default-Group configuration
+> will not reflect in an already created Service Engine Group."
+
+So **Default-Group must be right before the first thing consumes it** —
+retrofitting it afterwards does nothing for whatever already cloned from
+it. Under **Infrastructure → Cloud Resources → Service Engine Group**, set:
+
+- The **vSphere storage policy** — Service Engines are VMs, no policy means
+  nowhere to deploy them.
+
+  > **The storage policy lives on the Service Engine Group, not on the
+  > Cloud object** **[field-verified 2026-07-23]** — there is no
+  > storage-policy field on the NSX Cloud itself, which is the common place
+  > people go looking for it first.
+- **Placement scope** — compute cluster + datastore, optionally VM-group /
+  host-group affinity.
+- **HA mode** (N+M buffer / active-standby / active-active), maximum Service
+  Engine count (default 10), and virtual-service placement (**Compact**, the
+  default, packs onto existing SEs; **Distributed** spreads across new
+  ones). At least two Service Engine VMs are typically deployed per
+  consumer.
+
+> **IPAM is NOT required for VPC networking** **[documented]** — a
+> placeholder IPAM profile is only needed for a **non-VPC** cloud. On the
+> VPC path (the model used both by Supervisor's built-in LB integration and
+> the [VCF Automation DMZ VPC approach](#vcf-automation-externalcustomer-access)
+> below), TechDocs states plainly: *"IPAM profiles are: Not required for VPC
+> networking"*, because **the VIP comes from the VPC's External IP Block,
+> not from Avi IPAM**. That External IP Block is the real pre-activation
+> dependency in that model, and it lives in the VPC connectivity profile you
+> build in NSX, not in Avi itself.
+
+> **The short version:** SE management network built in NSX and selected in
+> the Avi Cloud + a data-network transport zone (no segments needed under a
+> VPC-networked cloud) + vCenter with a **hand-built SE content library** +
+> a Service Engine Group (Default-Group, or a named template) with a
+> **storage policy** set. Everything else a fuller walkthrough shows you is
+> already done for you by VCF Operations.
+
 ## Licensing
 
 **The controller must be pointed at License Hub — it does not find it.**
@@ -115,6 +236,17 @@ Controllers from On-prem License Hub"*. That is the actual join between the
 two appliances: the hub holds the entitlement, and the controller is an
 **endpoint** it assigns licences to. Until that is done the controller reports
 **0 Used / 0 Available**.
+
+> **Extract the controller's certificate before you go to License Hub to
+> onboard it — the onboarding dialog needs it in hand, in full chain.**
+> Field-verified: the endpoint's Certificate field in License Hub's
+> *Onboard an Endpoint* dialog (see
+> [`15-license-hub.md`](15-license-hub.md)) wants the **leaf certificate and
+> the CA certificate pasted together in one action** — no separate
+> leaf/CA fields. Since this is the **VCF-Operations-generated** controller
+> certificate, not one you already hold, retrieve it from the controller
+> **before** starting the onboarding wizard rather than discovering the
+> extraction step mid-dialog.
 
 - **Licences are measured in Service Units**, not per-appliance — the figure
   to check against an entitlement at procurement time.
@@ -182,6 +314,141 @@ validated license file directly to your Avi Controller endpoints."* Note that
 the entitlement upgrade is a **portal action taken before any appliance work**,
 and that **once upgraded a licence cannot be downgraded** — so it is a
 one-way step to schedule deliberately, not to discover mid-deployment.
+
+## VCF Automation (external/customer access)
+
+*Sourcing convention: **[documented]** = confirmed elsewhere in this repo
+against TechDocs/field observation; **[field-reported]** = practitioner blog,
+not independently verified here. This whole section is one worked example,
+not the only way to do it — TechDocs itself only says an external LB is
+possible post-deploy, not how.*
+
+VCF Automation's own **built-in load balancer is L4-only** — no SSL
+termination, and (per the built-in-LB memory already in this repo) it's
+never required. Putting Avi in front adds L7 termination and can keep
+customer/tenant traffic off the management network entirely. The most
+complete field walkthrough found for this is Tom Fojta's ["Load Balancing
+VCF Automation with
+Avi"](https://fojta.wordpress.com/2025/08/16/load-balancing-vcf-automation-with-avi/)
+**[field-reported]**, which uses a **DMZ VPC** architecture — a separate NSX
+VPC dedicated to external access, not a plain VDS network. Below follows
+his steps with notes on what a **VCF-managed Avi deploy already did for
+you**, since his article doesn't distinguish that.
+
+> **Licensing note [field-reported]:** this approach needs **VPC networking
+> and Avi/vDefend licensing beyond base VCF** — plain VCF only ships NSX
+> Legacy L4 load balancing and a stateless gateway firewall.
+
+### What the VCF Operations deploy already did
+
+- **The NSX Cloud + vCenter/NSX linkage — already done, don't recreate it.**
+  **[documented]**, per the deploy wizard's own Finish-step notice quoted in
+  *Notices and gotchas* below: *"Service accounts will be created with NSX
+  Manager and vCenter Server as required."* Fojta's guide lists creating an
+  NSX Cloud that connects to the management domain's NSX and vCenter as its
+  first Avi-side step — for a VCF-managed deploy this connection **already
+  exists**. Go verify it under the Cloud configuration rather than creating
+  a new one.
+- **A default Service Engine Group likely already exists — configure it,
+  don't assume it's ready as-is.** Avi ships a default SE Group, but Fojta's
+  guide still calls for setting SE node sizing, placement, and HA on it. Not
+  independently confirmed here whether the VCF-deployed default needs
+  changes before it is production-ready for this use case — check live.
+- **Everything else below is genuinely manual**, VCF-managed or not: the NSX
+  networking chain (Project/Transit GW/VPC), the SE management network, and
+  all of the virtual-service configuration are Day-2, use-case-specific work
+  that nothing automates.
+
+### NSX-side build (the DMZ VPC)
+
+**[field-reported]**, in order:
+
+1. **Confirm Avi is registered in NSX to support VPCs.** Not confirmed here
+   whether this is automatic alongside the Cloud/service-account
+   provisioning above, or a separate toggle — verify live before assuming
+   either way.
+2. **External IP block** for the DMZ VIP and SNAT.
+3. **NSX Project** ("DMZ project") with a centralized connection to a Tier-0
+   GW that can route to both the VCFA network and the external IP block.
+4. **Transit GW** inside that project.
+5. **DMZ VPC** with its own private CIDR (non-overlapping with the external
+   block). Its Connectivity Profile uses the external IP block, N-S
+   services, and default outbound NAT (so the service network can reach
+   VCFA).
+6. Enable **Avi Load Balancing** in the VPC's Advanced Settings.
+
+> **DFW gotcha [field-reported]:** the default east-west (DFW) drop rule
+> blocks LB→VCFA traffic. Temporarily open it to prove the path works, then
+> harden back down deliberately rather than leaving it wide open.
+
+If registered correctly, Avi **auto-detects** Avi-enabled VPCs and creates a
+matching **tenant** per NSX Project — no manual tenant creation needed in
+Avi itself.
+
+### Avi-side SE Group, content library, and management-plane network
+
+**Do this via the canonical procedure above, not from scratch.** The [Service
+Engine infrastructure](#service-engine-infrastructure--cloud-content-library-and-se-group)
+section covers the SE management network build, the hand-built content
+library (VCF Operations does not create it — and confirming the SE OVA
+lands in it is your checkpoint before going further), and the Service
+Engine Group's storage policy — all of it applies here unchanged, since
+it's the same NSX Cloud object regardless of what consumes the load
+balancer. Fojta's own write-up **[field-reported]** names only a **Tier-1
+GW + DHCP-enabled segment** for this — that matches the management-network
+build above, just described less precisely; use the canonical section's
+detail (including the exact place SEs go **red** if it's wrong) over his
+shorthand.
+
+If this controller cluster was **freshly deployed specifically for this use
+case**, budget the full Cloud/content-library/SE-Group setup as real work
+before expecting Service Engines to deploy at all — none of it is optional,
+and none of it is done for you beyond what VCF Operations already handles
+(cert, trust, service accounts, base connector).
+
+### Building the virtual service
+
+> **Use the Advanced create wizard — the Basic one does not expose what you
+> need.** Field-verified: creating the virtual service per the settings
+> below (custom Application Profile, TLS SNI on the health monitor, a
+> specific certificate) requires Avi's **Advanced** virtual-service
+> creation flow, not the default Basic wizard. Switch to Advanced **before**
+> starting, rather than building it in Basic and discovering the fields
+> aren't there.
+
+**[field-reported]**, field values from Fojta's guide:
+
+| Object | Settings |
+| ------ | -------- |
+| **VIP** | Pick the NSX Cloud + DMZ VPC VRF context; auto-allocate from the public subnet |
+| **Pool** | Generic application; same NSX Cloud/VRF as the VIP; default server port **443**; **server = VCFA's internal built-in-LB VIP** (single member — not the individual VMSP node IPs) |
+| **Pool health monitor** | Type **HTTPS**; Client Request: `GET /api/server_status HTTP/1.1`; expected Server Response Data: *"Service is up."*; Response code: **2xx**; SSL enabled; **TLS SNI Server Name = the VCFA FQDN**; SSL Profile: System Standard |
+| **Virtual Service** | Application Type **HTTP/HTTPS**; Application Profile **System-Secure-HTTP**; Cloud/VRF matching the VPC; the Service Engine Group; the VIP; service port **443** with SSL enabled; **certificate matching the VCFA FQDN**; Pool = above |
+
+> **DNS cutover gotcha [field-reported] — and it's not what you'd expect.**
+> *"AFAIK there is no documented way how to change FQDN of VCFA
+> installation which means you cannot use a new FQDN for the public VIP."*
+> So this is **not** a new customer-facing name added alongside the
+> internal one — the **same** VCFA FQDN's DNS record has to move from the
+> internal VIP to the new external VIP. Skip this and VCFA will redirect
+> subsequent calls back to the internal VIP, breaking the flow, because the
+> internal VIP still believes it owns that name.
+
+### Known gotcha: HTTP/2 breaks Supervisor image pulls
+
+**[field-reported]**, and worth reading before enabling HTTP/2 on this
+virtual service at all: VKS Cluster Management traffic (Supervisor and VKS
+clusters talking to the VCFA endpoint) needs **HTTP/2**, because the cluster
+agent extensions use gRPC over HTTP/2. But on **Avi 32.1.1**, enabling
+HTTP/2 broke Supervisor's ability to pull images from the VCFA endpoint
+(`ErrImagePull` on pods like `auto-attach`) — Avi was rewriting the
+backend's HEAD-request `Content-Length` to `0` under HTTP/2, and downstream
+image resolution failed on that malformed response. Workaround: a
+**second VCFA pool with HTTP/2 disabled**, with an Avi **request policy**
+that context-switches HTTP `HEAD` requests to that pool instead. If this
+fleet uses Supervisor/VKS against the same VCFA endpoint, budget for
+hitting this and plan the second pool up front rather than discovering it
+mid-incident.
 
 ## Notices and gotchas
 

@@ -259,6 +259,17 @@ TechDocs:
     Installer's vCenter connection above, and the same planning consequence:
     gather certificates before you start, not during.
 
+> **The Certificate field wants the full chain, pasted in one go — not just
+> the leaf.** Field-verified: onboarding a VCF-managed Avi Controller (using
+> the certificate VCF Operations auto-generated at deploy) means the
+> **leaf certificate and the CA certificate both go in the same paste**, in
+> one single action — the dialog does not offer separate leaf/CA fields.
+> Since the controller cert is auto-generated (not something already sitting
+> in a cert store the way a manually-issued one would be), you have to
+> **extract it from the controller first** rather than having it on hand —
+> plan that retrieval step into the onboarding work, not just the credential
+> gathering.
+
 > **Registered is not licensed — there are three gates, not one.** With the hub
 > deployed *and* registered, it still banners: *"The License Hub is registered,
 > but **no licenses are found**. Download the license file from Avi Cloud
