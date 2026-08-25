@@ -1,6 +1,6 @@
 # Changelog
 
-## v3.3.5 — 2026-08-25
+## v3.3.7 — 2026-08-25
 - **Added a "VCF Automation (external/customer access)" section to
   `docs/14-avi-load-balancer.md`** (#239) — how to actually configure Avi's
   virtual service to front VCF Automation, which nothing in TechDocs or the
@@ -40,6 +40,34 @@
   create wizard, not Basic** — added to `docs/14-avi-load-balancer.md`. The
   custom Application Profile, TLS SNI health-monitor setting, and specific
   certificate the virtual service needs aren't exposed in the Basic flow.
+
+## v3.3.6 — 2026-08-25
+- **Code blocks across the site now wrap fully and get a copy button.**
+  Previously `.prose pre` used `overflow-x: auto`, so a long single-line
+  command was clipped behind a horizontal scrollbar rather than shown in
+  full. Switched to wrapping (`white-space: pre-wrap`), and added a small
+  inline script in `BaseLayout.astro` that adds a copy button (SVG icon,
+  swaps to a checkmark for 1.5s on click) to every code block in rendered
+  doc/sample content, site-wide.
+
+## v3.3.5 — 2026-08-25
+- **Split the VCF Automation cleanup/reinstall procedure out of
+  `docs/05-day2-deployments.md` into its own doc**,
+  `docs/16-vcf-automation-cleanup.md` (#241) — the `cleanup_component.py`
+  sequence is general-purpose, not specific to the non-management-network
+  deployment path it was nested under. Reformatted the commands as
+  single-line invocations with every variable substitution double-quoted
+  (unquoted values fail silently rather than erroring, the same trap class
+  as the `$`-interpolation lockout already documented elsewhere in this
+  repo), and documented the actual credential to use:
+  `VCFMS_USERNAME=admin@vsp.local`. Updated `README.md`, `CLAUDE.md`, and
+  `web/src/nav.ts` for the new doc.
+- **Correction to the above: the "`admin@vsp.local` shares its password
+  with `vmware-system-user`" fact is about the fleet-wide VCFMS instance
+  only**, not VCFA's own separate instance — the initial commit wrongly
+  attributed it to VCFA's own instance, directly contradicting the doc's
+  own callout that the two instances are distinct. Fixed in
+  `docs/16-vcf-automation-cleanup.md`.
 
 ## v3.3.4 — 2026-08-25
 - **Split the Avi Load Balancer and License Hub deep-dive content out of

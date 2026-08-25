@@ -124,6 +124,13 @@ export const NAV: NavItem[] = [
     blurb: 'Deploy License Hub for vDefend and Avi subscription licensing — both the 2.0 standalone OVA and 5.1.2 SSP Installer flows — and the post-deploy registration chain.',
   },
   {
+    slug: '16-vcf-automation-cleanup',
+    step: 'Reference',
+    label: 'Automation Cleanup',
+    icon: 'trash-can',
+    blurb: 'Cleanly remove and reinstall VCF Automation via cleanup_component.py — component IDs, delete order, and the VCFMS credential to use.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',
