@@ -1,4 +1,4 @@
-# Day-N Component Cleanup and Reinstall
+# Remove Components
 
 Cleanly removing an optional Day-N fleet component so it can be redeployed
 fresh — using Broadcom's `cleanup_component.py` script (from [KB 441333 —
@@ -14,10 +14,19 @@ the only supported path.
 > only states the tool in general terms.
 
 Download `cleanup_component.py` from the KB and run it on any system with a
-Python runtime and network connectivity to your VCF environment. **Double-quote
-every substituted value**, even the ones that look safe — a password or FQDN
-containing a special character (`$`, spaces, `&`) silently mangles the
-argument rather than erroring, the same class of trap as the
+Python runtime and network connectivity to your VCF environment.
+
+> **Recommendation: run it from the SDDC Manager VM.** Copy the script there
+> with SCP and run it over SSH as root. SDDC Manager ships with Python by
+> default, so there's nothing to install, and the `delete vsp-cluster` step
+> under [VCF Automation](#vcf-automation) below already **requires** running
+> from inside the SDDC Manager VM as root — using the same VM for every
+> component keeps one consistent place to run the script from instead of
+> switching machines partway through.
+
+**Double-quote every substituted value**, even the ones that look safe — a
+password or FQDN containing a special character (`$`, spaces, `&`) silently
+mangles the argument rather than erroring, the same class of trap as the
 `$`-interpolation lockout documented elsewhere in this repo.
 
 The `list vsp-component` command only ever shows components that are
@@ -29,7 +38,6 @@ optional there.
 
 ## Contents
 
-- [Setup: credentials](#setup-credentials)
 - [Log Management](#log-management)
 - [Real-time Metrics](#real-time-metrics)
 - [VCF Operations for Networks (VON)](#vcf-operations-for-networks-von)
@@ -38,21 +46,10 @@ optional there.
 - [VCF Automation](#vcf-automation)
 - [References](#references)
 
-## Setup: credentials
-
-```bash
-VCF_FLEET_FQDN="<fleet-fqdn>"
-VCFMS_RUNTIME_FQDN="<vcfms-runtime-fqdn>"
-VCFMS_USERNAME="admin@vsp.local"
-VCFMS_PASSWORD="<vcfms-password>"
-VCENTER_USERNAME="<vcenter-username>"
-VCENTER_PASSWORD="<vcenter-password>"
-```
-
-The vCenter credentials are only needed for components the script cleans up
-VMs for directly — VON and VCFA's `vsp-cluster` delete. Plain `vsp-component`
-deletes (Log Management, Real-time Metrics, Depot Service, Identity Broker)
-don't touch vCenter.
+The vCenter credentials (`--vcenter-username` / `--vcenter-password`) are
+only needed for components the script cleans up VMs for directly — VON and
+VCFA's `vsp-cluster` delete. Plain `vsp-component` deletes (Log Management,
+Real-time Metrics, Depot Service, Identity Broker) don't touch vCenter.
 
 ## Log Management
 
@@ -61,11 +58,11 @@ type, visible on the first/primary VCF Instance. List to find its ID, then
 delete it:
 
 ```bash
-python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+python cleanup_component.py list vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>"
 ```
 
 ```bash
-python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<log-management-component-id>"
+python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --component-id="<log-management-component-id>"
 ```
 
 ## Real-time Metrics
@@ -77,15 +74,15 @@ output and **both need their own delete run** to fully remove the service;
 deleting only one leaves the other behind.
 
 ```bash
-python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+python cleanup_component.py list vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>"
 ```
 
 ```bash
-python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<real-time-metrics-component-id>"
+python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --component-id="<real-time-metrics-component-id>"
 ```
 
 ```bash
-python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<real-time-metrics-store-component-id>"
+python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --component-id="<real-time-metrics-store-component-id>"
 ```
 
 ## VCF Operations for Networks (VON)
@@ -95,11 +92,11 @@ uses the `ova-component` type instead of `vsp-component`, and needs the
 vCenter credentials to clean up its VMs:
 
 ```bash
-python cleanup_component.py list ova-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+python cleanup_component.py list ova-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>"
 ```
 
 ```bash
-python cleanup_component.py delete ova-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --vcenter-username="${VCENTER_USERNAME}" --vcenter-password="${VCENTER_PASSWORD}" --component-id="<von-component-id>"
+python cleanup_component.py delete ova-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --vcenter-username="<vcenter-username>" --vcenter-password="<vcenter-password>" --component-id="<von-component-id>"
 ```
 
 After that delete succeeds, one manual step is still required: remove the
@@ -114,11 +111,11 @@ A plain `vsp-component` type, but only visible (and only removable) on an
 components that ships there:
 
 ```bash
-python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+python cleanup_component.py list vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>"
 ```
 
 ```bash
-python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<depot-service-component-id>"
+python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --component-id="<depot-service-component-id>"
 ```
 
 ## Identity Broker
@@ -127,11 +124,11 @@ Also a plain `vsp-component` type, and also **non-primary-instance only**,
 same as Depot Service above:
 
 ```bash
-python cleanup_component.py list vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}"
+python cleanup_component.py list vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>"
 ```
 
 ```bash
-python cleanup_component.py delete vsp-component --fleet-fqdn="${VCF_FLEET_FQDN}" --vcf-services-runtime-fqdn="${VCFMS_RUNTIME_FQDN}" --vcf-services-runtime-username="${VCFMS_USERNAME}" --vcf-services-runtime-password="${VCFMS_PASSWORD}" --component-id="<identity-broker-component-id>"
+python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --component-id="<identity-broker-component-id>"
 ```
 
 ## VCF Automation

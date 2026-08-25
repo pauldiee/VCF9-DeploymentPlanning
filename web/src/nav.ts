@@ -126,7 +126,7 @@ export const NAV: NavItem[] = [
   {
     slug: '16-remove-components',
     step: 'Reference',
-    label: 'Day-N Cleanup',
+    label: 'Remove Components',
     icon: 'trash-can',
     blurb: 'Cleanly remove and reinstall optional Day-N fleet components — Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation — via cleanup_component.py.',
   },

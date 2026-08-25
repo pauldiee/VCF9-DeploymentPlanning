@@ -15,6 +15,17 @@
   vsp-component (×2)/vsp-cluster delete order — is kept as a
   subsection. Updated `README.md`, `CLAUDE.md`, `web/src/nav.ts`, and
   `docs/05-day2-deployments.md` for the new filename.
+- **Reworked `docs/16-remove-components.md` into one page with a per-product
+  TOC** (Log Management, Real-time Metrics, VON, Depot Service, Identity
+  Broker, VCF Automation each as their own section in the original
+  numbered-procedure style), dropped the shared `${VAR}` env-var setup block
+  in favor of the same literal `<placeholder>` style already used in the VCF
+  Automation section throughout, and added a recommendation to copy
+  `cleanup_component.py` to the SDDC Manager VM and run it from there over
+  SSH as root — it ships with Python by default, and the VCF Automation
+  `delete vsp-cluster` step already requires running from there, so it's one
+  consistent place to run every component's cleanup from. Updated the nav
+  label in `web/src/nav.ts` to "Remove Components" to match.
 
 ## v3.3.7 — 2026-08-25
 - **Added a "VCF Automation (external/customer access)" section to
