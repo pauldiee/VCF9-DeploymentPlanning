@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.3.4 — 2026-08-25
+- **Split the Avi Load Balancer and License Hub deep-dive content out of
+  `docs/prerequisites.md` into two new build guides** (#237), matching the
+  precedent already set by `10-supervisor-enablement.md`: `prerequisites.md`
+  now carries a compact prereq-gate checklist for each (what to decide/
+  collect before you start), while the full deploy-wizard field tables,
+  first-login setup, licensing chain, and field-verified gotchas moved to
+  `docs/14-avi-load-balancer.md` and `docs/15-license-hub.md`. Trims
+  `prerequisites.md` from ~1500 lines back down to a scannable gate
+  checklist; no content was cut, only relocated. Updated `README.md`,
+  `CLAUDE.md`, and `web/src/nav.ts` for the two new docs.
+
 ## v3.3.3 — 2026-08-24
 - **Added a License Hub 2.0 section to `docs/prerequisites.md`** (#236).
   License Hub 2.0 (GA 2026-08-05) drops the SSP Installer/`.tar` dependency
