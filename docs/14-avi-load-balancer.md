@@ -25,6 +25,15 @@ the chosen load balancer for **vSphere Supervisor**, optionally in front of
 
 ## Deploying from VCF Operations
 
+**Before you start: a content library for Service Engine images.** A local
+content library in the target vCenter is required for Service Engines — not
+optional, and not something the deploy wizard below provisions for you.
+Service Engines are always present per cluster (every cluster Avi serves
+runs its own, minimum 2 for HA), so this has to exist wherever the
+controller's Service Engine Group will place them. See the [VCF Automation
+section](#vcf-automation-externalcustomer-access) below for where this
+actually gets consumed.
+
 **Where you deploy it from, and what "optional" means.** **VCF Operations →
 Build → Lifecycle → VCF Instances → *your domain* → Manage Components**, where
 **Avi Load Balancer** appears as a card beside **VCF Operations HCX**. That
@@ -253,13 +262,25 @@ If registered correctly, Avi **auto-detects** Avi-enabled VPCs and creates a
 matching **tenant** per NSX Project — no manual tenant creation needed in
 Avi itself.
 
-### Avi-side SE Group and management-plane network
+### Avi-side SE Group, content library, and management-plane network
 
 **[field-reported]**, alongside the Cloud verified above: a **Tier-1 GW +
 DHCP-enabled segment** for the controller↔Service-Engine management-plane
 connectivity. This is the same **Service Engine management network**
 already called out in the prerequisites gate — plan it as part of the same
 work, not a separate afterthought.
+
+> **The content library for SE images is not optional, and neither this
+> guide's source nor Fojta's covers it — don't skip it.** Per the
+> prerequisites gate: *"A local content library in the target vCenter for
+> the Service Engine images"* is required, since **Service Engines are
+> always present per cluster** — every cluster Avi serves runs its own. If
+> the controller cluster was freshly deployed for this specific use case
+> (rather than reused from an existing Avi deployment already serving
+> another cluster), confirm the content library exists in the management
+> domain's vCenter and is wired to the SE Group **before** expecting Service
+> Engines to actually deploy — an SE Group with sizing/placement/HA set but
+> no content library will not produce running Service Engines.
 
 ### Building the virtual service
 
