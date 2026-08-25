@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.3.8 — 2026-08-25
+- **Expanded `docs/16-vcf-automation-cleanup.md` into a general Day-N
+  component cleanup reference, renamed `docs/16-day-n-component-cleanup.md`**
+  (#244) — `cleanup_component.py` isn't VCFA-specific; William Lam's [VCF 9.1
+  Quick Tip: Uninstalling Optional Day-N
+  Components](https://williamlam.com/2026/06/vcf-9-1-quick-tip-uninstalling-optional-day-n-components.html)
+  covers the same tool for Log Management, Real-time Metrics (two
+  components — the metrics service and its store), VCF Operations for
+  Networks (VON, the `ova-component` type, plus the manual VCF Operations
+  integration-removal step it still needs), and Depot Service/Identity
+  Broker (non-primary VCF Instances only). VCFA's existing detailed
+  procedure — the `admin@vsp.local` VCFMS-instance subtlety, the
+  vsp-component (×2)/vsp-cluster delete order — is kept as a
+  subsection. Updated `README.md`, `CLAUDE.md`, `web/src/nav.ts`, and
+  `docs/05-day2-deployments.md` for the new filename.
+
 ## v3.3.7 — 2026-08-25
 - **Added a "VCF Automation (external/customer access)" section to
   `docs/14-avi-load-balancer.md`** (#239) — how to actually configure Avi's

@@ -37,7 +37,7 @@ This repo flips the order:
 | `docs/13-shutdown-startup.md`       | Reference — the ordered fleet shutdown / startup runbook (the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, infrastructure VMs last) |
 | `docs/14-avi-load-balancer.md`      | Reference — build guide for deploying Avi Load Balancer (VCF Operations wizard, controller first-login setup, the licensing chain) |
 | `docs/15-license-hub.md`            | Reference — build guide for deploying License Hub (2.0 standalone OVA and 5.1.2 SSP Installer flows, post-deploy registration/licensing chain) |
-| `docs/16-vcf-automation-cleanup.md` | Reference — cleanly remove and reinstall VCF Automation via `cleanup_component.py` (component IDs, delete order, the VCFMS credential to use) |
+| `docs/16-day-n-component-cleanup.md` | Reference — cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
 | `docs/workbook-cell-mapping.md`     | Reference — intake answers mapped to workbook cells    |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
