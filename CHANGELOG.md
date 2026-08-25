@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.3.5 — 2026-08-25
+- **Split the VCF Automation cleanup/reinstall procedure out of
+  `docs/05-day2-deployments.md` into its own doc**,
+  `docs/16-vcf-automation-cleanup.md` (#241) — the `cleanup_component.py`
+  sequence is general-purpose, not specific to the non-management-network
+  deployment path it was nested under. Reformatted the commands as
+  single-line invocations with every variable substitution double-quoted
+  (unquoted values fail silently rather than erroring, the same trap class
+  as the `$`-interpolation lockout already documented elsewhere in this
+  repo), and documented the actual credential to use:
+  `VCFMS_USERNAME=admin@vsp.local`, same password as `vmware-system-user`.
+  Updated `README.md`, `CLAUDE.md`, and `web/src/nav.ts` for the new doc.
+
 ## v3.3.4 — 2026-08-25
 - **Split the Avi Load Balancer and License Hub deep-dive content out of
   `docs/prerequisites.md` into two new build guides** (#237), matching the

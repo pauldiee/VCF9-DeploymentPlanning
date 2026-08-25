@@ -47,6 +47,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/13-shutdown-startup.md`    | Ordered fleet shutdown / startup runbook (11-step mgmt sequence, fleet-level VCF Ops rule, shared NSX, infra VMs last) |
 | `docs/14-avi-load-balancer.md`   | Build guide — deploy Avi Load Balancer from VCF Operations (wizard, controller first-login setup, licensing chain) |
 | `docs/15-license-hub.md`         | Build guide — deploy License Hub for vDefend/Avi (2.0 standalone OVA and 5.1.2 SSP Installer flows, post-deploy registration chain) |
+| `docs/16-vcf-automation-cleanup.md` | Build guide — cleanly remove/reinstall VCF Automation via `cleanup_component.py` (component IDs, delete order, VCFMS credential) |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |
