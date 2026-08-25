@@ -349,21 +349,24 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   width: 1.75rem;
   height: 1.75rem;
   padding: 0;
-  background: var(--surface-inset);
+  background: rgba(255, 255, 255, 0.12);
   border: var(--border-width) solid var(--border-on-code);
   border-radius: var(--radius-xs);
   color: var(--text-on-code);
-  opacity: 0.7;
+  opacity: 0.85;
   cursor: pointer;
-  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    background 0.15s ease;
 }
 .code-copy-btn:hover {
   opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
   color: var(--itq-orange);
   border-color: var(--itq-orange);
 }
 .code-copy-btn.is-copied {
   opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
   color: var(--itq-orange);
   border-color: var(--itq-orange);
 }
