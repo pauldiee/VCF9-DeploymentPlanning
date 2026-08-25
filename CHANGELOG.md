@@ -11,6 +11,15 @@
   `prerequisites.md` from ~1500 lines back down to a scannable gate
   checklist; no content was cut, only relocated. Updated `README.md`,
   `CLAUDE.md`, and `web/src/nav.ts` for the two new docs.
+- **Fixed `docs/01-network-dns-plan.md`'s License Hub sizing row and subnet
+  total — still written for the 5.1.2 flow** (#236). Now version-aware:
+  **2.0** needs only **3 routed IPs + 2 FQDNs** (down from 5.1.2's ~9 IPs +
+  3 FQDNs), so the `/24` subnet-sizing total's "+9 if License Hub" was
+  overstating 2.0's footprint. Also added 2.0's non-routable internal
+  cluster CIDR (default `10.10.0.0/16`, field-confirmed) to the same
+  "separate internal networks" callout that already covers VCF Automation's
+  and the fleet runtime's internal CIDRs, since it does not belong in the
+  routed subnet math at all.
 
 ## v3.3.3 — 2026-08-24
 - **Added a License Hub 2.0 section to `docs/prerequisites.md`** (#236).
