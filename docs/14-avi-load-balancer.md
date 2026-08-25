@@ -237,6 +237,17 @@ two appliances: the hub holds the entitlement, and the controller is an
 **endpoint** it assigns licences to. Until that is done the controller reports
 **0 Used / 0 Available**.
 
+> **Extract the controller's certificate before you go to License Hub to
+> onboard it — the onboarding dialog needs it in hand, in full chain.**
+> Field-verified: the endpoint's Certificate field in License Hub's
+> *Onboard an Endpoint* dialog (see
+> [`15-license-hub.md`](15-license-hub.md)) wants the **leaf certificate and
+> the CA certificate pasted together in one action** — no separate
+> leaf/CA fields. Since this is the **VCF-Operations-generated** controller
+> certificate, not one you already hold, retrieve it from the controller
+> **before** starting the onboarding wizard rather than discovering the
+> extraction step mid-dialog.
+
 - **Licences are measured in Service Units**, not per-appliance — the figure
   to check against an entitlement at procurement time.
 - Splitting, merging or upgrading licences happens in the **Broadcom Support
