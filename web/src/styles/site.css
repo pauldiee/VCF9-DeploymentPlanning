@@ -322,11 +322,15 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   color: var(--text-body);
 }
 .prose pre {
+  position: relative;
   background: var(--surface-code);
   color: var(--text-on-code);
   padding: var(--space-5);
+  padding-right: calc(var(--space-5) + 2.25rem);
   border-radius: var(--radius-md);
   overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   line-height: var(--lh-base);
 }
 .prose pre code {
@@ -334,6 +338,42 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   border: 0;
   padding: 0;
   color: inherit;
+}
+.code-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border: var(--border-width) solid var(--border-on-code);
+  border-radius: var(--radius-xs);
+  color: var(--text-on-code);
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    background 0.15s ease;
+}
+.code-copy-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--itq-orange);
+  border-color: var(--itq-orange);
+}
+.code-copy-btn.is-copied {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--itq-orange);
+  border-color: var(--itq-orange);
+}
+.code-copy-btn svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  pointer-events: none;
 }
 
 .prose blockquote {

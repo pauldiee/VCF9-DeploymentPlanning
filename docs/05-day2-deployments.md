@@ -643,80 +643,12 @@ UI with no SSH, and it distinguishes a misaligned secret from a wrong password.
 #### If recovery is not viable — remove and reinstall
 
 When the `admin@vsp.local` credential cannot be recovered, the alternative is
-removing VCF Automation cleanly and deploying it fresh, using Broadcom's
-`cleanup_component.py` script (from [KB 441333 — Scripted components cleanup
-from VCF Operations](https://knowledge.broadcom.com/external/article/441333/scripted-components-cleanup-from-vcf-ope.html)).
-
-> **Credit.** The worked example and command order below follow William Lam's
-> [VCF 9.1 Quick Tip: Uninstalling Optional Day-N
-> Components](https://williamlam.com/2026/06/vcf-9-1-quick-tip-uninstalling-optional-day-n-components.html),
-> which walks the VCFA-specific sequence the KB only states in general terms.
-
-VCF Automation removal is **three deletes, in order** — the first two use
-`vsp-component`, the last uses `vsp-cluster`:
-
-1. **List `vsp-component` to find the "VCF Automation" and "Migration service
-   engine" component IDs:**
-   ```bash
-   python cleanup_component.py list vsp-component \
-     --fleet-fqdn=${VCF_FLEET_FQDN} \
-     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
-     --vcf-services-runtime-username=${VCFMS_USERNAME} \
-     --vcf-services-runtime-password=${VCFMS_PASSWORD}
-   ```
-2. **Delete the "Migration service engine" component first** — VCFA brings
-   its own migration engine, which is a separate component from Automation
-   itself and does not get removed with it:
-   ```bash
-   python cleanup_component.py delete vsp-component \
-     --fleet-fqdn=${VCF_FLEET_FQDN} \
-     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
-     --vcf-services-runtime-username=${VCFMS_USERNAME} \
-     --vcf-services-runtime-password=${VCFMS_PASSWORD} \
-     --component-id=<migration-service-engine-component-id>
-   ```
-3. **Then delete the "VCF Automation" component**, with its own component ID
-   from the list output:
-   ```bash
-   python cleanup_component.py delete vsp-component \
-     --fleet-fqdn=${VCF_FLEET_FQDN} \
-     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
-     --vcf-services-runtime-username=${VCFMS_USERNAME} \
-     --vcf-services-runtime-password=${VCFMS_PASSWORD} \
-     --component-id=<vcf-automation-component-id>
-   ```
-4. **Delete the VCFA's own VCFMS cluster**, as **root**, from inside the SDDC
-   Manager VM:
-   ```bash
-   python cleanup_component.py list vsp-cluster \
-     --fleet-fqdn=${VCF_FLEET_FQDN} \
-     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
-     --vcf-services-runtime-username=${VCFMS_USERNAME} \
-     --vcf-services-runtime-password=${VCFMS_PASSWORD}
-
-   python cleanup_component.py delete vsp-cluster \
-     --fleet-fqdn=${VCF_FLEET_FQDN} \
-     --vcf-services-runtime-fqdn=${VCFMS_RUNTIME_FQDN} \
-     --vcf-services-runtime-username=${VCFMS_USERNAME} \
-     --vcf-services-runtime-password=${VCFMS_PASSWORD} \
-     --vcenter-username=${VCENTER_USERNAME} --vcenter-password=${VCENTER_PASSWORD} \
-     --component-id=<id-from-list-output>
-   ```
-   The `delete vsp-cluster` step is the one that actually cleans up the VMs in
-   vCenter — steps 1 and 2 alone leave the VCFMS VMs behind.
-
-> **VCFA's VCFMS runs its own, separate Services Runtime — with its own
-> `admin@vsp.local`.** Field-verified 2026-07-27. This is *not* the same
-> instance as the fleet-wide VCF Management Services runtime used elsewhere on
-> this page (the one behind the `$`-interpolation lockout above). If that
-> other runtime's `admin@vsp.local` is broken, it does **not** block this
-> cleanup — `${VCFMS_USERNAME}` / `${VCFMS_PASSWORD}` here authenticate against
-> VCFA's own instance. Confirm which FQDN `${VCFMS_RUNTIME_FQDN}` actually
-> points at before assuming either way.
-
-After the `delete vsp-cluster` step, confirm in vCenter that the VCFMS VMs are
-actually gone before treating the environment as clean for a fresh deploy —
-the script's own "success" does not substitute for checking.
+removing VCF Automation cleanly and deploying it fresh. That procedure — the
+`cleanup_component.py` sequence, the `VCFMS_USERNAME`/`VCFMS_PASSWORD`
+credential to use, and the vsp-component/vsp-cluster delete order — is
+general-purpose (not specific to this non-management-network deployment
+path), so it now lives in its own doc:
+[`16-vcf-automation-cleanup.md`](16-vcf-automation-cleanup.md).
 
 > **Verification status (2026-07-21).** Confirmed on a real deployment through three
 > stages: the validation task returned `SUCCEEDED`, the deployment task was
