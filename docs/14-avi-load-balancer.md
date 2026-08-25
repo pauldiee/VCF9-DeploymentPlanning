@@ -408,6 +408,14 @@ and none of it is done for you beyond what VCF Operations already handles
 
 ### Building the virtual service
 
+> **Use the Advanced create wizard — the Basic one does not expose what you
+> need.** Field-verified: creating the virtual service per the settings
+> below (custom Application Profile, TLS SNI on the health monitor, a
+> specific certificate) requires Avi's **Advanced** virtual-service
+> creation flow, not the default Basic wizard. Switch to Advanced **before**
+> starting, rather than building it in Basic and discovering the fields
+> aren't there.
+
 **[field-reported]**, field values from Fojta's guide:
 
 | Object | Settings |

@@ -36,6 +36,10 @@
   on hand. Added to `docs/15-license-hub.md`, and cross-referenced as an
   explicit step in `docs/14-avi-load-balancer.md`'s Licensing section so
   it's not missed from the Avi side either.
+- **Field-verified: the VCF Automation virtual service needs Avi's Advanced
+  create wizard, not Basic** — added to `docs/14-avi-load-balancer.md`. The
+  custom Application Profile, TLS SNI health-monitor setting, and specific
+  certificate the virtual service needs aren't exposed in the Basic flow.
 
 ## v3.3.4 — 2026-08-25
 - **Split the Avi Load Balancer and License Hub deep-dive content out of
