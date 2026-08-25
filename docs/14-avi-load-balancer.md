@@ -25,14 +25,12 @@ the chosen load balancer for **vSphere Supervisor**, optionally in front of
 
 ## Deploying from VCF Operations
 
-**Before you start: a content library for Service Engine images.** A local
-content library in the target vCenter is required for Service Engines — not
-optional, and not something the deploy wizard below provisions for you.
-Service Engines are always present per cluster (every cluster Avi serves
-runs its own, minimum 2 for HA), so this has to exist wherever the
-controller's Service Engine Group will place them. See the [VCF Automation
-section](#vcf-automation-externalcustomer-access) below for where this
-actually gets consumed.
+**Before you start: a content library for Service Engine images is required
+and VCF Operations does not create it.** See [Service Engine
+infrastructure](#service-engine-infrastructure--cloud-content-library-and-se-group)
+below for the full, field-verified procedure — read it before you activate
+anything downstream (Supervisor or a virtual service), since this is the
+single most commonly missed step in the whole Avi deployment.
 
 **Where you deploy it from, and what "optional" means.** **VCF Operations →
 Build → Lifecycle → VCF Instances → *your domain* → Manage Components**, where
@@ -104,6 +102,120 @@ Three planning consequences:
 > human. If the fleet has a monitoring or alerting standard, wire the
 > controller into it deliberately; if it does not, at least record that Avi
 > alerts live only in its own UI.
+
+## Service Engine infrastructure — Cloud, content library, and SE Group
+
+*Sourcing convention: **[documented]** = confirmed against TechDocs;
+**[field-verified 2026-07-23]** = confirmed against a live 9.1 lab, ported
+over from `10-supervisor-enablement.md` §4.5, which found this while
+enabling Supervisor with Avi — the same Cloud/content-library/SE-Group
+mechanism applies regardless of what consumes the load balancer (Supervisor,
+VCF Automation, tenant LBaaS), since it's all the same NSX Cloud object in
+Avi.*
+
+**VCF Operations deploys the Controller, creates its service account,
+generates the certificate, and propagates trust to NSX and vCenter, and
+wires the base NSX Cloud connector** **[documented — 9.1 Avi release
+notes]**. That leaves a **short, required** list of Avi-side configuration
+you still have to do by hand before anything can actually deploy a Service
+Engine — this is the gate almost everyone hits.
+
+> **Verify before you build.** VCF Operations does the base "cloud connector
+> setup", so parts of the NSX Cloud may already exist. Open **Infrastructure
+> → Clouds** and **Templates → IPAM/DNS Profiles** and check what's already
+> there before hand-creating anything.
+
+**1. The Service Engine management network — the piece people miss**
+**[documented; field-verified 2026-07-23]**. SE management NICs need their
+own network, and **VCF Operations does not create it** — it leaves the NSX
+Cloud connector's *Management Network* field blank, because it cannot guess
+which segment your SEs should sit on. Two parts:
+
+- **On NSX, build the segment first.** A **management transport zone** plus
+  an **overlay segment behind a Tier-1** (or a **VLAN-backed segment**),
+  with an **IP pool / allocation** for the SE management NICs. This does not
+  exist until you make it.
+- **In Avi, select it on the Cloud.** **Infrastructure → Clouds →** the NSX
+  cloud **→ Management Network →** pick that transport zone + segment + IP
+  allocation. Until this is set the Cloud sits **red** with the tell-tale
+  *"Configured management transport zone '' of type ''"* (empty quotes =
+  never set), and **no Service Engines can deploy** — surfacing later as the
+  load-balancer step stalling with *"Unable to acquire IP address for
+  network"* (KB 442187). The empty-quotes state is a **missing-config**
+  error, not a trust/cert error — a cert problem shows as a
+  connection/auth failure instead.
+- **The data network still needs a transport zone — but no segments.** The
+  Cloud config *requires* a **data-network transport zone** (the workload
+  overlay TZ), but you do **not** configure data segments or IP pools under
+  it in a VPC-networked cloud — the VPC handles the Data Network Segment
+  itself. The data TZ does not need to match the management-network TZ, and
+  it must be present in the **transport node profile of the ESXi hosts
+  where the Service Engines will run**, or the SE data NICs cannot attach.
+
+**2. The NSX Cloud connector — vCenter, a hand-built SE content library, and
+the template SE Group** **[documented; field-verified 2026-07-23]**. Beyond
+the management network above:
+
+- Verify the Cloud has a **vCenter registered for SE placement** (where the
+  SE *VMs* land — the target cluster; VCF Operations usually sets this, but
+  confirm it).
+- **Create the Service Engine content library by hand — VCF Operations does
+  not create this one.** Make an (empty) **content library on the vCenter**
+  and point the Cloud's vCenter config at it; Avi uploads the **Service
+  Engine OVA** into it and clones SEs from it. No library, no SE deployment.
+  **The push is immediate, not lazy** **[field-verified 2026-07-23]** — as
+  soon as you save the vCenter/content-library config on the Cloud, Avi
+  pushes the SE OVA into the library. Use that as a checkpoint: after
+  saving, confirm the SE OVA item actually appears in the library, proving
+  the SE image path works **before** you try to activate anything
+  downstream — not something to discover mid-activation.
+- Set the **Template Service Engine Group** on the Cloud. **Infrastructure
+  → Clouds**.
+
+**3. The Service Engine Group — configure Default-Group as the template,
+before first use** **[documented]**. Two statements that together make this
+a one-shot setting:
+
+> "\<Consumer\> creates one Service Engine Group for each \<instance\>." /
+> "If no template Service Engine Group is configured in the cloud, the
+> Default-Group is used." / "Changes made to the Default-Group configuration
+> will not reflect in an already created Service Engine Group."
+
+So **Default-Group must be right before the first thing consumes it** —
+retrofitting it afterwards does nothing for whatever already cloned from
+it. Under **Infrastructure → Cloud Resources → Service Engine Group**, set:
+
+- The **vSphere storage policy** — Service Engines are VMs, no policy means
+  nowhere to deploy them.
+
+  > **The storage policy lives on the Service Engine Group, not on the
+  > Cloud object** **[field-verified 2026-07-23]** — there is no
+  > storage-policy field on the NSX Cloud itself, which is the common place
+  > people go looking for it first.
+- **Placement scope** — compute cluster + datastore, optionally VM-group /
+  host-group affinity.
+- **HA mode** (N+M buffer / active-standby / active-active), maximum Service
+  Engine count (default 10), and virtual-service placement (**Compact**, the
+  default, packs onto existing SEs; **Distributed** spreads across new
+  ones). At least two Service Engine VMs are typically deployed per
+  consumer.
+
+> **IPAM is NOT required for VPC networking** **[documented]** — a
+> placeholder IPAM profile is only needed for a **non-VPC** cloud. On the
+> VPC path (the model used both by Supervisor's built-in LB integration and
+> the [VCF Automation DMZ VPC approach](#vcf-automation-externalcustomer-access)
+> below), TechDocs states plainly: *"IPAM profiles are: Not required for VPC
+> networking"*, because **the VIP comes from the VPC's External IP Block,
+> not from Avi IPAM**. That External IP Block is the real pre-activation
+> dependency in that model, and it lives in the VPC connectivity profile you
+> build in NSX, not in Avi itself.
+
+> **The short version:** SE management network built in NSX and selected in
+> the Avi Cloud + a data-network transport zone (no segments needed under a
+> VPC-networked cloud) + vCenter with a **hand-built SE content library** +
+> a Service Engine Group (Default-Group, or a named template) with a
+> **storage policy** set. Everything else a fuller walkthrough shows you is
+> already done for you by VCF Operations.
 
 ## Licensing
 
@@ -264,23 +376,24 @@ Avi itself.
 
 ### Avi-side SE Group, content library, and management-plane network
 
-**[field-reported]**, alongside the Cloud verified above: a **Tier-1 GW +
-DHCP-enabled segment** for the controller↔Service-Engine management-plane
-connectivity. This is the same **Service Engine management network**
-already called out in the prerequisites gate — plan it as part of the same
-work, not a separate afterthought.
+**Do this via the canonical procedure above, not from scratch.** The [Service
+Engine infrastructure](#service-engine-infrastructure--cloud-content-library-and-se-group)
+section covers the SE management network build, the hand-built content
+library (VCF Operations does not create it — and confirming the SE OVA
+lands in it is your checkpoint before going further), and the Service
+Engine Group's storage policy — all of it applies here unchanged, since
+it's the same NSX Cloud object regardless of what consumes the load
+balancer. Fojta's own write-up **[field-reported]** names only a **Tier-1
+GW + DHCP-enabled segment** for this — that matches the management-network
+build above, just described less precisely; use the canonical section's
+detail (including the exact place SEs go **red** if it's wrong) over his
+shorthand.
 
-> **The content library for SE images is not optional, and neither this
-> guide's source nor Fojta's covers it — don't skip it.** Per the
-> prerequisites gate: *"A local content library in the target vCenter for
-> the Service Engine images"* is required, since **Service Engines are
-> always present per cluster** — every cluster Avi serves runs its own. If
-> the controller cluster was freshly deployed for this specific use case
-> (rather than reused from an existing Avi deployment already serving
-> another cluster), confirm the content library exists in the management
-> domain's vCenter and is wired to the SE Group **before** expecting Service
-> Engines to actually deploy — an SE Group with sizing/placement/HA set but
-> no content library will not produce running Service Engines.
+If this controller cluster was **freshly deployed specifically for this use
+case**, budget the full Cloud/content-library/SE-Group setup as real work
+before expecting Service Engines to deploy at all — none of it is optional,
+and none of it is done for you beyond what VCF Operations already handles
+(cert, trust, service accounts, base connector).
 
 ### Building the virtual service
 

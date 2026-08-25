@@ -14,6 +14,19 @@
   virtual service itself). Covers the DNS-cutover gotcha (VCFA's FQDN can't
   be changed, so the *same* FQDN's record has to move to the new VIP) and a
   real HTTP/2 gotcha breaking Supervisor image pulls on Avi 32.1.1.
+- **Added a canonical "Service Engine infrastructure" section to
+  `docs/14-avi-load-balancer.md`**, porting the field-verified
+  Cloud/content-library/SE-Group procedure from
+  `10-supervisor-enablement.md` §4.5 (#239) — the same NSX Cloud mechanism
+  applies regardless of consumer, so it belongs in the Avi doc rather than
+  staying Supervisor-only. Covers what VCF Operations leaves undone: the SE
+  management network (build on NSX, select on the Cloud — red with
+  `"Configured management transport zone '' of type ''"` if missed, and no
+  SEs deploy), the hand-built SE content library (not created by VCF
+  Operations; the SE OVA push on save is a usable checkpoint), the storage
+  policy living on the SE Group rather than the Cloud object, and that IPAM
+  is not required for VPC networking. The VCF Automation section's SE Group
+  bullet now points at this canonical section instead of restating it.
 
 ## v3.3.4 — 2026-08-25
 - **Split the Avi Load Balancer and License Hub deep-dive content out of
