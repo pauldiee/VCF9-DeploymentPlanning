@@ -1,5 +1,20 @@
 # Changelog
 
+## v3.3.5 — 2026-08-25
+- **Added a "VCF Automation (external/customer access)" section to
+  `docs/14-avi-load-balancer.md`** (#239) — how to actually configure Avi's
+  virtual service to front VCF Automation, which nothing in TechDocs or the
+  practitioner blogs checked (VMware's own Avi/VCFA blog, the Load
+  Balancing blog, vStellar's home-lab series) documents end-to-end. Sourced
+  from Tom Fojta's DMZ-VPC walkthrough, credited and marked
+  **[field-reported]** throughout per the sourcing convention already used
+  in `10-supervisor-enablement.md`, with explicit notes on which steps a
+  VCF-managed Avi deploy already handles (the NSX Cloud/vCenter linkage)
+  versus what remains manual (the DMZ VPC build, SE Group tuning, the
+  virtual service itself). Covers the DNS-cutover gotcha (VCFA's FQDN can't
+  be changed, so the *same* FQDN's record has to move to the new VIP) and a
+  real HTTP/2 gotcha breaking Supervisor image pulls on Avi 32.1.1.
+
 ## v3.3.4 — 2026-08-25
 - **Split the Avi Load Balancer and License Hub deep-dive content out of
   `docs/prerequisites.md` into two new build guides** (#237), matching the

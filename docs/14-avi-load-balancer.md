@@ -183,6 +183,120 @@ the entitlement upgrade is a **portal action taken before any appliance work**,
 and that **once upgraded a licence cannot be downgraded** — so it is a
 one-way step to schedule deliberately, not to discover mid-deployment.
 
+## VCF Automation (external/customer access)
+
+*Sourcing convention: **[documented]** = confirmed elsewhere in this repo
+against TechDocs/field observation; **[field-reported]** = practitioner blog,
+not independently verified here. This whole section is one worked example,
+not the only way to do it — TechDocs itself only says an external LB is
+possible post-deploy, not how.*
+
+VCF Automation's own **built-in load balancer is L4-only** — no SSL
+termination, and (per the built-in-LB memory already in this repo) it's
+never required. Putting Avi in front adds L7 termination and can keep
+customer/tenant traffic off the management network entirely. The most
+complete field walkthrough found for this is Tom Fojta's ["Load Balancing
+VCF Automation with
+Avi"](https://fojta.wordpress.com/2025/08/16/load-balancing-vcf-automation-with-avi/)
+**[field-reported]**, which uses a **DMZ VPC** architecture — a separate NSX
+VPC dedicated to external access, not a plain VDS network. Below follows
+his steps with notes on what a **VCF-managed Avi deploy already did for
+you**, since his article doesn't distinguish that.
+
+> **Licensing note [field-reported]:** this approach needs **VPC networking
+> and Avi/vDefend licensing beyond base VCF** — plain VCF only ships NSX
+> Legacy L4 load balancing and a stateless gateway firewall.
+
+### What the VCF Operations deploy already did
+
+- **The NSX Cloud + vCenter/NSX linkage — already done, don't recreate it.**
+  **[documented]**, per the deploy wizard's own Finish-step notice quoted in
+  *Notices and gotchas* below: *"Service accounts will be created with NSX
+  Manager and vCenter Server as required."* Fojta's guide lists creating an
+  NSX Cloud that connects to the management domain's NSX and vCenter as its
+  first Avi-side step — for a VCF-managed deploy this connection **already
+  exists**. Go verify it under the Cloud configuration rather than creating
+  a new one.
+- **A default Service Engine Group likely already exists — configure it,
+  don't assume it's ready as-is.** Avi ships a default SE Group, but Fojta's
+  guide still calls for setting SE node sizing, placement, and HA on it. Not
+  independently confirmed here whether the VCF-deployed default needs
+  changes before it is production-ready for this use case — check live.
+- **Everything else below is genuinely manual**, VCF-managed or not: the NSX
+  networking chain (Project/Transit GW/VPC), the SE management network, and
+  all of the virtual-service configuration are Day-2, use-case-specific work
+  that nothing automates.
+
+### NSX-side build (the DMZ VPC)
+
+**[field-reported]**, in order:
+
+1. **Confirm Avi is registered in NSX to support VPCs.** Not confirmed here
+   whether this is automatic alongside the Cloud/service-account
+   provisioning above, or a separate toggle — verify live before assuming
+   either way.
+2. **External IP block** for the DMZ VIP and SNAT.
+3. **NSX Project** ("DMZ project") with a centralized connection to a Tier-0
+   GW that can route to both the VCFA network and the external IP block.
+4. **Transit GW** inside that project.
+5. **DMZ VPC** with its own private CIDR (non-overlapping with the external
+   block). Its Connectivity Profile uses the external IP block, N-S
+   services, and default outbound NAT (so the service network can reach
+   VCFA).
+6. Enable **Avi Load Balancing** in the VPC's Advanced Settings.
+
+> **DFW gotcha [field-reported]:** the default east-west (DFW) drop rule
+> blocks LB→VCFA traffic. Temporarily open it to prove the path works, then
+> harden back down deliberately rather than leaving it wide open.
+
+If registered correctly, Avi **auto-detects** Avi-enabled VPCs and creates a
+matching **tenant** per NSX Project — no manual tenant creation needed in
+Avi itself.
+
+### Avi-side SE Group and management-plane network
+
+**[field-reported]**, alongside the Cloud verified above: a **Tier-1 GW +
+DHCP-enabled segment** for the controller↔Service-Engine management-plane
+connectivity. This is the same **Service Engine management network**
+already called out in the prerequisites gate — plan it as part of the same
+work, not a separate afterthought.
+
+### Building the virtual service
+
+**[field-reported]**, field values from Fojta's guide:
+
+| Object | Settings |
+| ------ | -------- |
+| **VIP** | Pick the NSX Cloud + DMZ VPC VRF context; auto-allocate from the public subnet |
+| **Pool** | Generic application; same NSX Cloud/VRF as the VIP; default server port **443**; **server = VCFA's internal built-in-LB VIP** (single member — not the individual VMSP node IPs) |
+| **Pool health monitor** | Type **HTTPS**; Client Request: `GET /api/server_status HTTP/1.1`; expected Server Response Data: *"Service is up."*; Response code: **2xx**; SSL enabled; **TLS SNI Server Name = the VCFA FQDN**; SSL Profile: System Standard |
+| **Virtual Service** | Application Type **HTTP/HTTPS**; Application Profile **System-Secure-HTTP**; Cloud/VRF matching the VPC; the Service Engine Group; the VIP; service port **443** with SSL enabled; **certificate matching the VCFA FQDN**; Pool = above |
+
+> **DNS cutover gotcha [field-reported] — and it's not what you'd expect.**
+> *"AFAIK there is no documented way how to change FQDN of VCFA
+> installation which means you cannot use a new FQDN for the public VIP."*
+> So this is **not** a new customer-facing name added alongside the
+> internal one — the **same** VCFA FQDN's DNS record has to move from the
+> internal VIP to the new external VIP. Skip this and VCFA will redirect
+> subsequent calls back to the internal VIP, breaking the flow, because the
+> internal VIP still believes it owns that name.
+
+### Known gotcha: HTTP/2 breaks Supervisor image pulls
+
+**[field-reported]**, and worth reading before enabling HTTP/2 on this
+virtual service at all: VKS Cluster Management traffic (Supervisor and VKS
+clusters talking to the VCFA endpoint) needs **HTTP/2**, because the cluster
+agent extensions use gRPC over HTTP/2. But on **Avi 32.1.1**, enabling
+HTTP/2 broke Supervisor's ability to pull images from the VCFA endpoint
+(`ErrImagePull` on pods like `auto-attach`) — Avi was rewriting the
+backend's HEAD-request `Content-Length` to `0` under HTTP/2, and downstream
+image resolution failed on that malformed response. Workaround: a
+**second VCFA pool with HTTP/2 disabled**, with an Avi **request policy**
+that context-switches HTTP `HEAD` requests to that pool instead. If this
+fleet uses Supervisor/VKS against the same VCFA endpoint, budget for
+hitting this and plan the second pool up front rather than discovering it
+mid-incident.
+
 ## Notices and gotchas
 
 > **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
