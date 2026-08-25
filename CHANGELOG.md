@@ -1,5 +1,53 @@
 # Changelog
 
+## v3.3.4 — 2026-08-25
+- **Split the Avi Load Balancer and License Hub deep-dive content out of
+  `docs/prerequisites.md` into two new build guides** (#237), matching the
+  precedent already set by `10-supervisor-enablement.md`: `prerequisites.md`
+  now carries a compact prereq-gate checklist for each (what to decide/
+  collect before you start), while the full deploy-wizard field tables,
+  first-login setup, licensing chain, and field-verified gotchas moved to
+  `docs/14-avi-load-balancer.md` and `docs/15-license-hub.md`. Trims
+  `prerequisites.md` from ~1500 lines back down to a scannable gate
+  checklist; no content was cut, only relocated. Updated `README.md`,
+  `CLAUDE.md`, and `web/src/nav.ts` for the two new docs.
+- **Fixed `docs/01-network-dns-plan.md`'s License Hub sizing row and subnet
+  total — still written for the 5.1.2 flow** (#236). Now version-aware:
+  **2.0** needs only **3 routed IPs + 2 FQDNs** (down from 5.1.2's ~9 IPs +
+  3 FQDNs), so the `/24` subnet-sizing total's "+9 if License Hub" was
+  overstating 2.0's footprint. Also added 2.0's non-routable internal
+  cluster CIDR (default `10.10.0.0/16`, field-confirmed) to the same
+  "separate internal networks" callout that already covers VCF Automation's
+  and the fleet runtime's internal CIDRs, since it does not belong in the
+  routed subnet math at all.
+
+## v3.3.3 — 2026-08-24
+- **Added a License Hub 2.0 section to `docs/prerequisites.md`** (#236).
+  License Hub 2.0 (GA 2026-08-05) drops the SSP Installer/`.tar` dependency
+  and deploys as a single standalone OVA with different network/IP-pool
+  requirements (an appliance FQDN/IP, a 2-address Kafka pool, and a
+  non-routable internal cluster CIDR needing ≥512 addresses). The existing
+  5.1.2 material (SSP Installer, 3-VM instance, node/service pools) is left
+  in place and now labelled by version rather than replaced, since it still
+  applies to sites running 5.1.2 and the new section is pending field
+  verification against a live 2.0 deploy.
+- **Field-verified (#236): a mismatched Kafka FQDN DNS record fails License
+  Hub 2.0 first boot silently.** `vsx-license-hub-deploy.service` hard-fails
+  if the Kafka FQDN doesn't resolve to the pool's second IP — the appliance
+  and its 5480 admin UI come up fine regardless, with no error surfaced there,
+  only in `journalctl -u vsx-license-hub-deploy`. Documented the exact log
+  line and recovery steps (fix DNS, `systemctl restart`) since the official
+  tooltip's wording undersold how strictly this is enforced.
+- **Field-verified (#236): License Hub 2.0's post-deploy behaviour, fully
+  confirmed against a live lab deploy.** Two separate UIs (port `5480` admin
+  shell vs. the actual product on plain HTTPS, FQDN-only — the IP does not
+  work); first boot stands up a real Kubernetes workload cluster and installs
+  the product as a Helm chart (`licensing-ssp`); and the post-deploy
+  Registration → Licenses → Endpoint Management → Usage Reporting chain is
+  unchanged from 5.1.2, including "Avi Cloud Console" being the shared
+  registration backend for vDefend **and** Avi (not a sign a second appliance
+  is needed).
+
 ## v3.3.2 — 2026-08-24
 - **Version Overview stopped updating on 4 August despite the daily scrape
   running and committing successfully every day since** (#235). The scrape

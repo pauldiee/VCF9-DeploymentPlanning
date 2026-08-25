@@ -110,6 +110,20 @@ export const NAV: NavItem[] = [
     blurb: 'The ordered fleet shutdown and startup runbook: the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, and the infrastructure VMs that go last.',
   },
   {
+    slug: '14-avi-load-balancer',
+    step: 'Reference',
+    label: 'Avi Load Balancer',
+    icon: 'scale-balanced',
+    blurb: 'Deploy Avi Load Balancer from VCF Operations: the wizard, first-login controller setup, and the licensing chain.',
+  },
+  {
+    slug: '15-license-hub',
+    step: 'Reference',
+    label: 'License Hub',
+    icon: 'certificate',
+    blurb: 'Deploy License Hub for vDefend and Avi subscription licensing — both the 2.0 standalone OVA and 5.1.2 SSP Installer flows — and the post-deploy registration chain.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',
