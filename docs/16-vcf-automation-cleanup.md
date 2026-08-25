@@ -18,11 +18,16 @@ general-purpose.
 
 ## The credential: `VCFMS_USERNAME` / `VCFMS_PASSWORD`
 
-Use `admin@vsp.local` for `VCFMS_USERNAME`, with the **same password as
-`vmware-system-user`** — the two accounts are set from the same provisioning
-value, confirmed field-verified.
+`VCFMS_USERNAME` is `admin@vsp.local` here too, but **this is VCFA's own,
+separate VCFMS instance — not the fleet-wide one**, and its password is
+**not** assumed to be the same as the fleet-wide instance's. (The
+"`admin@vsp.local` shares its password with `vmware-system-user`" fact
+documented for the **fleet-wide** runtime's `$`-interpolation lockout in
+`05-day2-deployments.md` is about that *other* instance — don't carry it
+over here without separately confirming it holds for VCFA's own instance
+too.) Source `VCFMS_PASSWORD` from wherever VCFA's own deployment recorded
+it.
 
-> **This is VCFA's own, separate VCFMS instance — not the fleet-wide one.**
 > Field-verified 2026-07-27. VCFA brings its own Services Runtime with its
 > own `admin@vsp.local`, distinct from the fleet-wide VCF Management Services
 > runtime used elsewhere in this repo (the one behind the `$`-interpolation

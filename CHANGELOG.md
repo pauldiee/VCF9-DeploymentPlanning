@@ -10,8 +10,14 @@
   (unquoted values fail silently rather than erroring, the same trap class
   as the `$`-interpolation lockout already documented elsewhere in this
   repo), and documented the actual credential to use:
-  `VCFMS_USERNAME=admin@vsp.local`, same password as `vmware-system-user`.
-  Updated `README.md`, `CLAUDE.md`, and `web/src/nav.ts` for the new doc.
+  `VCFMS_USERNAME=admin@vsp.local`. Updated `README.md`, `CLAUDE.md`, and
+  `web/src/nav.ts` for the new doc.
+- **Correction to the above: the "`admin@vsp.local` shares its password
+  with `vmware-system-user`" fact is about the fleet-wide VCFMS instance
+  only**, not VCFA's own separate instance — the initial commit wrongly
+  attributed it to VCFA's own instance, directly contradicting the doc's
+  own callout that the two instances are distinct. Fixed in
+  `docs/16-vcf-automation-cleanup.md`.
 
 ## v3.3.4 — 2026-08-25
 - **Split the Avi Load Balancer and License Hub deep-dive content out of
