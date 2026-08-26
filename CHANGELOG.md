@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.4.0 — 2026-08-26
+- **Reconciled the conflicting Supervisor per-cluster host minimums in
+  `docs/10-supervisor-enablement.md` §2** (#225) — the doc stated a flat "3
+  without vSAN, 4 with vSAN" as if it were one number from one source.
+  Verbatim TechDocs fetches show two different pages answering different
+  questions: the general [Requirements for Supervisor deployment with NSX
+  VPC](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/requirements-for-supervisor-deployment-with-nsx-vpc.html)
+  page gives a technical minimum of 1 host without vSAN (3 recommended), 3
+  with vSAN (4 recommended), 8 CPU/64 GB per host; the [vSphere Zones
+  creation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/create-vsphere-zones-for-a-multi-zone-deployment-with-nsx-vpc.html)
+  page gives production guidance of 2 for NFS/FC (4 for HA), 3 for vSAN (4
+  for HA), and separate 1/2-host POC floors. Both sources agree on vSAN (min
+  3, HA 4); rewrote the doc to state minimum vs recommended vs HA explicitly
+  per source instead of a single blended number, and recommend 3/4 as the
+  safe production baseline. Checked `docs/prerequisites.md` and
+  `docs/04-sizing.md` — neither states a Supervisor-specific host minimum, so
+  nothing to align there.
+
 ## v3.3.9 — 2026-08-26
 - **Fixed `docs/16-remove-components.md`'s VCF Automation section** (#245) —
   it claimed VCFA brings its own separate VCF Services Runtime instance with

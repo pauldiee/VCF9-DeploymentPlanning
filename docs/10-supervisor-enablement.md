@@ -217,8 +217,18 @@ Verify — do not accept assurances. Each of these has failed a real activation.
       mode" **[documented]**. The failure symptom is *not* documented; treat the
       requirement as absolute
 - [ ] **vSphere HA enabled** on the target cluster
-- [ ] Hosts: 3 per cluster without vSAN, **4 with vSAN**; minimum **8 CPU /
-      64 GB RAM** per host **[documented]**
+- [ ] Hosts per cluster — two Broadcom pages give different numbers because
+      they're answering different questions; both **[documented]**:
+      - **With vSAN, the two sources agree: minimum 3 hosts, 4 for HA.**
+      - **Without vSAN** the [general Supervisor requirements page][req-vpc]
+        gives a technical minimum of **1 host (3 recommended)**; the
+        [vSphere Zones creation page][zones] instead gives production
+        guidance of **2 hosts for NFS/FC storage, 4 for HA**. Test/POC
+        environments only need **1 host** (**2** with vSAN) per the zones
+        page. Treat **3 without vSAN / 4 with vSAN** as the safe baseline for
+        a production build unless you have a specific reason to run leaner
+      - **8 CPU / 64 GB RAM minimum per host**, stated on the requirements
+        page and unchanged across both sources
 - [ ] **Host names are lowercase** — "Otherwise, the activation of the Supervisor
       might fail" **[documented]**. Cheap to check, ugly to diagnose
 - [ ] Storage policy selected for control-plane VM placement, and compatible with
@@ -280,7 +290,7 @@ Verify — do not accept assurances. Each of these has failed a real activation.
       empty. Check the **SUPERVISOR** path first, then **VKR**
       ([§5.4](#54-offline-depot-configured-is-not-the-same-as-populated))
 
-*Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90] · [Supervisor architecture with VPC networking][arch]*
+*Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90] · [Requirements for Supervisor deployment with NSX VPC][req-vpc] · [Supervisor architecture with VPC networking][arch] · [Create vSphere Zones for a multi-zone deployment with VPC][zones]*
 
 ---
 
@@ -1447,6 +1457,7 @@ covers the Software Depot that now feeds the VKS content library.
 [kb442187]: https://knowledge.broadcom.com/external/article/442187/vks-guest-cluster-deployment-hangs-with.html
 [nsx-wizard90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/deploy-a-thee-zone-supervisor-with-nsx-t-data-center-networking.html
 [relnotes]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-1/release-notes/vmware-vsphere-supervisor-release-notes.html
+[req-vpc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/requirements-for-supervisor-deployment-with-nsx-vpc.html
 [req-nsx90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/requirements-for-cluster-supervisor-deployment-with-nsx.html
 [stretched]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/overview-of-running-vsphere-iaas-control-plane-on-vsan-stretched-cluster.html
 [zones]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/create-vsphere-zones-for-a-multi-zone-deployment-with-nsx-vpc.html
