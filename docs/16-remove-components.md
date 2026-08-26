@@ -51,6 +51,17 @@ only needed for components the script cleans up VMs for directly — VON and
 VCFA's `vsp-cluster` delete. Plain `vsp-component` deletes (Log Management,
 Real-time Metrics, Depot Service, Identity Broker) don't touch vCenter.
 
+### The credential: `--vcf-services-runtime-username` / `--vcf-services-runtime-password`
+
+The username is `admin@vsp.local` in every command on this page, and it is
+always the **fleet-wide** VCF Management Services runtime — there is no
+per-component or per-instance VCFMS runtime, including for VCF Automation
+below. This is the same account that shares its password with
+`vmware-system-user` and is behind the `$`-interpolation lockout trap
+documented in `05-day2-deployments.md`: if that credential is broken, it
+blocks every removal on this page, not just one component, and needs
+recovering first.
+
 ## Log Management
 
 Log Management (formerly VCF Operations for Logs) is a plain `vsp-component`
@@ -140,17 +151,6 @@ method](05-day2-deployments.md#deploying-vcf-automation-to-a-non-management-netw
 in `05-day2-deployments.md` links here as its fallback when the
 `admin@vsp.local` credential cannot be recovered, but the procedure itself is
 general-purpose.
-
-### The credential: `--vcf-services-runtime-username` / `--vcf-services-runtime-password`
-
-The username is `admin@vsp.local`, and **this is the fleet-wide VCF
-Management Services runtime — the same one used for every other component
-in this doc** — not a separate VCFA-specific instance. There is no
-independent VCFMS runtime tied to VCFA; all four steps below (list/delete
-`vsp-component` x2, list/delete `vsp-cluster`) authenticate against the same
-fleet-wide runtime and credential, including the "`admin@vsp.local` shares
-its password with `vmware-system-user`" fact documented for the
-`$`-interpolation lockout in `05-day2-deployments.md`.
 
 > **Correction:** an earlier revision of this doc claimed VCFA brings its own
 > separate Services Runtime with its own `admin@vsp.local`, distinct from the

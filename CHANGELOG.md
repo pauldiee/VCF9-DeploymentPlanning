@@ -11,6 +11,10 @@
 - **Clarified the VCF Automation section's closing VM-check line** (#246) —
   "confirm the VCFMS VMs are gone" now reads "confirm VCFA's VCFMS VMs are
   gone", since the page covers multiple products' VMs elsewhere.
+- **Moved the `admin@vsp.local` credential explanation up to the top of
+  `docs/16-remove-components.md`** (#247) — it was buried under the VCF
+  Automation section but applies to every component's commands on the page,
+  since they all authenticate against the same fleet-wide VCFMS runtime.
 
 ## v3.3.8 — 2026-08-25
 - **Expanded `docs/16-vcf-automation-cleanup.md` into a general Day-N
