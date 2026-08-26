@@ -189,8 +189,8 @@ its password with `vmware-system-user`" fact documented for the
    The `delete vsp-cluster` step is the one that actually cleans up the VMs in
    vCenter — steps 1–3 alone leave the VCFMS VMs behind.
 
-After the `delete vsp-cluster` step, confirm in vCenter that the VCFMS VMs
-are actually gone before treating the environment as clean for a fresh
+After the `delete vsp-cluster` step, confirm in vCenter that VCFA's VCFMS
+VMs are actually gone before treating the environment as clean for a fresh
 deploy — the script's own "success" does not substitute for checking.
 
 ## References

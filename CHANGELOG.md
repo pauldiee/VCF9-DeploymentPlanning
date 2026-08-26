@@ -8,6 +8,9 @@
   `vsp-cluster`) authenticate against the **fleet-wide** VCF Management
   Services runtime, the same credential used for every other component in
   the doc. Corrected the doc and superseded the related memory note.
+- **Clarified the VCF Automation section's closing VM-check line** (#246) —
+  "confirm the VCFMS VMs are gone" now reads "confirm VCFA's VCFMS VMs are
+  gone", since the page covers multiple products' VMs elsewhere.
 
 ## v3.3.8 — 2026-08-25
 - **Expanded `docs/16-vcf-automation-cleanup.md` into a general Day-N
