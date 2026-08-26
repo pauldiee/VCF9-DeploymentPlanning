@@ -1,7 +1,48 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { NAV } from '../nav';
-import { docHref as href } from '../lib/path';
+import { docHref as href, withBase } from '../lib/path';
+
+const flowItems = NAV.filter((item) => item.step !== 'Reference');
+const referenceItems = NAV.filter((item) => item.step === 'Reference');
+
+const TOOLS = [
+  {
+    href: withBase('tools/mgmt-sizing/'),
+    icon: 'calculator',
+    step: 'Interactive',
+    label: 'Sizing Calculator',
+    blurb: 'Size the management fleet and check whether your hosts fit at N-1; export or share the result.',
+  },
+  {
+    href: withBase('tools/deployment-plan/'),
+    icon: 'sitemap',
+    step: 'Interactive',
+    label: 'Deployment Plan Export',
+    blurb: 'Build your deployment scope (connectivity, storage, stretch, Supervisor, Automation model, Day-2) and export a backlog.',
+  },
+  {
+    href: withBase('tools/plan-tracker/'),
+    icon: 'bars-progress',
+    step: 'Interactive',
+    label: 'Deployment Tracker',
+    blurb: 'The exported plan as a checklist, with per-epic progress and a save/load progress file.',
+  },
+  {
+    href: withBase('tools/test-plan/'),
+    icon: 'clipboard-check',
+    step: 'Interactive',
+    label: 'Test Plan',
+    blurb: 'Scope-driven verification cases in phases TP-0 through TP-6, with result tracking and report/CSV/runbook export.',
+  },
+  {
+    href: withBase('version-overview/'),
+    icon: 'layer-group',
+    step: 'Live',
+    label: 'VCF 9.1 Version Overview',
+    blurb: 'Auto-updating latest version and build per component, refreshed weekly from Broadcom.',
+  },
+];
 ---
 
 <BaseLayout
@@ -43,7 +84,55 @@ import { docHref as href } from '../lib/path';
       <h2 class="workflow__heading">The planning flow, in order</h2>
       <div class="card-grid">
         {
-          NAV.map((item) => (
+          flowItems.map((item) => (
+            <a class="planning-card" href={href(item.slug)}>
+              <div class="planning-card__top">
+                <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
+              </div>
+              <span class="planning-card__step itq-eyebrow">{item.step}</span>
+              <h3 class="planning-card__title">{item.label}</h3>
+              <p class="planning-card__blurb">{item.blurb}</p>
+              <span class="planning-card__cta">
+                Open <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="workflow">
+    <div class="workflow__inner">
+      <p class="itq-eyebrow">Once you're building</p>
+      <h2 class="workflow__heading">Interactive tools</h2>
+      <div class="card-grid">
+        {
+          TOOLS.map((item) => (
+            <a class="planning-card" href={item.href}>
+              <div class="planning-card__top">
+                <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
+              </div>
+              <span class="planning-card__step itq-eyebrow">{item.step}</span>
+              <h3 class="planning-card__title">{item.label}</h3>
+              <p class="planning-card__blurb">{item.blurb}</p>
+              <span class="planning-card__cta">
+                Open <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="workflow">
+    <div class="workflow__inner">
+      <p class="itq-eyebrow">Build guides</p>
+      <h2 class="workflow__heading">Reference: per-component build guides</h2>
+      <div class="card-grid">
+        {
+          referenceItems.map((item) => (
             <a class="planning-card" href={href(item.slug)}>
               <div class="planning-card__top">
                 <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
@@ -63,7 +152,7 @@ import { docHref as href } from '../lib/path';
 
   <section class="related">
     <div class="related__inner">
-      <p class="itq-eyebrow">Related tools</p>
+      <p class="itq-eyebrow">External tools</p>
       <h2 class="related__heading">Part of a larger VCF 9 toolkit</h2>
       <div class="related__grid">
         <a class="related__item" href="https://vcfplanner.lcoscia.fr/" target="_blank" rel="noopener">

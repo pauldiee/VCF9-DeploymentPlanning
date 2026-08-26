@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.4.1 — 2026-08-26
+- **Clarified the site homepage and README contents overview** (#248) — the
+  homepage's card grid never listed the 5 interactive tools (Sizing
+  Calculator, Deployment Plan Export, Deployment Tracker, Test Plan, Version
+  Overview), only reachable via the sidebar or individual docs. Split
+  `web/src/pages/index.astro`'s grid into "The planning flow, in order," a
+  new "Interactive tools" section, and "Reference: per-component build
+  guides"; renamed "Related tools" to "External tools" to disambiguate.
+  Split README.md's flat 40-row Contents table into six labeled sections.
+  Also shrunk the hero banner (`web/src/styles/site.css`) so the planning
+  flow is visible closer to the fold.
+
 ## v3.4.0 — 2026-08-26
 - **Reconciled the conflicting Supervisor per-cluster host minimums in
   `docs/10-supervisor-enablement.md` §2** (#225) — the doc stated a flat "3
