@@ -505,16 +505,16 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
 .hero__inner {
   max-width: var(--container-max);
   margin: 0 auto;
-  padding: var(--space-9) var(--gutter);
+  padding: var(--space-7) var(--gutter);
 }
 .hero__eyebrow { color: var(--itq-light-blue); }
 .hero__title {
   color: var(--itq-white);
-  font-size: var(--fs-display);
+  font-size: var(--fs-title);
   line-height: var(--lh-tight);
   letter-spacing: var(--ls-tight);
   max-width: 18ch;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 .hero__title .accent { color: var(--itq-orange); }
 .hero__intro { color: var(--itq-light-blue); max-width: 62ch; }
