@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.3.9 — 2026-08-26
+- **Fixed `docs/16-remove-components.md`'s VCF Automation section** (#245) —
+  it claimed VCFA brings its own separate VCF Services Runtime instance with
+  its own `admin@vsp.local`, distinct from the fleet-wide one. That was
+  wrong: all four removal steps (list/delete `vsp-component` x2, list/delete
+  `vsp-cluster`) authenticate against the **fleet-wide** VCF Management
+  Services runtime, the same credential used for every other component in
+  the doc. Corrected the doc and superseded the related memory note.
+
 ## v3.3.8 — 2026-08-25
 - **Expanded `docs/16-vcf-automation-cleanup.md` into a general Day-N
   component removal reference, renamed `docs/16-remove-components.md`**

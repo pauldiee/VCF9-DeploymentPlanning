@@ -143,24 +143,22 @@ general-purpose.
 
 ### The credential: `--vcf-services-runtime-username` / `--vcf-services-runtime-password`
 
-The username is `admin@vsp.local` here too, but **this is VCFA's own,
-separate VCFMS instance — not the fleet-wide one**, and its password is
-**not** assumed to be the same as the fleet-wide instance's. (The
-"`admin@vsp.local` shares its password with `vmware-system-user`" fact
-documented for the **fleet-wide** runtime's `$`-interpolation lockout in
-`05-day2-deployments.md` is about that *other* instance — don't carry it
-over here without separately confirming it holds for VCFA's own instance
-too.) Source the password from wherever VCFA's own deployment recorded it.
+The username is `admin@vsp.local`, and **this is the fleet-wide VCF
+Management Services runtime — the same one used for every other component
+in this doc** — not a separate VCFA-specific instance. There is no
+independent VCFMS runtime tied to VCFA; all four steps below (list/delete
+`vsp-component` x2, list/delete `vsp-cluster`) authenticate against the same
+fleet-wide runtime and credential, including the "`admin@vsp.local` shares
+its password with `vmware-system-user`" fact documented for the
+`$`-interpolation lockout in `05-day2-deployments.md`.
 
-> Field-verified 2026-07-27. VCFA brings its own Services Runtime with its
-> own `admin@vsp.local`, distinct from the fleet-wide VCF Management Services
-> runtime used elsewhere in this repo (the one behind the `$`-interpolation
-> lockout documented in `05-day2-deployments.md`). If that *other* runtime's
-> `admin@vsp.local` is broken, it does **not** block this cleanup — the
-> `--vcf-services-runtime-username`/`--vcf-services-runtime-password` values
-> here authenticate against VCFA's own instance. Confirm which FQDN
-> `--vcf-services-runtime-fqdn` actually points at before assuming either
-> way.
+> **Correction:** an earlier revision of this doc claimed VCFA brings its own
+> separate Services Runtime with its own `admin@vsp.local`, distinct from the
+> fleet-wide instance. That was wrong — the fleet-wide runtime is what's
+> actually used for this entire procedure. If the fleet-wide `admin@vsp.local`
+> is broken (see the `$`-interpolation lockout trap in
+> `05-day2-deployments.md`), it **does** block this cleanup and needs
+> recovering first.
 
 ### The procedure
 
@@ -180,7 +178,7 @@ too.) Source the password from wherever VCFA's own deployment recorded it.
    ```bash
    python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>" --component-id="<vcf-automation-component-id>"
    ```
-4. **Delete VCFA's own VCFMS cluster**, as **root**, from inside the SDDC
+4. **Delete VCFA's VCFMS cluster**, as **root**, from inside the SDDC
    Manager VM — list first to get the ID, then delete:
    ```bash
    python cleanup_component.py list vsp-cluster --fleet-fqdn="<fleet-fqdn>" --vcf-services-runtime-fqdn="<vcfms-runtime-fqdn>" --vcf-services-runtime-username="admin@vsp.local" --vcf-services-runtime-password="<vcfms-password>"
