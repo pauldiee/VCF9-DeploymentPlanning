@@ -425,13 +425,24 @@ and none of it is done for you beyond what VCF Operations already handles
 | **Pool health monitor** | Type **HTTPS**; Client Request: `GET /api/server_status HTTP/1.1`; expected Server Response Data: *"Service is up."*; Response code: **2xx**; SSL enabled; **TLS SNI Server Name = the VCFA FQDN**; SSL Profile: System Standard |
 | **Virtual Service** | Application Type **HTTP/HTTPS**; Application Profile **System-Secure-HTTP**; Cloud/VRF matching the VPC; the Service Engine Group; the VIP; service port **443** with SSL enabled; **a CA-signed certificate matching the VCFA FQDN**; Pool = above |
 
-> **Use a CA-signed certificate on the Virtual Service, not the default
-> self-signed one [field-verified 2026-08-27].** This VS is externally
-> facing, so leaving Avi's self-signed cert bound to it costs a **-20** hit
-> on Avi's security score for that virtual service — everything else scores
-> 100. It is not a functional break, just an unaddressed cert; get a
-> properly signed certificate (public CA or your internal CA) onto the VS
-> before calling this build done, not after someone notices the score drop.
+> **The Avi security score on an externally-facing VS is additive, and
+> Broadcom's documented factors are necessary but not provably sufficient
+> [field-verified 2026-08-27].** Per Broadcom's Health Score Codes
+> documentation, the VS's **SSL Score** (a component of its security
+> penalty) is driven by: an insecure cipher in the SSL/TLS profile, the
+> certificate being expired or self-signed, and other SSL settings such as
+> HSTS not being enabled on the HTTP profile. **Expect each fix to move the
+> score by roughly one point, not to clear it outright.** In the field case
+> behind this note: self-signed → CA-signed cert moved it **-20 → -19**;
+> removing an insecure cipher from the SSL/TLS profile moved it **-19 →
+> -18**; HSTS was checked next and found **already enabled**, with no score
+> change — so that documented cause was ruled out, not fixed, and **-18
+> remained unaccounted for**. The GUI's top-level security-score tile never
+> explained the breakdown at any point in this investigation. Don't assume
+> the cert/cipher/HSTS list is exhaustive — if you hit the same wall, verify
+> the new cert and cipher list are actually live on the Service Engine (not
+> just saved in the VS config) before assuming a further, undocumented
+> factor.
 
 > **DNS cutover gotcha [field-reported] — and it's not what you'd expect.**
 > *"AFAIK there is no documented way how to change FQDN of VCFA

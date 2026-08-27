@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.4.3 — 2026-08-27
+- **Corrected the CA-signed cert claim in `docs/14-avi-load-balancer.md`**
+  (#250) — #249 implied a CA-signed cert clears the VCFA Virtual Service's
+  Avi security-score deduction. Field-verified same day: cert swap recovered
+  only 1 point (-20 to -19); removing an insecure SSL/TLS cipher recovered
+  another (-19 to -18); HSTS was checked next and found already enabled, no
+  score change. Broadcom's documented SSL Score factors (cert, cipher, HSTS)
+  are necessary but not provably sufficient — 18 points remain unaccounted
+  for and the GUI never explains the breakdown. Updated the callout and the
+  related memory note to reflect this rather than claim a fixed checklist.
+
 ## v3.4.2 — 2026-08-27
 - **Called out that the external-facing VCFA Virtual Service needs a
   CA-signed certificate, not the Avi default self-signed one**, in
