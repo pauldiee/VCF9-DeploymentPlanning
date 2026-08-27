@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.4.2 — 2026-08-27
+- **Called out that the external-facing VCFA Virtual Service needs a
+  CA-signed certificate, not the Avi default self-signed one**, in
+  `docs/14-avi-load-balancer.md`'s "Building the virtual service" section
+  (#249) — field-verified 2026-08-27: a self-signed cert on that VS costs a
+  -20 hit on Avi's security score even when everything else scores 100.
+
 ## v3.4.1 — 2026-08-26
 - **Clarified the site homepage and README contents overview** (#248) — the
   homepage's card grid never listed the 5 interactive tools (Sizing

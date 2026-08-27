@@ -423,7 +423,15 @@ and none of it is done for you beyond what VCF Operations already handles
 | **VIP** | Pick the NSX Cloud + DMZ VPC VRF context; auto-allocate from the public subnet |
 | **Pool** | Generic application; same NSX Cloud/VRF as the VIP; default server port **443**; **server = VCFA's internal built-in-LB VIP** (single member — not the individual VMSP node IPs) |
 | **Pool health monitor** | Type **HTTPS**; Client Request: `GET /api/server_status HTTP/1.1`; expected Server Response Data: *"Service is up."*; Response code: **2xx**; SSL enabled; **TLS SNI Server Name = the VCFA FQDN**; SSL Profile: System Standard |
-| **Virtual Service** | Application Type **HTTP/HTTPS**; Application Profile **System-Secure-HTTP**; Cloud/VRF matching the VPC; the Service Engine Group; the VIP; service port **443** with SSL enabled; **certificate matching the VCFA FQDN**; Pool = above |
+| **Virtual Service** | Application Type **HTTP/HTTPS**; Application Profile **System-Secure-HTTP**; Cloud/VRF matching the VPC; the Service Engine Group; the VIP; service port **443** with SSL enabled; **a CA-signed certificate matching the VCFA FQDN**; Pool = above |
+
+> **Use a CA-signed certificate on the Virtual Service, not the default
+> self-signed one [field-verified 2026-08-27].** This VS is externally
+> facing, so leaving Avi's self-signed cert bound to it costs a **-20** hit
+> on Avi's security score for that virtual service — everything else scores
+> 100. It is not a functional break, just an unaddressed cert; get a
+> properly signed certificate (public CA or your internal CA) onto the VS
+> before calling this build done, not after someone notices the score drop.
 
 > **DNS cutover gotcha [field-reported] — and it's not what you'd expect.**
 > *"AFAIK there is no documented way how to change FQDN of VCFA
