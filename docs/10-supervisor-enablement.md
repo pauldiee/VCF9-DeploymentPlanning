@@ -637,6 +637,12 @@ for mandatory because a popular field walkthrough includes them.
    > **The storage policy lives on the Service Engine Group, not on the Cloud
    > object** **[field-verified 2026-07-23]** — there is no storage-policy field on
    > the NSX Cloud itself, which is a common place to go looking for it.
+   >
+   > **If it is not pinned to shared storage, SEs deploy onto host-*local*
+   > datastores** and SE HA / host maintenance break. Fixing it after activation
+   > means correcting **every per-Supervisor SE Group** (AKO does not retro-apply
+   > template changes) **and** relocating the SEs already placed — see
+   > [`14-avi-load-balancer.md` → SEs land on local datastores](14-avi-load-balancer.md#service-engine-infrastructure--cloud-content-library-and-se-group).
 
 > **IPAM is NOT required for VPC networking** **[documented]** — an earlier draft
 > of this guide listed a placeholder IPAM profile as mandatory; that is wrong for

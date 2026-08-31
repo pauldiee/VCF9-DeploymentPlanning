@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.4.7 — 2026-08-31
+- **Documented the "Avi Service Engines land on host-local datastores" trap and
+  its remediation** (#254) — new gotcha callout in
+  `docs/14-avi-load-balancer.md`'s Service Engine infrastructure section:
+  datastore choice is an SE-Group setting (not a Cloud setting) and Avi's
+  default picks the chosen host's local datastore when no shared storage is
+  pinned via a storage policy or Placement Scope → "Data Store for Service
+  Engine Virtual Machine". Remediation is two steps — correct *every* in-use
+  SE Group plus the template (the consumer clones one group per Supervisor /
+  instance and Default-Group changes do not propagate), then relocate the
+  existing SEs (Storage vMotion one at a time, or delete + let the Controller
+  recreate), because the config change does not move them. Notes that editing
+  the SE Group is safe on a VCF-Ops-managed Avi (unlike the controller
+  certificate) and to confirm shared storage is actually presented to every
+  host in the SE cluster. Cross-referenced from
+  `docs/10-supervisor-enablement.md` beside the "storage policy lives on the
+  SE Group" note.
+
 ## v3.4.6 — 2026-08-31
 - **New build guide `docs/17-vcfa-tenant-config.md`** (#253) — first-time VCF
   Automation tenant/organization configuration, the manual path from the

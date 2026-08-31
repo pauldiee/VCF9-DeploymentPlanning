@@ -200,6 +200,38 @@ it. Under **Infrastructure → Cloud Resources → Service Engine Group**, set:
   ones). At least two Service Engine VMs are typically deployed per
   consumer.
 
+> **Gotcha — SEs land on *local* datastores unless you pin shared storage.**
+> **[field-verified]** Datastore choice is an **SE-Group** setting, not a Cloud
+> one, and the default is unhelpful: when Avi picks an ESXi host for an SE VM it
+> **picks that host's local datastore**. If the SE Group has neither a **vSphere
+> storage policy** that resolves to shared storage nor an explicit shared
+> datastore under **Placement Scope → vCenter → "Data Store for Service Engine
+> Virtual Machine"** (use the **Include** checkbox to pin it), every SE clones
+> onto host-local storage — and SE HA and host maintenance break.
+>
+> **Remediation is two steps — changing the config does *not* move existing SEs:**
+> 1. **Correct every SE Group that virtual services actually run on**, not just
+>    `Default-Group`. The consumer (AKO for Supervisor, VCFA for automation)
+>    clones **one group per Supervisor / per instance** from the template, and
+>    *"changes to the Default-Group configuration will not reflect in an already
+>    created Service Engine Group."* Fix the in-use groups **and** the template.
+> 2. **Relocate the SEs already on local storage.** Either **Storage vMotion**
+>    each SE VM onto the shared datastore, one at a time, waiting for the SE to
+>    go healthy in the Avi UI between moves (non-disruptive on an N+M or
+>    active/standby group); or **delete** each SE in the Avi UI one at a time and
+>    let the Controller rebuild it from the now-fixed group on shared storage
+>    (brief per-SE data-plane blip — watch virtual-service placement recover
+>    between deletes). Storage vMotion is the safer default.
+>
+> Editing the SE Group directly is fine on a **VCF-Operations-managed** Avi — SE
+> sizing / placement / storage is normal data-plane config. The controller
+> **certificate** is the thing you must never change from the Avi or NSX UI — VCF
+> Operations generates it and propagates trust to NSX and vCenter, and swapping
+> it in the Avi/NSX UI breaks that trust; re-drive it through VCF Operations. And
+> confirm a **shared datastore is actually presented to every host** in the SE
+> cluster: NSX-T clouds require one for SE HA, and a cluster with none is itself
+> the root cause.
+
 > **IPAM is NOT required for VPC networking** **[documented]** — a
 > placeholder IPAM profile is only needed for a **non-VPC** cloud. On the
 > VPC path (the model used both by Supervisor's built-in LB integration and
