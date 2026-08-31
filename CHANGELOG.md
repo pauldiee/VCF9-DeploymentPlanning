@@ -1,5 +1,26 @@
 # Changelog
 
+## v3.4.6 — 2026-08-31
+- **New build guide `docs/17-vcfa-tenant-config.md`** (#253) — first-time VCF
+  Automation tenant/organization configuration, the manual path from the
+  **Login Provider → Manual setup** screen. `docs/05-day2-deployments.md`
+  covers deploying the appliance; this picks up at first login: Step 1 create a
+  region (name is immutable; storage class needs a vSphere storage policy first,
+  and a new policy needs Connections → Refresh storage classes to show up),
+  Step 2 external IP block (CIDR, ranges, exclusions, allocation limits), Step 3
+  external connection (Tier-0 + IP block; a public connection may need a new NSX
+  Edge cluster), Step 4 organization (portion/full quota + Supervisor zone,
+  VM/storage classes, networking, and Avi org-managed vs provider-managed +
+  service units). Field-verified 2026-08-31 on a customer deployment and
+  cross-checked against Broadcom TechDocs (VCF 9.1) — region name *and* NSX
+  Manager are immutable, "IP space" → external IP block and "provider gateway"
+  → external/centralized connection are the 9.1 renames, and the portion/full
+  region-quota split is verbatim doc language; the storage-policy prerequisite
+  and the *Connections → Refresh storage classes* step are field observations
+  not in the docs. Includes a References section. README + CLAUDE.md
+  file-layout tables updated. Site nav entry (`web/src/nav.ts`) deferred to a
+  web branch with local preview.
+
 ## v3.4.5 — 2026-08-31
 - **Structural reader-friendliness pass on `docs/09-binary-depot.md`** (#252) —
   the doc had grown to ~925 lines with no way in. Added a "Which path do I
