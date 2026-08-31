@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.4.9 — 2026-08-31
+- **Documented the VCFA tenant Bills 500 caused by an unset VCF Operations Cost
+  currency** (#256) — new gotcha subsection in `docs/05-day2-deployments.md`
+  section D. A tenant org's Administer → Bills page throws
+  `[<uuid>] Internal Server Error` until **VCF Operations → Administration →
+  Global Settings → Cost/Price → Currency** is set (not the same as any "global
+  currency" set elsewhere); cost calculation is a daily 21:00 job with no manual
+  recalculate; a pricing card must be assigned to the org; and an
+  unregistered/eval VCF Operations can gate cost features. Browser-diagnosed on
+  a 9.1 lab 2026-08-31. One-line pointer added from
+  `docs/17-vcfa-tenant-config.md`'s "After the four steps" section.
+
 ## v3.4.8 — 2026-08-31
 - **Added the delayed symptom to the SE-local-datastore gotcha** in
   `docs/14-avi-load-balancer.md` (#255, follow-up to #254) — the misplacement

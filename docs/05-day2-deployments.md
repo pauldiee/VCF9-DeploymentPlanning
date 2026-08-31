@@ -662,6 +662,36 @@ path), so it now lives in its own doc:
 > succeeded. The apparent lockout in between was **not** a deployment fault: it
 > was the `$`-interpolation trap above (#195).
 
+### VCF Automation tenant billing — the Bills page needs a Cost currency set
+
+A tenant organization's **Administer → Bills** page in VCF Automation throws
+`[<uuid>] Internal Server Error` until **VCF Operations' cost currency is
+configured** — and that setting is **not** the same as any "global currency" set
+elsewhere. **[field-verified 2026-08-31]**
+
+VCFA's Bills view is a front end onto VCF Operations cost/chargeback data. With no
+currency set, the cost engine produces nothing, no bill is ever generated, and
+VCFA returns a 500 rather than an empty state. `Manage → Cost → Overview` in VCF
+Operations shows the same cause plainly: *"We couldn't find any currency
+configured."*
+
+Set it, then let it populate:
+
+1. **VCF Operations → Operate → Administration → Global Settings → Cost/Price →
+   Currency → SET CURRENCY** (e.g. EUR). The default is empty.
+2. **Cost Calculation** on that same page is a **daily scheduled job** (default
+   21:00) — there is **no manual "recalculate"** in the UI. Wait for the next run
+   after setting the currency (or have it restarted on the appliance).
+3. Confirm a **pricing card / chargeback policy** is assigned to the org —
+   *Manage → Cost → Chargeback → Organizations*. A `Total Ongoing Price` of `-`
+   there means none is assigned.
+4. Generate the first bill: *Manage → Cost → Bills → **GENERATE BILL***.
+5. Re-open the tenant's **Administer → Bills** page.
+
+If it still errors once cost has calculated and a bill exists, check that **VCF
+Operations is registered** — an unregistered / evaluation Operations shows a
+banner, and cost features can be gated behind entitlement.
+
 ---
 
 ## E. DNS / IP checklist (additive to Step 1)

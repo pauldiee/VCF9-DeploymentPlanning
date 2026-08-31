@@ -130,6 +130,11 @@ tenant administrator can log in and start creating projects and deploying. Verif
 by logging in as an org user and confirming the region, the available VM/storage
 classes, and that a test network provisions against the external connection.
 
+> **The org's Administer → Bills page will throw `Internal Server Error`** until
+> VCF Operations' cost currency is set (**Operate → Administration → Global
+> Settings → Cost/Price → Currency**) and the daily cost-calculation job has run.
+> See [`05-day2-deployments.md` → VCF Automation tenant billing](05-day2-deployments.md#vcf-automation-tenant-billing--the-bills-page-needs-a-cost-currency-set).
+
 ---
 
 ## References
