@@ -131,6 +131,13 @@ export const NAV: NavItem[] = [
     blurb: 'Cleanly remove and reinstall optional Day-N fleet components — Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation — via cleanup_component.py.',
   },
   {
+    slug: '17-vcfa-tenant-config',
+    step: 'Reference',
+    label: 'VCFA Tenant Config',
+    icon: 'building',
+    blurb: 'First-time VCF Automation tenant/org config from the Login Provider Manual setup: create a region, an external IP block, an external connection, and an organization with its Avi integration.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',
