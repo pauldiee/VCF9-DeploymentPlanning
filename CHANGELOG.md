@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.4.8 — 2026-08-31
+- **Added the delayed symptom to the SE-local-datastore gotcha** in
+  `docs/14-avi-load-balancer.md` (#255, follow-up to #254) — the misplacement
+  is invisible at deploy time; the first visible sign is an ESX upgrade or
+  host maintenance-mode task stalling on an SE VM that will not vMotion, or a
+  VIP dropping when a host enters maintenance.
+
 ## v3.4.7 — 2026-08-31
 - **Documented the "Avi Service Engines land on host-local datastores" trap and
   its remediation** (#254) — new gotcha callout in

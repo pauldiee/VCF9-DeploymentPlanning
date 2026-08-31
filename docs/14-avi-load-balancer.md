@@ -209,6 +209,11 @@ it. Under **Infrastructure → Cloud Resources → Service Engine Group**, set:
 > Virtual Machine"** (use the **Include** checkbox to pin it), every SE clones
 > onto host-local storage — and SE HA and host maintenance break.
 >
+> **It stays invisible until it doesn't.** The first visible sign is usually an
+> **ESX upgrade or host maintenance-mode task stalling** on an SE VM that will
+> not vMotion (its disk is on the host's local datastore), or a **VIP dropping**
+> when a host enters maintenance. Nothing flags the misplacement at deploy time.
+>
 > **Remediation is two steps — changing the config does *not* move existing SEs:**
 > 1. **Correct every SE Group that virtual services actually run on**, not just
 >    `Default-Group`. The consumer (AKO for Supervisor, VCFA for automation)
