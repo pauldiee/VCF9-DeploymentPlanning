@@ -24,11 +24,11 @@ backs up to.
 | 1 | [Three ways to feed binaries](#1-three-ways-to-feed-binaries) | Choosing: online depot, offline depot, or manual transfer |
 | 2 | [Setting up an offline depot](#2-setting-up-an-offline-depot) | The site has no internet path to Broadcom |
 | | ↳ [Step 1 — Depot web server](#step-1--depot-web-server) | Sizing and certifying the box |
-| | ↳ [Photon OS variant (offline build)](#photon-os-variant-offline-build) | Air-gapped nginx install (ISO/RPM), serve the store, iptables — end to end |
 | | ↳ [Step 2 — Auth split](#step-2--auth-split) | What to protect with basic auth, and what must stay open |
 | | ↳ [Step 3 — VCF Download Tool](#step-3--vcf-download-tool) | Getting the tool |
 | | ↳ [Step 4 — Activation code](#step-4--activation-code) | **Start here early** — the Product Administrator role takes days |
-| | ↳ [Step 5 — Download the binaries](#step-5--download-the-binaries) | The actual `binaries download` / `esx download` runs |
+| | ↳ [Step 5 — Download the binaries](#step-5--download-the-binaries) | The actual `binaries download` run |
+| | ↳ [Step 5b — ESX patch data (UMDS)](#step-5b--esx-patch-data-umds) | `esx download` — the UMDS patch store, served without auth |
 | | ↳ [Step 6 — Transfer to the air-gapped server](#step-6--transfer-to-the-air-gapped-server) | Moving the store across the gap intact |
 | | ↳ [Step 7 — Connect VCF to it](#step-7--connect-vcf-to-it) | Pointing the Installer (and later the fleet) at the depot |
 | 3 | [Manual transfer — feeding the VCF Installer without a depot server](#3-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | You have no depot server at all and need bits on the Installer |
@@ -41,12 +41,23 @@ backs up to.
 | | ↳ [Gotcha: a fresh download lands root-owned](#gotcha-a-fresh-download-lands-root-owned--nginx-403s-and-the-precheck-fails) | **403 on a new file / precheck fails at Stage Precheck Binaries** — re-apply perms, and the post-download hook |
 | | ↳ [Reclaiming space: `binaries cleanup`](#reclaiming-space-binaries-cleanup) | The depot is full — pruning superseded lines safely |
 | 7 | [References](#7-references) | The TechDocs behind the above |
+| A | [Appendix A — air-gapped Photon + nginx, end to end](#appendix-a--air-gapped-photon--nginx-end-to-end) | The depot box is a minimal Photon image with no internet path |
 
 ---
 
 ## 1. Three ways to feed binaries
 
-Pick one (intake `G1`):
+**Which path do I need?**
+
+| Your situation | Read first | Also read |
+| --- | --- | --- |
+| Site can reach Broadcom on 443 | Online depot (below) | [§5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) if the *fleet* has no direct route |
+| Air-gapped, building a depot others will reuse | [§2](#2-setting-up-an-offline-depot) end to end — plus [Appendix A](#appendix-a--air-gapped-photon--nginx-end-to-end) if the box is Photon | [§5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) for the fleet proxy |
+| One-off / lab install, no depot server to build | [§3 Manual transfer](#3-manual-transfer--feeding-the-vcf-installer-without-a-depot-server) | — |
+| Pre-staging binaries on a connected host, appliances stay offline | [§4](#4-using-the-download-tool-standalone) | — |
+| Fleet already deployed and you are patching it | [§6](#6-upgrades--filling-the-depot-for-a-fleet-upgrade) | [Step 5b](#step-5b--esx-patch-data-umds) for ESX patch data |
+
+Pick one feed method (intake `G1`):
 
 - **Online depot** — VCF Installer (and later the fleet) connect to the
   Broadcom depot directly using the **Download Service ID + Activation Code**
@@ -69,6 +80,35 @@ Pick one (intake `G1`):
   [Manually Transfer Binaries to VCF Installer](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/downloading-binaries-to-the-vcf-installer-appliance/use-the-vmware-download-tool-to-download-binaries.html).
 
 ## 2. Setting up an offline depot
+
+**The happy path**, once you have done this before — every command is expanded in
+the like-numbered step below:
+
+```console
+# 4  register: software depot ID -> activation code (VCF Business Services console)
+./vcf-download-tool configuration generate --software-depot-id
+
+# 5  pull the install set into the depot store
+./vcf-download-tool binaries download --sku VCF --vcf-version 9.1.x \
+  --depot-download-activation-code-file /path/activation-code.txt \
+  --type INSTALL --depot-store /var/www/offline_depot
+
+# 5b  pull ESX patch data (UMDS) into the same store
+./vcf-download-tool esx download \
+  --depot-download-activation-code-file /path/activation-code.txt \
+  --depot-store /var/www/offline_depot
+
+# after every pull (see §6): make the tree web-server-readable
+chown -R nginx:nginx /var/www/offline_depot && chmod -R a+rX /var/www/offline_depot
+
+# 6  if the download host is not the web server, move the store across intact
+rsync -a /var/www/offline_depot/ depot01.sfo.example.io:/var/www/offline_depot/
+
+# 7  point the VCF Installer at https://depot01.sfo.example.io/ with the basic-auth user
+```
+
+First time through — or when a step fails — read the detail below. Steps 1–3
+(web server, auth split, get the tool) have no one-liner; do them once.
 
 ### Step 1 — Depot web server
 
@@ -135,109 +175,11 @@ too). A self-signed cert means the VCF Installer must trust it — see step 7.
 > needs outbound TCP 443 to the Broadcom Public URLs. An air-gapped depot (store
 > copied in) makes no outbound connections.
 
-### Photon OS variant (offline build)
-
-Photon is a natural pick for the depot box — lightweight and VMware-native — but
-it is a *minimal* image, and it is usually the **air-gapped** box, so the generic
-"`tdnf install nginx`, point a web server at the store" needs spelling out. End to
-end:
-
-**1. Install nginx — offline.** The box typically has no internet, so `tdnf` needs
-a local source. Two ways, no internet required either way:
-
-- **From the Photon ISO (no second machine).** Photon ships a preconfigured
-  `photon-iso` repo pointing at `file:///mnt/cdrom/RPMS`. Mount the **full** ISO
-  the appliance was built from (the *minimal* ISO may not carry nginx), refresh
-  the cache, and install from it alone:
-
-  ```bash
-  mkdir -p /mnt/cdrom && mount /dev/cdrom /mnt/cdrom   # or: mount -o loop photon-full-<ver>.iso /mnt/cdrom
-  tdnf makecache
-  tdnf install --disablerepo=* --enablerepo=photon-iso nginx
-  ```
-
-- **Or pre-download on an online Photon of the *identical* version/arch**, copy
-  the RPMs across (scp / USB), and install locally — deps resolve among them:
-
-  ```bash
-  # online box:      tdnf install --downloadonly --downloaddir=/root/nginx-rpms nginx
-  # air-gapped box:  cd /root/nginx-rpms && tdnf install ./*.rpm
-  ```
-
-  (If the box can reach the [proxy from §5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api),
-  set `proxy=` in `/etc/tdnf/tdnf.conf` and just `tdnf install nginx`.)
-
-**2. Create the store directory** — this *is* what you serve, and what the
-Download Tool writes into (pass it as `--depot-store` in Step 5):
-
-```bash
-mkdir -p /var/www/offline_depot
-chown -R nginx:nginx /var/www/offline_depot && chmod -R a+rX /var/www/offline_depot
-```
-
-nginx runs as the **`nginx`** user, so it must be able to read the tree; Photon
-has **no SELinux**, so there is no doc-root labeling step you would hit on RHEL.
-
-> **This is not a one-time step.** Every later `binaries download` writes
-> root-owned files into the store and re-breaks it — see
-> [§6 Gotcha: a fresh download lands root-owned](#gotcha-a-fresh-download-lands-root-owned--nginx-403s-and-the-precheck-fails)
-> for the symptom (a VCF Ops precheck failing at *Stage Precheck Binaries*) and a
-> post-download hook that keeps it fixed.
-
-**3. Serve it over HTTPS with the Step 2 auth split.** Add a server block to the
-`http { }` of `/etc/nginx/nginx.conf` (or `/etc/nginx/conf.d/depot.conf` if it
-includes `conf.d`):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name depot01.sfo.example.io;        # must be in the cert SANs
-    ssl_certificate     /etc/nginx/ssl/depot.crt;
-    ssl_certificate_key /etc/nginx/ssl/depot.key;
-    ssl_protocols       TLSv1.2 TLSv1.3;
-
-    root      /var/www/offline_depot;          # the --depot-store dir
-    autoindex on;                              # directory listing — handy to verify the tree
-
-    # Step 2 auth split: protect COMP + metadata; HCL + UMDS stay open
-    location /PROD/COMP     { auth_basic "VCF Depot"; auth_basic_user_file /etc/nginx/.htpasswd; }
-    location /PROD/metadata { auth_basic "VCF Depot"; auth_basic_user_file /etc/nginx/.htpasswd; }
-    # /PROD/vsan/hcl and /umds-patch-store have no auth_basic -> open, as required
-}
-```
-
-Create the basic-auth user **without `htpasswd`** (it ships in `httpd-tools`,
-absent on the minimal image) — generate the hash with openssl and write the line:
-
-```bash
-printf 'depotuser:%s\n' "$(openssl passwd -apr1)" > /etc/nginx/.htpasswd
-chmod 640 /etc/nginx/.htpasswd && chown root:nginx /etc/nginx/.htpasswd
-```
-
-**4. Open inbound 443 in iptables.** Photon's default firewall allows only SSH
-(22) inbound and **drops ICMP**, so the rule must be added *and persisted* or it
-is lost on reboot:
-
-```bash
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT
-iptables-save > /etc/systemd/scripts/ip4save   # Photon's iptables persistence file
-systemctl restart iptables
-```
-
-(Add `iptables -A INPUT -p icmp -j ACCEPT` before saving if you also want the box
-to answer ping for reachability tests — see the ICMP note in
-[Backup Target §3](08-backup-target.md#3-building-one-chrooted-openssh-example).)
-
-**5. Start + verify:**
-
-```bash
-nginx -t && systemctl enable --now nginx
-curl -k https://depot01.sfo.example.io/PROD/vsan/hcl/            # open      -> 200
-curl -k -u depotuser https://depot01.sfo.example.io/PROD/COMP/  # protected -> prompts
-```
-
-Everything else — the cert SANs, the auth-split rationale (Step 2), and connecting
-VCF (Step 7) — is the same as the generic build.
+> **Depot box on Photon OS?** A minimal, air-gapped Photon image hides real work
+> the generic "install nginx, point it at the store" skips — offline `tdnf`, the
+> `nginx` service user, `htpasswd` absent from the image, iptables persistence.
+> [Appendix A](#appendix-a--air-gapped-photon--nginx-end-to-end) walks it end to
+> end; the rest of §2 (cert SANs, auth split, connecting VCF) applies unchanged.
 
 ### Step 2 — Auth split
 
@@ -923,3 +865,108 @@ ever commission a host or add a cluster.
   layout carry over to 9.1; watch the version-specific KB notes) and
   [VCF 9.1.x Ultimate Deployment Guide](https://blog.leaha.co.uk/2026/05/06/vcf-9-1-x-ultimate-deployment-guide/)
   (depot connection in the context of a full 9.1 deployment).
+
+---
+
+## Appendix A — air-gapped Photon + nginx, end to end
+
+Photon is a natural pick for the depot box — lightweight and VMware-native — but
+it is a *minimal* image, and it is usually the **air-gapped** box, so
+[Step 1](#step-1--depot-web-server)'s "`tdnf install nginx`, point a web server at
+the store" needs spelling out. This appendix is that detail; the rest of
+[§2](#2-setting-up-an-offline-depot) — cert SANs, the auth split, connecting VCF —
+is the same as any other build. End to end:
+
+**1. Install nginx — offline.** The box typically has no internet, so `tdnf` needs
+a local source. Two ways, no internet required either way:
+
+- **From the Photon ISO (no second machine).** Photon ships a preconfigured
+  `photon-iso` repo pointing at `file:///mnt/cdrom/RPMS`. Mount the **full** ISO
+  the appliance was built from (the *minimal* ISO may not carry nginx), refresh
+  the cache, and install from it alone:
+
+  ```bash
+  mkdir -p /mnt/cdrom && mount /dev/cdrom /mnt/cdrom   # or: mount -o loop photon-full-<ver>.iso /mnt/cdrom
+  tdnf makecache
+  tdnf install --disablerepo=* --enablerepo=photon-iso nginx
+  ```
+
+- **Or pre-download on an online Photon of the *identical* version/arch**, copy
+  the RPMs across (scp / USB), and install locally — deps resolve among them:
+
+  ```bash
+  # online box:      tdnf install --downloadonly --downloaddir=/root/nginx-rpms nginx
+  # air-gapped box:  cd /root/nginx-rpms && tdnf install ./*.rpm
+  ```
+
+  (If the box can reach the [proxy from §5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api),
+  set `proxy=` in `/etc/tdnf/tdnf.conf` and just `tdnf install nginx`.)
+
+**2. Create the store directory** — this *is* what you serve, and what the
+Download Tool writes into (pass it as `--depot-store` in Step 5):
+
+```bash
+mkdir -p /var/www/offline_depot
+chown -R nginx:nginx /var/www/offline_depot && chmod -R a+rX /var/www/offline_depot
+```
+
+nginx runs as the **`nginx`** user, so it must be able to read the tree; Photon
+has **no SELinux**, so there is no doc-root labeling step you would hit on RHEL.
+
+> **This is not a one-time step.** Every later `binaries download` writes
+> root-owned files into the store and re-breaks it — see
+> [§6 Gotcha: a fresh download lands root-owned](#gotcha-a-fresh-download-lands-root-owned--nginx-403s-and-the-precheck-fails)
+> for the symptom (a VCF Ops precheck failing at *Stage Precheck Binaries*) and a
+> post-download hook that keeps it fixed.
+
+**3. Serve it over HTTPS with the Step 2 auth split.** Add a server block to the
+`http { }` of `/etc/nginx/nginx.conf` (or `/etc/nginx/conf.d/depot.conf` if it
+includes `conf.d`):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name depot01.sfo.example.io;        # must be in the cert SANs
+    ssl_certificate     /etc/nginx/ssl/depot.crt;
+    ssl_certificate_key /etc/nginx/ssl/depot.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    root      /var/www/offline_depot;          # the --depot-store dir
+    autoindex on;                              # directory listing — handy to verify the tree
+
+    # Step 2 auth split: protect COMP + metadata; HCL + UMDS stay open
+    location /PROD/COMP     { auth_basic "VCF Depot"; auth_basic_user_file /etc/nginx/.htpasswd; }
+    location /PROD/metadata { auth_basic "VCF Depot"; auth_basic_user_file /etc/nginx/.htpasswd; }
+    # /PROD/vsan/hcl and /umds-patch-store have no auth_basic -> open, as required
+}
+```
+
+Create the basic-auth user **without `htpasswd`** (it ships in `httpd-tools`,
+absent on the minimal image) — generate the hash with openssl and write the line:
+
+```bash
+printf 'depotuser:%s\n' "$(openssl passwd -apr1)" > /etc/nginx/.htpasswd
+chmod 640 /etc/nginx/.htpasswd && chown root:nginx /etc/nginx/.htpasswd
+```
+
+**4. Open inbound 443 in iptables.** Photon's default firewall allows only SSH
+(22) inbound and **drops ICMP**, so the rule must be added *and persisted* or it
+is lost on reboot:
+
+```bash
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables-save > /etc/systemd/scripts/ip4save   # Photon's iptables persistence file
+systemctl restart iptables
+```
+
+(Add `iptables -A INPUT -p icmp -j ACCEPT` before saving if you also want the box
+to answer ping for reachability tests — see the ICMP note in
+[Backup Target §3](08-backup-target.md#3-building-one-chrooted-openssh-example).)
+
+**5. Start + verify:**
+
+```bash
+nginx -t && systemctl enable --now nginx
+curl -k https://depot01.sfo.example.io/PROD/vsan/hcl/            # open      -> 200
+curl -k -u depotuser https://depot01.sfo.example.io/PROD/COMP/  # protected -> prompts
+```

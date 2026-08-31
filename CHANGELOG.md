@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.4.5 — 2026-08-31
+- **Structural reader-friendliness pass on `docs/09-binary-depot.md`** (#252) —
+  the doc had grown to ~925 lines with no way in. Added a "Which path do I
+  need?" decision table at the top of §1 (keyed on air-gapped? / one-off? /
+  already deployed? / fleet has internet? → which sections to read); added a
+  "happy path" bare-command block at the top of §2 for the repeat visitor, each
+  line cross-referenced to its step; moved the ~105-line Photon OS build out of
+  §2 Step 1 into a new **Appendix A — air-gapped Photon + nginx, end to end**,
+  leaving a one-line pointer in Step 1 so the seven steps read cleanly. Contents
+  table updated (Photon row removed, Step 5b and Appendix A rows added). No
+  wording changes to the field-verified gotchas.
+
 ## v3.4.4 — 2026-08-31
 - **Added a dedicated "Step 5b — ESX patch data (UMDS)" subsection to
   `docs/09-binary-depot.md` §2** (#251) — `esx download` was previously only a
