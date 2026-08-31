@@ -294,14 +294,12 @@ Into the depot store (the web server's document root, or a staging directory):
 ./vcf-download-tool binaries download --sku VCF --vcf-version 9.1.x \
   --depot-download-activation-code-file /path/activation-code.txt \
   --type INSTALL --depot-store /var/www/offline_depot
-
-./vcf-download-tool esx download \
-  --depot-download-activation-code-file /path/activation-code.txt \
-  --depot-store /var/www/offline_depot
 ```
 
 `binaries list` (same flags) previews what a run will pull; `--type UPGRADE`
-fetches lifecycle bundles for Day-N patching.
+fetches lifecycle bundles for Day-N patching. This `--type INSTALL` set carries
+the **ESX ISO** (host imaging) but **not** ESX patch data — that is a separate
+pull, see [Step 5b](#step-5b--esx-patch-data-umds).
 
 > **NSX Edge nodes need no extra binary.** There is no separate NSX Edge
 > bundle in the depot — the edge node OVA ships inside the **NSX Manager**
@@ -354,6 +352,56 @@ the proxy filter.)
 > Day-N `--type UPGRADE` refresh, since each run rewrites the tree. Re-verify with
 > the curl checks (open paths return 200, protected paths prompt) and confirm the
 > web-server user can still read the newly written files.
+
+### Step 5b — ESX patch data (UMDS)
+
+[Step 5](#step-5--download-the-binaries)'s `--type INSTALL` set includes the
+**ESX ISO** used to image and commission hosts. It does **not** include ESX
+**patch** data — the rollup bulletins vCenter's vLCM needs to remediate running
+hosts Day-N. Pull that separately:
+
+```console
+./vcf-download-tool esx download \
+  --depot-download-activation-code-file /path/activation-code.txt \
+  --depot-store /var/www/offline_depot
+```
+
+`esx download` wraps **UMDS** — it replaced the standalone UMDS install and the
+old Offline Bundle Transfer Utility (OBTU) — and mirrors the ESX patch depot
+into a **`umds-patch-store/`** directory beside `PROD/` under the document root.
+Four things bite here:
+
+- **`umds-patch-store` is a hardcoded directory name — don't rename it**, and
+  serve it **without basic auth**. The [Step 2 auth split](#step-2--auth-split)
+  protects `PROD/COMP` and `PROD/metadata` only; `umds-patch-store` (like
+  `PROD/vsan/hcl`) must stay anonymously reachable or vLCM cannot read the patch
+  metadata.
+- **Behind a proxy:** same rule as [Step 5](#step-5--download-the-binaries) — add
+  `--proxy-server <FQDN:Port>` (no `http://` scheme); the shell `http_proxy` /
+  `https_proxy` env vars are ignored.
+- **Re-apply permissions after the run.** `esx download` runs as **root** and
+  writes the store root-owned, and it is **not** covered by the
+  [§6 post-download hook](#the-durable-fix-a-post-download-hook) (that wraps only
+  `binaries download`). Re-run the ownership fix by hand, or rely on the systemd
+  path unit from §6 which catches any write:
+
+  ```bash
+  chown -R nginx:nginx /var/www/offline_depot
+  chmod -R a+rX /var/www/offline_depot
+  ```
+
+- **Verify it is anonymously reachable** once the web server is serving it:
+
+  ```bash
+  curl -k https://depot01.sfo.example.io/umds-patch-store/   # -> 200, no auth prompt
+  ```
+
+**Day-N:** re-run `esx download` whenever you want newer ESX patch lines in the
+depot, then re-apply permissions and re-run **CHECK BINARY AVAILABILITY**
+([§6](#6-upgrades--filling-the-depot-for-a-fleet-upgrade)) — that, not anything
+the CLI reports, is the authoritative check on whether the fleet can see the new
+data. ESX *upgrade* bundles (major host version upgrades) are a different pull —
+`binaries download --type UPGRADE --component ESX_HOST`, into `PROD/COMP`.
 
 ### Step 6 — Transfer to the air-gapped server
 

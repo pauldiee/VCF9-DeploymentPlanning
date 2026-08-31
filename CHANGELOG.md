@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.4.4 — 2026-08-31
+- **Added a dedicated "Step 5b — ESX patch data (UMDS)" subsection to
+  `docs/09-binary-depot.md` §2** (#251) — `esx download` was previously only a
+  second unexplained command inside Step 5. The new subsection spells out that
+  the `--type INSTALL` set carries the ESX ISO but not patch data; that
+  `esx download` wraps UMDS (replacing the standalone UMDS install / OBTU) and
+  writes a hardcoded `umds-patch-store/` that must be served without basic auth;
+  the `--proxy-server` rule; that the run lands root-owned and is not covered by
+  the §6 post-download hook, so permissions must be re-applied; a curl
+  reachability check; and the Day-N refresh loop (re-run + CHECK BINARY
+  AVAILABILITY), noting ESX major-version upgrades come from
+  `--type UPGRADE --component ESX_HOST` instead. Step 5's command block dropped
+  the stray `esx download` line and now points to Step 5b.
+
 ## v3.4.3 — 2026-08-27
 - **Corrected the CA-signed cert claim in `docs/14-avi-load-balancer.md`**
   (#250) — #249 implied a CA-signed cert clears the VCFA Virtual Service's
