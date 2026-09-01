@@ -95,6 +95,13 @@ component lands on it.
   `ecdh-sha2-nistp256`, `ecdh-sha2-nistp384`, `ecdh-sha2-nistp521` — and the
   **MAC** `hmac-sha2-256`. Verify it with §4 below.
 - Service account + write path pre-created (e.g. `svc-vcf-bck` → `/backups/`).
+- **Password character trap.** The service-account password must **start with a
+  letter** and avoid shell-significant characters — `!&` in particular is not
+  escaped by the backup deployment scripts, so the shell mis-parses it and the
+  run fails with an unrelated-looking error. Stick to alphanumerics plus
+  `~ @ # % ^ , . /`. Keep the **vCenter** file-based-backup password (VAMI, §1)
+  to **≤ 20 characters** — longer values are rejected there. Field note via
+  [vcfwizard.nl](https://vcfwizard.nl/?p=489) (§9).
 - Put it **outside the management domain it protects** — a backup target that
   dies with the platform is not a backup. A VM on separate infrastructure, a
   physical host, or a NAS with SFTP all work; in multi-AZ designs prefer a
@@ -631,6 +638,8 @@ error message alone.
 - FIPS-by-default in 9.x: [FIPS Configuration for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/fips-compliance-for-vcf-components.html).
 - Cold shutdown of the management plane (§7): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
   (Broadcom KB 440874 — the `vcf_services_runtime_shutdown.sh` script and its modes).
+- SFTP password character trap (§2 — `!&` breaks the deploy scripts, vCenter
+  password ≤ 20 chars): [vcfwizard.nl — SFTP backup config](https://vcfwizard.nl/?p=489).
 - Community walkthroughs: [SFTP server on Photon OS for VCF 9.1 backups](https://topvcf.com/2026/05/19/5685/)
   (chroot jail, end to end) and [SFTP on Ubuntu Server](https://www.velements.net/2024/10/12/setup-sftp-on-ubuntu-server/)
   (includes re-enabling `ssh-rsa` host-key algorithms for older VMware

@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.5.0 — 2026-09-01
+- **Documented the SFTP service-account password character trap** (#257) — new
+  bullet in `docs/08-backup-target.md` section 2. `!&` in the password is not
+  escaped by the backup deployment scripts, so the run fails with an
+  unrelated-looking error; safe set is alphanumerics plus `~ @ # % ^ , . /`
+  starting with a letter, and the vCenter (VAMI) file-based-backup password must
+  be ≤ 20 characters. Field note credited to
+  [vcfwizard.nl](https://vcfwizard.nl/?p=489) in section 9 References.
+
 ## v3.4.9 — 2026-08-31
 - **Documented the VCFA tenant Bills 500 caused by an unset VCF Operations Cost
   currency** (#256) — new gotcha subsection in `docs/05-day2-deployments.md`
