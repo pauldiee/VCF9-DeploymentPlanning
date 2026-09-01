@@ -1,5 +1,5 @@
 {
-  "_updated": "2026-08-31",
+  "_updated": "2026-09-01",
   "_sourceErrors": [],
   "_sources": {
     "techdocs": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x",
@@ -224,6 +224,16 @@
       "build": "25367580",
       "releaseDate": "2026-05-12",
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/dsm/data-services-manager/9-1/release-notes/vmware-data-services-manager-91-release-notes.html",
+      "patched": true
+    },
+    {
+      "key": "license-hub",
+      "name": "License Hub (vDefend / Avi licensing)",
+      "category": "Add-ons",
+      "version": "2.0",
+      "build": "25630952",
+      "releaseDate": "2026-08-05",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/release-notes/license-hub-20-for-vmware-vdefend-and-avi-load-balancer-release-notes.html",
       "patched": true
     },
     {

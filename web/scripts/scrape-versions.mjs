@@ -119,6 +119,15 @@ const COMPONENTS = [
     url: 'https://techdocs.broadcom.com/us/en/vmware-cis/dsm/data-services-manager/9-1/release-notes/vmware-data-services-manager-91-release-notes.html',
     versionRe: /Data Services Manager\s+(\d+\.\d+(?:\.\d+)?)/i, buildRe: /Build\s+(\d{8})/i,
     dateRe: /Data Services Manager\s+[\d.]+\s*\|\s*([^|]+?)\s*\|\s*Build/i },
+  // License Hub (#258): a standalone product since License Hub 2.0 (standalone OVA -- no longer the
+  // SSP Installer), licensing vDefend + Avi. Own release-notes tree under vdefend/license-hub/<ver>/,
+  // own 8-digit build. Single rolling page (like vDefend/DSM). Header renders as
+  // "License Hub 2.0 for VMware vDefend and Avi Load Balancer | August 5, 2026 | Build 25630952",
+  // hence the "Month D, YYYY" date branch added to isoDate().
+  { key: 'license-hub', name: 'License Hub (vDefend / Avi licensing)', category: 'Add-ons', strategy: 'page',
+    url: 'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/release-notes/license-hub-20-for-vmware-vdefend-and-avi-load-balancer-release-notes.html',
+    versionRe: /License Hub\s+(\d+\.\d+(?:\.\d+)?)/i, buildRe: /Build\s+(\d{8})/i,
+    dateRe: /License Hub\s+[\d.]+[^|]*\|\s*([^|]+?)\s*\|\s*Build/i },
   // Avi mints a per-version leaf page and publishes NO 8-digit build; discover the newest leaf and
   // read the version from its heading. build stays null (rendered as an em-dash on the page).
   { key: 'avi-lb', name: 'Avi Load Balancer (NSX ALB)', category: 'Add-ons', strategy: 'avi',
@@ -170,13 +179,17 @@ function hrefs(html, baseUrl) {
 const verNum = (s) => parseInt(String(s).slice(-4), 10); // "9-1-0-0400" or "0400" -> 400
 
 const MONTHS = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06', JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
-// Normalize "13 JUL 2026" or "2026-07-13" to ISO "2026-07-13"; return null if unrecognized.
+// Normalize "13 JUL 2026", "August 5, 2026" or "2026-07-13" to ISO "2026-07-13"; return null if unrecognized.
 function isoDate(s) {
   if (!s) return null;
   const t = s.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  // "13 JUL 2026" / "13 July 2026"
   const m = t.match(/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\s+(\d{4})$/);
   if (m && MONTHS[m[2].toUpperCase()]) return `${m[3]}-${MONTHS[m[2].toUpperCase()]}-${m[1].padStart(2, '0')}`;
+  // "August 5, 2026" / "Aug 5 2026" -- the License Hub release-notes header format
+  const m2 = t.match(/^([A-Za-z]{3})[A-Za-z]*\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (m2 && MONTHS[m2[1].toUpperCase()]) return `${m2[3]}-${MONTHS[m2[1].toUpperCase()]}-${m2[2].padStart(2, '0')}`;
   return null;
 }
 

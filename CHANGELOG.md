@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.5.1 — 2026-09-01
+- **Version Overview: track License Hub as its own add-on** (#258) — License Hub
+  is a standalone product since 2.0 (standalone OVA, no longer the SSP
+  Installer), licensing vDefend + Avi from its own release-notes tree with its
+  own 8-digit build. Added a `page`-strategy row to
+  `web/scripts/scrape-versions.mjs` (currently **2.0 / Build 25630952 / 05 Aug
+  2026**) and taught `isoDate()` the `Month D, YYYY` header format that page
+  uses, so the Released column populates.
+
 ## v3.5.0 — 2026-09-01
 - **Documented the SFTP service-account password character trap** (#257) — new
   bullet in `docs/08-backup-target.md` section 2. `!&` in the password is not
