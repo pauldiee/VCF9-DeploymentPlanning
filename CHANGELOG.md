@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.6.0 — 2026-09-02
+- **New doc: `docs/18-vdefend-ssp.md`** (#261) — standalone build guide for
+  deploying and first-time-configuring the vDefend **Security Services
+  Platform** (the analytics platform behind Security Intelligence, NDR, NTA and
+  Malware Prevention — distinct from the SSP Installer and from License Hub).
+  Covers prerequisites, form factors + footprint + IP-pool sizes (Medium /
+  Large / XL), the SSP Installer deploy wizard (cross-referencing the
+  field-verified License Hub instance flow in `docs/15`), onboarding NSX
+  Manager from the Getting Started tab, activating features per licence, the
+  licensing pointer to `docs/15`, and the SSP Installer backup pointer to
+  `docs/08` §6. TechDocs-scaffolded against SSP 5.1/5.2; unverified steps
+  marked **[verify]**. Added to the README contents table and the site nav
+  (`web/src/nav.ts`).
+
 ## v3.5.3 — 2026-09-02
 - **docs/15: new "Licensing vDefend endpoints" section** (#260) — deploying and
   registering License Hub licenses nothing by itself; added the vDefend-side

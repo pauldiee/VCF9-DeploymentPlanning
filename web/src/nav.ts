@@ -138,6 +138,13 @@ export const NAV: NavItem[] = [
     blurb: 'First-time VCF Automation tenant/org config from the Login Provider Manual setup: create a region, an external IP block, an external connection, and an organization with its Avi integration.',
   },
   {
+    slug: '18-vdefend-ssp',
+    step: 'Reference',
+    label: 'vDefend SSP',
+    icon: 'shield-virus',
+    blurb: 'Deploy the vDefend Security Services Platform from the SSP Installer and configure it first time: form factors and footprint, the deploy wizard, onboarding NSX Manager, and activating Security Intelligence / NDR / Malware Prevention.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

@@ -47,6 +47,7 @@ This repo flips the order:
 | `docs/15-license-hub.md`            | Build guide for deploying License Hub (2.0 standalone OVA and 5.1.2 SSP Installer flows, post-deploy registration/licensing chain) |
 | `docs/16-remove-components.md`      | Cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
 | `docs/17-vcfa-tenant-config.md`     | Build guide for first-time VCF Automation tenant/org config (Login Provider Manual setup — region, external IP block, external connections, organization + Avi) |
+| `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
 | `docs/workbook-cell-mapping.md`     | Intake answers mapped to workbook cells                |
 
 ### Interactive tools (on the site)
