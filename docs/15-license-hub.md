@@ -581,6 +581,25 @@ equivalent of the Avi "switch the controller to On-prem License Hub" step in
 > Entitlement and assignment-to-hub happen at Pulse; actual licence
 > distribution to NSX/SSP/Avi happens through the on-prem hub.
 
+> **`ADD LICENSE` greyed out in the Avi Cloud Console? Upgrade the keys to LIC2
+> first. [field-verified]** A vDefend entitlement (ATP included) that is plainly
+> visible in the **old** Broadcom license portal does **not** surface in the
+> Avi Cloud Console *Licenses* page, and the **ADD LICENSE** button stays
+> **disabled**, until at least one key has been upgraded to the **LIC2**
+> (secure / subscription) format in the Broadcom Support Portal. The blue banner
+> on the Licenses page — *"upgrade, split, merge of license keys on the Broadcom
+> support portal"* — is pointing at exactly this. Field case: an "NSX Data
+> Center Advanced" perpetual key covered DFW + IDS/IPS, and a separate
+> **vDefend with Advanced Threat Prevention** core entitlement existed for the
+> SSP features but showed only in the old portal; **ADD LICENSE** did nothing
+> until one entitlement was upgraded to LIC2 there, after which it appeared in
+> Cloud Console and became allocatable to the hub. Also check the logged-in
+> user has the Cloud Console **License Management** role and that the
+> entitlement's Broadcom division is the one linked to this **Site**. If the
+> upgrade path is not offered, or converted keys still do not appear, it is a
+> Broadcom licensing support case — nothing on the hub or SSP side can move
+> until a row shows on that page.
+
 Order of work:
 
 1. **Register the hub and load the vDefend licence file first.** The
@@ -614,11 +633,14 @@ Order of work:
    with capacity, and IDS/IPS / Malware Prevention are no longer in evaluation.
 
 Turning the **features** on is separate and happens in NSX once the licence is
-live: Distributed Firewall is already active (build policy under *Security →
-Distributed Firewall*); **Distributed IDS/IPS** is enabled under *Security →
-IDS/IPS & Malware Prevention* (enable, pull signatures, enable per cluster,
-attach policies); **Malware Prevention / ATP** needs the SSP onboarded and
-licensed; **Gateway Firewall** is configured on the T0/T1 gateways.
+live: **Distributed Firewall** — confirm *Security → Distributed Firewall →
+Distributed Firewall Service* is **On** (on by default, but if it has been
+turned off you must re-enable it here before DFW policy applies —
+**[field-verified]**), then build policy there; **Distributed IDS/IPS** is
+enabled under *Security → IDS/IPS & Malware Prevention* (enable, pull
+signatures, enable per cluster, attach policies); **Malware Prevention / ATP**
+needs the SSP onboarded and licensed; **Gateway Firewall** is configured on the
+T0/T1 gateways.
 
 **Usage reporting** then runs on the same loop as every other hub endpoint —
 automatic in connected mode, the recurring generate → upload →

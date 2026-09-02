@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.6.2 — 2026-09-02
+- **docs/15: `ADD LICENSE` greyed in the Avi Cloud Console until keys are
+  upgraded to LIC2** (#263) — field-verified. A vDefend/ATP entitlement visible
+  in the old Broadcom license portal does not surface in Cloud Console, and the
+  ADD LICENSE button stays disabled, until at least one key is upgraded to the
+  LIC2 secure/subscription format in the Broadcom Support Portal. Added as a
+  gotcha under the "three licensing layers" note, with the field case (perpetual
+  NSX Data Center Advanced covering DFW+IDS/IPS, separate vDefend-ATP cores
+  stuck in the old portal) and the role / Site-division checks.
+- **docs/15 + docs/18: check the Distributed Firewall Service toggle is On**
+  (#263) — field-verified. *Security → Distributed Firewall → Distributed
+  Firewall Service* is on by default but can be turned off; DFW policy does not
+  apply until it is re-enabled. Corrected the stale "Distributed Firewall is
+  already active" wording in `docs/15` and added the check as a step in
+  `docs/18` §4 (feature enablement builds on the DFW data path).
+
 ## v3.6.1 — 2026-09-02
 - **docs/15 + docs/18: "three licensing layers" note** (#262) — a shared
   callout spelling out that vDefend/Avi licensing spans three places, not just

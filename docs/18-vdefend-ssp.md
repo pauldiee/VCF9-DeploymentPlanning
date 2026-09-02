@@ -166,7 +166,12 @@ Once the instance is **Healthy**:
 2. **Review the service-activation summary** and click **Continue**. Confirm
    readiness = **READY**, cluster status = **Stable**, connectivity = **Up**.
 
-3. **Activate features per licence** — SSP UI → **Platform & Features**:
+3. **In NSX**, confirm *Security → Distributed Firewall → Distributed Firewall
+   Service* is **On** (on by default, but re-enable it here if it has been
+   turned off — **[field-verified]**). The vDefend feature set builds on the
+   distributed firewall data path.
+
+4. **Activate features per licence** — SSP UI → **Platform & Features**:
    - **Security Intelligence + NDR + NTA** — SSP 5.2 offers **one-click**
      activation for the three together.
    - **Network Detection and Response** — log in to the SSP UI with Admin, open
@@ -180,7 +185,7 @@ Once the instance is **Healthy**:
 > Services Platform uses NSX Manager for license management and activation of
 > security features."* So the onboarded NSX Manager must itself be licensed for
 > vDefend (§5) — an unlicensed NSX Manager onboards fine but the feature
-> activation in step 3 will be gated.
+> activation in step 4 will be gated.
 
 > **Egress.** NDR and Malware Prevention send telemetry / samples to a Broadcom
 > cloud region. A constrained-egress or air-gapped site needs that path planned
@@ -200,14 +205,14 @@ License Hub VMs on the NSX DFW exclusion list, onboard **NSX Manager** and the
 > | ----- | ----- | ------------------ |
 > | **1. Pulse portal** | `portal.pulse.broadcom.com` (the "Avi Cloud Console") | Register the hub; assign the subscription to the hub; generate licence files (disconnected mode); usage reporting. Needs the Broadcom account holder. **Not** on Broadcom's public URLs list (proxy-allowlist gotcha). |
 > | **2. On-prem License Hub** | the appliance | Load the licence file into *Licenses*; onboard endpoints; assign licences to them. Registration alone brings none. |
-> | **3. The endpoint** | **NSX Manager** | The vDefend licence authority — the feature activation in §4.3 is gated on NSX Manager being vDefend-licensed through the hub. |
+> | **3. The endpoint** | **NSX Manager** | The vDefend licence authority — the feature activation in §4.4 is gated on NSX Manager being vDefend-licensed through the hub. |
 >
 > Entitlement and assignment-to-hub happen at Pulse; actual licence
 > distribution to NSX/SSP happens through the on-prem hub. Full detail in
 > [`15-license-hub.md`](15-license-hub.md#licensing-vdefend-endpoints).
 
 Order relative to this page: the hub must exist and hold a vDefend licence
-**before** the feature activation in §4.3 will succeed. Deploying the SSP
+**before** the feature activation in §4.4 will succeed. Deploying the SSP
 instance itself does not require the licence; **using** it does.
 
 ## 6. Backup
