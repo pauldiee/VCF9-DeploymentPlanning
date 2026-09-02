@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.6.1 — 2026-09-02
+- **docs/15 + docs/18: "three licensing layers" note** (#262) — a shared
+  callout spelling out that vDefend/Avi licensing spans three places, not just
+  the Pulse portal: (1) `portal.pulse.broadcom.com` for registration,
+  subscription-to-hub assignment, disconnected licence-file generation and
+  usage reporting; (2) the on-prem License Hub for loading the file, onboarding
+  endpoints and assigning licences to them; (3) the endpoint — NSX Manager is
+  the vDefend licence authority that gates SSP feature activation, Avi has the
+  On-prem License Hub toggle. Added to `docs/15` "Licensing vDefend endpoints"
+  and `docs/18` §5.
+
 ## v3.6.0 — 2026-09-02
 - **New doc: `docs/18-vdefend-ssp.md`** (#261) — standalone build guide for
   deploying and first-time-configuring the vDefend **Security Services

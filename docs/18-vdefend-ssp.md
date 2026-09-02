@@ -195,6 +195,17 @@ License Hub VMs on the NSX DFW exclusion list, onboard **NSX Manager** and the
 **SSP** as endpoints, assign the licence, point NSX at the hub — is in
 [`15-license-hub.md` → Licensing vDefend endpoints](15-license-hub.md#licensing-vdefend-endpoints).
 
+> **Three licensing layers — "it's done in the Pulse portal" is a half-truth.**
+> | Layer | Where | What happens there |
+> | ----- | ----- | ------------------ |
+> | **1. Pulse portal** | `portal.pulse.broadcom.com` (the "Avi Cloud Console") | Register the hub; assign the subscription to the hub; generate licence files (disconnected mode); usage reporting. Needs the Broadcom account holder. **Not** on Broadcom's public URLs list (proxy-allowlist gotcha). |
+> | **2. On-prem License Hub** | the appliance | Load the licence file into *Licenses*; onboard endpoints; assign licences to them. Registration alone brings none. |
+> | **3. The endpoint** | **NSX Manager** | The vDefend licence authority — the feature activation in §4.3 is gated on NSX Manager being vDefend-licensed through the hub. |
+>
+> Entitlement and assignment-to-hub happen at Pulse; actual licence
+> distribution to NSX/SSP happens through the on-prem hub. Full detail in
+> [`15-license-hub.md`](15-license-hub.md#licensing-vdefend-endpoints).
+
 Order relative to this page: the hub must exist and hold a vDefend licence
 **before** the feature activation in §4.3 will succeed. Deploying the SSP
 instance itself does not require the licence; **using** it does.

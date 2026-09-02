@@ -571,6 +571,16 @@ equivalent of the Avi "switch the controller to On-prem License Hub" step in
 [`14-avi-load-balancer.md`](14-avi-load-balancer.md). The endpoint types are
 **NSX Manager** and the **vDefend Security Services Platform (SSP)**.
 
+> **Three licensing layers — "it's done in the Pulse portal" is a half-truth.**
+> | Layer | Where | What happens there |
+> | ----- | ----- | ------------------ |
+> | **1. Pulse portal** | `portal.pulse.broadcom.com` (the "Avi Cloud Console") | Register the hub; **assign the subscription to the hub**; generate licence files (disconnected mode); usage reporting. Needs the **Broadcom account holder**. **Not** on Broadcom's public URLs list — a proxy allowlist built from that page misses it. In disconnected mode nothing in the data centre reaches it, but an administrator's browser still does. |
+> | **2. On-prem License Hub** | the appliance | **Load** the licence file into *Licenses*; **onboard** endpoints (NSX Manager, SSP, Avi Controllers); **assign** licences to those endpoints. Registration alone brings none — see the *"Registered is not licensed"* note above. |
+> | **3. The endpoint** | NSX Manager / Avi Controller | For vDefend, **NSX Manager is the licence authority** — SSP feature activation (Security Intelligence / NDR / Malware Prevention) is gated on NSX Manager being vDefend-licensed through the hub. For Avi it is the *On-prem License Hub* toggle under *Administration → Licensing*. |
+>
+> Entitlement and assignment-to-hub happen at Pulse; actual licence
+> distribution to NSX/SSP/Avi happens through the on-prem hub.
+
 Order of work:
 
 1. **Register the hub and load the vDefend licence file first.** The
