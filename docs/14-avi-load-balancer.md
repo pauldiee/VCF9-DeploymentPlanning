@@ -458,9 +458,19 @@ and none of it is done for you beyond what VCF Operations already handles
 | Object | Settings |
 | ------ | -------- |
 | **VIP** | Pick the NSX Cloud + DMZ VPC VRF context; auto-allocate from the public subnet |
-| **Pool** | Generic application; same NSX Cloud/VRF as the VIP; default server port **443**; **server = VCFA's internal built-in-LB VIP** (single member — not the individual VMSP node IPs) |
+| **Pool** | Generic application; same NSX Cloud/VRF as the VIP; default server port **443**; **server = VCFA's internal built-in-LB VIP** (single member — not the individual VMSP node IPs); **enable SSL *and* pick an SSL Profile** (System-Standard) + set the SNI / server host name to the VCFA FQDN — see the 503 gotcha below |
 | **Pool health monitor** | Type **HTTPS**; Client Request: `GET /api/server_status HTTP/1.1`; expected Server Response Data: *"Service is up."*; Response code: **2xx**; SSL enabled; **TLS SNI Server Name = the VCFA FQDN**; SSL Profile: System Standard |
 | **Virtual Service** | Application Type **HTTP/HTTPS**; Application Profile **System-Secure-HTTP**; Cloud/VRF matching the VPC; the Service Engine Group; the VIP; service port **443** with SSL enabled; **a CA-signed certificate matching the VCFA FQDN**; Pool = above |
+
+> **Empty SSL Profile on an SSL-enabled pool → 503 [field-verified].** If the
+> pool has *Enable SSL* ticked but the **SSL Profile dropdown is left empty**,
+> Avi connects to VCFA's internal 443 VIP in **plaintext**; the backend drops
+> it and the client gets a **503 from Avi**. The Avi VS logs show the 503 as
+> **relayed from the server**, not `NO_AVAIL_POOL`, and the pool member can even
+> read *up* if the health monitor was configured with its own SSL profile (the
+> monitor and the pool data path are configured separately). Fix: on the pool,
+> *Enable SSL* **and** select an SSL Profile (System-Standard), with the SNI /
+> server host name set to the VCFA FQDN.
 
 > **The Avi security score on an externally-facing VS is additive, and
 > Broadcom's documented factors are necessary but not provably sufficient

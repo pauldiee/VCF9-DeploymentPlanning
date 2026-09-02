@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.5.2 — 2026-09-02
+- **docs/14: Avi pool fronting VCF Automation needs an SSL Profile selected, not
+  just SSL enabled** (#259) — field-verified. An SSL-enabled pool with the
+  **SSL Profile dropdown left empty** makes Avi talk plaintext to VCFA's
+  internal 443 VIP; the backend drops it and the client gets a **503 relayed
+  from the server** (not `NO_AVAIL_POOL`), even if the health monitor's own SSL
+  profile keeps the member reading up. Added pool-side SSL (enable + profile +
+  SNI = VCFA FQDN) to the "Building the virtual service" Pool row plus a
+  dedicated 503 gotcha callout.
+
 ## v3.5.1 — 2026-09-01
 - **Version Overview: track License Hub as its own add-on** (#258) — License Hub
   is a standalone product since 2.0 (standalone OVA, no longer the SSP
