@@ -35,9 +35,23 @@ top-level "License Hub" product either — it is listed under **VMware Avi Load
 Balancer `<version>` → Primary Downloads**, alongside the Avi controller/SE
 OVAs.
 
-**No upgrade path from 5.1.2.** TechDocs is explicit: *"There is no direct
-upgrade path from License Hub 5.1.2 to License Hub 2.0."* A site with an
-existing 5.1.2 hub needs a fresh 2.0 deployment, not an in-place upgrade.
+> **No upgrade path from 5.1.2 to 2.0 — it is a rebuild, not an upgrade.**
+> TechDocs, verbatim: *"There is no direct upgrade path from License Hub 5.1.2
+> to License Hub 2.0."* The version reset reflects a different architecture
+> (5.1.2 = a 3-VM instance deployed *from the SSP Installer*; 2.0 = a single
+> standalone OVA). Moving an existing 5.1.2 site to 2.0 means:
+> 1. **Deploy 2.0 fresh** (the OVA + wizard below).
+> 2. **Re-register** the new hub with the Avi Cloud Console — a new
+>    registration and Site association; **nothing migrates** from the old hub.
+> 3. **Re-load licences** and **re-onboard every endpoint** (NSX Manager, SSP,
+>    Avi Controllers) — see [Licensing vDefend endpoints](#licensing-vdefend-endpoints).
+> 4. **Decommission the old 5.1.2 instance** — but **keep the SSP Installer** if
+>    it is also deploying the vDefend **SSP** ([`18-vdefend-ssp.md`](18-vdefend-ssp.md));
+>    the installer is only redundant when License Hub was its *only* job.
+>
+> Upgrades **within** 2.0 (2.0 → 2.0.x) do exist, via the appliance's
+> **Lifecycle Management** tab — it is specifically the 5.1.2 → 2.0 bridge that
+> is missing. **A greenfield site should deploy 2.0 directly and skip 5.1.2.**
 
 **Deploy-wizard fields**, per *Deploy a License Hub Appliance*:
 

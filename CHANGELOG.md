@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.6.3 — 2026-09-02
+- **docs/15: expanded the "no 5.1.2 → 2.0 upgrade" note into a callout** (#264)
+  — the one-line paragraph is now a blockquote spelling out that moving to 2.0
+  is a rebuild: deploy 2.0 fresh, re-register with the Avi Cloud Console
+  (nothing migrates), re-load licences, re-onboard every endpoint, decommission
+  the old 5.1.2 instance — but keep the SSP Installer if it is also deploying
+  the vDefend SSP. Notes that within-2.0 upgrades exist (Lifecycle Management
+  tab) and that greenfield sites should deploy 2.0 directly.
+
 ## v3.6.2 — 2026-09-02
 - **docs/15: `ADD LICENSE` greyed in the Avi Cloud Console until keys are
   upgraded to LIC2** (#263) — field-verified. A vDefend/ATP entitlement visible
