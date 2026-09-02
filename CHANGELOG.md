@@ -15,6 +15,9 @@
   apply until it is re-enabled. Corrected the stale "Distributed Firewall is
   already active" wording in `docs/15` and added the check as a step in
   `docs/18` §4 (feature enablement builds on the DFW data path).
+- **docs/15: incognito workaround for a blank Avi Cloud Console Licenses page**
+  (#263) — field-verified. The page loaded in an incognito window when the
+  normal session would not render it; clear the Cloud Console cache/cookies.
 
 ## v3.6.1 — 2026-09-02
 - **docs/15 + docs/18: "three licensing layers" note** (#262) — a shared

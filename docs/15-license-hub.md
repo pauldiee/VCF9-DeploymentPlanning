@@ -599,6 +599,11 @@ equivalent of the Avi "switch the controller to On-prem License Hub" step in
 > upgrade path is not offered, or converted keys still do not appear, it is a
 > Broadcom licensing support case — nothing on the hub or SSP side can move
 > until a row shows on that page.
+>
+> **If the Licenses page will not render at all** (blank / stuck), try an
+> **incognito window** — **[field-verified]** it loaded there when the normal
+> session did not, so clear the Cloud Console's cache/cookies for the stuck
+> browser profile.
 
 Order of work:
 
