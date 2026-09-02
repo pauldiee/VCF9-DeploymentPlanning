@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.5.3 — 2026-09-02
+- **docs/15: new "Licensing vDefend endpoints" section** (#260) — deploying and
+  registering License Hub licenses nothing by itself; added the vDefend-side
+  chain: load the licence file, put the hub VMs on the NSX DFW exclusion list,
+  onboard NSX Manager (Cluster VIP, enterprise-admin creds, full cert chain in
+  one paste) and the SSP if deployed, assign the licence, then point NSX at the
+  hub. The "point NSX at the hub" step is marked **[verify in-product]** pending
+  a field check (NSX may reflect the assignment automatically rather than
+  needing an Avi-style Cloud-vs-On-prem toggle). Notes that DFW / IDS-IPS /
+  Malware / Gateway FW features are enabled separately in NSX once the licence
+  is live.
+
 ## v3.5.2 — 2026-09-02
 - **docs/14: Avi pool fronting VCF Automation needs an SSL Profile selected, not
   just SSL enabled** (#259) — field-verified. An SSL-enabled pool with the

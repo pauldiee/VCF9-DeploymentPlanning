@@ -562,6 +562,58 @@ TechDocs:
 > license file in **twice a year, forever**. Give it a named owner and a
 > calendar reminder at deployment time, not at first expiry.
 
+## Licensing vDefend endpoints
+
+Deploying and registering the hub (either version above) licenses nothing by
+itself. vDefend's endpoints have to be **onboarded** into the hub, **assigned**
+a licence, and then NSX has to be **pointed at the hub** — the vDefend
+equivalent of the Avi "switch the controller to On-prem License Hub" step in
+[`14-avi-load-balancer.md`](14-avi-load-balancer.md). The endpoint types are
+**NSX Manager** and the **vDefend Security Services Platform (SSP)**.
+
+Order of work:
+
+1. **Register the hub and load the vDefend licence file first.** The
+   *"Registered is not licensed — there are three gates"* note above applies
+   unchanged — registration brings no licences. Download the vDefend licence
+   from the Avi Cloud Console and add it under *Licenses* before touching
+   endpoints.
+2. **Put the License Hub VMs on the NSX Distributed Firewall exclusion list**
+   *before* onboarding — see the *"NSX firewall exclusion list"* note above and
+   [`07-firewall-ports.md`](07-firewall-ports.md). You are about to enforce
+   DFW; the appliance that licenses vDefend must not be caught by it.
+3. **Onboard NSX Manager** — *Endpoint Management → Onboard an Endpoint →
+   Connect to an Endpoint*: Type **NSX Manager**; Connection Type **Dynamic**;
+   the **Cluster VIP** or FQDN; an NSX **enterprise-admin** credential; and the
+   **full certificate chain (leaf + CA) pasted in one action**, exactly as for
+   the Avi controller above — extract NSX Manager's certificate first, it is not
+   sitting in a store to hand.
+4. **Onboard the vDefend SSP** the same way **if it is deployed** — required for
+   the Malware Prevention / ATP endpoints. Distributed Firewall and Distributed
+   IDS/IPS licensing ride on the **NSX Manager** endpoint alone, so a
+   Firewall-only site can skip this.
+5. **Assign the vDefend licence** to each onboarded endpoint in the hub
+   (vDefend Firewall, or Firewall with Advanced Threat Prevention).
+6. **Point NSX at the hub.** NSX Manager → *System → Licenses*.
+   **[verify in-product]** Unlike Avi — which has an explicit *Cloud Licensing*
+   vs *On-prem License Hub* choice under *Administration → Licensing* — NSX may
+   simply reflect the hub's assignment once the Manager is onboarded, or it may
+   need the licensing mode set here. Confirm which on your build before treating
+   the endpoint as licensed; this step will be tightened once field-verified.
+7. **Verify on NSX** — *System → Licenses* shows the vDefend subscription active
+   with capacity, and IDS/IPS / Malware Prevention are no longer in evaluation.
+
+Turning the **features** on is separate and happens in NSX once the licence is
+live: Distributed Firewall is already active (build policy under *Security →
+Distributed Firewall*); **Distributed IDS/IPS** is enabled under *Security →
+IDS/IPS & Malware Prevention* (enable, pull signatures, enable per cluster,
+attach policies); **Malware Prevention / ATP** needs the SSP onboarded and
+licensed; **Gateway Firewall** is configured on the T0/T1 gateways.
+
+**Usage reporting** then runs on the same loop as every other hub endpoint —
+automatic in connected mode, the recurring generate → upload →
+import-refreshed-licence cycle in disconnected mode.
+
 ## References
 
 TechDocs:
