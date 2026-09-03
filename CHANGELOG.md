@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.6.6 — 2026-09-03
+- **Version Overview: corrected the Sources footer** (#269) — dropped the stale
+  "vCenter build KB" link (vCenter has read from the TechDocs patch tree since
+  #230, not KB 326316) and the unused `_sources.ga` field. The footer now points
+  at the one Broadcom VCF 9.1 release-notes landing page and describes the real
+  provenance: per maintenance version, its patch-release tree — or that
+  version's Bill of Materials where no Express Patch has shipped — plus each
+  add-on's own release notes, with every row linking its exact source. Trimmed
+  the duplicate provenance sentence from the closing note. `_sources` is now
+  just `{ releaseNotes }`.
+
 ## v3.6.5 — 2026-09-03
 - **Version Overview: meta description reflects the per-maintenance-version
   layout** (#267) — the `<BaseLayout description>` string still read as a single

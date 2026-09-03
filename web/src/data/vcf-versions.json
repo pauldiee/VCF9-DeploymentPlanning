@@ -3,8 +3,7 @@
   "_family": "9.1",
   "_sourceErrors": [],
   "_sources": {
-    "techdocs": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x",
-    "ga": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html"
+    "releaseNotes": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html"
   },
   "lines": [
     {
