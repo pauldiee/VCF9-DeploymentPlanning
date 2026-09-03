@@ -159,19 +159,17 @@ export function vcfAutomationNodes(vcfAutomationSize: string): number {
   return vcfAutomationSize === 'Small' ? 1 : 3;
 }
 
-// A vSphere Supervisor requires its NSX Edge cluster at the Large form factor
-// minimum (10-supervisor-enablement.md section 3.1). This is advisory: it does
-// not change the footprint math or the user's selection, only surfaces a warning.
-// Returns the warning text, or null when the Edge choice is fine / Supervisor
-// isn't planned.
+// When a vSphere Supervisor is backed by an NSX Edge cluster, that cluster must
+// be at the Large form factor minimum (10-supervisor-enablement.md section 3.1).
+// This fires ONLY for an under-sized NSX Edge selection: the no-Edge Supervisor
+// paths are legitimate and must not warn -- VPC networking with a Distributed
+// Transit Gateway uses a VNA cluster and no Edge cluster, and vDS networking
+// uses no NSX at all. Advisory only: no change to the footprint math or the
+// user's selection. Returns the warning text, or null.
 export function supervisorEdgeWarning(supervisorPlanned: boolean, nsxEdgeSize: string): string | null {
   if (!supervisorPlanned) return null;
-  if (nsxEdgeSize === 'Excluded')
-    return 'vSphere Supervisor needs an NSX Edge cluster with a Tier-0 gateway — none is selected. Add an NSX Edge at Large or larger.';
-  if (nsxEdgeSize.startsWith('VNA '))
-    return 'vSphere Supervisor needs an Edge cluster with a Tier-0 gateway; a VNA cluster (Distributed connectivity) runs no Tier-0. Select an NSX Edge at Large or larger.';
   if (nsxEdgeSize === 'NSX Edge Small' || nsxEdgeSize === 'NSX Edge Medium')
-    return 'vSphere Supervisor requires the NSX Edge cluster at the Large form factor minimum (see 10-supervisor-enablement.md). Small and Medium Edges only cover plain north-south routing.';
+    return 'A Supervisor backed by an NSX Edge cluster (VPC + Centralized Transit Gateway, or classic NSX) needs it at the Large form factor minimum — see 10-supervisor-enablement.md §3.1. Small and Medium Edges only cover plain north-south routing.';
   return null;
 }
 
@@ -182,6 +180,11 @@ export interface WorkloadDomain {
   nsxModel: string;
   nsxSize: string;
   gm: string;
+  // Advisory only. A workload domain's Edge cluster runs on WLD hosts, not in
+  // the management domain, so these do NOT feed the footprint totals - they
+  // drive the same Supervisor Large-minimum warning as the mgmt-domain fields.
+  supervisorPlanned: boolean;
+  nsxEdgeSize: string;
 }
 
 export interface SizingState {

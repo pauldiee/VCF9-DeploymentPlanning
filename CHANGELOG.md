@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.6.8 — 2026-09-03
+- **Sizer: fix the Supervisor/Edge warning and take it per workload domain**
+  (#273, follows #271) — the warning no longer fires for a VNA or Excluded Edge
+  selection: those are legitimate no-Edge Supervisor paths (VPC + Distributed
+  Transit Gateway on a VNA cluster; vDS networking with no NSX). It now fires
+  only for an **NSX Edge Small / Medium** selection, where an Edge-backed
+  Supervisor genuinely needs Large. The check is now also on **each workload
+  domain row** — new `NSX Edge form factor` + `Supervisor planned` fields,
+  advisory only (a WLD Edge runs on WLD hosts, so it is not added to the
+  management-domain totals). Both ride the share link and the Markdown summary.
+  docs/04 callout corrected to drop the "VNA cannot back a Supervisor" claim.
+
 ## v3.6.7 — 2026-09-03
 - **docs/04: NSX Edge / VNA form-factor table** (#271) — added the per-node
   vCPU/RAM/disk table (Small 2/4/200, Medium 4/8/200, Large 8/32/200, XLarge

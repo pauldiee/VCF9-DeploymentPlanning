@@ -106,7 +106,8 @@ const opt = (values: readonly string[]) => values;
           <label>NSX Edges
             <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <label class="sizer__check"><input id="supervisorPlanned" type="checkbox" /> vSphere Supervisor planned (needs Large+ Edges)</label>
+          <label class="sizer__check"><input id="supervisorPlanned" type="checkbox" /> vSphere Supervisor planned on the management domain</label>
+          <p class="sizer__hint">An Edge-backed Supervisor (VPC + Centralized Transit Gateway, or classic NSX) needs its Edge cluster at <strong>Large</strong> minimum. The VPC + Distributed Transit Gateway path uses a VNA cluster and no Edge; vDS networking uses no NSX. Per-domain Supervisors are set on each workload domain below.</p>
           <p class="sizer__warn" id="edgeWarn" hidden></p>
           <label>AVI Load Balancer
             <select id="aviSize">{opt(OPTIONS.aviSize).map((v) => <option>{v}</option>)}</select>
@@ -233,14 +234,19 @@ const opt = (values: readonly string[]) => values;
           ${field('NSX model', 'nsxModel', OPTIONS.nsxModel, w.nsxModel)}
           ${field('NSX Manager size', 'nsxSize', OPTIONS.nsxManagerSize, w.nsxSize)}
           ${field('Global Manager', 'gm', OPTIONS.gm, w.gm)}
-        </div>`;
+          ${field('NSX Edge form factor', 'nsxEdgeSize', OPTIONS.nsxEdgeSize, w.nsxEdgeSize)}
+        </div>
+        <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="supervisorPlanned" ${w.supervisorPlanned ? 'checked' : ''} /> vSphere Supervisor planned on this domain</label>
+        <p class="sizer__hint wld__hint">Advisory: the Edge cluster runs on this domain's hosts, so it is <strong>not</strong> added to the management-domain totals above — the check only enforces the Large minimum an Edge-backed Supervisor needs.</p>
+        <p class="sizer__warn wld__warn" data-i="${i}" hidden></p>`;
       host.appendChild(row);
     });
     host.querySelectorAll<HTMLElement>('input,select').forEach((el) =>
       el.addEventListener('input', (e) => {
         const t = e.target as HTMLInputElement;
         const i = Number(t.dataset.i);
-        (state.workloadDomains[i] as any)[t.dataset.k as keyof WorkloadDomain] = t.value;
+        (state.workloadDomains[i] as any)[t.dataset.k as keyof WorkloadDomain] =
+          t.type === 'checkbox' ? t.checked : t.value;
         recalc();
       }),
     );
@@ -254,10 +260,22 @@ const opt = (values: readonly string[]) => values;
   }
 
   $('addWld').addEventListener('click', () => {
-    state.workloadDomains.push({ name: '', vcenterSize: 'Small', vcenterStorage: 'Default', nsxModel: 'Dedicated - HA Cluster', nsxSize: 'Medium', gm: 'None' });
+    state.workloadDomains.push({ name: '', vcenterSize: 'Small', vcenterStorage: 'Default', nsxModel: 'Dedicated - HA Cluster', nsxSize: 'Medium', gm: 'None', supervisorPlanned: false, nsxEdgeSize: 'Excluded' });
     renderWlds();
     recalc();
   });
+
+  // Per-WLD Supervisor / Edge warning. The WLD rows persist between recalcs
+  // (renderWlds only runs on add/remove), so refresh the banners here each pass.
+  function renderWldWarnings() {
+    state.workloadDomains.forEach((w, i) => {
+      const el = document.querySelector<HTMLElement>(`.wld__warn[data-i="${i}"]`);
+      if (!el) return;
+      const msg = supervisorEdgeWarning(w.supervisorPlanned, w.nsxEdgeSize);
+      el.hidden = !msg;
+      if (msg) el.innerHTML = `⚠ ${msg}`;
+    });
+  }
 
   // ---- deployment size is constrained by the model (workbook cell O23):
   //   Simple -> Small only; High Availability -> Medium or Large.
@@ -401,11 +419,13 @@ const opt = (values: readonly string[]) => values;
       warn.innerHTML = `⚠ ${which} oversubscription is above <strong>2:1</strong>. Broadcom's guidance caps the management domain at <strong>2:1</strong> to keep the latency-sensitive control plane performant; higher ratios shrink the host count here but are not a recommended posture. Monitor closely and add hardware if you see contention.`;
     }
 
-    // vSphere Supervisor needs its Edge cluster at Large form factor minimum
+    // vSphere Supervisor needs its Edge cluster at Large form factor minimum —
+    // management domain, then each workload domain.
     const edgeWarnEl = $('edgeWarn') as HTMLElement;
     const ew = supervisorEdgeWarning(state.supervisorPlanned, state.nsxEdgeSize);
     edgeWarnEl.hidden = !ew;
     if (ew) edgeWarnEl.innerHTML = `⚠ ${ew}`;
+    renderWldWarnings();
 
     // derived (profile-fixed) component sizes
     $('derivedSizes').innerHTML = `Fixed by the deployment profile: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +
@@ -468,6 +488,8 @@ const opt = (values: readonly string[]) => values;
         nsxModel: inList(OPTIONS.nsxModel, w?.nsxModel, 'Dedicated - HA Cluster'),
         nsxSize: inList(OPTIONS.nsxManagerSize, w?.nsxSize, 'Medium'),
         gm: inList(OPTIONS.gm, w?.gm, 'None'),
+        supervisorPlanned: typeof w?.supervisorPlanned === 'boolean' ? w.supervisorPlanned : false,
+        nsxEdgeSize: inList(OPTIONS.nsxEdgeSize, w?.nsxEdgeSize, 'Excluded'),
       }));
     }
     return out;
@@ -510,6 +532,17 @@ const opt = (values: readonly string[]) => values;
       : `${gb(s.externalStorageGb)} GB datastore`;
     const dim = (label: string, d: ReturnType<typeof compute>['fit']['cpu']) =>
       `| ${label} | ${gb(d.required)} | ${gb(d.available)} | ${pct(d.headroomPct)} | ${d.fits ? '✓' : '✗'} |`;
+    // Supervisor / Edge advisory lines — management domain, then each WLD that plans one.
+    const supLines: string[] = [];
+    const mgmtSup = supervisorEdgeWarning(s.supervisorPlanned, s.nsxEdgeSize);
+    if (mgmtSup) supLines.push(`- ⚠ Management domain: ${mgmtSup}`);
+    else if (s.supervisorPlanned) supLines.push('- Management domain: Supervisor planned; NSX Edge selection meets the Large minimum.');
+    s.workloadDomains.forEach((w, i) => {
+      const label = w.name?.trim() || `Workload Domain ${i + 1}`;
+      const wmsg = supervisorEdgeWarning(w.supervisorPlanned, w.nsxEdgeSize);
+      if (wmsg) supLines.push(`- ⚠ ${label}: ${wmsg}`);
+      else if (w.supervisorPlanned) supLines.push(`- ${label}: Supervisor planned; NSX Edge form factor meets the Large minimum (Edge runs on WLD hosts, not counted here).`);
+    });
     const L = [
       '# VCF 9.1 Management Domain Sizing',
       '',
@@ -517,11 +550,7 @@ const opt = (values: readonly string[]) => values;
       `**Cluster:** ${s.clusterType}, ${s.proposedHosts} hosts × ${s.coresPerHost} cores / ${gb(s.ramPerHost)} GB RAM / ${store}`,
       `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, reserve ${s.reservePct}%, growth ${s.growthPct}%`,
       `**Profile-fixed:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}`,
-      ...(supervisorEdgeWarning(s.supervisorPlanned, s.nsxEdgeSize)
-        ? [`**⚠ Supervisor:** ${supervisorEdgeWarning(s.supervisorPlanned, s.nsxEdgeSize)}`]
-        : s.supervisorPlanned
-          ? ['**Supervisor:** planned — Edge cluster meets the Large form factor minimum']
-          : []),
+      ...(supLines.length ? ['', '## vSphere Supervisor / Edge', ...supLines] : []),
       '',
       `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} (tightest: ${r.fit.binding}, basis: ${r.survivorBasis})`,
       '',
@@ -693,6 +722,9 @@ const opt = (values: readonly string[]) => values;
   }
   .wld .wld__field { display: block; margin: 0; font-size: 0.72rem; color: var(--text-muted); }
   .wld .wld__field select { margin-top: 0.15rem; font-size: 0.8rem; padding: 0.32rem; }
+  .wld .wld__check { font-size: 0.78rem; margin-top: 0.6rem; color: var(--text-body); }
+  .wld .wld__hint { margin: 0.25rem 0 0; }
+  .wld .wld__warn { font-size: 0.76rem; margin-top: 0.4rem; }
 
   .sizer__results { position: sticky; top: calc(var(--header-h) + 1rem); }
   .verdict {

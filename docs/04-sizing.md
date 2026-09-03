@@ -29,7 +29,9 @@ browser — no data leaves the page.
   VCF Automation, VCF Operations for Networks, plus the always-on SDDC Manager,
   VCF services runtime (control + worker), and protection reserve
 - A **workload-domain repeater** — each workload domain's vCenter and dedicated
-  NSX Managers run inside the management domain, so they add to its footprint
+  NSX Managers run inside the management domain, so they add to its footprint;
+  each row also carries an advisory **Supervisor planned + NSX Edge form factor**
+  check (the WLD Edge cluster itself is not counted — it runs on WLD hosts)
 
 **Cluster inputs (the part the workbook lacks)**
 
@@ -171,12 +173,18 @@ The management Edge cluster is a **2-node** deployment, so the sizer doubles the
 totals. Figures are transcribed from the pinned workbook and match the
 [NSX Edge Installation Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/installation-guide/installing-nsx-edge/nsx-edge-installation-requirements.html).
 
-> **vSphere Supervisor needs Large or bigger.** A vSphere Supervisor requires its
-> Edge cluster at the **Large** form factor minimum
-> ([`10-supervisor-enablement.md`](10-supervisor-enablement.md) §3.1) — Small and
-> Medium Edges only cover plain north-south routing. A VNA cluster cannot back a
-> Supervisor at all (no Tier-0). The sizer flags an Edge selection below Large
-> when **vSphere Supervisor planned** is ticked.
+> **An Edge-backed Supervisor needs Large or bigger.** When a vSphere Supervisor
+> uses an NSX Edge cluster — VPC networking with a **Centralized** Transit
+> Gateway, or classic NSX segment networking — that Edge cluster must be at the
+> **Large** form factor minimum
+> ([`10-supervisor-enablement.md`](10-supervisor-enablement.md) §3.1); Small and
+> Medium only cover plain north-south routing. The other Supervisor paths use no
+> Edge cluster and the minimum does not apply: VPC networking with a
+> **Distributed** Transit Gateway runs on a VNA cluster, and vDS networking uses
+> no NSX at all. The sizer carries a **vSphere Supervisor planned** toggle on the
+> management domain and on each workload domain; it flags an NSX Edge selection
+> below Large. A workload domain's Edge cluster runs on that domain's hosts, so
+> it is advisory only there — not added to the management-domain totals.
 
 ## Source
 
