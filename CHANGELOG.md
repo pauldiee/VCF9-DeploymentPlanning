@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.6.5 — 2026-09-03
+- **Version Overview: meta description reflects the per-maintenance-version
+  layout** (#267) — the `<BaseLayout description>` string still read as a single
+  flat component list; it now says "per supported maintenance version (9.1.1,
+  9.1.0)". Title and route unchanged.
+
 ## v3.6.4 — 2026-09-03
 - **Version Overview: support VCF 9.1.1 and future maintenance versions** (#265)
   — the page was hardwired to the `9.1.0.x` patch train. `scrape-versions.mjs`
