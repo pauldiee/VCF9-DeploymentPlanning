@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.6.7 — 2026-09-03
+- **docs/04: NSX Edge / VNA form-factor table** (#271) — added the per-node
+  vCPU/RAM/disk table (Small 2/4/200, Medium 4/8/200, Large 8/32/200, XLarge
+  16/64/200; VNA identical, mgmt Edge cluster is 2 nodes so the sizer doubles
+  it), with a callout that a vSphere Supervisor needs its Edge cluster at
+  **Large** minimum and a VNA cannot back one (no Tier-0).
+- **Sizer: flag an under-sized Edge when Supervisor is planned** (#271) — new
+  "vSphere Supervisor planned" checkbox in the Management components fieldset.
+  When ticked, a warning fires under the NSX Edges dropdown if the selection is
+  Excluded, a VNA tier, or NSX Edge Small/Medium. Advisory only — it does not
+  change the footprint math or the selection. New `supervisorEdgeWarning()`
+  helper in `mgmt-sizing.ts`; the copied Markdown summary carries the flag.
+
 ## v3.6.6 — 2026-09-03
 - **Version Overview: corrected the Sources footer** (#269) — dropped the stale
   "vCenter build KB" link (vCenter has read from the TechDocs patch tree since

@@ -154,6 +154,30 @@ against Broadcom TechDocs (issue #16). Results:
   (#193). The fleet's deployment model / size does not drive Automation at all,
   so a Large fleet can run a single-node Automation and vice versa.
 
+## NSX Edge / VNA form factors
+
+The NSX Edge node has four form factors. The Virtual Network Appliance (VNA,
+Distributed connectivity) shares the identical per-node footprint, so the sizer's
+single Edge selector covers both families. Per node:
+
+| Form factor | vCPU | RAM (GB) | Disk (GB) |
+| ----------- | ---: | -------: | --------: |
+| Small       |    2 |        4 |      200 |
+| Medium      |    4 |        8 |      200 |
+| Large       |    8 |       32 |      200 |
+| XLarge      |   16 |       64 |      200 |
+
+The management Edge cluster is a **2-node** deployment, so the sizer doubles these
+totals. Figures are transcribed from the pinned workbook and match the
+[NSX Edge Installation Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/nsx/vmware-nsx/4-2/installation-guide/installing-nsx-edge/nsx-edge-installation-requirements.html).
+
+> **vSphere Supervisor needs Large or bigger.** A vSphere Supervisor requires its
+> Edge cluster at the **Large** form factor minimum
+> ([`10-supervisor-enablement.md`](10-supervisor-enablement.md) §3.1) — Small and
+> Medium Edges only cover plain north-south routing. A VNA cluster cannot back a
+> Supervisor at all (no Tier-0). The sizer flags an Edge selection below Large
+> when **vSphere Supervisor planned** is ticked.
+
 ## Source
 
 Figures come from `reference/vcf-9.1-planning-and-preparation-workbook.xlsx`

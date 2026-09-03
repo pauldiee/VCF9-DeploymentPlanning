@@ -106,6 +106,8 @@ const opt = (values: readonly string[]) => values;
           <label>NSX Edges
             <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
           </label>
+          <label class="sizer__check"><input id="supervisorPlanned" type="checkbox" /> vSphere Supervisor planned (needs Large+ Edges)</label>
+          <p class="sizer__warn" id="edgeWarn" hidden></p>
           <label>AVI Load Balancer
             <select id="aviSize">{opt(OPTIONS.aviSize).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -185,7 +187,7 @@ const opt = (values: readonly string[]) => values;
 </BaseLayout>
 
 <script>
-  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, logsSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
+  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, logsSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, supervisorEdgeWarning, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const state: SizingState = defaultState();
@@ -196,7 +198,7 @@ const opt = (values: readonly string[]) => values;
   // ---- bind top-level inputs to state ----
   const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
   const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize', 'logsSize', 'vcfAutomationSize'] as const;
-  const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd'] as const;
+  const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'supervisorPlanned'] as const;
 
   function hydrate() {
     for (const id of numIds) ($(id) as HTMLInputElement).value = String((state as any)[id]);
@@ -399,6 +401,12 @@ const opt = (values: readonly string[]) => values;
       warn.innerHTML = `⚠ ${which} oversubscription is above <strong>2:1</strong>. Broadcom's guidance caps the management domain at <strong>2:1</strong> to keep the latency-sensitive control plane performant; higher ratios shrink the host count here but are not a recommended posture. Monitor closely and add hardware if you see contention.`;
     }
 
+    // vSphere Supervisor needs its Edge cluster at Large form factor minimum
+    const edgeWarnEl = $('edgeWarn') as HTMLElement;
+    const ew = supervisorEdgeWarning(state.supervisorPlanned, state.nsxEdgeSize);
+    edgeWarnEl.hidden = !ew;
+    if (ew) edgeWarnEl.innerHTML = `⚠ ${ew}`;
+
     // derived (profile-fixed) component sizes
     $('derivedSizes').innerHTML = `Fixed by the deployment profile: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +
       `(<strong>${r.derived.vcenterStorage}</strong> storage), NSX Local Manager <strong>${r.derived.nsxManagerSize}</strong>. ` +
@@ -509,6 +517,11 @@ const opt = (values: readonly string[]) => values;
       `**Cluster:** ${s.clusterType}, ${s.proposedHosts} hosts × ${s.coresPerHost} cores / ${gb(s.ramPerHost)} GB RAM / ${store}`,
       `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, reserve ${s.reservePct}%, growth ${s.growthPct}%`,
       `**Profile-fixed:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}`,
+      ...(supervisorEdgeWarning(s.supervisorPlanned, s.nsxEdgeSize)
+        ? [`**⚠ Supervisor:** ${supervisorEdgeWarning(s.supervisorPlanned, s.nsxEdgeSize)}`]
+        : s.supervisorPlanned
+          ? ['**Supervisor:** planned — Edge cluster meets the Large form factor minimum']
+          : []),
       '',
       `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} (tightest: ${r.fit.binding}, basis: ${r.survivorBasis})`,
       '',
