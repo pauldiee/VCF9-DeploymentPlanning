@@ -67,8 +67,10 @@ const LINES = [
   },
 ];
 
-// GA release-notes landing page (kept in _sources for the page footer).
-const GA_RN = `${TD}.html`;
+// VCF 9.1 release-notes landing page - indexes every maintenance version's release notes
+// (each with its Bill of Materials) and every patch-release tree. Linked from the page footer
+// as the single "start here" source; every table row also links its own exact source.
+const RELEASE_NOTES = `${TD}.html`;
 
 // --- Per-minor component manifest -------------------------------------------------------------
 //
@@ -421,7 +423,7 @@ async function main() {
     _updated: new Date().toISOString().slice(0, 10),
     _family: FAMILY,
     _sourceErrors: errors,
-    _sources: { techdocs: (LINES.find((l) => l.patch) || {}).patch || GA_RN, ga: GA_RN },
+    _sources: { releaseNotes: RELEASE_NOTES },
     lines,
     addons,
   };
