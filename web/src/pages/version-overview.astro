@@ -3,29 +3,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import data from '../data/vcf-versions.json';
 
 // Data is refreshed daily by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
-// commits it back to main, which rebuilds Pages). See issue #179.
-const { _updated, _sourceErrors, components } = data;
+// commits it back to main, which rebuilds Pages). See issues #179, #265.
+// `lines` carries one component set per supported release line (9.1.1.x, 9.1.0.x); `addons`
+// is the shared optional set (versions on its own schemes, not tied to the VCF maintenance
+// version). See the script header for the X.Y.Z.EEHH version scheme.
+const { _updated, _family, _sourceErrors, lines, addons } = data;
+
 // Rows whose build came from a recorded human-verified reconciliation because the upstream
 // release notes render a malformed build string (#214). Current, not stale - so these are
-// footnoted, never folded into the "could not be read" warning above.
-const pinned = components.filter((c) => c.pinned);
+// footnoted, never folded into the "could not be read" warning above. Checked across all lines.
+const pinned = lines.flatMap((ln) => ln.components).filter((c) => c.pinned);
 
-// Group by category, preserving manifest order within each group. Rows with a `parent`
-// (the VCF Operations sub-components, #180) are rendered indented beneath their parent row as a
-// visual grouping - they are independently-versioned components, not internal parts of one (#185).
-const order = ['Core', 'Operations', 'Automation', 'Management', 'Add-ons'];
-const groups = order
-  .map((cat) => {
-    const rows = components.filter((c) => c.category === cat);
-    const childrenOf = (key) => rows.filter((c) => c.parent === key);
-    const ordered = [];
-    for (const c of rows.filter((c) => !c.parent)) {
-      ordered.push({ ...c, child: false });
-      for (const ch of childrenOf(c.key)) ordered.push({ ...ch, child: true });
-    }
-    return { cat, rows: ordered };
-  })
-  .filter((g) => g.rows.length);
+// Group a component list by category, preserving manifest order within each group. Rows with a
+// `parent` (the VCF Operations sub-components, #180) render indented beneath their parent as a
+// visual grouping - independently-versioned components, not internal parts of one (#185).
+const CAT_ORDER = ['Core', 'Operations', 'Automation', 'Management'];
+function groupByCat(components) {
+  return CAT_ORDER
+    .map((cat) => {
+      const rows = components.filter((c) => c.category === cat);
+      const childrenOf = (key) => rows.filter((c) => c.parent === key);
+      const ordered = [];
+      for (const c of rows.filter((c) => !c.parent)) {
+        ordered.push({ ...c, child: false });
+        for (const ch of childrenOf(c.key)) ordered.push({ ...ch, child: true });
+      }
+      return { cat, rows: ordered };
+    })
+    .filter((g) => g.rows.length);
+}
+
+// One section per release line (newest maintenance version first), plus the shared add-ons.
+const lineSections = lines.map((ln) => ({ ...ln, groups: groupByCat(ln.components) }));
+const addonRows = addons.map((c) => ({ ...c, child: false }));
 
 const fmtDate = (iso) =>
   iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
@@ -38,14 +48,24 @@ const fmtDate = (iso) =>
 >
   <article class="prose">
     <p class="doc-eyebrow itq-eyebrow">Reference</p>
-    <h1>VCF 9.1 Version Overview</h1>
+    <h1>VCF {_family} Version Overview</h1>
 
     <p>
-      The current latest version and build for each VMware Cloud Foundation 9.1 component. In 9.1,
-      components patch <strong>per component and asynchronously</strong> (Express Patches), so a
-      single point-in-time table drifts within weeks. This one is refreshed automatically from
-      Broadcom, so it stays honest as a one-glance &ldquo;what&rsquo;s current&rdquo; reference
-      during planning.
+      The current latest version and build for each VMware Cloud Foundation {_family} component. In
+      {' '}{_family}, components patch <strong>per component and asynchronously</strong> (Express
+      Patches), so a single point-in-time table drifts within weeks. This one is refreshed
+      automatically from Broadcom, so it stays honest as a one-glance &ldquo;what&rsquo;s
+      current&rdquo; reference during planning.
+    </p>
+
+    <p class="vo-note">
+      <strong>Reading a {_family.split('.')[0]}.x version.</strong> Broadcom numbers releases
+      {' '}<code>X.Y.Z.EEHH.build</code> &mdash; major <code>.</code> minor <code>.</code>
+      {' '}maintenance <code>.</code> (Express&nbsp;Patch + Hot&nbsp;Patch) <code>.</code> build.
+      Moving <code>X.Y.Z</code> (e.g. 9.1.0 &rarr; 9.1.1) is an <strong>upgrade</strong> and follows
+      a required update sequence; moving only <code>EEHH</code> (e.g. 9.1.0.0300 &rarr; 9.1.0.0400)
+      is a <strong>patch</strong> with no sequence. Each maintenance version keeps receiving patches
+      on its own line, so every currently-supported one is listed below.
     </p>
 
     <p class="vo-updated">
@@ -78,62 +98,105 @@ const fmtDate = (iso) =>
     }
 
     {
-      groups.map((g) => (
+      lineSections.map((ln) => (
         <>
-          <h2 class="vo-cat">{g.cat}</h2>
-          {g.cat === 'Add-ons' && (
+          <h2 class="vo-line">VCF {ln.v}<span class="vo-line__meta">GA {fmtDate(ln.ga)}</span></h2>
+          {!ln.hasPatchTree && (
             <p class="vo-note">
-              Optional components, <strong>not part of the base VCF 9.1 BOM</strong>. Each patches on
-              its own cadence in its own release-notes tree. Avi Load Balancer publishes no build
-              number, so its Build column shows &ldquo;N/A&rdquo;.
+              Newly released &mdash; Broadcom has not opened a patch tree for {ln.v} yet, so every
+              row is at its <span class="vo-pill">GA</span> build (from the {ln.v} Bill of
+              Materials). Express Patches will land here as they ship.
             </p>
           )}
-          <figure class="table-scroll vo-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Component</th>
-                  <th>Latest version</th>
-                  <th>Build</th>
-                  <th>Released</th>
-                  <th>Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                {g.rows.map((c) => (
-                  <tr class={c.child ? 'vo-child' : undefined}>
-                    <td class="vo-name">{c.name}</td>
-                    <td class="vo-ver">
-                      {c.version ?? ''}
-                      {c.patched === false && <span class="vo-pill">GA</span>}
-                    </td>
-                    <td class="vo-build">
-                      {c.build ?? 'N/A'}
-                      {c.pinned && (
-                        <sup
-                          class="vo-pin"
-                          title={`Broadcom's release notes render this build as "${c.pinned.raw}", which is malformed. Showing the verified build ${c.pinned.build} (checked ${c.pinned.verified}). ${c.pinned.note}`}
-                        >
-                          &dagger;
-                        </sup>
-                      )}
-                    </td>
-                    <td>{fmtDate(c.releaseDate)}</td>
-                    <td>
-                      {c.sourceUrl && (
-                        <a href={c.sourceUrl} target="_blank" rel="noopener">
-                          Release notes <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </figure>
+          {ln.groups.map((g) => (
+            <>
+              <h3 class="vo-cat">{g.cat}</h3>
+              <figure class="table-scroll vo-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Component</th>
+                      <th>Latest version</th>
+                      <th>Build</th>
+                      <th>Released</th>
+                      <th>Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.rows.map((c) => (
+                      <tr class={c.child ? 'vo-child' : undefined}>
+                        <td class="vo-name">{c.name}</td>
+                        <td class="vo-ver">
+                          {c.version ?? ''}
+                          {c.patched === false && <span class="vo-pill">GA</span>}
+                        </td>
+                        <td class="vo-build">
+                          {c.build ?? 'N/A'}
+                          {c.pinned && (
+                            <sup
+                              class="vo-pin"
+                              title={`Broadcom's release notes render this build as "${c.pinned.raw}", which is malformed. Showing the verified build ${c.pinned.build} (checked ${c.pinned.verified}). ${c.pinned.note}`}
+                            >
+                              &dagger;
+                            </sup>
+                          )}
+                        </td>
+                        <td>{fmtDate(c.releaseDate)}</td>
+                        <td>
+                          {c.sourceUrl && (
+                            <a href={c.sourceUrl} target="_blank" rel="noopener">
+                              Release notes <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </figure>
+            </>
+          ))}
         </>
       ))
     }
+
+    <h2 class="vo-line">Add-ons</h2>
+    <p class="vo-note">
+      Optional components, <strong>not part of the base VCF {_family} BOM</strong> and not tied to a
+      maintenance version. Each patches on its own cadence and versioning scheme in its own
+      release-notes tree. Avi Load Balancer publishes no build number, so its Build column shows
+      &ldquo;N/A&rdquo;.
+    </p>
+    <figure class="table-scroll vo-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Latest version</th>
+            <th>Build</th>
+            <th>Released</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {addonRows.map((c) => (
+            <tr>
+              <td class="vo-name">{c.name}</td>
+              <td class="vo-ver">{c.version ?? ''}</td>
+              <td class="vo-build">{c.build ?? 'N/A'}</td>
+              <td>{fmtDate(c.releaseDate)}</td>
+              <td>
+                {c.sourceUrl && (
+                  <a href={c.sourceUrl} target="_blank" rel="noopener">
+                    Release notes <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />
+                  </a>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
 
     <blockquote>
       <p>
@@ -142,9 +205,9 @@ const fmtDate = (iso) =>
         Express Patch yet, so they run at their general-availability build. The VCF Operations
         services listed under Management &mdash; Orchestrator, Log Management, Real-Time Metrics and
         its Store &mdash; are independently-versioned components of that product family, each with
-        its own build; they currently happen to be aligned on the same Express Patch. vCenter is
-        read from its build-number KB, the core fleet from the Broadcom TechDocs patch-release tree,
-        and each add-on from its own release-notes tree.
+        its own build. The core fleet is read from the Broadcom TechDocs patch-release tree (or, for
+        a line with no patch tree yet, that line's Bill of Materials), and each add-on from its own
+        release-notes tree.
       </p>
     </blockquote>
 
@@ -179,8 +242,24 @@ const fmtDate = (iso) =>
   }
   .vo-warn i { color: var(--itq-orange); margin-right: 0.4rem; }
 
+  /* Release-line heading (VCF 9.1.1 / VCF 9.1.0 / Add-ons) - the top level of the page. */
+  .vo-line {
+    margin-top: var(--space-8);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--itq-orange);
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .vo-line__meta {
+    font-size: var(--fs-small);
+    font-weight: var(--fw-regular);
+    color: var(--text-muted);
+  }
+
   .vo-cat {
-    margin-top: var(--space-7);
+    margin-top: var(--space-6);
     font-size: var(--fs-h4, 1.1rem);
     color: var(--text-body);
   }

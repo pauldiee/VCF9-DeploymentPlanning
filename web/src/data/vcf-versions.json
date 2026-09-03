@@ -1,211 +1,428 @@
 {
-  "_updated": "2026-09-02",
+  "_updated": "2026-09-03",
+  "_family": "9.1",
   "_sourceErrors": [],
   "_sources": {
     "techdocs": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x",
     "ga": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html"
   },
-  "components": [
+  "lines": [
     {
-      "key": "vcenter",
-      "name": "vCenter Server",
-      "category": "Core",
-      "version": "9.1.0.0300",
-      "build": "25629530",
-      "releaseDate": "2026-07-29",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/vcenter/vcenter-9-1-0-0300-release-notes.html",
-      "patched": true
+      "v": "9.1.1",
+      "ga": "2026-09-03",
+      "hasPatchTree": false,
+      "components": [
+        {
+          "key": "vcenter",
+          "name": "vCenter Server",
+          "category": "Core",
+          "version": "9.1.1.0",
+          "build": "25712839",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "esxi",
+          "name": "ESXi",
+          "category": "Core",
+          "version": "9.1.1.0",
+          "build": "25714478",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "nsx",
+          "name": "NSX",
+          "category": "Core",
+          "version": "9.1.1.0",
+          "build": "25691509",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "sddc-manager",
+          "name": "SDDC Manager",
+          "category": "Core",
+          "version": "9.1.1.0",
+          "build": "25713928",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-operations",
+          "name": "VCF Operations",
+          "category": "Operations",
+          "version": "9.1.1.0",
+          "build": "25679751",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-for-networks",
+          "name": "VCF Operations for Networks",
+          "category": "Operations",
+          "version": "9.1.1.0",
+          "build": "25682214",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-hcx",
+          "name": "VCF Operations HCX",
+          "category": "Operations",
+          "version": "9.1.1.0",
+          "build": "25690219",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-orchestrator",
+          "name": "Orchestrator",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25679883",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-log-management",
+          "name": "Log Management",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25679624",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-real-time-metrics",
+          "name": "Real-Time Metrics",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25679622",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-real-time-metrics-store",
+          "name": "Real-Time Metrics Store",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25714471",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-automation",
+          "name": "VCF Automation",
+          "category": "Automation",
+          "version": "9.1.1.0",
+          "build": "25714559",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "fleet-lifecycle",
+          "name": "Fleet Lifecycle Management",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25713934",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "sddc-lifecycle",
+          "name": "SDDC Lifecycle Management",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25713940",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "salt-master",
+          "name": "Salt Master",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25679895",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "salt-raas",
+          "name": "Salt RaaS",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25679895",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "software-depot",
+          "name": "Software Depot",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25713941",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vsp",
+          "name": "VCF Services Runtime (VSP)",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25714471",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "telemetry",
+          "name": "Telemetry",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25671600",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "identity-broker",
+          "name": "Identity Broker",
+          "category": "Management",
+          "version": "9.1.1.0",
+          "build": "25679886",
+          "releaseDate": "2026-09-03",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
+          "patched": false
+        }
+      ]
     },
     {
-      "key": "esxi",
-      "name": "ESXi",
-      "category": "Core",
-      "version": "9.1.0.0200",
-      "build": "25557999",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/esx/esx-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "nsx",
-      "name": "NSX",
-      "category": "Core",
-      "version": "9.1.0.0200",
-      "build": "25524170",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/nsx/nsx-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "sddc-manager",
-      "name": "SDDC Manager",
-      "category": "Core",
-      "version": "9.1.0.0400",
-      "build": "25570100",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-installer/sddc-manager-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-operations",
-      "name": "VCF Operations",
-      "category": "Operations",
-      "version": "9.1.0.0400",
-      "build": "25541561",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/vcfoperations-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-for-networks",
-      "name": "VCF Operations for Networks",
-      "category": "Operations",
-      "version": "9.1.0.0200",
-      "build": "25517220",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-for-networks-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-hcx",
-      "name": "VCF Operations HCX",
-      "category": "Operations",
-      "version": "9.1.0.0200",
-      "build": "25535720",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-hcx-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-orchestrator",
-      "name": "Orchestrator",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25545173",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/vcf-operations-orchestrator-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-log-management",
-      "name": "Log Management",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25544947",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/log-management-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-real-time-metrics",
-      "name": "Real-Time Metrics",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25544944",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/real-time-mertics-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-ops-real-time-metrics-store",
-      "name": "Real-Time Metrics Store",
-      "category": "Management",
-      "version": "9.1.0.0200",
-      "build": "25555874",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/real-time-metrics-store-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vcf-automation",
-      "name": "VCF Automation",
-      "category": "Automation",
-      "version": "9.1.0.0200",
-      "build": "25556825",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-automation/vcfautomation-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "fleet-lifecycle",
-      "name": "Fleet Lifecycle Management",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25570104",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/fleet-lifecycle-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "sddc-lifecycle",
-      "name": "SDDC Lifecycle Management",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25570103",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/sddc-lifecycle-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "salt-master",
-      "name": "Salt Master",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25544946",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/salt-master-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "salt-raas",
-      "name": "Salt RaaS",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25544946",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/salt-raas-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "software-depot",
-      "name": "Software Depot",
-      "category": "Management",
-      "version": "9.1.0.0400",
-      "build": "25570105",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/software-depot-9-1-0-0400-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "vsp",
-      "name": "VCF Services Runtime (VSP)",
-      "category": "Management",
-      "version": "9.1.0.0200",
-      "build": "25555874",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-services-runtime-9-1-0-0200-release-notes.html",
-      "patched": true
-    },
-    {
-      "key": "telemetry",
-      "name": "Telemetry",
-      "category": "Management",
-      "version": "9.1.0.0",
-      "build": "25181946",
-      "releaseDate": "2026-05-12",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
-      "patched": false
-    },
-    {
-      "key": "identity-broker",
-      "name": "Identity Broker",
-      "category": "Management",
-      "version": "9.1.0.0100",
-      "build": "25522734",
-      "releaseDate": "2026-07-13",
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0100/identity-broker-9-1-0-0100-release-notes.html",
-      "patched": true
-    },
+      "v": "9.1.0",
+      "ga": "2026-05-12",
+      "hasPatchTree": true,
+      "components": [
+        {
+          "key": "vcenter",
+          "name": "vCenter Server",
+          "category": "Core",
+          "version": "9.1.0.0300",
+          "build": "25629530",
+          "releaseDate": "2026-07-29",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/vcenter/vcenter-9-1-0-0300-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "esxi",
+          "name": "ESXi",
+          "category": "Core",
+          "version": "9.1.0.0200",
+          "build": "25557999",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/esx/esx-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "nsx",
+          "name": "NSX",
+          "category": "Core",
+          "version": "9.1.0.0200",
+          "build": "25524170",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/nsx/nsx-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "sddc-manager",
+          "name": "SDDC Manager",
+          "category": "Core",
+          "version": "9.1.0.0400",
+          "build": "25570100",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-installer/sddc-manager-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-operations",
+          "name": "VCF Operations",
+          "category": "Operations",
+          "version": "9.1.0.0400",
+          "build": "25541561",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/vcfoperations-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-ops-for-networks",
+          "name": "VCF Operations for Networks",
+          "category": "Operations",
+          "version": "9.1.0.0200",
+          "build": "25517220",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-for-networks-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-ops-hcx",
+          "name": "VCF Operations HCX",
+          "category": "Operations",
+          "version": "9.1.0.0200",
+          "build": "25535720",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-operations-hcx-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-ops-orchestrator",
+          "name": "Orchestrator",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25545173",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/vcf-operations-orchestrator-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-ops-log-management",
+          "name": "Log Management",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25544947",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/log-management-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-ops-real-time-metrics",
+          "name": "Real-Time Metrics",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25544944",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/real-time-mertics-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-ops-real-time-metrics-store",
+          "name": "Real-Time Metrics Store",
+          "category": "Management",
+          "version": "9.1.0.0200",
+          "build": "25555874",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/real-time-metrics-store-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vcf-automation",
+          "name": "VCF Automation",
+          "category": "Automation",
+          "version": "9.1.0.0200",
+          "build": "25556825",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-automation/vcfautomation-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "fleet-lifecycle",
+          "name": "Fleet Lifecycle Management",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25570104",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/fleet-lifecycle-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "sddc-lifecycle",
+          "name": "SDDC Lifecycle Management",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25570103",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/sddc-lifecycle-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "salt-master",
+          "name": "Salt Master",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25544946",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/salt-master-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "salt-raas",
+          "name": "Salt RaaS",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25544946",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/salt-raas-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "software-depot",
+          "name": "Software Depot",
+          "category": "Management",
+          "version": "9.1.0.0400",
+          "build": "25570105",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0400/software-depot-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vsp",
+          "name": "VCF Services Runtime (VSP)",
+          "category": "Management",
+          "version": "9.1.0.0200",
+          "build": "25555874",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0200/vcf-services-runtime-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "telemetry",
+          "name": "Telemetry",
+          "category": "Management",
+          "version": "9.1.0.0",
+          "build": "25181946",
+          "releaseDate": "2026-05-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
+          "patched": false
+        },
+        {
+          "key": "identity-broker",
+          "name": "Identity Broker",
+          "category": "Management",
+          "version": "9.1.0.0100",
+          "build": "25522734",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-operations/9-1-0-0100/identity-broker-9-1-0-0100-release-notes.html",
+          "patched": true
+        }
+      ]
+    }
+  ],
+  "addons": [
     {
       "key": "vdefend",
       "name": "vDefend (Firewall / IDS-IPS / ATP)",
