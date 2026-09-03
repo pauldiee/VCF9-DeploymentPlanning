@@ -456,10 +456,10 @@
       "key": "avi-lb",
       "name": "Avi Load Balancer (NSX ALB)",
       "category": "Add-ons",
-      "version": "32.1.2",
+      "version": "32.1.3",
       "build": null,
       "releaseDate": null,
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes/release-notes-for-avi-load-balancer-version-32-1-2.html",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes/release-notes-for-avi-load-balancer-version-32-1-3.html",
       "patched": true
     }
   ]
