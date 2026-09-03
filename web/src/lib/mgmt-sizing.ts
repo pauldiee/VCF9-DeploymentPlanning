@@ -159,6 +159,22 @@ export function vcfAutomationNodes(vcfAutomationSize: string): number {
   return vcfAutomationSize === 'Small' ? 1 : 3;
 }
 
+// A vSphere Supervisor requires its NSX Edge cluster at the Large form factor
+// minimum (10-supervisor-enablement.md section 3.1). This is advisory: it does
+// not change the footprint math or the user's selection, only surfaces a warning.
+// Returns the warning text, or null when the Edge choice is fine / Supervisor
+// isn't planned.
+export function supervisorEdgeWarning(supervisorPlanned: boolean, nsxEdgeSize: string): string | null {
+  if (!supervisorPlanned) return null;
+  if (nsxEdgeSize === 'Excluded')
+    return 'vSphere Supervisor needs an NSX Edge cluster with a Tier-0 gateway — none is selected. Add an NSX Edge at Large or larger.';
+  if (nsxEdgeSize.startsWith('VNA '))
+    return 'vSphere Supervisor needs an Edge cluster with a Tier-0 gateway; a VNA cluster (Distributed connectivity) runs no Tier-0. Select an NSX Edge at Large or larger.';
+  if (nsxEdgeSize === 'NSX Edge Small' || nsxEdgeSize === 'NSX Edge Medium')
+    return 'vSphere Supervisor requires the NSX Edge cluster at the Large form factor minimum (see 10-supervisor-enablement.md). Small and Medium Edges only cover plain north-south routing.';
+  return null;
+}
+
 export interface WorkloadDomain {
   name: string;
   vcenterSize: string;
@@ -193,6 +209,9 @@ export interface SizingState {
   // the deployment profile — see deriveMgmtSizes — not chosen here)
   nsxGmSize: string; // 'Excluded' or a manager size
   nsxEdgeSize: string;
+  // Planning flag only (not a component): when set, the tool warns if the Edge
+  // selection is below the Large form factor a vSphere Supervisor requires.
+  supervisorPlanned: boolean;
   aviSize: string;
   sspSize: string;
   vcfOps: boolean;
@@ -229,6 +248,7 @@ export function defaultState(): SizingState {
     proposedHosts: 4,
     nsxGmSize: 'Excluded',
     nsxEdgeSize: 'Excluded',
+    supervisorPlanned: false,
     aviSize: 'Excluded',
     sspSize: 'Excluded',
     vcfOps: true, // normally deployed in a greenfield fleet; exclude only if reusing an instance
