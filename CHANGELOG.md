@@ -1,5 +1,20 @@
 # Changelog
 
+## v3.6.4 — 2026-09-03
+- **Version Overview: support VCF 9.1.1 and future maintenance versions** (#265)
+  — the page was hardwired to the `9.1.0.x` patch train. `scrape-versions.mjs`
+  now drives off a `LINES` config (one entry per maintenance version, newest
+  first) with `{ v, z, ga, patch, bom }`: `patch` is the `patch-releases-9-1-Z-x`
+  tree, or `null` until Broadcom opens one — while it is null the whole line
+  runs at its Bill-of-Materials (GA) builds. The ~20 component leaf regexes are
+  parameterised by the maintenance digit `z`, and a new BOM row-parser replaces
+  the three hardcoded GA `fallback` builds (VSP, Telemetry, Identity Broker).
+  Output shape is now `{ _family, lines[], addons[] }`. `version-overview.astro`
+  renders one section per line (**VCF 9.1.1** all-GA, **VCF 9.1.0** at real patch
+  levels) plus a shared **Add-ons** section, and gains a short X.Y.Z.EEHH
+  version-scheme note (Upgrade vs Patch). Adding 9.1.2 later is one `LINES`
+  entry; wiring up the 9.1.1 patch tree when it ships is one field.
+
 ## v3.6.3 — 2026-09-02
 - **docs/15: expanded the "no 5.1.2 → 2.0 upgrade" note into a callout** (#264)
   — the one-line paragraph is now a blockquote spelling out that moving to 2.0

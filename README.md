@@ -58,7 +58,7 @@ This repo flips the order:
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/pages/tools/plan-tracker.astro` | Interactive deployment tracker — the plan as a checklist (story checkboxes, per-epic progress, save/load progress file); follows the scope set in the export tool |
 | `web/src/pages/tools/test-plan.astro` | Interactive test plan — scope-driven verification cases in phases TP-0…TP-6 with P/F1/F2/NA tracking, actual-result capture, "How to run this" instructions, and Excel/report/CSV/runbook export; follows the scope set in the export tool |
-| `web/src/pages/version-overview.astro` | Auto-updating VCF 9.1 Version Overview (latest version + build per component); data refreshed weekly from Broadcom |
+| `web/src/pages/version-overview.astro` | Auto-updating VCF 9.1 Version Overview — latest version + build per component, one section per supported maintenance version (9.1.1, 9.1.0) plus shared add-ons; data refreshed daily from Broadcom |
 
 ### Reference data + templates
 
@@ -85,7 +85,7 @@ This repo flips the order:
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
-| `web/scripts/scrape-versions.mjs`   | Node scraper behind the Version Overview — reads vCenter build KB + Broadcom TechDocs patch tree, emits `web/src/data/vcf-versions.json`; run weekly by `.github/workflows/scrape-versions.yml` |
+| `web/scripts/scrape-versions.mjs`   | Node scraper behind the Version Overview — walks the Broadcom TechDocs patch tree per maintenance version (with a Bill-of-Materials fallback for lines with no patch tree yet) + the add-on release-notes trees, emits `web/src/data/vcf-versions.json`; run daily by `.github/workflows/scrape-versions.yml` |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters + progress tracking |
 | `web/src/lib/test-plan.ts`          | Test-plan engine — scope-driven verification cases in phases TP-0…TP-6, each mapped to the epic/story it proves; result tracking + exporters (customer **report** with a verdict and an exit-criteria self-audit, working **CSV**, full **runbook**) |
