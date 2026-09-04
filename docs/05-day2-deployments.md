@@ -345,6 +345,28 @@ From [VCF Automation instance types — deployment](https://techdocs.broadcom.co
 So the shape is a **DMZ VPC** for external-facing services, a **Mgmt App VPC**
 for the VCF Automation appliances, and a **Transit Gateway** routing between
 them and upstream — with east/west firewalling available on the app VPC.
+Broadcom names this **Deployment Pattern 3: External-Facing Deployment of VCF
+Automation**, and documents its own trade-offs and a gateway-architecture note
+worth carrying into the decision:
+
+**Benefits (per the design library):** one set of VCF Automation appliances is
+easier to manage and update (lower operational overhead); isolating
+external-facing services from core management and workloads limits lateral
+movement; the DMZ-plus-load-balancer micro-segmentation exposes the service
+without weakening protection; traffic distributes across multiple appliance
+instances for scale and availability.
+
+**Drawbacks (per the design library):** needs robust security already in
+place — firewalls, WAF, API security; a load-balancer misconfiguration can
+cause downtime or abnormal routing; the added network complexity (routing,
+firewall rules, per-tenant subnet allocation) needs careful planning.
+
+> **CTGW or DTGW — both are supported.** The design library's own diagram for
+> this pattern shows the **Centralized Transit Gateway (CTGW)** architecture,
+> but the page states plainly that the **Distributed Transit Gateway (DTGW)**
+> architecture is equally supported. So this pattern doesn't force a
+> connectivity model — the CTGW/DTGW choice you already made for the domain
+> (`01-network-dns-plan.md` §B) carries through unchanged.
 
 **How you actually deploy it:** through the **Fleet LCM API**, exactly like the
 other non-management placements — the VPC subnet is referenced by its

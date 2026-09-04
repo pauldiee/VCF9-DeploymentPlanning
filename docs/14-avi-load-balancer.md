@@ -372,6 +372,22 @@ VPC dedicated to external access, not a plain VDS network. Below follows
 his steps with notes on what a **VCF-managed Avi deploy already did for
 you**, since his article doesn't distinguish that.
 
+> **This shape is now an official Broadcom design pattern, not just a field
+> report.** [Deployment Pattern 3: External-Facing Deployment of VCF
+> Automation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-automation-deployment-models-9-x/vcf-automation-instance-types/deployment.html)
+> **[documented]** names the same **DMZ VPC + Mgmt App VPC + Transit
+> Gateway + Tier-0 Gateway** structure Fojta's walkthrough builds below, and
+> adds two things his article doesn't: a Benefits/Drawbacks list, and
+> confirmation that either **Centralized (CTGW)** or **Distributed (DTGW)**
+> Transit Gateway architecture works here — the diagram shows CTGW, but DTGW
+> is equally supported. Fojta's steps below (NSX Project + a Tier-0 GW) are
+> the CTGW path; a DTGW build skips the Tier-0/BGP pieces per
+> `01-network-dns-plan.md` §B.2, but the DMZ-VPC/Transit-GW/Avi shape is
+> otherwise the same. **Trade-offs, from the design library:** easier
+> management of one appliance set and reduced lateral-movement risk, against
+> needing solid perimeter security (firewalls/WAF/API security) already in
+> place and the added routing/firewall/subnet complexity per tenant.
+
 > **Licensing note [field-reported]:** this approach needs **VPC networking
 > and Avi/vDefend licensing beyond base VCF** — plain VCF only ships NSX
 > Legacy L4 load balancing and a stateless gateway firewall.
