@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.6.9 — 2026-09-04
+- **docs: incorporate Broadcom's official "Deployment Pattern 3" design page**
+  (#275) — a colleague surfaced Broadcom's new "VCF Automation Deployment
+  Models 9.x" design-library section; incorporated the one page covering the
+  external-facing / DMZ-VPC pattern (the other ~12 sibling pages are a
+  possible follow-up, out of scope here). `docs/05-day2-deployments.md`'s NSX
+  VPC section gains the design library's **Benefits** / **Drawbacks** lists
+  and the note that the **Distributed (DTGW)** Transit Gateway architecture is
+  equally supported, not just the **Centralized (CTGW)** one shown in the
+  diagram. `docs/14-avi-load-balancer.md`'s external/customer-access section
+  gets a callout that this shape — DMZ VPC + Mgmt App VPC + Transit Gateway +
+  Tier-0 — is now an **official Broadcom design pattern**, not only Tom
+  Fojta's field-reported walkthrough, plus the same CTGW/DTGW note.
+
 ## v3.6.8 — 2026-09-03
 - **Sizer: fix the Supervisor/Edge warning and take it per workload domain**
   (#273, follows #271) — the warning no longer fires for a VNA or Excluded Edge
