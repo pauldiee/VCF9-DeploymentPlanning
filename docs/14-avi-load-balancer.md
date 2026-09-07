@@ -532,7 +532,7 @@ fleet uses Supervisor/VKS against the same VCFA endpoint, budget for
 hitting this and plan the second pool up front rather than discovering it
 mid-incident.
 
-### Locking the portals to known client IPs (Pattern 3 "Avi HTTP configuration")
+## Locking the portals to known client IPs (Pattern 3 "Avi HTTP configuration")
 
 **[documented]**, from Broadcom's [Securing VCF Automation
 Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
@@ -563,32 +563,107 @@ These are **redirects, not authorization** — a misrouted legitimate user lands
 on the standard login rather than an error, and RBAC inside VCFA still makes
 the real access decision. It is a surface-reduction control.
 
-**Objects to build:**
+### Walkthrough
 
-| Object | Where | Contents |
-| ------ | ----- | -------- |
-| **IP group — provider users** | `Templates → Groups → IP Group` | the management-station subnets |
-| **IP group — `<tenant>` users** (optional, per tenant) | same | that tenant's known client CIDRs |
-| **String group — safe characters** | `Templates → Groups → String Group` | the PSM safe-char regex from the design page |
-| **HTTP Policy Set — provider redirect** | `Templates → Policies → HTTP Policy Set` | rules below |
-| **HTTP Policy Set — `<tenant>` redirect** (per tenant) | same | rules below |
+> **Keep a way back in.** The provider rule below will redirect *you* too if
+> your browser's source IP is not in the provider IP group. Before you attach
+> it, confirm the IP group contains the address you are actually browsing from
+> (post-NAT — see the caveat at the end), and keep the Avi Controller reachable
+> by SSH / a management-IP browser in case you need to detach the policy.
 
-**Provider redirect policy — two HTTP request rules:**
+#### 1. Create the IP group(s)
+
+`Templates > Load Balancer > Groups > IP Group > Create`.
+
+- **Provider Users** — add the **management-station subnets / jump-host
+  addresses** the provider admins browse from. Prefixes and single IPs both
+  work.
+- **`<tenant>` Users** (optional, one per tenant) — e.g. **Tenant1 Users** with
+  that tenant's known client CIDRs. Skip these if you only want to lock the
+  provider portal.
+
+Whatever address the Service Engine actually *sees* as the client is what these
+groups are matched against — so populate them with post-NAT addresses if
+anything in front of the SE source-NATs.
+
+#### 2. (Optional) Create the "safe characters" String group
+
+Only needed if you are also doing the design page's WAF chapter — its Positive
+Security Model rules reference this group. `Templates > Load Balancer > Groups >
+String Group > Create`, name it e.g. **Safe Characters**, one string entry, the
+regex verbatim from the design page:
+
+```
+^\[0-9A-Za-z.\_ \\t:,!?+\*=@#\\-\\$\\(\\)\\&\\'\\/\\\[\\\]\]\*$
+```
+
+#### 3. Create the Provider redirect HTTP Policy Set
+
+`Templates > Policies > HTTP Policy Set > Create`. Name it e.g.
+**vcfa-provider-redirect**. Add **two HTTP Request** rules (Rules tab → Add
+Rule):
+
+**Rule 1 — `Redirect Provider - Path`**
+
+| Part | Setting |
+| ---- | ------- |
+| Match → **Client IP Address** | Condition **Is Not In**, IP Group **Provider Users** |
+| Match → **Path** | Criteria **Begins With**, string **`/provider`** |
+| Action → **HTTP Redirect** | **Path** = `automation/` (no leading slash — enter it exactly). **Uncheck "Keep Query"**. Leave Protocol / Host / Port at their defaults (same virtual service); the default **302 (Found)** status is fine. |
+
+**Rule 2 — `Redirect Provider - Query`**
+
+| Part | Setting |
+| ---- | ------- |
+| Match → **Client IP Address** | **Is Not In** → **Provider Users** |
+| Match → **Path** | **Begins With** → **`/login`** |
+| Match → **Query** | value **`service=provider`** (use **Equals** if that is the whole query string, otherwise **Contains**) |
+| Action → **HTTP Redirect** | **Path** = `automation/`, **uncheck "Keep Query"**, defaults otherwise |
+
+All match elements within a rule are ANDed. The two rules match disjoint URLs
+(`/provider` vs `/login?service=provider`), so their order in the set does not
+matter here; rules are still evaluated top-down, first match wins.
+
+#### 4. Create a per-tenant redirect HTTP Policy Set (optional, per tenant)
+
+Same shape as step 3, one policy set per tenant, e.g.
+**vcfa-tenant1-redirect** with two rules:
 
 | Rule | Match (all of) | Action |
 | ---- | -------------- | ------ |
-| Redirect Provider — path | Client IP **Is Not In** *provider users* **AND** Path **Begins With** `/provider` | Redirect to path `automation/`, **uncheck "Keep Query"** |
-| Redirect Provider — query | Client IP **Is Not In** *provider users* **AND** Path **Begins With** `/login` **AND** Query **equals** `service=provider` | Redirect to path `automation/`, **uncheck "Keep Query"** |
+| `Redirect Tenant1 - Path` | Client IP **Is Not In** **Tenant1 Users** · Path **Begins With** **`/tenant/tenant1`** | Redirect Path `automation/`, Keep Query **off** |
+| `Redirect Tenant1 - Query` | Client IP **Is Not In** **Tenant1 Users** · Path **Begins With** **`/login`** · Query **`service=tenant:tenant1`** | Redirect Path `automation/`, Keep Query **off** |
 
-**Per-tenant redirect policy (example `tenant1`) — two rules, same shape:** path
-`/tenant/tenant1` and query `service=tenant:tenant1`, matched against the
-*tenant1 users* IP group, redirecting to `automation/`.
+(The design page labels these two rules "Provider request rule - Path/Query" —
+that is a copy-paste slip in the doc; name them per-tenant so the VS config
+stays readable.)
 
-**Then attach everything to the VS.** Design page, verbatim: *"Ensure that the
-newly created WAF policies and HTTP policies are applied to the Virtual
-service!"* Edit the VS → **Policies** section → add the provider redirect and
-each per-tenant policy set → scroll to **Security** → select the **WAF
-Policy** → Save.
+#### 5. Attach the policy sets — and the WAF policy — to the virtual service
+
+Design page, verbatim: *"Ensure that the newly created WAF policies and HTTP
+policies are applied to the Virtual service!"*
+
+`Applications > Virtual Services >` the VCFA VS `> edit`:
+
+1. Scroll to **Policies** → add the **provider redirect** policy set and each
+   **per-tenant redirect** policy set.
+2. Scroll to **Security** → select the **WAF Policy** (from the WAF chapter, if
+   you are doing it).
+3. **Save.**
+
+The redirect rules take effect immediately on save.
+
+#### 6. Validate
+
+- From a **management IP** (in Provider Users): `https://<vcfa-fqdn>/provider`
+  loads the provider login normally.
+- From an **IP not in any group**: the same URL 302-redirects to
+  `https://<vcfa-fqdn>/automation/` (the generic tenant login). Check with
+  `curl -sI` and look for `Location: .../automation/`.
+- Per tenant: a client outside **Tenant1 Users** hitting `/tenant/tenant1` gets
+  the same redirect; a client inside it reaches the tenant login.
+- Avi **VS → Logs** (enable non-significant logs) shows the redirected requests
+  with the matched rule name.
 
 > **The rules match on client *source* IP — so the SE must see the real
 > client [field caveat].** If any hop in front of the Service Engine
