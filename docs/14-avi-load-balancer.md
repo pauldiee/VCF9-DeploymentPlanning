@@ -532,6 +532,167 @@ fleet uses Supervisor/VKS against the same VCFA endpoint, budget for
 hitting this and plan the second pool up front rather than discovering it
 mid-incident.
 
+## Segregating tenant traffic at the Transit Gateway (Pattern 3 TGW gateway firewall)
+
+**[documented]**, from the *Protecting Tenant Traffic with vDefend Gateway
+Firewall on TGW* chapter of the [Securing VCF Automation
+Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+design page. This is the **north-south perimeter** for everything entering the
+DMZ VPC: the goal is *"only required services into the VCF Automation user
+interface"*, with external tenant traffic kept off the internal management
+paths.
+
+**Applied to:** the **Transit Gateway's** built-in **stateful gateway firewall
+(GFW)**. On a **CTGW** build the TGW reaches outside via a Tier-0 — the rules go
+on the **TGW**, not the Tier-0. On a **DTGW** build there is no Tier-0 in the
+path; the TGW GFW is otherwise the same.
+
+> **Licensing.** The stateful GFW / vDefend Gateway Firewall needs
+> **vDefend licensing** — plain VCF ships only a *stateless* gateway firewall.
+> See [`docs/15-license-hub.md`](15-license-hub.md).
+
+### Walkthrough
+
+#### 1. Confirm the GFW is available on the DMZ TGW
+
+`Security > Gateway Firewall` → select the DMZ project's **Transit Gateway**. If
+the stateful rule options are greyed out, the vDefend firewall licence is not
+applied yet — fix that first.
+
+#### 2. Build the groups
+
+`Inventory > Groups`:
+
+| Group | Members |
+| ----- | ------- |
+| **DNS-Servers**, **LDAP-Servers** | the infra-service endpoints tenants and VCFA resolve/bind against |
+| **Avi-SE** | the Service Engine data/VIP interfaces in the DMZ VPC services subnet |
+| **VCFA** | the VCF Automation node IPs |
+| **VCFA-VIP** | the external-facing virtual-service VIP (from the external IP block) |
+| **VCFA-Management-IPs** | the VCFA management interfaces |
+| **Orchestrator** | the VCF Automation Orchestrator endpoint |
+| **vSphere-Supervisor** | the Supervisor control-plane VIP(s) |
+| **ESX-Hosts** | the management-domain ESXi hosts (for the VM web console) |
+
+#### 3. Create the policies and rules on the TGW GFW
+
+**Applied To** = the Transit Gateway for every rule. Policies evaluate
+top-down; keep this order.
+
+**`Policy-Infra-Services`**
+
+| Name | Source | Destination | Service | Action |
+| ---- | ------ | ----------- | ------- | ------ |
+| `DNS` | Any | DNS-Servers | **DNS** | Allow |
+| `LDAP` | Any | LDAP-Servers | **LDAP** + **LDAP-UDP** | Allow |
+
+**`Policy-Avi`**
+
+| Name | Source | Destination | Service | Action |
+| ---- | ------ | ----------- | ------- | ------ |
+| `allow-web` | Any | Avi-SE | **TCP 80, 443** | Allow |
+
+**`Policy-VCFA`**
+
+| Name | Source | Destination | Service | Action |
+| ---- | ------ | ----------- | ------- | ------ |
+| `VCFA-to-Orchestrator` | VCFA | Orchestrator | **HTTPS** | Allow |
+| `VCFA-to-Supervisor` | VCFA | vSphere-Supervisor | **TCP 6443** | Allow |
+| `gw-health-check` | Any | VCFA-VIP | **TCP 8008** | Allow |
+| `VC Webconsole` | VCFA-Management-IPs | ESX-Hosts | **HTTPS** | Allow |
+
+**`Default-Deny`**
+
+| Name | Source | Destination | Service | Action |
+| ---- | ------ | ----------- | ------- | ------ |
+| `Default-Deny` | Any | Any | Any | **Deny** (enable **Logging**) |
+
+The GFW is **stateful** — only the connection-initiation direction is listed;
+return traffic is automatic.
+
+#### 4. Stage before enforcing
+
+Set `Default-Deny` to **Allow + Logging** first. Exercise the full tenant path
+— reach the VIP, log in, browse the catalog, deploy a workload, open a VM web
+console — then read the drop log for anything the allowlist missed before
+switching the rule to **Deny**.
+
+#### 5. Validate
+
+- External client → **VCFA-VIP:443** works; the same client to any other
+  port/host is dropped.
+- `gw-health-check`: the load-balancer probe to **8008** succeeds and the VS
+  stays green.
+- Deploy a test workload — `VCFA-to-Orchestrator` (HTTPS) and
+  `VCFA-to-Supervisor` (6443) carry the reconcile.
+- A VM **web console** opens from the VCFA UI (`VCFA-Management-IPs → ESX-Hosts`
+  on 443).
+- `Default-Deny` hit counter catches only noise.
+
+> **The port list is the design's example, not a validated superset [field
+> caveat].** `TCP 8008` is VCFA's built-in-LB health port and `6443` the
+> Supervisor API, but cross-check the live set against
+> [`docs/07-firewall-ports.md`](07-firewall-ports.md) and the VCFA / Supervisor
+> port docs before turning on `Default-Deny`. On a **CTGW** build do **not**
+> re-create these rules on the upstream Tier-0 — enforce once, on the TGW.
+
+## Layer 7 protection with Avi — SE placement, the DFW exclusion-list step, and licensing
+
+**[documented]**, from the *Protecting Tenant Traffic with vDefend and Avi*
+chapter. Most of that chapter is the **virtual service + HTTP redirect
+policies**, already covered above —
+[Building the virtual service](#building-the-virtual-service) and
+[Locking the portals to known client IPs](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration).
+This section captures the parts that are *not* in those: where the Service
+Engines sit, the DFW exclusion-list sequence, and the licensing gates.
+
+### Service Engine placement
+
+- The SEs run **one-arm** load balancing for VCF Automation, deployed in the
+  **DMZ VPC services subnet**.
+- The virtual-service **VIP is a static address from the external IP block**,
+  externally facing, and front-ends the **three internal VCF Automation node
+  IPs** as pool members (through the internal built-in-LB VIP — see the VS build
+  section).
+- The design page confirms the field values already documented above:
+  **`System-Persistence-Http-Cookie`** persistence on the pool, an **HTTPS
+  health monitor hitting `/api/server_status`**, and **`System-Standard` SSL
+  profile with SNI** — so treat those as **[documented]**, not just
+  field-reported.
+
+### The DFW exclusion-list sequence
+
+Do these in order:
+
+1. **Before deploying Service Engines** — add the SEs (by SE segment or a group)
+   to the **NSX Distributed Firewall exclusion list**. A partially-configured SE
+   with DFW applied can wedge during bring-up.
+2. **Deploy the SEs** (or let Avi place them). Confirm they come up
+   **Connected** and the VS is green.
+3. **Post-install hardening** — **remove the SEs from the exclusion list** so
+   DFW policy applies to them again. If your hardening plan calls for policing
+   VCF management components with vDefend, this is also where you remove
+   **`VCF-Created-Virtual-Machines`** members from the exclusion list — by
+   default they stay excluded (see
+   [Protecting the Avi management plane](#protecting-the-avi-management-plane-pattern-3-gateway-firewall)).
+4. **Re-validate** — SEs still Connected, VS still green, tenant path still works
+   with the DFW now enforcing.
+
+### Licensing gates — all before you start
+
+- **Avi needs a valid licence before Service Engines can come online** — see
+  [Licensing](#licensing) (License Hub / Enterprise tier).
+- Avi must be **deployed via VCF Operations fleet management into the VCF
+  management domain** and **integrated with that domain's instance** — not a
+  standalone Avi.
+- **vDefend firewall licensing must be applied before you can configure DFW**
+  (and the stateful TGW GFW in the section above).
+
+> The WAF Positive-Security-Model detail from this chapter (PSM rules on the
+> All-Apps / VM-Apps org endpoints, the safe-character string group, the
+> XSS / HTTP-response-splitting rule exceptions) is written up separately in
+> [Web Application Firewall on the VCFA virtual service](#web-application-firewall-on-the-vcfa-virtual-service).
+
 ## Locking the portals to known client IPs (Pattern 3 "Avi HTTP configuration")
 
 **[documented]**, from Broadcom's [Securing VCF Automation
@@ -560,8 +721,9 @@ on the standard login rather than an error, and RBAC inside VCFA still makes
 the real access decision. It is a surface-reduction control.
 
 > **Scope.** This section covers only the design page's **HTTP configuration**
-> (the redirect policies). The page's separate WAF chapter is out of scope
-> here — nothing below creates or attaches a WAF policy.
+> (the redirect policies). The WAF policy is a separate object, built in
+> [Web Application Firewall on the VCFA virtual service](#web-application-firewall-on-the-vcfa-virtual-service);
+> both get attached to the same VS.
 
 ### Walkthrough
 
@@ -664,6 +826,120 @@ The redirect rules take effect immediately on save.
 > `/login?service=…`). Re-validate them after a VCFA patch — a routing change
 > upstream in the product will silently break the match.
 
+## Web Application Firewall on the VCFA virtual service
+
+**[documented]**, from the *Avi Web Application Firewall (WAF) Configuration*
+chapter of the [Securing VCF Automation
+Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+design page. This adds L7 application-level filtering to the VS: a
+**Positive Security Model (PSM)** that validates a set of VCF Automation API
+requests against a known-safe character set, with **targeted CRS exceptions**
+so VCFA's own JSON/XML API bodies don't trip the signature rules.
+
+It is a **separate object** from the HTTP redirect policies in
+[Locking the portals](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration)
+— both attach to the same VS. The design page does not define an evaluation
+order; the HTTP redirect policies are the coarser control and logically run
+first.
+
+> **Licensing.** WAF is an Avi **Enterprise**-tier feature, and *"Avi requires
+> a valid license before Service Engines can come online"* — settle
+> [Licensing](#licensing) first.
+
+### Walkthrough
+
+#### 1. Create the WAF Profile
+
+`Templates > WAF > WAF Profile > Create` (clone the system profile). Two
+changes for VCFA:
+
+- **Allowed HTTP methods** — add **`PUT`**, **`PATCH`**, **`DELETE`** to the
+  defaults (the VCFA API uses all three).
+- **Content-Type mapping** — add two entries so structured bodies are parsed,
+  not treated as opaque strings:
+  - `application/*+json` → Request Parser **JSON**
+  - `application/*+xml` → Request Parser **XML**
+
+#### 2. Create the safe-characters String group
+
+`Templates > Groups > String Group > Create`. Name it something explicit
+(the design page uses a key like **`VCFA_BLUEPRINTS`**), one entry, the regex
+verbatim:
+
+```
+^\[0-9A-Za-z.\_ \\t:,!?+\*=@#\\-\\$\\(\\)\\&\\'\\/\\\[\\\]\]\*$
+```
+
+This is the same string group the [HTTP-config chapter](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration)
+mentions seeding — one group, reused here.
+
+#### 3. Create the Positive Security group
+
+`Templates > WAF > Positive Security > Create`. Set **Miss Action** =
+**`Flag or Reject`** — without it the PSM is defined but not enforced. Add two
+location-scoped rules, both matching the **safe-characters string group**:
+
+| Rule ID | Scope (Path) | Match elements |
+| ------- | ------------ | -------------- |
+| **10001** | `/blueprint/api/blueprints` (All-Apps org) | `ARGS` key `content` · `ARGS_NAMES` key `$select` |
+| **10002** | `/project-service/api/projects`, `/provisioning/uerp`, `/form-service/api/forms`, `/provisioning/mgmt`, `/provisioning/resources` (VM-Apps org) | `ARGS` `$filter`, `odataQuery`, `network.instanceAdapterReference`, `size` · `ARGS_NAMES` `$select` · `ARGS` **Contains** `constraints` |
+
+Each listed argument on those paths must match the safe-character regex or the
+Miss Action fires.
+
+#### 4. Create the WAF Policy with the VCFA exceptions
+
+`Templates > WAF > WAF Policy > Create` (clone `System-WAF-Policy`). Reference
+the WAF Profile from step 1 and the Positive Security group from step 3, then
+add the exceptions that keep VCFA's API bodies from false-positiving:
+
+- **Pre-CRS rule** — disable protocol-validation rule **`920600`** for JSON
+  requests:
+  ```
+  SecRule REQUEST_HEADERS:Accept "@beginsWith application/json" \
+    "id:1000,phase:1,pass,nolog,ctl:ruleRemoveById=920600"
+  ```
+- **CRS exception — HTTP response splitting** (rule **`921130`**): Subnet
+  **Any**, Path **Any**, Match Element **`ARGS:body`**.
+- **CRS exception — XSS** (whole **`CRS_941_Application_Attack_XSS`** group):
+  Subnet **Any**, Path **Any**, Match Element **`ARGS:body`**.
+
+Both exceptions scope to **`ARGS:body`** specifically — legitimate JSON/XML
+payloads VCFA posts there otherwise match XSS / response-splitting signatures.
+
+#### 5. Policy mode
+
+The design page sets the policy straight to **Enforcement**.
+
+> **Stage in Detection first anyway [field caveat].** Set **Policy Mode =
+> Detection**, attach it (step 6), then exercise VCFA hard — UI in every
+> section, a Terraform/API run, a catalog deploy, a large upload. Read
+> **VS → Logs → WAF** for `FLAGGED` hits the design's exception list didn't
+> anticipate (websocket upgrade, base64 tokens, large bodies), resolve each
+> with a rule-level exclusion, then flip to **Enforcement** — or use
+> **Allow Mode Delegation** to enforce most rules while holding the noisy ones
+> in Detection.
+
+#### 6. Attach to the virtual service
+
+`Applications > Virtual Services >` the VCFA VS `> edit`:
+
+1. **Policies** — the HTTP redirect policy set(s) from the previous section.
+2. **Security** — select this **WAF Policy**.
+3. **Save.**
+
+Design page, verbatim: *"Ensure that the newly created WAF policies and HTTP
+policies are applied to the Virtual service!"*
+
+#### 7. Validate
+
+- A normal VCFA session (login, browse blueprints, create a project, deploy)
+  works with no `REJECTED` entries in **VS → Logs → WAF**.
+- A request to `/blueprint/api/blueprints` with a disallowed character in
+  `content` or `$select` is flagged/rejected per the Miss Action.
+- The XSS / response-splitting exceptions show as applied (no false `941xxx` /
+  `921130` rejects on legitimate API bodies).
+
 ## Protecting the Avi management plane (Pattern 3 gateway firewall)
 
 **[documented]**, from the *Protecting Management Traffic* chapter of the same
@@ -732,7 +1008,7 @@ flow is automatic — you only add the connection-initiation direction.
 > **DNS**, SE → **NTP** (if your NTP source is not the Controller), SE → the
 > segment **gateway**, and possibly a Controller→SE return path for
 > SE lifecycle orchestration. Stage rule 7 as **Allow + Logging** first, run
-> the [validation](#5-validate-1) below, read the log for what the allowlist
+> the validation in step 5 below, read the log for what the allowlist
 > missed, then switch it to **Drop**.
 
 #### 5. Validate
@@ -749,11 +1025,12 @@ flow is automatic — you only add the connection-initiation direction.
 
 VCFA's management traffic is already unrestricted between VCF components (the
 `VCF-Created-Virtual-Machines` exclusion). The only firewalling that applies to
-it is on the **Transit Gateway** — the SE→VCFA rules above plus whatever the
-*Protecting Tenant Traffic … on TGW* chapter defines for VCFA↔fleet-services.
-If you need finer east-west segmentation for VCFA than the exclusion allows,
-that is **vDefend** (gateway firewall / distributed IDS-IPS), configured per the
-lateral-security guide — out of scope here.
+it is on the **Transit Gateway** — the `Policy-VCFA` rules in
+[Segregating tenant traffic at the Transit Gateway](#segregating-tenant-traffic-at-the-transit-gateway-pattern-3-tgw-gateway-firewall)
+(`VCFA-to-Orchestrator`, `VCFA-to-Supervisor`, and so on). If you need finer
+east-west segmentation for VCFA than the exclusion allows, that is **vDefend**
+(gateway firewall / distributed IDS-IPS), configured per the lateral-security
+guide — out of scope here.
 
 ## Notices and gotchas
 

@@ -1,32 +1,40 @@
 # Changelog
 
 ## v3.7.0 — 2026-09-07
-- **docs/14: add the Pattern 3 "Avi HTTP configuration" — IP-based portal
-  segregation on the VCFA virtual service** (#277) — new **H2 section** (so it
-  lands in the site's "On this page" nav and is directly linkable) in the
-  *VCF Automation (external/customer access)* area, covering the **HTTP
-  configuration** part of Broadcom's *Securing VCF Automation* design page
-  (the page's WAF chapter is explicitly out of scope here). Full step-by-step
-  walkthrough: create the **Provider Users** / per-tenant IP groups, the
-  **Provider redirect** HTTP Policy Set (two request rules — `/provider` path
-  and `/login?service=provider` query, both redirecting to `automation/` with
-  Keep Query off), the per-tenant redirect policy sets, attaching the HTTP
-  policy sets to the VS (`Policies`), and a validation pass with `curl -sI`.
-  Includes the "keep a way back in" warning and the field caveat that the
-  rules match on **client source IP** — so the VS must not SNAT client traffic
-  (or must honour `X-Forwarded-For`), or every client collapses to one
-  address.
-- **docs/14: add "Protecting the Avi management plane (Pattern 3 gateway
-  firewall)"** (#277) — walkthrough for the design page's *Protecting
-  Management Traffic* chapter: the **`plcy-Avi-UX`** gateway firewall policy on
-  the NSX **Tier-1** the Avi management segment sits behind (grp-Avi-SE /
-  grp-Avi-Controllers / grp-VCFA groups; the six allow rules — keyx 8443, SSH,
-  NTP, object-store 9001, backend-pool 8443, SE→VCFA 443 — plus a logged
-  default drop), staged Allow+Logging before Drop with an Avi Ports &
-  Protocols cross-check, and validation via gateway-firewall hit counters +
-  SE/VS health. Plus the **`VCF-Created-Virtual-Machines`** exclusion note:
-  VCFA management traffic can't be policed by the DFW, only by the Transit
-  Gateway firewall / vDefend.
+- **docs/14: incorporate Broadcom's *Securing VCF Automation* (Pattern 3)
+  design page as five walkthrough sections** (#277) — each a new **H2** (so it
+  lands in the site's "On this page" nav and is directly linkable), following
+  the design page's own layering, outer to inner:
+  - **Segregating tenant traffic at the Transit Gateway** — the north-south
+    perimeter: `Policy-Infra-Services` / `Policy-Avi` / `Policy-VCFA` /
+    `Default-Deny` on the **TGW** stateful gateway firewall (DNS, LDAP,
+    allow-web TCP 80/443 → Avi SE, VCFA→Orchestrator/Supervisor 6443,
+    gw-health-check 8008, VC webconsole), staged Allow+Logging before Deny.
+  - **Layer 7 protection with Avi** — the non-VS parts of the *vDefend + Avi*
+    chapter: one-arm SE placement in the DMZ VPC services subnet, the DFW
+    **exclusion-list sequence** (add SEs before install, remove after; optional
+    removal of `VCF-Created-Virtual-Machines`), and the licensing gates.
+  - **Locking the portals to known client IPs** — the *HTTP configuration*
+    chapter: **Provider Users** / per-tenant IP groups, the **Provider
+    redirect** HTTP Policy Set (`/provider` path + `/login?service=provider`
+    query → `automation/`, Keep Query off), per-tenant redirect sets, attach,
+    `curl -sI` validation; "keep a way back in" warning and the client-source-IP
+    / no-SNAT caveat.
+  - **Web Application Firewall on the VCFA virtual service** — the *WAF
+    Configuration* chapter: WAF Profile (add PUT/PATCH/DELETE, `*+json` / `*+xml`
+    content-type mapping), the safe-characters String group, the Positive
+    Security group (Miss Action **Flag or Reject**; rules **10001** on
+    `/blueprint/api/blueprints` and **10002** on the five VM-Apps API paths),
+    the WAF Policy exceptions (Pre-CRS `ruleRemoveById=920600` for JSON, plus
+    `ARGS:body` exceptions for XSS `941` and response-splitting `921130`),
+    attach, and a Detection-first field caveat over the design's straight-to-
+    Enforcement.
+  - **Protecting the Avi management plane** — the *Protecting Management
+    Traffic* chapter: the **`plcy-Avi-UX`** policy on the **Tier-1** behind the
+    Avi management segment (keyx 8443, SSH, NTP, object-store 9001,
+    backend-pool 8443, SE→VCFA 443, logged default drop), plus the
+    `VCF-Created-Virtual-Machines` exclusion note (VCFA management traffic is
+    policed only at the TGW / vDefend, never the DFW).
 
 ## v3.6.9 — 2026-09-04
 - **docs: incorporate Broadcom's official "Deployment Pattern 3" design page**
