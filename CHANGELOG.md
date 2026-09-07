@@ -1,5 +1,21 @@
 # Changelog
 
+## v3.7.0 — 2026-09-07
+- **docs/14: add the Pattern 3 "Avi HTTP configuration" — IP-based portal
+  segregation on the VCFA virtual service** (#277) — new subsection in the
+  *VCF Automation (external/customer access)* section covering Broadcom's
+  *Securing VCF Automation* design page. Builds Avi L7 HTTP request policies
+  that pin the **Provider (admin) portal** to management-station IP ranges and
+  (optionally) each **tenant portal** to that tenant's client CIDRs,
+  redirecting non-matching sources to the generic `automation/` login; also
+  seeds the "safe characters" String group the WAF chapter's Positive Security
+  rules consume. Includes the object list, the request-rule table (path +
+  `service=` query matches, "Keep Query" unchecked), the "attach **both** the
+  HTTP policy sets **and** the WAF policy to the VS" step, and the field
+  caveat that the rules match on **client source IP** — so the VS must not
+  SNAT client traffic (or must honour `X-Forwarded-For`), or every client
+  collapses to one address.
+
 ## v3.6.9 — 2026-09-04
 - **docs: incorporate Broadcom's official "Deployment Pattern 3" design page**
   (#275) — a colleague surfaced Broadcom's new "VCF Automation Deployment

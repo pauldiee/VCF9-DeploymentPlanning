@@ -532,6 +532,77 @@ fleet uses Supervisor/VKS against the same VCFA endpoint, budget for
 hitting this and plan the second pool up front rather than discovering it
 mid-incident.
 
+### Locking the portals to known client IPs (Pattern 3 "Avi HTTP configuration")
+
+**[documented]**, from Broadcom's [Securing VCF Automation
+Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+design page (the same Pattern 3 shape as above). Its **Avi HTTP
+Configuration** chapter is *not* TLS/cipher hardening despite the name — it is
+**IP-based portal segregation**: L7 HTTP request rules on the VCFA virtual
+service that decide *who may reach which login surface*.
+
+What it accomplishes:
+
+- **The Provider (admin) portal is pinned to your management networks.** A
+  client whose source IP is **not** in the provider IP group and that asks for
+  `/provider` — or `/login?service=provider` — is redirected to the generic
+  `automation/` tenant login. The privileged UI is never presented off the
+  management network, so recon / credential-stuffing / brute-force against the
+  admin login from tenant networks or the internet is turned away at the load
+  balancer before it reaches VCFA.
+- **(Optional) each tenant portal is pinned to that tenant's client IP
+  ranges** — same rule shape on `/tenant/<tenant>` and
+  `/login?service=tenant:<tenant>`, redirecting non-matching sources to
+  `automation/`. Enforces tenant isolation at the edge.
+- It also seeds a **String group of "safe" characters** that the same design
+  page's *Avi Web Application Firewall (WAF) Configuration* chapter consumes
+  for its Positive Security Model rules — so staging this chapter partly feeds
+  the WAF one.
+
+These are **redirects, not authorization** — a misrouted legitimate user lands
+on the standard login rather than an error, and RBAC inside VCFA still makes
+the real access decision. It is a surface-reduction control.
+
+**Objects to build:**
+
+| Object | Where | Contents |
+| ------ | ----- | -------- |
+| **IP group — provider users** | `Templates → Groups → IP Group` | the management-station subnets |
+| **IP group — `<tenant>` users** (optional, per tenant) | same | that tenant's known client CIDRs |
+| **String group — safe characters** | `Templates → Groups → String Group` | the PSM safe-char regex from the design page |
+| **HTTP Policy Set — provider redirect** | `Templates → Policies → HTTP Policy Set` | rules below |
+| **HTTP Policy Set — `<tenant>` redirect** (per tenant) | same | rules below |
+
+**Provider redirect policy — two HTTP request rules:**
+
+| Rule | Match (all of) | Action |
+| ---- | -------------- | ------ |
+| Redirect Provider — path | Client IP **Is Not In** *provider users* **AND** Path **Begins With** `/provider` | Redirect to path `automation/`, **uncheck "Keep Query"** |
+| Redirect Provider — query | Client IP **Is Not In** *provider users* **AND** Path **Begins With** `/login` **AND** Query **equals** `service=provider` | Redirect to path `automation/`, **uncheck "Keep Query"** |
+
+**Per-tenant redirect policy (example `tenant1`) — two rules, same shape:** path
+`/tenant/tenant1` and query `service=tenant:tenant1`, matched against the
+*tenant1 users* IP group, redirecting to `automation/`.
+
+**Then attach everything to the VS.** Design page, verbatim: *"Ensure that the
+newly created WAF policies and HTTP policies are applied to the Virtual
+service!"* Edit the VS → **Policies** section → add the provider redirect and
+each per-tenant policy set → scroll to **Security** → select the **WAF
+Policy** → Save.
+
+> **The rules match on client *source* IP — so the SE must see the real
+> client [field caveat].** If any hop in front of the Service Engine
+> source-NATs the traffic (an upstream firewall, or the VS itself SNAT'ing to
+> the pool), every client collapses to one address and these rules either
+> allow everyone or lock everyone out. Confirm the VS preserves client IP — or
+> that the rules are written against `X-Forwarded-For` — **before** enabling
+> the provider rule, especially where the DMZ path crosses a Tier-0 / VRF
+> boundary.
+
+> **The rules encode VCFA's URL scheme** (`/provider`, `/tenant/<name>`,
+> `/login?service=…`). Re-validate them after a VCFA patch — a routing change
+> upstream in the product will silently break the match.
+
 ## Notices and gotchas
 
 > **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:
