@@ -1,10 +1,17 @@
 # Changelog
 
 ## v3.7.0 — 2026-09-07
-- **docs/14: incorporate Broadcom's *Securing VCF Automation* (Pattern 3)
-  design page as five walkthrough sections** (#277) — each a new **H2** (so it
-  lands in the site's "On this page" nav and is directly linkable), following
-  the design page's own layering, outer to inner:
+- **docs: incorporate Broadcom's *Securing VCF Automation* (Pattern 3) design
+  page as a new build guide, `docs/19-securing-vcf-automation.md`** (#277,
+  split out under #278) — five walkthrough **H2** sections, following the
+  design page's own layering, outer to inner. Started life inside
+  `docs/14-avi-load-balancer.md`; moved to its own guide once it reached
+  ~500 lines, with `docs/14` keeping a pointer from its *VCF Automation
+  (external/customer access)* section. Duplicate `### Walkthrough` headers
+  made unique per section and the over-long "Layer 7 protection with Avi…"
+  heading renamed to "Protecting tenant traffic with vDefend and Avi" as part
+  of the move. README, `CLAUDE.md` file-layout table (+ the missing `docs/18`
+  row), and `web/src/nav.ts` updated. The five sections:
   - **Segregating tenant traffic at the Transit Gateway** — the north-south
     perimeter: `Policy-Infra-Services` / `Policy-Avi` / `Policy-VCFA` /
     `Default-Deny` on the **TGW** stateful gateway firewall (DNS, LDAP,

@@ -145,6 +145,13 @@ export const NAV: NavItem[] = [
     blurb: 'Deploy the vDefend Security Services Platform from the SSP Installer and configure it first time: form factors and footprint, the deploy wizard, onboarding NSX Manager, and activating Security Intelligence / NDR / Malware Prevention.',
   },
   {
+    slug: '19-securing-vcf-automation',
+    step: 'Reference',
+    label: 'Securing VCFA',
+    icon: 'user-shield',
+    blurb: 'Hardening for an external-facing (Pattern 3) VCF Automation instance: the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

@@ -48,6 +48,7 @@ This repo flips the order:
 | `docs/16-remove-components.md`      | Cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
 | `docs/17-vcfa-tenant-config.md`     | Build guide for first-time VCF Automation tenant/org config (Login Provider Manual setup — region, external IP block, external connections, organization + Avi) |
 | `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
+| `docs/19-securing-vcf-automation.md` | Hardening for an external-facing (Pattern 3) VCF Automation instance — the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall (walkthroughs for Broadcom's *Securing VCF Automation Deployment* design page) |
 | `docs/workbook-cell-mapping.md`     | Intake answers mapped to workbook cells                |
 
 ### Interactive tools (on the site)
