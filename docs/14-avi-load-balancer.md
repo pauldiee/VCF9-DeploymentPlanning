@@ -664,6 +664,97 @@ The redirect rules take effect immediately on save.
 > `/login?service=…`). Re-validate them after a VCFA patch — a routing change
 > upstream in the product will silently break the match.
 
+## Protecting the Avi management plane (Pattern 3 gateway firewall)
+
+**[documented]**, from the *Protecting Management Traffic* chapter of the same
+[Securing VCF Automation
+Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+design page. Two distinct problems, solved in two different places:
+
+- **Avi control-plane traffic** (Service Engine ↔ Controller, and SE → the VCFA
+  backend) — locked down with a **gateway firewall policy on the NSX Tier-1**
+  that the Avi management segment sits behind. *"Avi management network is on a
+  NSX segment that is backed by a NSX T1 Gateway which controls traffic to the
+  Avi management plane."*
+- **VCF Automation management traffic** — the VCFA nodes are VCF-created, so NSX
+  puts them in the **`VCF-Created-Virtual-Machines`** User Excluded group and
+  *"All of the VCF management components are automatically excluded from any of
+  the firewall rules created in DFW"*. You therefore cannot police VCFA east-west
+  with the DFW at all — cross-network flows are allowed explicitly on the
+  **Transit Gateway gateway firewall** instead (the rules from the design page's
+  *Protecting Tenant Traffic with vDefend Gateway Firewall on TGW* chapter), and
+  granular control beyond that is the vDefend lateral-security path.
+
+### Walkthrough — the `plcy-Avi-UX` T1 gateway firewall
+
+#### 1. Find the Tier-1 the Avi management segment is on
+
+`Networking > Tier-1 Gateways`. The SE management-plane network you built in
+[Service Engine infrastructure](#service-engine-infrastructure--cloud-content-library-and-se-group)
+is a segment on a T1 — that T1 is where these rules go. **Gateway firewall on
+the T1, not DFW** — DFW would not see this traffic consistently and would not
+touch VCF-created VMs anyway.
+
+#### 2. Build the NSX groups
+
+`Inventory > Groups > Add Group`:
+
+| Group | Members |
+| ----- | ------- |
+| **grp-Avi-SE** | the Service Engine **management** interfaces — by the SE mgmt segment, an SE tag, or the SE mgmt subnet CIDR |
+| **grp-Avi-Controllers** | the Controller node IP(s) (1 or 3) **and** the cluster VIP |
+| **grp-VCFA** | the VCFA internal built-in-LB VIP **and** the VCFA node IPs (same target the Avi pool uses) |
+
+#### 3. Create the gateway firewall policy
+
+`Security > Gateway Firewall >` select the **T1** from step 1 `> Add Policy`,
+name it **`plcy-Avi-UX`**. Add these rules, **Applied To** = that T1:
+
+| # | Name | Source | Destination | Service | Action |
+| - | ---- | ------ | ----------- | ------- | ------ |
+| 1 | `allow-keyx-channel` | grp-Avi-SE | grp-Avi-Controllers | **TCP 8443** | Allow |
+| 2 | `allow-ssh` | grp-Avi-SE | grp-Avi-Controllers | **SSH** (TCP 22) | Allow |
+| 3 | `allow-NTP` | grp-Avi-SE | grp-Avi-Controllers | **NTP** (UDP 123) | Allow |
+| 4 | `SE-object-store` | grp-Avi-SE | grp-Avi-Controllers | **TCP 9001** | Allow |
+| 5 | `Avi-backend-pool` | grp-Avi-SE | grp-VCFA | **TCP 8443** | Allow |
+| 6 | `SE-to-VCFA-web` | grp-Avi-SE | grp-VCFA | **HTTPS** (TCP 443) | Allow |
+| 7 | `default` | Any | Any | Any | **Drop** (enable **Logging**) |
+
+Rules 1–4 are the design page's SE→Controller set; 5–6 are the SE→VCFA backend
+path. The gateway firewall is **stateful**, so return traffic on each allowed
+flow is automatic — you only add the connection-initiation direction.
+
+#### 4. Before you flip rule 7 to Drop
+
+> **The design page's list is a template, not a validated exhaustive port set
+> [field caveat].** Cross-check the current **Avi Ports & Protocols** for your
+> version before enforcing default-deny, and expect to also need SE →
+> **DNS**, SE → **NTP** (if your NTP source is not the Controller), SE → the
+> segment **gateway**, and possibly a Controller→SE return path for
+> SE lifecycle orchestration. Stage rule 7 as **Allow + Logging** first, run
+> the [validation](#5-validate-1) below, read the log for what the allowlist
+> missed, then switch it to **Drop**.
+
+#### 5. Validate
+
+- From a Controller (CLI) or an SE shell, confirm the allowed flows: the
+  8443 keyx channel, SSH, TCP 9001, and the backend pool to `grp-VCFA` on
+  8443/443.
+- `Security > Gateway Firewall >` check the **hit counters** — rules 1–6
+  incrementing, rule 7 catching only what you expect.
+- In Avi, confirm **SEs still show Connected** and the VCFA VS stays **green**
+  after rule 7 is set to Drop — that is the "did I miss a port" check.
+
+#### 6. VCF Automation side — nothing to do on the DFW
+
+VCFA's management traffic is already unrestricted between VCF components (the
+`VCF-Created-Virtual-Machines` exclusion). The only firewalling that applies to
+it is on the **Transit Gateway** — the SE→VCFA rules above plus whatever the
+*Protecting Tenant Traffic … on TGW* chapter defines for VCFA↔fleet-services.
+If you need finer east-west segmentation for VCFA than the exclusion allows,
+that is **vDefend** (gateway firewall / distributed IDS-IPS), configured per the
+lateral-security guide — out of scope here.
+
 ## Notices and gotchas
 
 > **The wizard states the per-NSX-instance rule itself.** At Finish, verbatim:

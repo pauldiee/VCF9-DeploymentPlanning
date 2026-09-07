@@ -16,6 +16,17 @@
   rules match on **client source IP** — so the VS must not SNAT client traffic
   (or must honour `X-Forwarded-For`), or every client collapses to one
   address.
+- **docs/14: add "Protecting the Avi management plane (Pattern 3 gateway
+  firewall)"** (#277) — walkthrough for the design page's *Protecting
+  Management Traffic* chapter: the **`plcy-Avi-UX`** gateway firewall policy on
+  the NSX **Tier-1** the Avi management segment sits behind (grp-Avi-SE /
+  grp-Avi-Controllers / grp-VCFA groups; the six allow rules — keyx 8443, SSH,
+  NTP, object-store 9001, backend-pool 8443, SE→VCFA 443 — plus a logged
+  default drop), staged Allow+Logging before Drop with an Avi Ports &
+  Protocols cross-check, and validation via gateway-firewall hit counters +
+  SE/VS health. Plus the **`VCF-Created-Virtual-Machines`** exclusion note:
+  VCFA management traffic can't be policed by the DFW, only by the Transit
+  Gateway firewall / vDefend.
 
 ## v3.6.9 — 2026-09-04
 - **docs: incorporate Broadcom's official "Deployment Pattern 3" design page**
