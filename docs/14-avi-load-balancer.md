@@ -554,14 +554,14 @@ What it accomplishes:
   ranges** — same rule shape on `/tenant/<tenant>` and
   `/login?service=tenant:<tenant>`, redirecting non-matching sources to
   `automation/`. Enforces tenant isolation at the edge.
-- It also seeds a **String group of "safe" characters** that the same design
-  page's *Avi Web Application Firewall (WAF) Configuration* chapter consumes
-  for its Positive Security Model rules — so staging this chapter partly feeds
-  the WAF one.
 
 These are **redirects, not authorization** — a misrouted legitimate user lands
 on the standard login rather than an error, and RBAC inside VCFA still makes
 the real access decision. It is a surface-reduction control.
+
+> **Scope.** This section covers only the design page's **HTTP configuration**
+> (the redirect policies). The page's separate WAF chapter is out of scope
+> here — nothing below creates or attaches a WAF policy.
 
 ### Walkthrough
 
@@ -586,18 +586,7 @@ Whatever address the Service Engine actually *sees* as the client is what these
 groups are matched against — so populate them with post-NAT addresses if
 anything in front of the SE source-NATs.
 
-#### 2. (Optional) Create the "safe characters" String group
-
-Only needed if you are also doing the design page's WAF chapter — its Positive
-Security Model rules reference this group. `Templates > Load Balancer > Groups >
-String Group > Create`, name it e.g. **Safe Characters**, one string entry, the
-regex verbatim from the design page:
-
-```
-^\[0-9A-Za-z.\_ \\t:,!?+\*=@#\\-\\$\\(\\)\\&\\'\\/\\\[\\\]\]\*$
-```
-
-#### 3. Create the Provider redirect HTTP Policy Set
+#### 2. Create the Provider redirect HTTP Policy Set
 
 `Templates > Policies > HTTP Policy Set > Create`. Name it e.g.
 **vcfa-provider-redirect**. Add **two HTTP Request** rules (Rules tab → Add
@@ -624,9 +613,9 @@ All match elements within a rule are ANDed. The two rules match disjoint URLs
 (`/provider` vs `/login?service=provider`), so their order in the set does not
 matter here; rules are still evaluated top-down, first match wins.
 
-#### 4. Create a per-tenant redirect HTTP Policy Set (optional, per tenant)
+#### 3. Create a per-tenant redirect HTTP Policy Set (optional, per tenant)
 
-Same shape as step 3, one policy set per tenant, e.g.
+Same shape as step 2, one policy set per tenant, e.g.
 **vcfa-tenant1-redirect** with two rules:
 
 | Rule | Match (all of) | Action |
@@ -638,22 +627,19 @@ Same shape as step 3, one policy set per tenant, e.g.
 that is a copy-paste slip in the doc; name them per-tenant so the VS config
 stays readable.)
 
-#### 5. Attach the policy sets — and the WAF policy — to the virtual service
+#### 4. Attach the policy sets to the virtual service
 
-Design page, verbatim: *"Ensure that the newly created WAF policies and HTTP
-policies are applied to the Virtual service!"*
+A created HTTP Policy Set does nothing until it is bound to the VS. The design
+page stresses this: *"Ensure that the newly created ... HTTP policies are
+applied to the Virtual service!"*
 
-`Applications > Virtual Services >` the VCFA VS `> edit`:
-
-1. Scroll to **Policies** → add the **provider redirect** policy set and each
-   **per-tenant redirect** policy set.
-2. Scroll to **Security** → select the **WAF Policy** (from the WAF chapter, if
-   you are doing it).
-3. **Save.**
+`Applications > Virtual Services >` the VCFA VS `> edit` → scroll to
+**Policies** → add the **provider redirect** policy set and each **per-tenant
+redirect** policy set → **Save**.
 
 The redirect rules take effect immediately on save.
 
-#### 6. Validate
+#### 5. Validate
 
 - From a **management IP** (in Provider Users): `https://<vcfa-fqdn>/provider`
   loads the provider login normally.
