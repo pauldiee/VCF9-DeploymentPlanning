@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.9.5 — 2026-09-08
+- **docs/19: simplify the TGW group table** (#285). The three-column
+  *Group | Members | Role in step 3* table from #283 was too dense — reverted to
+  a two-column *Group | Members* table, with the source/destination usage moved
+  to a short "How step 3 uses them" block (sources vs destinations) and the two
+  clarifying points (three VCFA addresses; `Avi-SE` ≠ `grp-Avi-SE`) kept as
+  notes below.
+
 ## v3.9.4 — 2026-09-08
 - **docs/19: optional `Policy-Mgmt-Access` in the TGW gateway firewall
   walkthrough** (#284, mirrors #282). Adds a `Mgmt-Admin` source group and an
