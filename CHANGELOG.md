@@ -1,6 +1,12 @@
 # Changelog
 
 ## v3.9.6 — 2026-09-08
+- **docs/19: how to read the gateway-firewall log.** New *Reading the
+  gateway-firewall log* subsection shared by both walkthroughs — tag the staged
+  rules, where the log lives (Edge transport nodes / VCF Operations for Logs),
+  the `grep -i firewall /var/log/syslog` on an Edge, and using the logged
+  5-tuple on the `Default-Deny` / `default` rule to build the missing allow
+  rules before switching to Deny/Drop.
 - **docs/19: reconcile firewall object names across the page** (follow-up to
   #285). The page keeps its two local naming styles (unprefixed in the TGW
   walkthrough, `grp-`/`plcy-`/`svc-` in the Avi management-plane walkthrough),

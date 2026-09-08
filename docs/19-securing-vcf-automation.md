@@ -152,8 +152,43 @@ return traffic is automatic.
 Set `Default-Deny` to **Allow + Logging** first. Exercise the full tenant path
 — reach the VIP, log in, browse the catalog, deploy a workload, open a VM web
 console — and, if you added `Policy-Mgmt-Access`, SSH from a management station
-to a VCFA node and an SE. Then read the drop log for anything the allowlist
+to a VCFA node and an SE. Then read the log (below) for anything the allowlist
 missed before switching the rule to **Deny**.
+
+#### Reading the gateway-firewall log
+
+Applies to both firewalls on this page — the TGW GFW here and the `plcy-Avi-UX`
+T1 GFW in [Protecting the Avi management plane](#protecting-the-avi-management-plane-pattern-3-gateway-firewall).
+Logging is **per rule** (the `Logging` toggle you set on each staged rule).
+
+- **Tag the staged rules.** On the rule, set the **Tag** field to a short
+  string — the policy name works (`Default-Deny`, `plcy-Avi-UX`). NSX writes
+  that tag into every log line the rule produces, so you can filter on it
+  instead of resolving numeric rule IDs.
+- **Where the log is.** Gateway-firewall logging runs on the **Edge transport
+  nodes** that host the gateway — the Tier-0 the TGW rides for the TGW GFW, the
+  Tier-1 for `plcy-Avi-UX`. If NSX forwards syslog to **VCF Operations for
+  Logs** or a SIEM (the usual fleet setup) read it there; otherwise read it on
+  the Edge.
+- **On an Edge node** (SSH as `admin`), the packet logs are in
+  `/var/log/syslog`:
+
+  ```
+  grep -i firewall /var/log/syslog | grep <your-tag>
+  ```
+
+  Each line carries the **action** (`PASS` / `DROP` / `REJECT`), the protocol,
+  and the source and destination **`IP:port`** — the 5-tuple you need to write
+  the missing allow rule.
+- **In VCF Operations for Logs**, filter to the NSX firewall events and your
+  tag; each event shows the same action and source/destination address and
+  port.
+- **What to act on.** While the `Default-Deny` / `default` rule is staged as
+  **Allow + Logging**, every line it matches is a flow the allowlist missed —
+  note the destination IP, port and protocol, add a rule, and repeat until that
+  rule logs only noise. Then switch it to **Deny** / **Drop**. The
+  `Security > Gateway Firewall` **hit counters** are the quick "is this rule
+  matching" check; the log is where you get the 5-tuple.
 
 #### 5. Validate
 
@@ -584,8 +619,9 @@ allowed flow is automatic — you only add the connection-initiation direction.
 > **DNS**, SE → **NTP** (if your NTP source is not the Controller), SE → the
 > segment **gateway**, and possibly a Controller→SE return path for
 > SE lifecycle orchestration. Stage the **`default`** rule as **Allow +
-> Logging** first, run the validation in step 6 below, read the log for what the
-> allowlist missed, then switch it to **Drop**.
+> Logging** first, run the validation in step 6 below, read the log
+> ([Reading the gateway-firewall log](#reading-the-gateway-firewall-log)) for
+> what the allowlist missed, then switch it to **Drop**.
 
 #### 6. Validate
 
