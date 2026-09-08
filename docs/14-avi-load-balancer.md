@@ -23,6 +23,43 @@ the chosen load balancer for **vSphere Supervisor**, optionally in front of
 > set; a workload domain with its **own** NSX instance gets its **own** set.
 > Count controller sets by NSX instance, and Service Engines by cluster.
 
+## The full sequence, start to finish
+
+The linear path from a standing start to a working, licensed Avi that downstream
+consumers (Supervisor, a virtual service) can rely on. Each step points at the
+section on this page.
+
+1. **Clear the prerequisites**
+   ([prerequisites gate](prerequisites.md#avi-load-balancer-only-if-in-scope))
+   — the Avi software bundle already in the depot, cluster capacity for the
+   chosen form factor, DNS for the controller **cluster FQDN**, and the served
+   domain's vCenter + NSX configured.
+2. **Deploy the controller cluster from VCF Operations**
+   ([Deploying from VCF Operations](#deploying-from-vcf-operations)) — *Build →
+   Lifecycle → VCF Instances → your domain → Manage Components → Avi Load
+   Balancer*; the four wizard steps (version, form factor + capacity check,
+   settings incl. the three node IPs and the cluster FQDN/name, finish).
+3. **Do the controller's first-login setup**
+   ([Controller first-login setup](#controller-first-login-setup)) — the
+   one-time configuration wizard on the controller itself.
+4. **Work the licensing chain** ([Licensing](#licensing)) — move the controller
+   off evaluation; subscription **licence file** (32.1.1+), not serial keys;
+   License Hub if vDefend/Avi licensing is centralised
+   ([15-license-hub.md](15-license-hub.md)).
+5. **Build the Service Engine infrastructure**
+   ([Service Engine infrastructure](#service-engine-infrastructure--cloud-content-library-and-se-group))
+   — **the most commonly missed part**: the Cloud connector, the **hand-built SE
+   image content library** (VCF Operations does not create it), the SE
+   management network, and the **SE Group Default-Group** with a storage policy.
+   Do this **before** activating a Supervisor or building a virtual service.
+6. **Validate** — controller cluster healthy, NSX Cloud connector **green**, an
+   SE Group present, and (once a consumer exists) Service Engines spawning and a
+   virtual service reaching **placed**.
+7. **Optional — external / customer-facing access**
+   ([VCF Automation (external/customer access)](#vcf-automation-externalcustomer-access))
+   — the DMZ VPC, one-arm SE placement, the virtual service, and the hardening
+   in [19-securing-vcf-automation.md](19-securing-vcf-automation.md).
+
 ## Deploying from VCF Operations
 
 **Before you start: a content library for Service Engine images is required

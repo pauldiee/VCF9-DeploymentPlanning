@@ -51,6 +51,39 @@ only needed for components the script cleans up VMs for directly — VON and
 VCFA's `vsp-cluster` delete. Plain `vsp-component` deletes (Log Management,
 Real-time Metrics, Depot Service, Identity Broker) don't touch vCenter.
 
+## The full sequence, start to finish
+
+The same shape for every component; the per-component sections below carry the
+exact commands.
+
+1. **Get the script** — download `cleanup_component.py` from
+   [KB 441333](https://knowledge.broadcom.com/external/article/441333/scripted-components-cleanup-from-vcf-ope.html)
+   and copy it to the **SDDC Manager VM**; run it there over SSH as root (Python
+   is already present, and the [VCF Automation](#vcf-automation) `vsp-cluster`
+   delete *requires* running from inside that VM).
+2. **Check the runtime credential first**
+   ([The credential](#the-credential---vcf-services-runtime-username----vcf-services-runtime-password))
+   — `--vcf-services-runtime-username admin@vsp.local` is the **fleet-wide**
+   VCFMS runtime (no per-component or per-instance one). If it is broken (the
+   `$`-interpolation lockout), it blocks **every** removal on this page — recover
+   it before going further.
+3. **List what is eligible** — `list vsp-component` on the target instance. The
+   set differs: primary instance shows Log Management, Real-time Metrics, VON,
+   VCFA; an additional instance shows Real-time Metrics, Depot Service, Identity
+   Broker.
+4. **Quote every substituted value** — wrap each FQDN / password / username in
+   double quotes even when it looks safe; a `$`, space or `&` mangles the
+   argument silently instead of erroring.
+5. **Remove the component** — follow its section:
+   - Plain `vsp-component` delete (no vCenter creds):
+     [Log Management](#log-management) · [Real-time Metrics](#real-time-metrics) ·
+     [Depot Service](#depot-service) · [Identity Broker](#identity-broker)
+   - `vsp-cluster` delete (needs `--vcenter-username` / `--vcenter-password`):
+     [VON](#vcf-operations-for-networks-von) ·
+     [VCF Automation](#vcf-automation) (run from inside the SDDC Manager VM)
+6. **Verify and redeploy** — confirm the component is gone (`list vsp-component`
+   / the LCM UI), then redeploy it fresh through the normal Day-N flow.
+
 ### The credential: `--vcf-services-runtime-username` / `--vcf-services-runtime-password`
 
 The username is `admin@vsp.local` in every command on this page, and it is

@@ -45,6 +45,46 @@ backs up to.
 
 ---
 
+## The full sequence, start to finish
+
+This page has one decision and then a path. Pick the path first
+([§1](#1-three-ways-to-feed-binaries)); the offline-depot path is the long one
+and is laid out step by step below.
+
+1. **Pick how binaries reach VCF** ([§1](#1-three-ways-to-feed-binaries)) —
+   **online depot** (direct or via proxy), **offline depot** (a web server you
+   host and feed), or **manual transfer** (no depot server at all). Most
+   air-gapped sites run an offline depot.
+2. **Start the activation code now** ([Step 4](#step-4--activation-code)) —
+   independent of everything else and the long pole: the **Product
+   Administrator** role can take days to be granted.
+3. **Stand up the depot web server** ([Step 1](#step-1--depot-web-server)) —
+   size and certify the box (Appendix A is a full air-gapped Photon + nginx
+   build), then set the [auth split](#step-2--auth-split): basic-auth on the
+   install/upgrade tree, UMDS path left open.
+4. **Get the VCF Download Tool** ([Step 3](#step-3--vcf-download-tool)).
+5. **Pull the binaries** ([Step 5](#step-5--download-the-binaries)) — the
+   `binaries download` run for the install set, then
+   [`esx download` for the UMDS patch data](#step-5b--esx-patch-data-umds).
+6. **Move the store across the gap** ([Step 6](#step-6--transfer-to-the-air-gapped-server))
+   — intact, then make the tree web-server-readable (watch the root-owned-file
+   **403** trap).
+7. **Connect VCF to the depot** ([Step 7](#step-7--connect-vcf-to-it)) — point
+   the Installer, and later the fleet, at the depot URL + basic-auth user.
+8. **If the fleet has no direct internet for runtime pulls**
+   ([§5](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)) — set the
+   `G5` proxy on the services runtime via the Fleet LCM API; expect the
+   [whole-node-block netcat precheck](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place).
+9. **No depot server at all** — feed the Installer by
+   [manual transfer](#3-manual-transfer--feeding-the-vcf-installer-without-a-depot-server),
+   or pull with the
+   [Download Tool standalone](#4-using-the-download-tool-standalone).
+10. **Later, for a fleet upgrade** ([§6](#6-upgrades--filling-the-depot-for-a-fleet-upgrade))
+    — the sync → check → export → download → re-check loop, re-applying
+    permissions after every pull.
+
+---
+
 ## 1. Three ways to feed binaries
 
 **Which path do I need?**

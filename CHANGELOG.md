@@ -1,5 +1,35 @@
 # Changelog
 
+## v3.9.0 — 2026-09-08
+- **docs: add a consolidated *"The full sequence, start to finish"* walkthrough
+  to the five build guides that lacked a single linear path** (#280, follow-on
+  from #279's `docs/10` §6). Each new section is a numbered list whose steps link
+  the detailed sections on the same page; placed right after the intro / Contents,
+  no renumber of existing sections. All added intra-page anchors verified against
+  the built HTML.
+  - **`docs/08-backup-target.md`** — size/schedule → placement + FIPS baseline →
+    build the box → verify (forced FIPS negotiation) → register both fleet
+    backup configs in VCF Operations → per-vCenter VAMI backup → field notes →
+    cold-maintenance / decrypt.
+  - **`docs/09-binary-depot.md`** — pick the path (online / offline / manual);
+    then the offline-depot sequence: start the activation code early → web
+    server + auth split → Download Tool → pull binaries (+ UMDS) → transfer →
+    connect VCF → runtime proxy → upgrade loop.
+  - **`docs/14-avi-load-balancer.md`** — prerequisites → deploy the controller
+    cluster from VCF Operations → first-login setup → licensing chain → **Service
+    Engine infrastructure** (called out as the most-missed step) → validate →
+    optional external-facing access.
+  - **`docs/15-license-hub.md`** — confirm need (vDefend *or* Avi) → pick the
+    flow (2.0 standalone OVA vs 5.1.2 SSP Installer, no upgrade path between) →
+    deploy per flow → the shared post-deploy registration + licensing chain →
+    ongoing usage reporting.
+  - **`docs/16-remove-components.md`** — get `cleanup_component.py` onto the SDDC
+    Manager VM → check the fleet-wide runtime credential first → `list
+    vsp-component` → quote every value → remove per component (`vsp-component` vs
+    `vsp-cluster`) → verify + redeploy.
+  - Out of scope: `07` (lookup matrix), `12` / `13` / `17` / `19` (already
+    explicitly step-ordered), `11` / `18` (linear but short).
+
 ## v3.8.0 — 2026-09-08
 - **docs/10 + web: combined vSphere Supervisor prep CSV templates (9.0 + 9.1),
   reconciled with a colleague's Config Sheet, plus an end-to-end walkthrough in

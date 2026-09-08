@@ -38,6 +38,54 @@ from.
 
 ---
 
+## The full sequence, start to finish
+
+The linear path from nothing to a registered, verified backup target. Each step
+points at the section on this page that carries the detail.
+
+1. **Size it and set the schedule** ([§1](#1-what-backs-up-to-it-and-how-often))
+   — list what backs up (SDDC Manager, every vCenter, NSX, the VCF management
+   services), pick cadences and retention, and give the target enough free space
+   for a full retention window of all of it.
+2. **Fix placement and requirements** ([§2](#2-requirements-and-placement)) —
+   **outside** the management domain it protects; SFTP/TCP 22 reachable from the
+   management network; a pre-created service account + write path; static IP and
+   **A + PTR**. Note the **FIPS** KEX/MAC baseline (9.x, not optional) and the
+   password character traps.
+3. **Build the box** ([§3](#3-building-one-chrooted-openssh-example)) — the
+   Linux [chroot-jail variant](#linux-variant-chroot-jail) (common case) or the
+   [Windows OpenSSH variant](#windows-server-variant-built-in-openssh-server),
+   offering a **superset** of the required host-key / KEX / MAC algorithms.
+4. **Verify it before you touch the wizard**
+   ([§4](#4-verify-the-target-before-you-register-it)) — run the
+   [forced FIPS negotiation](#the-check-force-the-fips-negotiation); it predicts
+   whether VCF will connect and catches the
+   [three common traps](#three-traps-this-catches) (ETM MACs, legacy `ssh-rsa`,
+   the path format).
+5. **Register the fleet target in VCF Operations**
+   ([§1](#1-what-backs-up-to-it-and-how-often)) — set **both** backup configs
+   (*SDDC Manager + NSX* under *Administration*; the *VCF management services*
+   under *Build → Lifecycle → Backup & Restore*), **Fetch Fingerprint**,
+   validate credentials before saving. Point it at the **IP** if an FQDN fails
+   host-key pinning
+   ([§5](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn)).
+6. **Configure each vCenter's file-based backup by hand**
+   ([§1](#1-what-backs-up-to-it-and-how-often)) — VAMI (`:5480` → Backup) per
+   instance; jobs must start within the same 5-minute window as SDDC Manager.
+   VCF does **not** do this for you.
+7. **If the wizard fails silently, work the field notes**
+   ([§5](#5-when-the-target-will-not-configure-field-notes)) — read the sshd log
+   correctly (most `[preauth]` lines are probes), remember a failed submit
+   stores nothing, and check the [`sshd_config` traps](#two-sshd_config-traps).
+   The [SSP Installer authenticates by key](#6-the-ssp-installer-is-the-odd-one-out),
+   not by the password in its own dialog.
+8. **Later, operationally** — the
+   [cold-maintenance shutdown](#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
+   runbook, and [decrypting a backed-up piece](#8-manually-decrypting-a-backed-up-file-for-inspection)
+   for inspection.
+
+---
+
 ## 1. What backs up to it (and how often)
 
 | Component                             | Cadence (recommended)             | Note                                                        |

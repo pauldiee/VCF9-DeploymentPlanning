@@ -16,6 +16,38 @@ licensing chain shared by both versions.
 > similar names, two unrelated appliances: don't plan one and assume it
 > covers the other.
 
+## The full sequence, start to finish
+
+The linear path through this page. Steps 1–2 decide the route; steps 3–5 are the
+deploy and the shared licensing chain.
+
+1. **Confirm it's needed and which one**
+   ([prerequisites gate](prerequisites.md#license-hub-only-if-vdefend-or-avi-is-in-scope))
+   — gate on **vDefend *or* Avi** being in scope. License Hub ≠ the bring-up
+   License Server (callout above).
+2. **Pick the flow** — **License Hub 2.0** (single standalone OVA, current) or
+   **License Hub 5.1.2** (3-VM instance from the SSP Installer, older). There is
+   **no upgrade path** between them — moving 5.1.2 → 2.0 is a fresh deploy plus
+   re-registration.
+3. **Deploy — take the path from step 2:**
+   - **2.0 path** ([License Hub 2.0](#license-hub-20-standalone-ova)) — download
+     the OVA (listed under **Avi Load Balancer → Primary Downloads**, not
+     vDefend); create DNS records **including the Kafka FQDN** (validated hard at
+     first boot); run the deploy wizard; note the settings that are **immutable
+     after deployment**; confirm `vsx-license-hub-deploy.service` succeeded.
+   - **5.1.2 path** ([License Hub 5.1.2](#license-hub-512-ssp-installer-flow)) —
+     the SSP Installer wizard, deploying the 3-VM instance.
+4. **Run the post-deploy registration + licensing chain (both versions)**
+   ([Licensing vDefend endpoints](#licensing-vdefend-endpoints)) — register the
+   hub and load the vDefend licence file first; put the hub VMs on the NSX DFW
+   **exclusion list**; **onboard NSX Manager** (and the vDefend SSP if
+   deployed); **assign** the licence to each endpoint; point **NSX → System →
+   Licenses** at the hub; verify. Mind the three licensing layers and the
+   **LIC2 key-upgrade** gate that greys out `ADD LICENSE` in the Avi Cloud
+   Console.
+5. **Ongoing** — usage reporting runs on the same loop as every other hub
+   endpoint.
+
 ## License Hub 2.0 (standalone OVA)
 
 *Per TechDocs (`vdefend/license-hub/2-0`); fields marked **Field-verified** below
