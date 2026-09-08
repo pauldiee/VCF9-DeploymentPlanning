@@ -480,6 +480,7 @@ touch VCF-created VMs anyway.
 | **grp-Avi-SE** | the Service Engine **management** interfaces — by the SE mgmt segment, an SE tag, or the SE mgmt subnet CIDR |
 | **grp-Avi-Controllers** | the Controller node IP(s) (1 or 3) **and** the cluster VIP |
 | **grp-VCFA** | the VCFA internal built-in-LB VIP **and** the VCFA node IPs (same target the Avi pool uses) |
+| **grp-Mgmt-Admin** *(only for the optional SSH rule below)* | the management / jump-host networks your operators connect from — a CIDR or IP set |
 
 #### 3. Create the custom L4 services
 
@@ -512,13 +513,23 @@ To** = that T1:
 | - | ---- | ------ | ----------- | ------- | ------ |
 | 1 | `allow-SE-to-Controller` | grp-Avi-SE | grp-Avi-Controllers | **`svc-Avi-keyx-8443`**, **SSH** (TCP 22), **NTP** (UDP 123), **`svc-Avi-objstore-9001`** | Allow |
 | 2 | `allow-SE-to-VCFA` | grp-Avi-SE | grp-VCFA | **`svc-Avi-keyx-8443`** (TCP 8443), **HTTPS** (TCP 443) | Allow |
-| 3 | `default` | Any | Any | Any | **Drop** (enable **Logging**) |
+| 3 | `allow-mgmt-ssh` *(optional)* | grp-Mgmt-Admin | grp-Avi-Controllers, grp-Avi-SE, grp-VCFA | **SSH** (TCP 22) | Allow |
+| 4 | `default` | Any | Any | Any | **Drop** (enable **Logging**) |
 
 Rule 1 is the design page's four SE→Controller flows (keyx channel, SSH, NTP,
 object store) as one rule; rule 2 is the SE→VCFA backend path (backend pool +
 web). Split them back out into a rule per flow only if you want per-flow hit
 counters. The gateway firewall is **stateful**, so return traffic on each
 allowed flow is automatic — you only add the connection-initiation direction.
+
+> **Rule 3 is optional and not prescribed by the Broadcom design page.** The
+> design page's port set is SE↔Controller and SE→VCFA only — it says nothing
+> about operator access. Once the `default` rule is enforcing default-deny, an
+> admin on the management network can no longer SSH to the Controllers, SEs or
+> VCFA nodes through this T1. Add `allow-mgmt-ssh` **only if** your operators
+> connect to those nodes directly (rather than via a bastion inside the
+> segment), and scope `grp-Mgmt-Admin` as tightly as the jump-host subnets
+> allow.
 
 #### 5. Before you flip the default rule to Drop
 
@@ -527,7 +538,7 @@ allowed flow is automatic — you only add the connection-initiation direction.
 > version before enforcing default-deny, and expect to also need SE →
 > **DNS**, SE → **NTP** (if your NTP source is not the Controller), SE → the
 > segment **gateway**, and possibly a Controller→SE return path for
-> SE lifecycle orchestration. Stage rule 3 (the **`default`** rule) as **Allow +
+> SE lifecycle orchestration. Stage the **`default`** rule as **Allow +
 > Logging** first, run the validation in step 6 below, read the log for what the
 > allowlist missed, then switch it to **Drop**.
 
@@ -536,11 +547,15 @@ allowed flow is automatic — you only add the connection-initiation direction.
 - From a Controller (CLI) or an SE shell, confirm the allowed flows: the
   8443 keyx channel, SSH, TCP 9001, and the backend pool to `grp-VCFA` on
   8443/443.
-- `Security > Gateway Firewall >` check the **hit counters** — rules 1–2
-  incrementing, the `default` rule catching only what you expect.
+- `Security > Gateway Firewall >` check the **hit counters** — the allow rules
+  incrementing (incl. `allow-mgmt-ssh` if you added it), the `default` rule
+  catching only what you expect.
 - In Avi, confirm **SEs still show Connected** and the VCFA VS stays **green**
   after the `default` rule is set to Drop — that is the "did I miss a port"
   check.
+- If you added `allow-mgmt-ssh`, confirm you can still `ssh` to a Controller,
+  an SE and a VCFA node from the management network after the `default` rule
+  is Drop.
 
 #### 7. VCF Automation side — nothing to do on the DFW
 

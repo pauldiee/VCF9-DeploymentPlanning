@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.9.2 — 2026-09-08
+- **docs/19: optional `allow-mgmt-ssh` rule in the `plcy-Avi-UX` walkthrough**
+  (#282). Adds a `grp-Mgmt-Admin` source group and an **optional** rule allowing
+  SSH (TCP 22) from the management / jump-host networks to
+  `grp-Avi-Controllers`, `grp-Avi-SE` and `grp-VCFA`, so operators keep direct
+  access once the `default` rule enforces default-deny. Flagged as **not
+  prescribed by the Broadcom design page** (which covers SE↔Controller and
+  SE→VCFA only) — add it only if operators SSH to those nodes directly rather
+  than via a bastion in the segment. Validation step gains a post-Drop SSH
+  reachability check; the default-rule references are now by name, not number.
+
 ## v3.9.1 — 2026-09-08
 - **docs/19: `plcy-Avi-UX` management-plane firewall walkthrough — create the
   custom L4 services, and collapse the rule set** (#281, field-reported). NSX
