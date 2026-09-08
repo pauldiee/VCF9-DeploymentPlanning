@@ -71,6 +71,7 @@ interface and direction. The *Role* column is how the rule set uses the group.
 | **Orchestrator** | the VCF Automation **Orchestrator** endpoint (workflow engine; embedded or external, its own address) | **Destination** of `VCFA-to-Orchestrator` (HTTPS) |
 | **vSphere-Supervisor** | the Supervisor **control-plane VIP(s)** — the Kubernetes API | **Destination** of `VCFA-to-Supervisor` (TCP 6443) — the IaaS / namespace reconcile path |
 | **ESX-Hosts** | the management-domain **ESXi hosts** | **Destination** of `VC Webconsole` (443) — where a VM web-console session terminates |
+| **Mgmt-Admin** *(only for the optional `Policy-Mgmt-Access` below)* | the management / jump-host networks your operators connect from — a CIDR or IP set | **Source** of the optional `mgmt-ssh` rule |
 
 > **The three VCFA groups are one system, three addresses:** `VCFA` is the box
 > talking **outbound** on its app interface; `VCFA-Management-IPs` is the box's
@@ -105,6 +106,25 @@ top-down; keep this order.
 | `gw-health-check` | Any | VCFA-VIP | **TCP 8008** | Allow |
 | `VC Webconsole` | VCFA-Management-IPs | ESX-Hosts | **HTTPS** | Allow |
 
+**`Policy-Mgmt-Access`** *(optional — not in the design page; see note)*
+
+| Name | Source | Destination | Service | Action |
+| ---- | ------ | ----------- | ------- | ------ |
+| `mgmt-ssh` | Mgmt-Admin | VCFA, Avi-SE | **SSH** (TCP 22) | Allow |
+
+> **`Policy-Mgmt-Access` is optional and not prescribed by the Broadcom design
+> page.** The design page's rule set is tenant / reconcile traffic only — it
+> assumes operator access to the DMZ VPC is either via a bastion *inside* the
+> segment or out of scope. Once `Default-Deny` is enforcing, an admin on the
+> management network can no longer SSH to the VCFA nodes or the Service Engines
+> across the TGW. Add this policy **only if** operators connect to those nodes
+> directly, place it **above `Default-Deny`**, and scope `Mgmt-Admin` to the
+> jump-host subnets. Web / UI access to the provider portal is a **separate
+> matter** — it already traverses `allow-web` (`Any → Avi-SE` :80/443) and is
+> restricted to management networks at **L7 by the Avi HTTP policy**
+> ([Locking the portals to known client IPs](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration)),
+> not here.
+
 **`Default-Deny`**
 
 | Name | Source | Destination | Service | Action |
@@ -118,8 +138,9 @@ return traffic is automatic.
 
 Set `Default-Deny` to **Allow + Logging** first. Exercise the full tenant path
 — reach the VIP, log in, browse the catalog, deploy a workload, open a VM web
-console — then read the drop log for anything the allowlist missed before
-switching the rule to **Deny**.
+console — and, if you added `Policy-Mgmt-Access`, SSH from a management station
+to a VCFA node and an SE. Then read the drop log for anything the allowlist
+missed before switching the rule to **Deny**.
 
 #### 5. Validate
 
@@ -131,6 +152,9 @@ switching the rule to **Deny**.
   `VCFA-to-Supervisor` (6443) carry the reconcile.
 - A VM **web console** opens from the VCFA UI (`VCFA-Management-IPs → ESX-Hosts`
   on 443).
+- If you added `Policy-Mgmt-Access`: `ssh` from `Mgmt-Admin` to a VCFA node and
+  an SE still works after `Default-Deny` is set to **Deny**; the same SSH from
+  any other source is dropped.
 - `Default-Deny` hit counter catches only noise.
 
 > **The port list is the design's example, not a validated superset [field

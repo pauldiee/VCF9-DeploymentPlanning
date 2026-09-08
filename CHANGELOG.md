@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.9.4 — 2026-09-08
+- **docs/19: optional `Policy-Mgmt-Access` in the TGW gateway firewall
+  walkthrough** (#284, mirrors #282). Adds a `Mgmt-Admin` source group and an
+  **optional** policy with a `mgmt-ssh` rule (`Mgmt-Admin → VCFA, Avi-SE` on
+  SSH/TCP 22), placed above `Default-Deny`, so operators keep SSH to the DMZ-VPC
+  VCFA nodes and Service Engines across the TGW once default-deny is enforced.
+  Flagged as **not prescribed by the Broadcom design page** (which assumes
+  bastion-in-segment or out-of-scope admin access); note that provider-portal
+  web/UI access is separate — already carried by `allow-web` and restricted at
+  L7 by the Avi HTTP policy. Stage / validate steps updated.
+
 ## v3.9.3 — 2026-09-08
 - **docs/19: clarify the TGW gateway firewall group table** (#283). Step 2 of
   the *Segregating tenant traffic at the Transit Gateway* walkthrough gains a
