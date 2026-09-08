@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.9.6 — 2026-09-08
+- **docs/19: reconcile firewall object names across the page** (follow-up to
+  #285). The page keeps its two local naming styles (unprefixed in the TGW
+  walkthrough, `grp-`/`plcy-`/`svc-` in the Avi management-plane walkthrough),
+  but the cross-section clashes are fixed:
+  - `grp-Mgmt-Admin` and `Mgmt-Admin` were the **same object** (operator /
+    jump-host source networks) — collapsed to one `Mgmt-Admin` group,
+    cross-referenced so it is built once and used by both firewalls.
+  - `grp-Avi-SE` → **`grp-Avi-SE-Mgmt`** (the SE *management* interfaces) so it
+    no longer looks like the TGW section's `Avi-SE` (SE *data / VIP*
+    interfaces).
+  - `grp-VCFA` → **`grp-VCFA-Backend`** (the internal LB VIP + nodes the SEs
+    proxy to) so it is distinct from the TGW section's `VCFA` (node IPs).
+
 ## v3.9.5 — 2026-09-08
 - **docs/19: simplify the TGW group table** (#285). The three-column
   *Group | Members | Role in step 3* table from #283 was too dense — reverted to
