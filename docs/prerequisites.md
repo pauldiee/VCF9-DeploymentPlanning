@@ -72,6 +72,7 @@ The IP/VLAN sheets hand off in a fixed order:
 - [NTP / AD / CA](https://vcf-planning.hollebollevsan.nl/templates/ntp-ad-ca-plan.csv) — NTP sources, AD domain/accounts/groups, CA + cert template
 - [BGP peering](https://vcf-planning.hollebollevsan.nl/templates/bgp-peering-plan.csv) — Edge/ToR AS, peer IPs, BFD (MD5 optional)
 - [Firewall request](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv) — deployment-critical flows (source / destination / port / purpose) for the security team; see [`07-firewall-ports.md`](07-firewall-ports.md)
+- **vSphere Supervisor prep** — [9.1](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.1.csv) · [9.0](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.0.csv) — one combined sheet for enabling a Supervisor on a workload domain (pre-flight, VPC networking, load balancer, Supervisor settings, content libraries, VKS, ordered tasks, firewall matrix); Day-N, only if a Supervisor is in scope. See [`10-supervisor-enablement.md`](10-supervisor-enablement.md)
 
 > **Data hygiene:** these are **blank** templates. A **filled** copy holds
 > real, sensitive data (IPs, DNS names, AS numbers) — store it in a secure
@@ -285,7 +286,10 @@ Prepare up front:
 Nothing here is needed at bring-up — the Supervisor is enabled **per workload
 domain, Day-N** (intake `H5`, deployment plan E9). But activation asks for all
 of it at once, and the workbook carries only **three** Supervisor fields
-(name, Service CIDR, control-plane IP range), so collect the rest up front:
+(name, Service CIDR, control-plane IP range), so collect the rest up front —
+the combined [Supervisor prep template](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.1.csv)
+([9.0](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.0.csv))
+groups every field below to match [`10-supervisor-enablement.md`](10-supervisor-enablement.md):
 
 - **5 consecutive static IPs** for the Supervisor control plane on the
   management network — 3 control-plane VMs + 1 floating IP + 1 reserved for

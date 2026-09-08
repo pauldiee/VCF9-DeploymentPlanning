@@ -15,10 +15,30 @@ new one (see [§8](#8-field-notes)).
 > *centralized* means two different things in the 9.x documentation, and picking
 > the wrong one sends you down a path that has no wizard in 9.1.
 
+## Planning template — download and fill before the deployment day
+
+One combined, fillable CSV of **every input on this page**, grouped into sections
+that mirror this guide (pre-flight · VPC networking · load balancer · Supervisor
+settings · content libraries · VKS guest clusters · an ordered task list · a
+firewall matrix). Pick the edition that matches the target build:
+
+| Target build | Template (CSV) | Version notes |
+| ------------ | -------------- | ------------- |
+| **VCF 9.1** | [**supervisor-prep-plan-9.1.csv**](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.1.csv) | Content libraries from the **VCF Software Depot**; "Easy" Supervisor available; Avi subscription-file licensing |
+| **VCF 9.0** | [**supervisor-prep-plan-9.0.csv**](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.0.csv) | Content libraries from the public **`wp-content` CDN**; Avi serial-key licensing |
+
+> A **filled** copy holds sensitive data (IPs, DNS names, AS numbers, BGP MD5
+> passwords) — store it securely, never in a public or shared repository.
+
+> **Credit.** This template began as the *Config Sheet — vSphere Supervisor*
+> created by **Albin Qorri** (ITQ). It has been reconciled with this guide and
+> extended with the pre-flight, load-balancer and VKS planning inputs.
+
 ## Contents
 
 | # | Section | Use it when |
 | - | ------- | ----------- |
+| — | [Planning template](#planning-template--download-and-fill-before-the-deployment-day) | **Before the day** — one fillable CSV (9.0 / 9.1) of every input on this page |
 | 1 | [Decide the shape first](#1-decide-the-shape-first) | **Before any build** — networking model, load balancer, zones |
 | 2 | [Pre-flight gate](#2-pre-flight-gate) | The morning of — what to verify before opening the wizard |
 | 3 | [Build the Centralized Transit Gateway](#3-build-the-centralized-transit-gateway) | Edge cluster + Tier-0 + BGP + the IP blocks |
@@ -203,6 +223,12 @@ reasoning.
 ## 2. Pre-flight gate
 
 Verify — do not accept assurances. Each of these has failed a real activation.
+The planning template ([9.1](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.1.csv)
+· [9.0](https://vcf-planning.hollebollevsan.nl/templates/supervisor-prep-plan-9.0.csv))
+carries every row below plus the build inputs from
+[§3](#3-build-the-centralized-transit-gateway)–[§5](#5-content-libraries-for-supervisor-and-vks-images)
+as one fillable sheet — fill it with the owning teams (Architect, Network,
+Platform, PKI, Depot) well before the day.
 
 ### Platform
 
@@ -1010,10 +1036,92 @@ then subscribe the VKS library at
 
 *Sources: [Supervisor 9.1 release notes][relnotes] · [Configure a subscribed content library for Supervisor images][cl-sup] · [Create a vCenter publisher for the Supervisor releases library (air-gapped)][cl-airgap] · [Create a subscribed content library (VKS)][cl-create] · [Add or update VKS content libraries on a Supervisor][cl-edit]*
 
+### 5.5 VKS guest clusters — planning inputs (after enablement)
+
+None of this is needed to **activate** the Supervisor — but the first VKS
+(vSphere Kubernetes Service) guest cluster stalls without it, so collect it with
+the customer while everything else is being planned. It maps to the *VKS guest
+clusters* section of the [planning template](#planning-template--download-and-fill-before-the-deployment-day).
+
+| Input | Note |
+| ----- | ---- |
+| **VKS version** | Target VKS release; verify / upgrade to it after enablement (`Configure → General → Kubernetes Service`). Association needs vSphere 9.0+ and VKS 3.3+ **[documented]** |
+| **Guest-cluster Pod CIDR** | Overlay for pods **inside** a guest cluster (Antrea). Not routable, not known outside the cluster. **Distinct from the Supervisor Service CIDR** ([§2](#2-pre-flight-gate)) |
+| **Guest-cluster Service CIDR** | Overlay for services inside a guest cluster. Same non-routable rule |
+| **Control-plane / worker counts** | Default node counts, typically split non-prod vs prod (e.g. 1/3 and 3/5) |
+| **Containerd storage size** | Per-node containerd disk (e.g. 30 GB) |
+| **CA trust** | Trust anchor injected into guest clusters (usually the customer's internal CA) so image pulls and webhooks trust the enterprise PKI |
+| **CNI** | Antrea, with a service exposure mode (e.g. `NodePortLocal`) |
+| **Default ingress controller** | L7 ingress for guest clusters. **AKO** implies Avi is the load balancer; with the built-in NSX Edge LB it is not AKO |
+
+> These are guest-cluster inputs, not Supervisor inputs. The only VKS item that
+> is a Supervisor-level decision is **which content library** feeds Kubernetes
+> releases ([§5.2](#52-the-vks-library--for-guest-clusters-afterwards)) — and
+> that is changeable after activation.
+
 ---
 
 
 ## 6. Activate the Supervisor
+
+This is the linear path from a standing start to a validated Supervisor. Each
+step points at the section on this page that carries the detail and, where
+relevant, the row group in the
+[planning template](#planning-template--download-and-fill-before-the-deployment-day). The screen-by-screen wizard reference
+is [§6.1](#61-the-activation-wizard-screen-by-screen); the full validation
+runbook is [§7.1](#71-followable-validation-runbook).
+
+### The full sequence, start to finish
+
+1. **Lock the shape** ([§1](#1-decide-the-shape-first)) — networking model (this
+   guide = VPC + Centralized Transit Gateway), load balancer (Avi or the
+   built-in NSX Edge LB — [§1.2](#12-load-balancer--you-may-not-need-avi)), and
+   single- vs three-zone ([§1.3](#13-zones--and-what-a-stretched-cluster-gives-you)).
+   The zone choice and the native-LB-vs-Avi choice are **not reversible**.
+2. **Create the vSphere Zones in vCenter** ([§1.3](#13-zones--and-what-a-stretched-cluster-gives-you))
+   — one cluster per zone, all on the same vDS. The wizard only selects them.
+3. **Clear the pre-flight gate** ([§2](#2-pre-flight-gate)) — DRS Fully
+   Automated, HA, lowercase host names, host count/size, NTP + DNS, storage
+   policies, IPv4-only. Verify; do not accept assurances.
+4. **Build (or confirm) the Centralized Transit Gateway** ([§3](#3-build-the-centralized-transit-gateway))
+   — Edge cluster (Large, ≥ 2 nodes), Tier-0, BGP established **both**
+   directions, MTU 1700, the VPC External IP Block and the Private
+   (Transit Gateway) `/16` ([§3.3](#33-the-ip-blocks-and-the-16-question)).
+5. **Attach the External IP Block to the Default VPC Connectivity Profile**
+   ([§3.4](#34-creating-the-external-ip-block-and-attaching-it-to-the-profile))
+   — profile not *(incompatible)*, Edge Cluster set. Relaunch the wizard after
+   any NSX change.
+6. **Make the load balancer ready** ([§4](#4-avi-load-balancer-only-if-used))
+   — built-in NSX Edge LB: nothing to build. Avi: Controller cluster healthy in
+   the **management domain**, licensed, certificate SAN correct
+   ([§4.4](#44-the-controller-certificate--cn-and-san)), Service Engine Group
+   Default-Group + storage policy, and — on VCF-Ops-managed Avi — the SE
+   management network on NSX and the hand-built SE content library
+   ([§4.5](#45-post-deploy-configuration-vcf-ops-path--what-is-left-to-do)).
+7. **Create and assign the Supervisor Images content library**
+   ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first)) and
+   confirm the Software Depot actually **holds** the SUPERVISOR content
+   ([§5.4](#54-offline-depot-configured-is-not-the-same-as-populated)). The
+   wizard never asks about this.
+8. **Run the activation wizard** ([§6.1](#61-the-activation-wizard-screen-by-screen))
+   — six screens; set *Networking Stack = VCF Networking with VPC*, select the
+   zones, enter the **API Server DNS Name** now (it resolves to the LB VIP, not
+   the management network), and **Export Configuration** on the last screen.
+9. **Wait for Running** — activation deploys the control-plane VMs, configures
+   the ESX hosts as Kubernetes nodes, prepares the LB VIP, and deploys the core
+   Supervisor Services. Status goes **Configuring → Running**.
+10. **Read the assigned API / Control-Plane VIP** from the Supervisor summary,
+    then create the DNS **A** (`FQDN → VIP`) and **PTR** records
+    ([§7.1](#71-followable-validation-runbook) step 0).
+11. **Validate end to end** ([§7.1](#71-followable-validation-runbook)) — API by
+    IP and by FQDN, `vcf context create` + `kubectl get nodes`, a test
+    namespace + workload, and a `LoadBalancer` Service reachable from outside.
+12. **Post-enablement** — replace the default Supervisor certificate if the
+    customer requires it, associate / upgrade the VKS content library
+    ([§5.5](#55-vks-guest-clusters--planning-inputs-after-enablement)), and set
+    up operator tooling.
+
+### 6.1 The activation wizard, screen by screen
 
 **Where:** vSphere Client → home menu → **Supervisor Management** → **Get
 Started**. (In 9.x the menu item is *Supervisor Management*; the post-activation
@@ -1434,6 +1542,11 @@ related upgrade timeout).
 is the planning-time input gate, [06-deployment-plan.md](06-deployment-plan.md)
 carries the E9 stories and their ordering, and [09-binary-depot.md](09-binary-depot.md)
 covers the Software Depot that now feeds the VKS content library.
+
+**Planning template** — the download table is at the
+[top of this page](#planning-template--download-and-fill-before-the-deployment-day):
+`supervisor-prep-plan-9.1.csv` / `-9.0.csv` (source: `web/public/templates/`),
+one combined fillable CSV whose sections mirror this guide.
 
 <!-- Link definitions for the per-section Sources lines. Keep alphabetical. -->
 

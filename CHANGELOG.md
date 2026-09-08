@@ -1,5 +1,46 @@
 # Changelog
 
+## v3.8.0 — 2026-09-08
+- **docs/10 + web: combined vSphere Supervisor prep CSV templates (9.0 + 9.1),
+  reconciled with a colleague's Config Sheet, plus an end-to-end walkthrough in
+  the guide** (#279). Origin: the *Config Sheet - vSphere Supervisor* created by
+  **Albin Qorri** (ITQ) — 4 sheets (VPC Networking, Supervisor Configuration,
+  Deployment Tasks, Firewall Rules), credited in both the templates and the
+  guide. Compared against `docs/10-supervisor-enablement.md`; the
+  sheet's structure was sound (VPC + Centralized Transit Gateway, the guide's
+  primary path) but missing several pre-flight inputs and carrying some
+  9.0-era detail.
+  - **New templates** — `web/public/templates/supervisor-prep-plan-9.1.csv` and
+    `-9.0.csv`: one combined fillable sheet per build, 16 sections
+    (`How to use` · pre-flight platform · vSphere Zones · VPC networking
+    edge/BGP/IP-blocks · NSX project/tenant · load balancer · Supervisor
+    identity/mgmt-network/service-CIDR/storage · content libraries & depot ·
+    VKS guest clusters · ordered deployment tasks · firewall matrix). Gaps
+    filled vs the original sheet: the single-vs-three-zone decision +
+    pre-creation + irreversibility, the Supervisor Images library / Software
+    Depot *populated* check, an explicit load-balancer choice with the Avi
+    controller-endpoint-in-cert-SAN / SE-management-network / SE-group-storage
+    inputs, the cluster-readiness pre-flight (DRS Fully Automated, HA,
+    lowercase host names, host count/CPU/RAM, NTP), MTU 1700 end-to-end + BFD,
+    and the API FQDN → LB VIP (not the management network) note. Cleanup pass:
+    retired the `wp-content` CDN library URLs for 9.1 (depot-based), TKG → VKS
+    naming, activation via VCF Operations (not the SDDC Manager UI on 9.1),
+    typo fixes, and de-consultant-ified wording. 9.0 ↔ 9.1 deltas kept small
+    and documented — private transit-gateway block is `/16` in **both**, and
+    `vcf context create` is the CLI in **both** (verified against the 9.0
+    TechDocs); the real splits are content-library source (CDN vs depot),
+    Avi licence format, Easy Supervisor, and `cidr` vs `cidr_list`.
+  - **`docs/10-supervisor-enablement.md`** — a *Planning template* callout near
+    the top and a *Planning template* entry in §10; §2 pre-flight now points at
+    the sheet; **§5.5 VKS guest clusters — planning inputs (after enablement)**
+    added (Albin's day-2 layer: pod/service CIDRs, node counts, containerd size,
+    CA trust, CNI, ingress); **§6 rebuilt as an end-to-end walkthrough** — a
+    12-step *full sequence, start to finish* from locking the shape through
+    validation, with the existing screen-by-screen wizard reference moved under
+    **§6.1**. No renumber of §7–§10.
+  - README file-layout + templates rows and `docs/prerequisites.md` (template
+    list + the vSphere Supervisor section) updated to link both CSVs.
+
 ## v3.7.0 — 2026-09-07
 - **docs: incorporate Broadcom's *Securing VCF Automation* (Pattern 3) design
   page as a new build guide, `docs/19-securing-vcf-automation.md`** (#277,

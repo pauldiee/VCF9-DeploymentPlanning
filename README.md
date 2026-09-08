@@ -39,7 +39,7 @@ This repo flips the order:
 | `docs/07-firewall-ports.md`         | Deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
 | `docs/08-backup-target.md`          | Build guide for the SFTP backup target (building, verifying, field-notes gotchas) |
 | `docs/09-binary-depot.md`           | Build guide for the offline depot / VCF Download Tool (feed the depot, connect VCF, the fleet proxy) |
-| `docs/10-supervisor-enablement.md`  | Build guide for enabling a vSphere Supervisor on a workload domain (Centralized Transit Gateway + Avi, validation, field notes) |
+| `docs/10-supervisor-enablement.md`  | Build guide for enabling a vSphere Supervisor on a workload domain (end-to-end walkthrough, Centralized Transit Gateway + Avi, VKS planning, validation, field notes; combined 9.0/9.1 prep template) |
 | `docs/11-esx-coredump.md`           | Build guide for the ESXi network Dump Collector (enable on vCenter, point every host at it, verify) |
 | `docs/12-sso-configuration.md`      | Build guide for configuring fleet SSO via the VCF Identity Broker (identity provider, per-product federation, role mapping, verification) |
 | `docs/13-shutdown-startup.md`       | The ordered fleet shutdown / startup runbook (the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, infrastructure VMs last) |
@@ -66,7 +66,7 @@ This repo flips the order:
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
-| `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request) — downloadable from the site; feed the workbook / Coscia planner |
+| `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request, vSphere Supervisor prep 9.0/9.1) — downloadable from the site; feed the workbook / Coscia planner |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
 
 ### PowerShell tools (`tools/`)
