@@ -170,12 +170,18 @@ Logging is **per rule** (the `Logging` toggle you set on each staged rule).
   Tier-1 for `plcy-Avi-UX`. If NSX forwards syslog to **VCF Operations for
   Logs** or a SIEM (the usual fleet setup) read it there; otherwise read it on
   the Edge.
-- **On an Edge node** (SSH as `admin`), the packet logs are in
-  `/var/log/syslog`:
+- **On an Edge node.** SSHing in as `admin` puts you in the **NSX CLI**, not a
+  shell — there is no `grep` and no direct file access. Use the built-in log
+  reader and its `find` filter:
 
   ```
-  grep -i firewall /var/log/syslog | grep <your-tag>
+  get log-file syslog | find firewall
+  get log-file syslog follow | find <your-tag>     # live tail while you test
   ```
+
+  A real shell (`grep`, `/var/log/syslog`) needs engineering / root mode, which
+  is support-gated and usually disabled on a VCF-managed NSX — prefer the CLI
+  above or VCF Operations for Logs.
 
   Each line carries the **action** (`PASS` / `DROP` / `REJECT`), the protocol,
   and the source and destination **`IP:port`** — the 5-tuple you need to write

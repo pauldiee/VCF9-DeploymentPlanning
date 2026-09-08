@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.9.7 — 2026-09-08
+- **docs/19: fix the Edge-log read command** (#286, field-reported). SSHing to
+  an NSX Edge as `admin` is the NSX CLI, not a shell — the *Reading the
+  gateway-firewall log* subsection now uses `get log-file syslog | find firewall`
+  (and `... follow | find <tag>` for a live tail) instead of `grep
+  /var/log/syslog`, with a note that a root shell is support-gated and usually
+  disabled on a VCF-managed NSX.
+
 ## v3.9.6 — 2026-09-08
 - **docs/19: how to read the gateway-firewall log.** New *Reading the
   gateway-firewall log* subsection shared by both walkthroughs — tag the staged
