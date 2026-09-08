@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.9.3 — 2026-09-08
+- **docs/19: clarify the TGW gateway firewall group table** (#283). Step 2 of
+  the *Segregating tenant traffic at the Transit Gateway* walkthrough gains a
+  *Role in step 3* column (source/destination use per group) and expanded member
+  descriptions. Explains that `VCFA`, `VCFA-Management-IPs` and `VCFA-VIP` are
+  one system / three addresses (app interface outbound, management NIC outbound
+  to ESXi, published VIP inbound) — equal on a single-homed deploy but kept
+  separate so each rule stays pinned to one interface and direction — and calls
+  out that `Avi-SE` here (SE data/VIP interfaces) is **not** `grp-Avi-SE` from
+  the Avi management-plane section (SE management interfaces, different
+  firewall).
+
 ## v3.9.2 — 2026-09-08
 - **docs/19: optional `allow-mgmt-ssh` rule in the `plcy-Avi-UX` walkthrough**
   (#282). Adds a `grp-Mgmt-Admin` source group and an **optional** rule allowing

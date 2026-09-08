@@ -57,18 +57,26 @@ applied yet — fix that first.
 
 #### 2. Build the groups
 
-`Inventory > Groups`:
+`Inventory > Groups`. Several of these are **different addresses of the same
+system**, split out so each allow rule in step 3 stays scoped to exactly one
+interface and direction. The *Role* column is how the rule set uses the group.
 
-| Group | Members |
-| ----- | ------- |
-| **DNS-Servers**, **LDAP-Servers** | the infra-service endpoints tenants and VCFA resolve/bind against |
-| **Avi-SE** | the Service Engine data/VIP interfaces in the DMZ VPC services subnet |
-| **VCFA** | the VCF Automation node IPs |
-| **VCFA-VIP** | the external-facing virtual-service VIP (from the external IP block) |
-| **VCFA-Management-IPs** | the VCFA management interfaces |
-| **Orchestrator** | the VCF Automation Orchestrator endpoint |
-| **vSphere-Supervisor** | the Supervisor control-plane VIP(s) |
-| **ESX-Hosts** | the management-domain ESXi hosts (for the VM web console) |
+| Group | Members | Role in step 3 |
+| ----- | ------- | -------------- |
+| **DNS-Servers**, **LDAP-Servers** | the infra-service endpoints tenants and VCFA resolve/bind against | **Destination** (`Policy-Infra-Services`) — two groups so the DNS vs LDAP service sets apply separately |
+| **Avi-SE** | the Service Engine **data / VIP** interfaces in the DMZ VPC services subnet | **Destination** of `allow-web` (80/443) — the external VIP is realised on the SEs. **Not** the same group as `grp-Avi-SE` in [Protecting the Avi management plane](#protecting-the-avi-management-plane-pattern-3-gateway-firewall), which is the SE **management** interfaces on a different firewall |
+| **VCFA** | the VCF Automation appliance **node IPs** — the cluster VMs' primary addresses in the DMZ VPC | **Source** of `VCFA-to-Orchestrator` / `VCFA-to-Supervisor` — the appliance initiating outbound reconcile |
+| **VCFA-Management-IPs** | the appliance's **management interface(s)** | **Source** of `VC Webconsole` (→ ESX-Hosts) — the console-proxy connection rides the management NIC, not the node IP. On a single-homed deployment this holds the **same IPs as VCFA**; keep it a separate group so each rule can be tightened independently |
+| **VCFA-VIP** | the **external-facing virtual-service VIP** (from the external IP block) | **Destination** only — external tenants on 443, and the `gw-health-check` probe on 8008. The published front door, not an appliance interface |
+| **Orchestrator** | the VCF Automation **Orchestrator** endpoint (workflow engine; embedded or external, its own address) | **Destination** of `VCFA-to-Orchestrator` (HTTPS) |
+| **vSphere-Supervisor** | the Supervisor **control-plane VIP(s)** — the Kubernetes API | **Destination** of `VCFA-to-Supervisor` (TCP 6443) — the IaaS / namespace reconcile path |
+| **ESX-Hosts** | the management-domain **ESXi hosts** | **Destination** of `VC Webconsole` (443) — where a VM web-console session terminates |
+
+> **The three VCFA groups are one system, three addresses:** `VCFA` is the box
+> talking **outbound** on its app interface; `VCFA-Management-IPs` is the box's
+> **management NIC**, outbound to ESXi for the console proxy; `VCFA-VIP` is the
+> **published address, inbound**. Modelling them separately keeps every rule
+> pinned to one interface and one direction.
 
 #### 3. Create the policies and rules on the TGW GFW
 
