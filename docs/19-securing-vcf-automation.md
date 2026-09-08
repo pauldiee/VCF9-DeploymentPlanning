@@ -481,47 +481,68 @@ touch VCF-created VMs anyway.
 | **grp-Avi-Controllers** | the Controller node IP(s) (1 or 3) **and** the cluster VIP |
 | **grp-VCFA** | the VCFA internal built-in-LB VIP **and** the VCFA node IPs (same target the Avi pool uses) |
 
-#### 3. Create the gateway firewall policy
+#### 3. Create the custom L4 services
+
+**NSX ships no predefined service for TCP 8443 or TCP 9001** — both have to be
+created before the policy can reference them, or the Service picker in step 4
+has nothing to select. **[field-verified]**
+
+`Inventory > Services > Add Service` → **Service Entries > Set > Add Service
+Entry**, *Type* = **L4 Port Set**, *Protocol* = **TCP**, *Destination Ports* =
+the single port:
+
+| Service | Protocol / port | Used by |
+| ------- | --------------- | ------- |
+| **`svc-Avi-keyx-8443`** | TCP 8443 | rule 1 (SE→Controller keyx channel) and rule 2 (SE→VCFA backend pool) |
+| **`svc-Avi-objstore-9001`** | TCP 9001 | rule 1 (SE→Controller object store) |
+
+> Any other non-standard TCP/UDP port the *Avi Ports & Protocols* list calls for
+> on your version (see step 5) needs the same treatment — predefined services
+> exist for the common ones (SSH, NTP, HTTPS, DNS) but not for Avi's
+> higher-numbered channels.
+
+#### 4. Create the gateway firewall policy
 
 `Security > Gateway Firewall >` select the **T1** from step 1 `> Add Policy`,
-name it **`plcy-Avi-UX`**. Add these rules, **Applied To** = that T1:
+name it **`plcy-Avi-UX`**. An NSX firewall rule takes a **list** of services, so
+each source/destination pair collapses to one rule. Add these rules, **Applied
+To** = that T1:
 
 | # | Name | Source | Destination | Service | Action |
 | - | ---- | ------ | ----------- | ------- | ------ |
-| 1 | `allow-keyx-channel` | grp-Avi-SE | grp-Avi-Controllers | **TCP 8443** | Allow |
-| 2 | `allow-ssh` | grp-Avi-SE | grp-Avi-Controllers | **SSH** (TCP 22) | Allow |
-| 3 | `allow-NTP` | grp-Avi-SE | grp-Avi-Controllers | **NTP** (UDP 123) | Allow |
-| 4 | `SE-object-store` | grp-Avi-SE | grp-Avi-Controllers | **TCP 9001** | Allow |
-| 5 | `Avi-backend-pool` | grp-Avi-SE | grp-VCFA | **TCP 8443** | Allow |
-| 6 | `SE-to-VCFA-web` | grp-Avi-SE | grp-VCFA | **HTTPS** (TCP 443) | Allow |
-| 7 | `default` | Any | Any | Any | **Drop** (enable **Logging**) |
+| 1 | `allow-SE-to-Controller` | grp-Avi-SE | grp-Avi-Controllers | **`svc-Avi-keyx-8443`**, **SSH** (TCP 22), **NTP** (UDP 123), **`svc-Avi-objstore-9001`** | Allow |
+| 2 | `allow-SE-to-VCFA` | grp-Avi-SE | grp-VCFA | **`svc-Avi-keyx-8443`** (TCP 8443), **HTTPS** (TCP 443) | Allow |
+| 3 | `default` | Any | Any | Any | **Drop** (enable **Logging**) |
 
-Rules 1–4 are the design page's SE→Controller set; 5–6 are the SE→VCFA backend
-path. The gateway firewall is **stateful**, so return traffic on each allowed
-flow is automatic — you only add the connection-initiation direction.
+Rule 1 is the design page's four SE→Controller flows (keyx channel, SSH, NTP,
+object store) as one rule; rule 2 is the SE→VCFA backend path (backend pool +
+web). Split them back out into a rule per flow only if you want per-flow hit
+counters. The gateway firewall is **stateful**, so return traffic on each
+allowed flow is automatic — you only add the connection-initiation direction.
 
-#### 4. Before you flip rule 7 to Drop
+#### 5. Before you flip the default rule to Drop
 
 > **The design page's list is a template, not a validated exhaustive port set
 > [field caveat].** Cross-check the current **Avi Ports & Protocols** for your
 > version before enforcing default-deny, and expect to also need SE →
 > **DNS**, SE → **NTP** (if your NTP source is not the Controller), SE → the
 > segment **gateway**, and possibly a Controller→SE return path for
-> SE lifecycle orchestration. Stage rule 7 as **Allow + Logging** first, run
-> the validation in step 5 below, read the log for what the allowlist
-> missed, then switch it to **Drop**.
+> SE lifecycle orchestration. Stage rule 3 (the **`default`** rule) as **Allow +
+> Logging** first, run the validation in step 6 below, read the log for what the
+> allowlist missed, then switch it to **Drop**.
 
-#### 5. Validate
+#### 6. Validate
 
 - From a Controller (CLI) or an SE shell, confirm the allowed flows: the
   8443 keyx channel, SSH, TCP 9001, and the backend pool to `grp-VCFA` on
   8443/443.
-- `Security > Gateway Firewall >` check the **hit counters** — rules 1–6
-  incrementing, rule 7 catching only what you expect.
+- `Security > Gateway Firewall >` check the **hit counters** — rules 1–2
+  incrementing, the `default` rule catching only what you expect.
 - In Avi, confirm **SEs still show Connected** and the VCFA VS stays **green**
-  after rule 7 is set to Drop — that is the "did I miss a port" check.
+  after the `default` rule is set to Drop — that is the "did I miss a port"
+  check.
 
-#### 6. VCF Automation side — nothing to do on the DFW
+#### 7. VCF Automation side — nothing to do on the DFW
 
 VCFA's management traffic is already unrestricted between VCF components (the
 `VCF-Created-Virtual-Machines` exclusion). The only firewalling that applies to

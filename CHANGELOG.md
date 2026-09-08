@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.9.1 — 2026-09-08
+- **docs/19: `plcy-Avi-UX` management-plane firewall walkthrough — create the
+  custom L4 services, and collapse the rule set** (#281, field-reported). NSX
+  ships **no predefined service for TCP 8443 or TCP 9001**, so the walkthrough
+  now has a *"Create the custom L4 services"* step (`svc-Avi-keyx-8443` /
+  `svc-Avi-objstore-9001`) before the policy step, with a note that any other
+  non-standard Avi port needs the same. The rule table is collapsed from seven
+  rows to three: one `allow-SE-to-Controller` rule carrying the four
+  SE→Controller services as a list, one `allow-SE-to-VCFA` rule, and the
+  `default` drop — an NSX rule takes a service list, so one rule per
+  source/destination pair. Step renumbering and the "default rule" references
+  updated to match.
+
 ## v3.9.0 — 2026-09-08
 - **docs: add a consolidated *"The full sequence, start to finish"* walkthrough
   to the five build guides that lacked a single linear path** (#280, follow-on
