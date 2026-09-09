@@ -1,5 +1,29 @@
 # Changelog
 
+## v4.0.8 — 2026-09-09
+- **docs/20: expand every step to full detail** (720 lines, was ~420). Each step
+  in all three paths now has the exact command / click path, a filled example
+  with Rainpole-style placeholders, an **Expect:** line, and a
+  symptom → meaning → fix table where it helps.
+  - **§2 Direct** — a 3-step mini-walkthrough (open the firewall by FQDN;
+    verify *from a workload subnet* with a `curl -sI … → 401`; a table
+    distinguishing `401` / timeout / DNS-fail / a stray `407` or proxy banner).
+  - **§3 Proxy** — Step 1 now a table (URL encoding, an interception test
+    `curl -x … -vI …`, `base64 -w0` the CA); Step 2 a full no-proxy table with
+    example CIDRs and *why* each entry; Step 3 the vSphere Client click path
+    **and** a complete `PATCH …/namespace-management/clusters/<id>` body **and**
+    the DCLI form; Step 4 a filled `TkgServiceConfiguration` YAML with commented
+    CIDRs + a `jsonpath` confirm; Step 5 a concrete `kubectl annotate` reconcile;
+    Step 6 a 5-check ordered validation.
+  - **§4 Air-gapped** — `git clone` the helper repo, the `imgpkg` install
+    one-liner, the full VCF CLI + plugin install, `yq` to pull the
+    `imgpkgBundle.image` ref out of the `*-legacy-*.yml`, concrete
+    `oci_image_depot_migrator.py download/upload/copy`, `_catalog` spot-check,
+    the `toggle_…` enable/disable with expected JSON, the full
+    `manage-depot-image-proxy.sh add` arg list + a `depot-image-proxy` reachability
+    test, the Harbor bundle-image YAML rewrite, and a 4-step deploy/validate that
+    greps every pod image for `projects.packages.broadcom.com`.
+
 ## v4.0.7 — 2026-09-09
 - **docs: new `docs/20-supervisor-image-registry.md` — proxy + air-gapped
   walkthroughs for the Supervisor/VKS container image registry** (split out of
