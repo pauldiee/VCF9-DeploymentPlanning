@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.9.8 — 2026-09-09
+- **docs: bring the remaining build guides to the same walkthrough format**
+  (follow-on from #280). Added a `## The full sequence, start to finish` lead-in
+  list — numbered, each step linking the section on the same page — to the six
+  guides that were step-ordered but lacked a consolidated sequence:
+  `11-esx-coredump`, `12-sso-configuration`, `13-shutdown-startup`,
+  `17-vcfa-tenant-config`, `18-vdefend-ssp`, and `19-securing-vcf-automation`
+  (the five hardening layers, outer to inner, with the licensing and
+  stage-before-enforce notes up front). Placed after the intro / Contents, no
+  section renumbering. Every guide except `07-firewall-ports` (a lookup matrix)
+  now carries a walkthrough. All added anchors verified against the built HTML.
+
 ## v3.9.7 — 2026-09-08
 - **docs/19: fix the Edge-log read command** (#286, field-reported). SSHing to
   an NSX Edge as `admin` is the NSX CLI, not a shell — the *Reading the

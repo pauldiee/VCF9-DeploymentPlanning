@@ -47,6 +47,30 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 
 ---
 
+## The full sequence, start to finish
+
+The broker is already running (bring-up); this is Day-2 configuration. Do the
+[prerequisites](prerequisites.md#identity-source-for-the-vcf-identity-broker)
+(bind account, base DN, LDAPS certificate) first. Everything below lives under
+*VCF Operations*.
+
+1. **Read what federates and what doesn't**
+   ([§1](#1-overview--what-federates-and-what-doesnt)).
+2. **Set the deployment mode** ([Step 1](#step-1--deployment-mode)).
+3. **Configure the identity provider** ([Step 2](#step-2--configure-the-identity-provider))
+   — the AD / LDAPS source on the broker.
+4. **Federate vCenter and NSX** ([Step 3](#step-3--federate-vcenter-and-nsx)).
+5. **Federate VCF Operations and VCF Automation**
+   ([Step 4](#step-4--federate-vcf-operations-and-vcf-automation)).
+6. **Federate everything else** ([Step 5](#step-5--federate-everything-else)) —
+   Log Management, the SSP Installer, and the rest.
+7. **Assign roles per product** ([Step 6](#step-6--assign-roles-per-product)) —
+   AD group → product role, one product at a time.
+8. **Verify** ([§8](#8-verification--troubleshooting)) — log in as an AD user to
+   each product; then the [field notes](#9-field-notes).
+
+---
+
 ## 1. Overview — what federates and what doesn't
 
 Not every product plugs into the broker the same way, and **the doc set does

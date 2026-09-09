@@ -42,6 +42,27 @@ Prevention Service**. The plain Distributed Firewall and Distributed IDS/IPS do
 
 ---
 
+## The full sequence, start to finish
+
+This page is the **SSP instance** — not the SSP Installer, not License Hub (see
+the callout above).
+
+1. **Clear the prerequisites** ([§1](#1-prerequisites)) — the SSP Installer
+   appliance already deployed, NSX Manager reachable, DNS / NTP, and the
+   licences (§5) lined up.
+2. **Pick the form factor** ([§2](#2-form-factors-and-footprint)) — controller +
+   worker sizing, and the footprint it costs.
+3. **Deploy the instance** ([§3](#3-deploy-the-instance)) — from the SSP
+   Installer wizard.
+4. **First-time configuration** ([§4](#4-first-time-configuration)) — onboard
+   NSX Manager, then activate Security Intelligence / NDR / NTA / Malware
+   Prevention.
+5. **Licensing** ([§5](#5-licensing)) — the vDefend entitlement chain (see also
+   [`15-license-hub.md`](15-license-hub.md)).
+6. **Register the backup** ([§6](#6-backup)).
+
+---
+
 ## 1. Prerequisites
 
 - **SSP Installer already deployed and healthy**, with the **SSP package

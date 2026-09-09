@@ -30,6 +30,40 @@ The design page layers the controls outer to inner; so does this guide.
 
 ---
 
+## The full sequence, start to finish
+
+The external-facing VCFA virtual service must already exist
+([`14-avi-load-balancer.md`](14-avi-load-balancer.md#vcf-automation-externalcustomer-access)).
+Then apply the five layers **outer to inner** — the order the design page uses.
+The two gateway-firewall layers (1 and 5) are **staged as Allow + Logging first**
+and only switched to deny once the log is clean
+([Reading the gateway-firewall log](#reading-the-gateway-firewall-log)).
+
+1. **Settle the licensing gates.** Layers 1 and 5 are *stateful* gateway
+   firewalls and need **vDefend** licensing; the WAF (layer 4) and parts of
+   layer 2 have their own gates — see
+   [Licensing gates](#licensing-gates--all-before-you-start). Do these before
+   you build anything.
+2. **Segregate tenant traffic at the Transit Gateway**
+   ([layer 1](#segregating-tenant-traffic-at-the-transit-gateway-pattern-3-tgw-gateway-firewall))
+   — the north-south perimeter; build the groups, the `Policy-*` allow set, then
+   stage and enforce `Default-Deny`.
+3. **Protect tenant traffic with vDefend and Avi**
+   ([layer 2](#protecting-tenant-traffic-with-vdefend-and-avi)) — Service Engine
+   placement and the NSX DFW exclusion-list sequence.
+4. **Lock the portals to known client IPs**
+   ([layer 3](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration))
+   — the Avi L7 HTTP-request policy on the VS. Keep a way back in.
+5. **Add the Web Application Firewall**
+   ([layer 4](#web-application-firewall-on-the-vcfa-virtual-service)) — the Avi
+   WAF policy on the VS; detection mode first, then enforcing.
+6. **Protect the Avi management plane**
+   ([layer 5](#protecting-the-avi-management-plane-pattern-3-gateway-firewall))
+   — the `plcy-Avi-UX` Tier-1 gateway firewall; custom L4 services, the allow
+   rules, then stage and switch the `default` rule to Drop.
+
+---
+
 ## Segregating tenant traffic at the Transit Gateway (Pattern 3 TGW gateway firewall)
 
 **[documented]**, from the *Protecting Tenant Traffic with vDefend Gateway

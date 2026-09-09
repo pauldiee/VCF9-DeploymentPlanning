@@ -30,6 +30,26 @@ Order matters: a connection (step 3) needs a region (step 1) and an IP block
 
 ---
 
+## The full sequence, start to finish
+
+The **Manual setup** path, once the appliance is deployed and healthy and the
+Supervisor(s) are enabled. Four objects in order, then the wrap-up.
+
+1. **Create a region** ([§1](#1-create-a-region)) — bind the Supervisor(s) as
+   the region's compute.
+2. **Create an external IP block** ([§2](#2-create-an-external-ip-block)) — the
+   routable range tenant workloads take north-south addresses from.
+3. **Create an external connection** ([§3](#3-create-an-external-connection)) —
+   Tier-0 + the IP block: the path out. Needs a region (step 1) and the block
+   (step 2).
+4. **Create an organization** ([§4](#4-create-an-organization)) — the tenant,
+   with its Avi integration; needs all three above.
+5. **Wrap up** ([After the four steps](#after-the-four-steps)) — the
+   storage-class (needs a policy first, then *Connections → Refresh*), the
+   tenant *Bills* currency gotcha, and validation.
+
+---
+
 ## 1. Create a region
 
 A region binds VCF Automation to one **NSX Manager** + one **Supervisor** and the

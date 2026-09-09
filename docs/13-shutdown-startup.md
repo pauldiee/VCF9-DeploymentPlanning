@@ -35,6 +35,28 @@ maintenance window and you are reading TechDocs at 02:00.
 
 ---
 
+## The full sequence, start to finish
+
+The whole page is the ordered procedure; this is its shape. **Shutdown and
+startup are mirror images** — startup reverses the shutdown order.
+
+1. **Pre-checks** ([§1](#1-before-you-touch-anything)) — fleet healthy, backups
+   current, and note what you deployed: your component set determines the order.
+2. **Learn the three ordering rules** ([§2](#2-the-three-ordering-rules-that-catch-people))
+   — VCF Operations is last out / first in at the *fleet* level; shared NSX
+   moves with the first workload domain; infrastructure VMs go last.
+3. **Shut down the workload domains** ([§3](#3-shutdown--workload-domains-first))
+   — all of them, first.
+4. **Shut down the management domain**
+   ([§4](#4-shutdown--the-management-domain-11-steps)) — the strict 11-step
+   sequence.
+5. *Maintenance window.*
+6. **Start the management domain** ([§5](#5-startup--the-management-domain)) —
+   the reverse of step 4.
+7. **Start the workload domains** ([§6](#6-startup--workload-domains)).
+
+---
+
 ## 1. Before you touch anything
 
 **Before shutdown [documented]:**

@@ -20,6 +20,28 @@ Two halves, in order: enable the collector service **on vCenter**, then point
 
 ---
 
+## The full sequence, start to finish
+
+Two halves, in order — enable the collector on vCenter, then point the hosts at
+it. Each step links the section that carries the detail.
+
+1. **Enable the Dump Collector service on vCenter**
+   ([§1](#1-enable-the-dump-collector-service-on-vcenter)) — set it to start
+   automatically, via the VAMI or SSH to the VCSA.
+2. **Point every ESX host at the collector**
+   ([§2](#2-point-every-esx-host-at-the-collector)) — per host by hand
+   (`esxcli system coredump network set …`), or the download-and-run fleet
+   sweep script at scale.
+3. **Open the firewall** ([§3](#3-firewall)) — the collector's UDP port from
+   every ESX management vmkernel to vCenter.
+4. **Verify** ([§4](#4-verify)) — `esxcli system coredump network check`, and
+   the host reports **Network Dump Collector** on the vCenter *Configure* tab
+   once it has checked in.
+5. **If a host will not register** ([§5](#5-field-notes)) — the field-notes
+   gotchas.
+
+---
+
 ## 1. Enable the Dump Collector service on vCenter
 
 The service ships with every VCSA but is **not started by default**.
