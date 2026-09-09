@@ -28,8 +28,9 @@
     Security for vDefend* TechDocs page where layers 2 and 5 defer to it. Noted
     the design's **`vsvip` CLI** (`… _AVISEPARATOR_ … _PUBLIC`, pool default
     port 443, `System-HTTP`) alongside `docs/14`'s UI method.
-  - Follow-up left open: `docs/14` should carry the `vsvip` CLI form for a
-    plain NSX-VPC integration; verbatim values (regex, ports, rule IDs) still
+  - The design's `vsvip` CLI form is noted as the hand-built-NSX-VPC path only;
+    `docs/14`'s Advanced-UI-wizard method is the one for a VCF-Operations-managed
+    Avi and needs nothing added. Verbatim values (regex, ports, rule IDs) still
     want a human check against the live design page.
   - *(Next CHANGELOG bump rolls to 4.0.0 — `3.9.9` is the last `.9`.)*
 

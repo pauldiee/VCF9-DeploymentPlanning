@@ -380,14 +380,17 @@ Engines sit, the DFW exclusion-list sequence, and the licensing gates.
   3xx**), a **`System-Standard` SSL profile with SNI**, the **pool default port
   443**, and the virtual service on **application type HTTP/HTTPS** with the
   **`System-HTTP`** application profile — treat those as **[documented]**.
-- **Creating the VS VIP against the VPC's PUBLIC subnet.** The design page does
-  this from the **Avi CLI** (`configure vsvip` → `tier1_lr
-  /orgs/default/projects/<NSX project>/vpcs/<VPC>` → `subnet_uuid <NSX
-  project>_AVISEPARATOR_<VPC>_AVISEPARATOR_PUBLIC` → `prefix_length 32`), which
-  binds the VIP to the VPC's external/PUBLIC subnet when the UI cannot express
-  the VPC / Tier-1 reference. [`14-avi-load-balancer.md`](14-avi-load-balancer.md#building-the-virtual-service)
-  builds the VS through the UI on a VCF-Operations-managed NSX cloud; use the
-  CLI form on a plain NSX-VPC integration.
+- **Creating the VS VIP against the VPC's PUBLIC subnet.**
+  [`14-avi-load-balancer.md`](14-avi-load-balancer.md#building-the-virtual-service)
+  builds the VS through Avi's **Advanced UI wizard**, picking the DMZ VPC's VRF
+  context and auto-allocating from the public subnet — the path on a
+  **VCF-Operations-managed Avi** (NSX Cloud auto-created, VPC auto-detected), and
+  the one to use here. The design page instead hand-builds the VIP from the
+  **Avi CLI** (`configure vsvip` → `tier1_lr /orgs/default/projects/<NSX
+  project>/vpcs/<VPC>` → `subnet_uuid <NSX
+  project>_AVISEPARATOR_<VPC>_AVISEPARATOR_PUBLIC` → `prefix_length 32`); that
+  form is only needed for a hand-built NSX-VPC + Avi integration where the
+  wizard has no field for the VPC / Tier-1 reference.
 
 ### The DFW exclusion-list sequence
 
