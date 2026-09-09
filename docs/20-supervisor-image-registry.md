@@ -30,6 +30,7 @@ this page is the **how-to** for the two that need one.
 | 2 | [A. Direct egress](#2-a-direct-egress) | Workload / node networks can reach the internet |
 | 3 | [B. Proxy path — walkthrough](#3-b-proxy-path--walkthrough) | Egress only via an HTTP(S) proxy |
 | 4 | [C. Air-gapped path — walkthrough](#4-c-air-gapped-path--walkthrough) | No egress from the workload / node networks at all |
+| — | [VCF Automation reaches the OCI registry too](#vcf-automation-reaches-the-oci-registry-too--a-different-path) | VCFA runs on the services runtime — a **separate** proxy / image path from the Supervisor's |
 | 5 | [References](#5-references) | The TechDocs and repo guides behind the above |
 
 ---
@@ -47,6 +48,12 @@ can be online for one and offline for the other — but they usually match. If t
 whole site is air-gapped you are almost certainly doing **C** here **and** the
 offline-depot seeding in
 [`10-supervisor-enablement.md` §5.4](10-supervisor-enablement.md#54-offline-depot-configured-is-not-the-same-as-populated).
+
+> **VCF Automation needs the OCI registry too**, but by a **different route** —
+> it runs on the VCF services runtime, so its path follows the *services-runtime*
+> proxy / depot, not the Supervisor's. Same A / B / C choice, configured once via
+> Fleet Management — see
+> [VCF Automation reaches the OCI registry too](#vcf-automation-reaches-the-oci-registry-too--a-different-path).
 
 ---
 
@@ -71,117 +78,117 @@ a timeout or a proxy error. A `401` here is success.
 
 ## 3. B. Proxy path — walkthrough
 
-Image pulls traverse an HTTP(S) proxy. Two layers set it, and **both** are
-needed if you run VKS clusters:
+Image pulls traverse an HTTP(S) proxy, set in **two independent places** — you
+need **both** if you run VKS clusters:
 
-- **The Supervisor** — for the Supervisor's own image pulls and container
-  traffic.
-- **The VKS `TkgServiceConfiguration`** — inherited by every VKS cluster that
-  instance provisions.
+- **The Supervisor** — its own image pulls and container traffic.
+- **The VKS `TkgServiceConfiguration`** — inherited by every VKS cluster the
+  Supervisor provisions.
 
-> Neither is the depot's `G5` fleet proxy. A site can have the depot
-> online-via-proxy while the workload networks have a *different* proxy, or none
-> — configure this independently.
+Neither is the depot's `G5` fleet proxy — a site can have the depot
+online-via-proxy while the workload networks use a *different* proxy, or none.
 
-### 3.1 Supervisor proxy **[documented]**
+**Steps:** 1 gather the proxy details → 2 build the no-proxy list →
+3 set the Supervisor proxy → 4 set the VKS `TkgServiceConfiguration` proxy →
+5 roll it to existing clusters → 6 validate.
 
-Set on the Supervisor itself. Three ways — pick one:
+### Step 1 — Gather the proxy details
 
-| Method | Where |
-| ------ | ----- |
-| **vSphere Client** | *Workload Management → Supervisors →* your Supervisor *→ Configure → (Network / General) → HTTP Proxy* |
-| **Cluster Management API** | `PATCH .../api/vcenter/namespace-management/clusters/<id>` |
-| **DCLI** | `com vmware vcenter namespacemanagement clusters update` |
+- **Proxy URL(s)** — `http://<host>:<port>` for both HTTP and HTTPS (prefix
+  `user:pass@` if it authenticates). The two are usually the same value.
+- **Does it TLS-intercept?** If yes, get its **root CA in PEM** — you trust it
+  on the Supervisor (`tlsRootCaBundle`) and in VKS
+  (`trust.additionalTrustedCAs`).
 
-Proxy modes (API / DCLI naming):
+### Step 2 — Build the no-proxy list (before you set anything)
 
-- **`VC_INHERITED`** — reuse vCenter's own proxy settings.
-- **`CLUSTER_CONFIGURED`** — set a proxy specifically for this Supervisor.
-- **`NONE`** — no proxy.
+The biggest cause of a broken proxy deployment is an incomplete no-proxy list —
+in-cluster and management traffic then goes to the proxy, which can't route it.
+Assemble **one** list, used verbatim in both places below:
 
-Fields when `CLUSTER_CONFIGURED`:
+| Include | Examples |
+| ------- | -------- |
+| Loopback | `localhost`, `127.0.0.1` |
+| Pod + Service CIDRs — the Supervisor's **and** each VKS cluster's | Supervisor Service CIDR (e.g. `10.96.0.0/16`), guest Pod/Service CIDRs ([`10` §2](10-supervisor-enablement.md#2-pre-flight-gate), §5.5) |
+| Namespace / workload network, Ingress, Egress CIDRs | your VPC / workload subnets |
+| Cluster-internal domains | `.svc`, `.svc.cluster.local`, `cluster.local`, `.local` |
+| Supervisor + API | the Supervisor / API-server FQDN **and** its VIP |
+| Infrastructure | vCenter, NSX Manager, the ESXi hosts |
+| VKS | control-plane endpoints, node subnets |
+| Air-gapped depot path (§4), if also used | `depot-image-proxy.kube-system.svc.cluster.local`, the Software Depot FQDN |
+| Any internal registry / Harbor | its FQDN |
 
-| Field | Note |
-| ----- | ---- |
-| `http_proxy_config` | `http://<host>:<port>` (with `user:pass@` if the proxy authenticates) |
-| `https_proxy_config` | usually the same value |
-| `no_proxy_config` | the exclusion list — see [§3.3](#33-the-no-proxy-list--get-this-right) |
-| `tlsRootCaBundle` | the proxy's root CA, PEM, if it does TLS interception |
+> The Supervisor `no_proxy_config` and the VKS `noProxy` are **separate fields**
+> — put the same list in both.
 
-> **Changeable after enablement, no redeploy** **[documented]**. *"You can use a
-> proxy if you need to handle container traffic or image pulling from networks
-> external to the Supervisor."*
+### Step 3 — Set the Supervisor proxy **[documented]**
 
-### 3.2 VKS `TkgServiceConfiguration` proxy
+Changeable after enablement, no redeploy. Pick one method:
 
-Applies to **every VKS cluster** the Supervisor provisions. Edit the
-`tkg-service-configuration` resource on the Supervisor (as a Supervisor
-administrator):
+- **vSphere Client** — *Workload Management → Supervisors →* your Supervisor *→
+  Configure → General → HTTP Proxy* (labelled *Network* on some builds). Choose
+  **Configure a proxy for this Supervisor** (= mode `CLUSTER_CONFIGURED`), enter
+  the HTTP proxy, HTTPS proxy, the **no-proxy list from Step 2**, and the proxy
+  CA if it intercepts TLS. (**Inherit from vCenter** = `VC_INHERITED`; **None**
+  = `NONE`.)
+- **API** — `PATCH …/api/vcenter/namespace-management/clusters/<supervisor-id>`
+  with `http_proxy_config`, `https_proxy_config`, `no_proxy_config`,
+  `tlsRootCaBundle`.
+- **DCLI** — `com vmware vcenter namespacemanagement clusters update`.
+
+### Step 4 — Set the VKS `TkgServiceConfiguration` proxy
+
+As a Supervisor administrator (`kubectl` context = the Supervisor):
 
 ```
 kubectl edit tkgserviceconfigurations tkg-service-configuration
 ```
 
-Add / edit the `proxy` block under `spec`:
+Add the `proxy` block under `spec` (and `trust` only if the proxy intercepts
+TLS):
 
 ```yaml
-apiVersion: run.tanzu.vmware.com/v1alpha1
-kind: TkgServiceConfiguration
-metadata:
-  name: tkg-service-configuration
 spec:
   proxy:
     httpProxy:  http://<user>:<pass>@<proxy-host>:<port>
     httpsProxy: http://<user>:<pass>@<proxy-host>:<port>
     noProxy:
-      - <see §3.3>
-  # if the proxy does TLS interception, also trust its CA:
+      - localhost
+      - 127.0.0.1
+      - <Supervisor Pod CIDR>
+      - <Supervisor Service CIDR>
+      - <guest Pod/Service CIDRs>
+      - <workload / Namespace / Ingress / Egress CIDRs>
+      - .svc
+      - .svc.cluster.local
+      - cluster.local
+      - <vCenter FQDN>
+      - <NSX Manager FQDN>
+      - <Supervisor API FQDN and VIP>
   trust:
     additionalTrustedCAs:
       - name: corp-proxy-ca
-        data: <base64 PEM>
+        data: <base64 PEM of the proxy root CA>
 ```
 
-Clusters created **after** this change inherit it. Existing clusters need a
-rolling update (change a trivial cluster field to trigger reconcile) or a
-per-cluster proxy set directly on the `Cluster` object.
+Every VKS cluster created **after** this inherits it.
 
-**Per-cluster override** (optional) — set `proxy` (and `trust`) under the
-cluster's topology variables instead, when one cluster needs a different proxy
-or none.
+### Step 5 — Roll it to existing VKS clusters
 
-### 3.3 The `no-proxy` list — get this right
+Clusters created before Step 4 keep their old (or no) proxy. Either **trigger a
+rolling reconcile** (edit a benign field on the `Cluster` object) or set
+`proxy` / `trust` **directly on that `Cluster`'s topology variables** — the same
+mechanism for giving one cluster a *different* proxy, or none.
 
-This is where proxy deployments fail: an incomplete `noProxy` sends **in-cluster
-and management traffic** through the proxy, which then can't route it. Include
-**all** of:
+### Step 6 — Validate
 
-- **`localhost`, `127.0.0.1`**
-- **The Pod CIDR and the Service CIDR** — both the Supervisor's and each VKS
-  cluster's ([`10-supervisor-enablement.md` §2](10-supervisor-enablement.md#2-pre-flight-gate),
-  §5.5)
-- **The Namespace / workload network, Ingress and Egress CIDRs**
-- **`.svc`, `.svc.cluster.local`, `.local`** (and `cluster.local`)
-- **The Supervisor / API-server FQDN and its VIP**
-- **vCenter, NSX Manager, the ESXi hosts**
-- **The VKS control-plane endpoints** and any node subnet
-- If you also run the **air-gapped depot path** (§4):
-  **`depot-image-proxy.kube-system.svc.cluster.local`** and the Software Depot
-  FQDN
-- Any **internal registry / Harbor** you use
-
-The Supervisor `no_proxy_config` and the VKS `noProxy` are **separate lists** —
-fill both.
-
-### 3.4 Validate
-
-- `curl -sI https://projects.packages.broadcom.com/v2/` from a node **returns
-  401 via the proxy** (check the proxy access log shows the request).
-- A test pod pulls its image; a new VKS cluster comes up with all system pods
-  `Running` (no `ImagePullBackOff` on `antrea`, `coredns`, `metrics-server`).
-- `kubectl get pod -A` on a VKS cluster shows nothing wedged on image pull.
-- In-cluster service-to-service traffic still works (proves `noProxy` covers the
-  Pod/Service CIDRs).
+- From a **node**: `curl -sI https://projects.packages.broadcom.com/v2/` returns
+  **`401`**, and the request appears in the **proxy access log**.
+- A **new VKS cluster** reaches all system pods `Running` — no
+  `ImagePullBackOff` on `antrea`, `coredns`, `metrics-server`.
+- `kubectl get pod -A` on that cluster — nothing wedged on image pull.
+- In-cluster service-to-service traffic still works (proves the no-proxy list
+  covers the Pod / Service CIDRs).
 
 *Sources: [Configuring HTTP Proxy Settings in vSphere Supervisor][sup-proxy] · [Customize the VKS Configuration for VKS Clusters][vks-config]*
 
@@ -200,6 +207,14 @@ an OCI registry inside the VCF Software Depot** — you relocate the images into
 *it*. (An external Harbor is only needed as a **user image registry**, and for
 that the **Harbor Supervisor Service** or the **VMware Bootstrap Registry
 Appliance** is the vendor path — [§4.8](#48-harbor-for-user-images-only-if-needed).)
+
+**Steps:** 1 two hosts + tooling → 2 download the bundles (bastion) →
+3 transfer across the gap → 4 stand up the Supervisor + the OVA library →
+5 prepare the admin host → 6 relocate the images into the depot OCI registry →
+7 the depot image proxy → 8 Harbor (only for user images) → 9 deploy + validate.
+You end up with: every Supervisor / VKS system image served from the **VCF
+Software Depot OCI registry**, reached over the **management network** via the
+**depot image proxy** — nothing at runtime touches `projects.packages.broadcom.com`.
 
 ### 4.1 Two hosts and the tooling
 
@@ -354,8 +369,35 @@ Trust its CA on the Supervisor / VKS side (`TkgServiceConfiguration`
 
 ---
 
+## VCF Automation reaches the OCI registry too — a different path
+
+**VCF Automation is not a Supervisor.** It runs on the **VCF services runtime**
+(the fleet Kubernetes runtime), and its own components — plus the VKS
+cluster-management it performs and its package updates — also pull runtime
+images from `projects.packages.broadcom.com`. The **Supervisor** proxy and the
+**`TkgServiceConfiguration`** from [§3](#3-b-proxy-path--walkthrough) do **not**
+apply to it. Handle it once, with the same A / B / C choice:
+
+| Option | For VCF Automation |
+| ------ | ----------------- |
+| **A — Direct** | The **services-runtime network** reaches `projects.packages.broadcom.com:443`. It is already in the fleet's public-URL allowlist ([`prerequisites.md`](prerequisites.md)). Nothing extra. |
+| **B — Proxy** | Set the **services-runtime proxy** — *VCF Operations → Fleet Management → Configuring Management Components → Configure a Proxy Server for VCF Management Services Components and VCF Automation* (also scriptable, KB 447542). It "applies to **all components** hosted on that runtime instance", VCF Automation included. This is the **same proxy family as `09-binary-depot.md` §5's `G5`** — **not** the Supervisor proxy. |
+| **C — Air-gapped** | The Fleet's Software Depot OCI registry serves the services runtime directly on the management network — the "Standard" service YAML definitions target the depot; the "legacy" ones use direct image URLs. **When VCF Automation is deployed it *provides* the Supervisor Management Proxy** (`depot-image-proxy`) that [§4.7](#47-the-depot-image-proxy-so-the-supervisor-can-reach-the-depot) otherwise sets up by hand — so having VCFA present makes the Supervisor's air-gapped image path simpler, not harder. |
+
+> **Practical upshot:** on a proxied or air-gapped site you configure **two
+> proxies / two image paths** — one for the services runtime (VCF Automation,
+> the depot, Identity Broker, telemetry) via Fleet Management, and one for the
+> Supervisor / VKS ([§3](#3-b-proxy-path--walkthrough) / [§4](#4-c-air-gapped-path--walkthrough)).
+> They are independent; a site can run one online and the other offline.
+
+*Sources: [Configure a Proxy Server for VCF Management Services Components and VCF Automation][mgmt-proxy] · [Scripted process to configure a proxy on VCF Management Services and VCF Automation (KB 447542)][kb447542] · [`09-binary-depot.md` §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)*
+
+---
+
 ## 5. References
 
+- [Configure a Proxy Server for VCF Management Services Components and VCF Automation][mgmt-proxy]
+- [Scripted process to configure a proxy on VCF Management Services and VCF Automation (KB 447542)][kb447542]
 - [Configuring HTTP Proxy Settings in vSphere Supervisor][sup-proxy]
 - [Customize the VKS Configuration for VKS Clusters][vks-config]
 - [`vmware/vsphere-supervisor` — `airgapped/air-gapped-vcf91.md`][airgap91]
@@ -375,3 +417,5 @@ Trust its CA on the Supervisor / VKS side (`TkgServiceConfiguration`
 [vks-private]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vsphere-supervisor-services-and-standalone-components/latest/managing-vsphere-kubernetes-service/installing-and-upgrading-the-tkg-service/upgrade-tkg-service-from-a-private-registry.html
 [harbor-blog]: https://blogs.vmware.com/cloud-foundation/2026/04/21/deploying-harbor-service-in-air-gapped-vmware-cloud-foundation-9-0/
 [bra-blog]: https://blogs.vmware.com/cloud-foundation/2026/08/11/vmware-bootstrap-registry-appliance-air-gapped-harbor-deployment/
+[mgmt-proxy]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/configuring-management-components/configure-a-proxy-server-to-download-bundles-from-sddc-manager.html
+[kb447542]: https://knowledge.broadcom.com/external/article/447542/

@@ -5,13 +5,15 @@
   walkthroughs for the Supervisor/VKS container image registry** (split out of
   `docs/10` §"Container image registry connectivity" so `docs/10` doesn't
   balloon).
-  - **B — Proxy walkthrough**: the **Supervisor** proxy (vSphere Client / API /
-    DCLI; `VC_INHERITED` / `CLUSTER_CONFIGURED` / `NONE`; changeable
-    post-enablement, no redeploy) **and** the VKS **`TkgServiceConfiguration`**
-    `proxy` block (`httpProxy` / `httpsProxy` / `noProxy[]`, `trust`), per-cluster
-    override, and a dedicated **no-proxy checklist** (Pod/Service/Namespace CIDRs,
-    `.svc` / `.svc.cluster.local` / `.local`, Supervisor / vCenter / NSX, the
-    depot image proxy). **[documented]**
+  - **B — Proxy walkthrough** (numbered steps 1–6): gather details → build the
+    no-proxy list → set the **Supervisor** proxy (vSphere Client / API / DCLI;
+    `VC_INHERITED` / `CLUSTER_CONFIGURED` / `NONE`; changeable post-enablement,
+    no redeploy) → set the VKS **`TkgServiceConfiguration`** `proxy` block
+    (`httpProxy` / `httpsProxy` / `noProxy[]`, `trust`, with a YAML sample) →
+    roll it to existing clusters → validate. The **no-proxy list** is its own
+    step (Pod/Service/Namespace CIDRs, `.svc` / `.svc.cluster.local` /
+    `cluster.local`, Supervisor / vCenter / NSX, the depot image proxy).
+    **[documented]**
   - **C — Air-gapped walkthrough**: the 9.1 model — relocate Supervisor
     Services + VKS Standard Packages into the **OCI registry inside the VCF
     Software Depot** (no external registry needed for system images). Bastion +
@@ -21,6 +23,14 @@
     / Bootstrap Registry Appliance only for **user** images, deploy + validate.
     **[field-reported]** — sourced from the community `vmware/vsphere-supervisor`
     `airgapped/` guides, not a single TechDocs page.
+  - **VCF Automation reaches the OCI registry too — a different path**: VCFA
+    runs on the VCF services runtime, so its image path follows the
+    *services-runtime* proxy / depot (Fleet Management → *Configure a Proxy
+    Server for VCF Management Services Components and VCF Automation*, KB 447542;
+    the same `G5` family as `09-binary-depot.md` §5) — **not** the Supervisor
+    proxy. Also: when VCFA is deployed it *provides* the Supervisor Management
+    Proxy (`depot-image-proxy`) that the air-gapped Supervisor path otherwise
+    sets up by hand.
   - `docs/10` registry section slimmed to the framing + a chooser table + a
     pointer to `docs/20`; §2 pre-flight line updated; `web/src/nav.ts`, README
     and `CLAUDE.md` file-layout tables gain the `docs/20` row.
