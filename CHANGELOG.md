@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.0.1 — 2026-09-09
+- **docs/19: add a *Setting it up* how-to to the Split DNS section.** The
+  section described the concept but not the procedure. Now: the external IP
+  block splits into an **internal range** (node IPs, service-runtime, Avi SE
+  ingress / VS pool) and an **external/public range** (the FQDN / VIP only,
+  design example `172.16.49.0/24` vs `10.200.0.0/24`); the **VCFA deploy JSON
+  is unchanged**; the node pool + ingress IPs come from the internal range and
+  the Avi VS VIP from the external range; and the two DNS views spelled out as
+  A-record recipes (internal → node pool + service-runtime FQDN; external → the
+  VS VIP, no service-runtime). Plus the *Result* end state.
+
 ## v4.0.0 — 2026-09-09
 - **docs/19: cross-link the in-repo prerequisites.** The top note only pointed at
   `docs/14`; it is now a **Prerequisites** list that links a guide for each

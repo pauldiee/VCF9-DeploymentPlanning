@@ -108,14 +108,52 @@ external access."*
 The **VCF Automation *service runtime* FQDN is advertised by the internal DNS
 only** — it is never resolvable off the management network.
 
-**Process** (design page):
+### Setting it up
 
-1. Carve **two ranges** out of the NSX Project's external IP block for the DMZ
-   VPC — one for the public subnet / VIP, one for the internal side.
-2. Configure the **split (split-horizon) DNS** — the internal view and the
-   external view above.
-3. Run the standard WAF and firewall configuration (the five layers) on top of
-   the split.
+**The VCF Automation deployment JSON is unchanged** — the design page: *"The JSON
+file for the split DNS configurations is the same as the standard JSON."* VCF
+Operations registers the FQDN against the node IP-pool addresses internally
+regardless; the split is entirely in **how you carve the external IP block** and
+**what the two DNS resolvers answer**. Nothing NSX-specific beyond the block
+split — no extra NAT or routes; the DMZ VPC's existing connectivity profile
+(public subnet + default outbound NAT) already covers it.
+
+1. **Split the external IP block into two ranges** when you assign it to the NSX
+   Project (design page example CIDRs):
+
+   | Range | Example | Feeds |
+   | ----- | ------- | ----- |
+   | **Internal** | `172.16.49.0/24` | the VCFA **node IPs**, the VCFA **service-runtime**, and the **Avi SE ingress / VS IP pool** — everything on the private side |
+   | **External / public** | `10.200.0.0/24` | the **VCFA FQDN / Avi VS VIP** only |
+
+   In the VPC, the internal range is the private/services subnet allocation; the
+   external range is the **public subnet** ([IP addressing](#ip-addressing-for-the-dmz-vpc)
+   below for the counts).
+
+2. **Deploy VCF Automation as normal** ([`05-day2-deployments.md`](05-day2-deployments.md))
+   — `vspClusterSpec.ipv4Pool.addresses` (the 5 node IPs) and
+   `ingress.vcfa.vips` (the 3 ingress IPs) come from the **internal** range.
+
+3. **Build the Avi virtual service** ([`14-avi-load-balancer.md`](14-avi-load-balancer.md#building-the-virtual-service))
+   with its **VIP from the external / public range**.
+
+4. **Configure the two DNS views** — same FQDN, different answers:
+
+   | Resolver (view) | Records |
+   | --------------- | ------- |
+   | **Internal** (management-network clients) | `A vcfa01.example.io → 172.16.49.43, .44, .45` (the node pool) · plus `A <vcfa-service-runtime-fqdn> → <its internal IP>` — **internal only** |
+   | **External** (tenant / internet clients) | `A vcfa01.example.io → 10.200.0.100` (the Avi VS VIP) · the service-runtime FQDN is **not** published here |
+
+   Use whatever gives you split-horizon: two DNS zones/views on one server, or a
+   management resolver separate from the tenant/public resolver.
+
+5. **Apply the five hardening layers** on top — the TGW / T1 gateway firewalls,
+   the Avi HTTP redirect policies, and the WAF still go on exactly as below; the
+   split just changes which IP the tenant path resolves to.
+
+**Result** — every user hits the same FQDN; management-side clients reach VCFA
+directly on the node IPs, tenants come in through the Avi VIP + the DMZ, and the
+service-runtime FQDN is unreachable from outside.
 
 ### IP addressing for the DMZ VPC
 
