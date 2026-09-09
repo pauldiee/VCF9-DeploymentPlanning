@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.0.3 — 2026-09-09
+- **research: new `research/` folder for scratch notes not published on the
+  site.** First note — `research/ipv6-vpc-vcfa-external-access.md`: as of VCF
+  9.1 the VPC model + VCF Automation have **no supported/documented path for
+  IPv6 external access to applications** (Supervisor/VKS is explicitly
+  IPv4-only, the VCFA deploy schema is IPv4-only, and NSX VPC constructs have no
+  documented IPv6 support); workaround is a dual-stack front-end outside the
+  VPC/Supervisor scope. README file-layout table gains a `research/` row.
+
 ## v4.0.2 — 2026-09-09
 - **docs/14: rewrite the HTTP/2 gotcha as a buildable procedure** (#292). Was a
   single prose paragraph; now a numbered walkthrough — *why* HTTP/2 is required

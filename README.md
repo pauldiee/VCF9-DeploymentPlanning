@@ -68,6 +68,7 @@ This repo flips the order:
 | `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
 | `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request, vSphere Supervisor prep 9.0/9.1) — downloadable from the site; feed the workbook / Coscia planner |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
+| `research/`                          | Scratch research notes (not published on the site) — e.g. IPv6 support on the VPC model + VCF Automation |
 
 ### PowerShell tools (`tools/`)
 
