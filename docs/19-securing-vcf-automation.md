@@ -6,11 +6,29 @@ design page — the hardening that goes around an **external-facing (Deployment
 Pattern 3)** VCF Automation instance: a **DMZ VPC** for tenant access, an Avi
 virtual service in front, and NSX firewalling on every hop.
 
-> **Prerequisite.** This assumes the external-facing VCFA virtual service is
-> already built — see
-> [`14-avi-load-balancer.md` → VCF Automation (external/customer access)](14-avi-load-balancer.md#vcf-automation-externalcustomer-access)
-> for the DMZ VPC, the Service Engine infrastructure, and the VS / pool / health
-> monitor. Everything here layers onto that.
+> **Prerequisites — build these first; this repo has a guide for each.**
+> - **The external-facing VCFA virtual service, Avi, and the Service Engine
+>   infrastructure** —
+>   [`14-avi-load-balancer.md` → VCF Automation (external/customer access)](14-avi-load-balancer.md#vcf-automation-externalcustomer-access)
+>   (the DMZ VPC, the SE infrastructure, the VS / pool / health monitor).
+>   Everything here layers onto that.
+> - **VCF Automation deployed** into the DMZ VPC —
+>   [`05-day2-deployments.md`](05-day2-deployments.md) (the Fleet LCM API, the
+>   node IP pool, `networkMoId`).
+> - **A vSphere Supervisor** for VCFA's compute, and the region that binds it —
+>   [`10-supervisor-enablement.md`](10-supervisor-enablement.md) and
+>   [`17-vcfa-tenant-config.md`](17-vcfa-tenant-config.md).
+> - **NSX Edge cluster + Tier-0** for the Centralized connection the TGW rides
+>   (not needed on a Distributed connection) —
+>   [`10-supervisor-enablement.md` §3](10-supervisor-enablement.md#3-build-the-centralized-transit-gateway),
+>   [`prerequisites.md`](prerequisites.md).
+> - **vDefend + Avi licensing via License Hub** — the stateful gateway firewalls
+>   (layers 1 and 5), the DFW (layer 2) and the WAF (layer 4) **all** depend on
+>   it: [`15-license-hub.md`](15-license-hub.md) (and the SSP Installer it
+>   deploys from). Gate on *vDefend **or** Avi in scope*.
+> - **vDefend SSP** — only if the plan uses **Security Intelligence**
+>   (firewall-rule recommendations) or **NDR** on top of the plain firewall:
+>   [`18-vdefend-ssp.md`](18-vdefend-ssp.md).
 
 *Sourcing convention: **[documented]** = stated on the design page (or confirmed
 elsewhere in this repo against TechDocs / field observation); **[field
@@ -418,14 +436,21 @@ Then, in order:
 
 ### Licensing gates — all before you start
 
-- **Avi needs a valid licence before Service Engines can come online** — see
-  [`14-avi-load-balancer.md` → Licensing](14-avi-load-balancer.md#licensing)
-  (License Hub / Enterprise tier).
+Both licence types come through **License Hub** —
+[`15-license-hub.md`](15-license-hub.md) (deployed from the SSP Installer);
+gate on *vDefend **or** Avi in scope*.
+
+- **Avi needs a valid licence before Service Engines can come online** —
+  Enterprise tier. See [`15-license-hub.md`](15-license-hub.md) for the licence
+  itself and [`14-avi-load-balancer.md` → Licensing](14-avi-load-balancer.md#licensing)
+  for attaching it.
 - Avi must be **deployed via VCF Operations fleet management into the VCF
   management domain** and **integrated with that domain's instance** — not a
   standalone Avi.
-- **vDefend firewall licensing must be applied before you can configure DFW**
-  (and the stateful TGW GFW in the section above).
+- **vDefend firewall licensing must be applied before you can configure the DFW**
+  or the stateful TGW / T1 gateway firewalls (layers 1, 2 and 5) —
+  [`15-license-hub.md`](15-license-hub.md). Security Intelligence / NDR
+  additionally need the **vDefend SSP** ([`18-vdefend-ssp.md`](18-vdefend-ssp.md)).
 
 > The WAF Positive-Security-Model detail from this chapter (PSM rules on the
 > All-Apps / VM-Apps org endpoints, the safe-character string group, the
@@ -587,7 +612,8 @@ order; the HTTP redirect policies are the coarser control and logically run
 first.
 
 > **Licensing.** WAF is an Avi **Enterprise**-tier feature, and *"Avi requires
-> a valid license before Service Engines can come online"* — settle
+> a valid license before Service Engines can come online"* — get the licence via
+> [`15-license-hub.md`](15-license-hub.md) and attach it per
 > [`14-avi-load-balancer.md` → Licensing](14-avi-load-balancer.md#licensing)
 > first.
 
@@ -858,7 +884,10 @@ check end to end — it exercises every layer at once:
 - [Manage a Firewall Exclusion List](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/manage-a-firewall-exclusion-list.html)
   — the DFW exclusion-list operations in [layer 2](#the-dfw-exclusion-list-sequence).
 - [Guidance to Write Efficient vDefend Firewall Rules](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/guidance-to-write-efficient-and-secure-firewall-rules.html)
-- **In this repo** — [`14-avi-load-balancer.md`](14-avi-load-balancer.md) (the Avi deploy + the VCFA virtual service),
+- **In this repo** (the *Prerequisites* list at the top of this page links each in build order) —
+  [`14-avi-load-balancer.md`](14-avi-load-balancer.md) (the Avi deploy + the VCFA virtual service),
   [`05-day2-deployments.md`](05-day2-deployments.md) (deploying VCF Automation, the Fleet LCM API, the node IP pool),
+  [`10-supervisor-enablement.md`](10-supervisor-enablement.md) (the Supervisor VCFA runs on + the Edge cluster / Tier-0 for the Centralized connection),
+  [`17-vcfa-tenant-config.md`](17-vcfa-tenant-config.md) (region, external IP block, tenant org),
   [`15-license-hub.md`](15-license-hub.md) (vDefend + Avi licensing),
   [`18-vdefend-ssp.md`](18-vdefend-ssp.md) (the vDefend SSP that backs Security Intelligence / NDR).

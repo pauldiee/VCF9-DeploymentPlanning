@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.0.0 — 2026-09-09
+- **docs/19: cross-link the in-repo prerequisites.** The top note only pointed at
+  `docs/14`; it is now a **Prerequisites** list that links a guide for each
+  dependency in build order — `docs/14` (Avi + the VCFA VS), `docs/05` (deploy
+  VCF Automation), `docs/10` + `docs/17` (the Supervisor VCFA runs on, the Edge
+  cluster / Tier-0, the region), `docs/15` (vDefend + Avi licensing via License
+  Hub), `docs/18` (vDefend SSP for Security Intelligence / NDR). Layer 2's
+  *Licensing gates* and layer 4's WAF licensing note now link `docs/15` for the
+  licence itself (they previously linked only `docs/14`'s *attach* step); the
+  References list adds `docs/10` and `docs/17`.
+- *(Version rolls from `3.9.9` to `4.0.0` — `.9` was the last value on both the
+  patch and minor components; see the CHANGELOG rule in `CLAUDE.md`.)*
+
 ## v3.9.9 — 2026-09-09
 - **docs/19: full coherence pass against the Broadcom *Securing VCF Automation*
   design page** (#288).
