@@ -98,6 +98,17 @@ layers: *"split the communication between internal users and external users so
 that the internally facing VCF Automation components are not directly exposed to
 external access."*
 
+> **Why it is closer to required than "optional" [field caveat].** Tom Fojta's
+> [Load Balancing VCF Automation with Avi](https://fojta.wordpress.com/2025/08/16/load-balancing-vcf-automation-with-avi/):
+> there is **no documented way to change a VCF Automation install's FQDN**, so
+> the external VIP has to answer on the *same* FQDN as the internal one. Without
+> the split-DNS entry pinning that FQDN to the external VIP for outside clients,
+> *"the external VIP will start redirecting subsequent calls to the internal
+> VIP"* — the first request lands on Avi, then VCFA hands back its own
+> (internal) FQDN and the client's next call resolves straight past the DMZ.
+> Split-horizon DNS (one FQDN, two answers) is what keeps external traffic on
+> the external path.
+
 **How it works** — one FQDN, two answers:
 
 | Resolver | `vcfa01.example.io` resolves to | Used by |
@@ -922,6 +933,10 @@ check end to end — it exercises every layer at once:
 - [Manage a Firewall Exclusion List](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/manage-a-firewall-exclusion-list.html)
   — the DFW exclusion-list operations in [layer 2](#the-dfw-exclusion-list-sequence).
 - [Guidance to Write Efficient vDefend Firewall Rules](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/guidance-to-write-efficient-and-secure-firewall-rules.html)
+- **Field write-up** — Tom Fojta, [Load Balancing VCF Automation with Avi](https://fojta.wordpress.com/2025/08/16/load-balancing-vcf-automation-with-avi/)
+  — the DMZ VPC + Avi VS build this guide's prerequisites come from, the split-DNS
+  "redirects back to the internal VIP" failure mode, and an HTTP/2 (`gRPC` /
+  VKS agent) requirement with an Avi 32.1.1 HEAD-request workaround.
 - **In this repo** (the *Prerequisites* list at the top of this page links each in build order) —
   [`14-avi-load-balancer.md`](14-avi-load-balancer.md) (the Avi deploy + the VCFA virtual service),
   [`05-day2-deployments.md`](05-day2-deployments.md) (deploying VCF Automation, the Fleet LCM API, the node IP pool),
