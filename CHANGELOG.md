@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.0.2 — 2026-09-09
+- **docs/14: rewrite the HTTP/2 gotcha as a buildable procedure** (#292). Was a
+  single prose paragraph; now a numbered walkthrough — *why* HTTP/2 is required
+  (VKS cluster-management gRPC), *why* it can't just be turned on (Avi 32.1.1
+  rewrites `HEAD` response `Content-Length` to `0` → `ErrImagePull`), and the
+  build: client-side HTTP/2 on the VS, a second pool that talks HTTP/1.1 to the
+  backend, an HTTP Request Policy content-switching only `HEAD` to it, attach,
+  validate (`curl -sI` gets a real `Content-Length`; the `auto-attach` pull
+  succeeds). Retitled *HTTP/2 for VKS — enable it, then work around the Avi
+  32.1.1 HEAD bug*; credited Fojta; version-scoped to 32.1.1.
+
 ## v4.0.1 — 2026-09-09
 - **docs/19: add a *Setting it up* how-to to the Split DNS section, + Fojta's
   failure-mode note.** The section described the concept but not the procedure.

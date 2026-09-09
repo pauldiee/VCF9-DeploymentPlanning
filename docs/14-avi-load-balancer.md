@@ -553,21 +553,60 @@ and none of it is done for you beyond what VCF Operations already handles
 > subsequent calls back to the internal VIP, breaking the flow, because the
 > internal VIP still believes it owns that name.
 
-### Known gotcha: HTTP/2 breaks Supervisor image pulls
+### HTTP/2 for VKS — enable it, then work around the Avi 32.1.1 HEAD bug
 
-**[field-reported]**, and worth reading before enabling HTTP/2 on this
-virtual service at all: VKS Cluster Management traffic (Supervisor and VKS
-clusters talking to the VCFA endpoint) needs **HTTP/2**, because the cluster
-agent extensions use gRPC over HTTP/2. But on **Avi 32.1.1**, enabling
-HTTP/2 broke Supervisor's ability to pull images from the VCFA endpoint
-(`ErrImagePull` on pods like `auto-attach`) — Avi was rewriting the
-backend's HEAD-request `Content-Length` to `0` under HTTP/2, and downstream
-image resolution failed on that malformed response. Workaround: a
-**second VCFA pool with HTTP/2 disabled**, with an Avi **request policy**
-that context-switches HTTP `HEAD` requests to that pool instead. If this
-fleet uses Supervisor/VKS against the same VCFA endpoint, budget for
-hitting this and plan the second pool up front rather than discovering it
-mid-incident.
+**[field-reported]** (Tom Fojta,
+[Load Balancing VCF Automation with Avi](https://fojta.wordpress.com/2025/08/16/load-balancing-vcf-automation-with-avi/),
+update 2026-06-12).
+
+**Why HTTP/2 is not optional here.** VKS Cluster Management — the Supervisor and
+the VKS guest clusters talking to the VCFA endpoint through this virtual service
+— uses **gRPC**, which runs over **HTTP/2**. If the VS only speaks HTTP/1.1 the
+cluster-agent extensions fail.
+
+**Why you cannot just turn it on.** On **Avi 32.1.1**, with HTTP/2 enabled Avi
+rewrites the backend's response `Content-Length` to `0` on **HTTP `HEAD`**
+requests. Container image resolution does a `HEAD` on the manifest first, gets
+the malformed `Content-Length: 0`, and the pull fails — `ErrImagePull` on pods
+such as `auto-attach`.
+
+**The fix — HTTP/2 on for everything except `HEAD`.** Keep client-side HTTP/2 on
+the VS, add a **second pool that talks HTTP/1.1 to the backend**, and
+content-switch only `HEAD` requests to it. Build it up front if this fleet runs
+Supervisor / VKS against this endpoint — retrofitting it mid-incident is
+avoidable.
+
+1. **Enable client-side HTTP/2 on the VS.** Clone the application profile
+   (`System-Secure-HTTP`), tick **HTTP/2**, and set the VS's Application Profile
+   to the clone. (`Templates > Profiles > Application`, then the VS `> Edit`.)
+2. **Primary pool** — the one from
+   [Building the virtual service](#building-the-virtual-service) above (server =
+   VCFA's internal built-in-LB VIP, port 443, SSL + SNI). Leave its backend
+   HTTP/2 at the default. This is the VS's **default pool** — everything except
+   `HEAD` uses it.
+3. **Second pool — `<vs-name>-pool-nohttp2`.** Clone the primary pool; keep the
+   same server, port 443, SSL profile, SNI and health monitor; **turn HTTP/2 to
+   the servers OFF** on this one (the pool's *Enable HTTP/2* / HTTP-version
+   setting). Nothing else differs.
+4. **HTTP Request Policy on the VS** — one rule:
+   - **Match** — *HTTP Method* **is** `HEAD`
+   - **Action** — *Content Switch* → **Pool** = `<vs-name>-pool-nohttp2`
+   Rules are first-match; non-`HEAD` traffic falls through to the default pool.
+5. **Attach and save.** `Applications > Virtual Services >` the VCFA VS `> Edit`
+   → **Policies > HTTP Request** → add the policy set from step 4 → **Save**.
+6. **Validate.**
+   - `curl -sI https://<vcfa-fqdn>/` (a `HEAD`) returns a correct
+     `Content-Length`, not `0`.
+   - A Supervisor / VKS image pull that previously showed `ErrImagePull`
+     (e.g. the `auto-attach` pod) now succeeds.
+   - VKS cluster-management / gRPC to the VCFA endpoint works — HTTP/2 is still
+     in effect for the non-`HEAD` traffic.
+
+> **Version-specific.** This is an Avi **32.1.1** defect. On a later Avi,
+> re-test a plain HTTP/2 VS (no second pool) before assuming you still need the
+> `HEAD` split. The exact toggle names above are Avi's current UI wording; the
+> shape — client HTTP/2 on, a no-backend-HTTP/2 pool, a `HEAD` content-switch —
+> is what matters.
 
 ### Securing the external-facing virtual service
 
