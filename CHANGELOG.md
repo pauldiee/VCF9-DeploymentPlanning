@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.0.6 — 2026-09-09
+- **docs/10: promote §5.6 to its own H2** — *Container image registry
+  connectivity*. As an `### 5.6` subsection it never showed in the site's "On
+  this page" sidebar (which lists H2 only); now a top-level `##` section (still
+  right after §5), so it appears there and in the Contents table (as a `—` row).
+  Anchor changed to `#container-image-registry-connectivity`; the three
+  cross-references updated.
+
 ## v4.0.5 — 2026-09-09
 - **docs/10: list §5.6 (container image registry connectivity) in the Contents
   table** — its own `5.6` row instead of only a clause on the §5 row.

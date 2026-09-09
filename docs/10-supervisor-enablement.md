@@ -44,7 +44,7 @@ firewall matrix). Pick the edition that matches the target build:
 | 3 | [Build the Centralized Transit Gateway](#3-build-the-centralized-transit-gateway) | Edge cluster + Tier-0 + BGP + the IP blocks |
 | 4 | [Avi Load Balancer (only if used)](#4-avi-load-balancer-only-if-used) | Ordering, and the settings that cannot be changed later |
 | 5 | [Content libraries for Supervisor and VKS images](#5-content-libraries-for-supervisor-and-vks-images) | **Two libraries** — one is a hard prerequisite to enablement |
-| 5.6 | [Container image registry connectivity](#56-container-image-registry-connectivity--the-three-options) | The **runtime image** path (`projects.packages.broadcom.com`) — direct / proxy / air-gapped; a separate decision from the depot |
+| — | [Container image registry connectivity](#container-image-registry-connectivity) | The **runtime image** path (`projects.packages.broadcom.com`) — direct / proxy / air-gapped; a separate decision from the depot |
 | 6 | [Activate the Supervisor](#6-activate-the-supervisor) | The wizard, screen by screen |
 | 7 | [Validate](#7-validate) | Proving it actually works, not just that it finished |
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |
@@ -320,7 +320,7 @@ Platform, PKI, Depot) well before the day.
       — `projects.packages.broadcom.com:443` direct, via proxy, or replaced by a
       local registry (Harbor). A separate decision from the depot, and it is the
       workload networks that need the path, not just management
-      ([§5.6](#56-container-image-registry-connectivity--the-three-options))
+      ([Container image registry connectivity](#container-image-registry-connectivity))
 
 *Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90] · [Requirements for Supervisor deployment with NSX VPC][req-vpc] · [Supervisor architecture with VPC networking][arch] · [Create vSphere Zones for a multi-zone deployment with VPC][zones]*
 
@@ -804,7 +804,7 @@ the Supervisor and every VKS node also pull **runtime container images**
 (Antrea, CoreDNS, metrics-server, the cluster-agent extensions, add-on packages,
 `pause`) from Broadcom's **container image registry** — a different endpoint,
 reached from the *workload / node* networks, with its own online / proxy /
-air-gapped decision in [§5.6](#56-container-image-registry-connectivity--the-three-options).
+air-gapped decision in [Container image registry connectivity](#container-image-registry-connectivity).
 
 **There are two content libraries, not one, and only one of them is a
 prerequisite to enablement.** Conflating them is easy and expensive, so keep
@@ -1075,7 +1075,9 @@ clusters* section of the [planning template](#planning-template--download-and-fi
 > releases ([§5.2](#52-the-vks-library--for-guest-clusters-afterwards)) — and
 > that is changeable after activation.
 
-### 5.6 Container image registry connectivity — the three options
+---
+
+## Container image registry connectivity
 
 Separate from the content libraries above. The Supervisor control plane, any
 vSphere Pods, and **every VKS guest-cluster node** pull **runtime container
