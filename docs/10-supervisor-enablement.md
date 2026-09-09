@@ -317,10 +317,12 @@ Platform, PKI, Depot) well before the day.
       empty. Check the **SUPERVISOR** path first, then **VKR**
       ([§5.4](#54-offline-depot-configured-is-not-the-same-as-populated))
 - [ ] **Container image registry reachable from the *workload / node* networks**
-      — `projects.packages.broadcom.com:443` direct, via proxy, or replaced by a
-      local registry (Harbor). A separate decision from the depot, and it is the
-      workload networks that need the path, not just management
-      ([Container image registry connectivity](#container-image-registry-connectivity))
+      — `projects.packages.broadcom.com:443` direct, via proxy, or relocated into
+      the VCF Software Depot OCI registry (air-gapped). A separate decision from
+      the depot, and it is the workload networks that need the path, not just
+      management ([Container image registry connectivity](#container-image-registry-connectivity);
+      proxy / air-gapped walkthroughs in
+      [`20-supervisor-image-registry.md`](20-supervisor-image-registry.md))
 
 *Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90] · [Requirements for Supervisor deployment with NSX VPC][req-vpc] · [Supervisor architecture with VPC networking][arch] · [Create vSphere Zones for a multi-zone deployment with VPC][zones]*
 
@@ -1094,61 +1096,22 @@ Two things make this its own decision:
 
 Pick one **before activation** (and before the first VKS cluster):
 
-#### A. Direct egress
-
-The Supervisor management network **and** every workload / VKS node subnet reach
-`projects.packages.broadcom.com` on **TCP 443** (via whatever routed or NAT'd
-path — see [§3.4](#34-creating-the-external-ip-block-and-attaching-it-to-the-profile)
-on Default Outbound NAT for the pod/workload side). Simplest; needs outbound
-internet from those networks.
-
-> Verify from where it matters: a test pod / a node in a workload subnet —
-> `curl -I https://projects.packages.broadcom.com/v2/` should return **401**
-> (registry reachable, auth required), not a timeout.
-
-#### B. Through a proxy
-
-Image pulls traverse an HTTP(S) proxy. This is set at the **Supervisor** and
-**per VKS cluster** level (the containerd / TKG proxy config — HTTP proxy, HTTPS
-proxy, and a **no-proxy** list that must cover the Service and Pod CIDRs, the
-Supervisor API / control-plane addresses, vCenter, NSX Manager, and any
-in-cluster ranges). Set it at enablement and at each cluster's creation —
-retrofitting means reconciling every existing cluster.
-
-> This is a *different* proxy setting from the depot's `G5` fleet proxy. A site
-> can have the depot online-via-proxy while the workload networks have no proxy
-> at all — check both.
-
-#### C. Air-gapped — a local registry
-
-No egress from the workload / node networks. Run a local **OCI registry**
-(**Harbor** is the documented choice), in one of two shapes:
-
-- **Mirror** — on a connected host, pull the images your Kubernetes release and
-  add-ons need and push them into the local registry; then point the Supervisor
-  / VKS cluster configuration at it as the image source and **trust its CA**
-  (the *CA trust* row in [§5.5](#55-vks-guest-clusters--planning-inputs-after-enablement)).
-  Pairs with the offline **content-library** seeding in
-  [§5.4](#54-offline-depot-configured-is-not-the-same-as-populated). This is the
-  documented "install VKS on an air-gapped Supervisor" path.
-- **Proxy cache** — run Harbor in proxy-cache mode in front of
-  `projects.packages.broadcom.com`. Clients only talk to Harbor, but Harbor
-  still needs egress — a middle ground, not truly air-gapped.
-
-#### Choosing
-
-| Situation | Option |
-| --------- | ------ |
-| Workload / node networks have routed internet | **A** |
-| Workload / node networks reach the internet only through a proxy | **B** |
-| Only the management network has egress; workload networks do not | **C** — or extend egress (direct or proxy) to the workload networks |
-| Fully isolated site | **C** (mirror) |
+| Situation | Option | What it means |
+| --------- | ------ | ------------- |
+| Workload / node networks have routed internet | **A — Direct egress** | Firewall only: `projects.packages.broadcom.com:443` from the Supervisor management network **and** every workload / VKS node subnet. Verify from a node subnet: `curl -sI …/v2/` → **401** (reachable), not a timeout. |
+| Workload / node networks reach the internet **only through a proxy** | **B — Proxy** | Set the proxy in **two** places — the **Supervisor** (vSphere Client / API / DCLI) **and** the VKS **`TkgServiceConfiguration`** — each with its own **no-proxy** list. |
+| No egress from the workload / node networks | **C — Air-gapped** | Relocate the images into the **VCF Software Depot OCI registry** and let the Supervisor reach it through a **depot image proxy**. Pairs with the offline content-library seeding ([§5.4](#54-offline-depot-configured-is-not-the-same-as-populated)). |
 
 This decision is **independent of** the content-library / depot decision
 (§5.1–§5.4) — a site can be online for one and offline for the other — but they
 usually match. Firewall detail: `projects.packages.broadcom.com:443` from the
-workload / node subnets, plus the local-registry host if option C — see
-[`07-firewall-ports.md`](07-firewall-ports.md).
+workload / node subnets — see [`07-firewall-ports.md`](07-firewall-ports.md).
+
+> **Walkthroughs for B and C** — the Supervisor + `TkgServiceConfiguration`
+> proxy steps and the full air-gapped relocation flow (the depot OCI registry,
+> `imgpkg` / `oci_image_depot_migrator.py`, the depot image proxy, Harbor only
+> if you need a user registry) are in
+> [`20-supervisor-image-registry.md`](20-supervisor-image-registry.md).
 
 ---
 

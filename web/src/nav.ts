@@ -152,6 +152,13 @@ export const NAV: NavItem[] = [
     blurb: 'Hardening for an external-facing (Pattern 3) VCF Automation instance: the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall.',
   },
   {
+    slug: '20-supervisor-image-registry',
+    step: 'Reference',
+    label: 'Supervisor Image Registry',
+    icon: 'boxes-stacked',
+    blurb: 'The runtime container-image supply chain for Supervisor / VKS: direct, proxy (Supervisor + TkgServiceConfiguration + the no-proxy list), and the fully air-gapped path (the VCF Software Depot OCI registry, imgpkg relocation, the depot image proxy).',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

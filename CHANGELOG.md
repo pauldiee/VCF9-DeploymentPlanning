@@ -1,5 +1,30 @@
 # Changelog
 
+## v4.0.7 — 2026-09-09
+- **docs: new `docs/20-supervisor-image-registry.md` — proxy + air-gapped
+  walkthroughs for the Supervisor/VKS container image registry** (split out of
+  `docs/10` §"Container image registry connectivity" so `docs/10` doesn't
+  balloon).
+  - **B — Proxy walkthrough**: the **Supervisor** proxy (vSphere Client / API /
+    DCLI; `VC_INHERITED` / `CLUSTER_CONFIGURED` / `NONE`; changeable
+    post-enablement, no redeploy) **and** the VKS **`TkgServiceConfiguration`**
+    `proxy` block (`httpProxy` / `httpsProxy` / `noProxy[]`, `trust`), per-cluster
+    override, and a dedicated **no-proxy checklist** (Pod/Service/Namespace CIDRs,
+    `.svc` / `.svc.cluster.local` / `.local`, Supervisor / vCenter / NSX, the
+    depot image proxy). **[documented]**
+  - **C — Air-gapped walkthrough**: the 9.1 model — relocate Supervisor
+    Services + VKS Standard Packages into the **OCI registry inside the VCF
+    Software Depot** (no external registry needed for system images). Bastion +
+    admin hosts, `oci_image_depot_migrator.py download/upload/copy`,
+    `toggle_software_depot_oci_image_upload.sh`, `manage-depot-image-proxy.sh` →
+    `depot-image-proxy.kube-system.svc.cluster.local`, Harbor Supervisor Service
+    / Bootstrap Registry Appliance only for **user** images, deploy + validate.
+    **[field-reported]** — sourced from the community `vmware/vsphere-supervisor`
+    `airgapped/` guides, not a single TechDocs page.
+  - `docs/10` registry section slimmed to the framing + a chooser table + a
+    pointer to `docs/20`; §2 pre-flight line updated; `web/src/nav.ts`, README
+    and `CLAUDE.md` file-layout tables gain the `docs/20` row.
+
 ## v4.0.6 — 2026-09-09
 - **docs/10: promote §5.6 to its own H2** — *Container image registry
   connectivity*. As an `### 5.6` subsection it never showed in the site's "On
