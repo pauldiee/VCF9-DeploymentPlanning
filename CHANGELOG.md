@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.0.4 — 2026-09-09
+- **docs/10: new §5.6 — *Container image registry connectivity — the three
+  options*.** The Supervisor and every VKS node pull **runtime container
+  images** (Antrea, CoreDNS, cluster-agent extensions, add-ons, `pause`) from
+  Broadcom's OCI registry `projects.packages.broadcom.com` — a separate supply
+  chain from the content libraries / Software Depot, reached from the *workload
+  / node* networks and **not** covered by the fleet `G5` proxy. Documents the
+  three choices with a how-to and a chooser table: **A** direct egress (verify
+  `curl -I …/v2/` → 401 from a node subnet), **B** proxy (set per Supervisor and
+  per VKS cluster in the containerd / TKG proxy config, with the no-proxy list),
+  **C** air-gapped local registry (Harbor — full mirror, or proxy-cache middle
+  ground). §5 intro reframed as "two supply chains"; §2 pre-flight gains a
+  registry-reachability line; the §5 Contents row updated. Also fixed two
+  pre-existing broken in-page anchors in this file.
+
 ## v4.0.3 — 2026-09-09
 - **research: new `research/` folder for scratch notes not published on the
   site.** First note — `research/ipv6-vpc-vcfa-external-access.md`: as of VCF

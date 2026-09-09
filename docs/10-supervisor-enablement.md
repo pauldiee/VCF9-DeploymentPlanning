@@ -43,7 +43,7 @@ firewall matrix). Pick the edition that matches the target build:
 | 2 | [Pre-flight gate](#2-pre-flight-gate) | The morning of — what to verify before opening the wizard |
 | 3 | [Build the Centralized Transit Gateway](#3-build-the-centralized-transit-gateway) | Edge cluster + Tier-0 + BGP + the IP blocks |
 | 4 | [Avi Load Balancer (only if used)](#4-avi-load-balancer-only-if-used) | Ordering, and the settings that cannot be changed later |
-| 5 | [Content libraries for Supervisor and VKS images](#5-content-libraries-for-supervisor-and-vks-images) | **Two libraries** — one is a hard prerequisite to enablement |
+| 5 | [Content libraries for Supervisor and VKS images](#5-content-libraries-for-supervisor-and-vks-images) | **Two libraries** — one is a hard prerequisite to enablement; §5.6 covers the separate **container image registry** (direct / proxy / air-gapped) |
 | 6 | [Activate the Supervisor](#6-activate-the-supervisor) | The wizard, screen by screen |
 | 7 | [Validate](#7-validate) | Proving it actually works, not just that it finished |
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |
@@ -315,6 +315,11 @@ Platform, PKI, Depot) well before the day.
       the depot is configured, and the usual cause of a library that syncs but is
       empty. Check the **SUPERVISOR** path first, then **VKR**
       ([§5.4](#54-offline-depot-configured-is-not-the-same-as-populated))
+- [ ] **Container image registry reachable from the *workload / node* networks**
+      — `projects.packages.broadcom.com:443` direct, via proxy, or replaced by a
+      local registry (Harbor). A separate decision from the depot, and it is the
+      workload networks that need the path, not just management
+      ([§5.6](#56-container-image-registry-connectivity--the-three-options))
 
 *Sources: [Deploy a Supervisor with NSX VPC][deploy-vpc] · [Requirements for Supervisor deployment with NSX (9.0)][req-nsx90] · [Requirements for Supervisor deployment with NSX VPC][req-vpc] · [Supervisor architecture with VPC networking][arch] · [Create vSphere Zones for a multi-zone deployment with VPC][zones]*
 
@@ -791,8 +796,18 @@ pool.
 
 ## 5. Content libraries for Supervisor and VKS images
 
-**There are two libraries, not one, and only one of them is a prerequisite to
-enablement.** Conflating them is easy and expensive, so keep them apart:
+**Two supply chains, don't conflate them.** The **content libraries** below
+(§5.1–§5.5) carry the Supervisor OVA / spherelet and the VKS Kubernetes-release
+artifacts, fed by the **VCF Software Depot** and synced by vCenter. Separately,
+the Supervisor and every VKS node also pull **runtime container images**
+(Antrea, CoreDNS, metrics-server, the cluster-agent extensions, add-on packages,
+`pause`) from Broadcom's **container image registry** — a different endpoint,
+reached from the *workload / node* networks, with its own online / proxy /
+air-gapped decision in [§5.6](#56-container-image-registry-connectivity--the-three-options).
+
+**There are two content libraries, not one, and only one of them is a
+prerequisite to enablement.** Conflating them is easy and expensive, so keep
+them apart:
 
 | Library | Holds | Needed |
 | ------- | ----- | ------ |
@@ -1059,6 +1074,79 @@ clusters* section of the [planning template](#planning-template--download-and-fi
 > releases ([§5.2](#52-the-vks-library--for-guest-clusters-afterwards)) — and
 > that is changeable after activation.
 
+### 5.6 Container image registry connectivity — the three options
+
+Separate from the content libraries above. The Supervisor control plane, any
+vSphere Pods, and **every VKS guest-cluster node** pull **runtime container
+images** — Antrea / CNI, CoreDNS, metrics-server, the cluster-agent extensions,
+add-on packages, `pause` — from Broadcom's **OCI container registry**,
+**`projects.packages.broadcom.com`** (formerly `projects.registry.vmware.com`).
+
+Two things make this its own decision:
+
+- It must be reachable from the **workload and VKS node networks**, not just the
+  Supervisor management network. Routing that reaches vCenter is not enough.
+- It is **not** covered by the fleet services-runtime (`G5`) proxy that feeds
+  the Software Depot ([`09-binary-depot.md` §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)).
+
+Pick one **before activation** (and before the first VKS cluster):
+
+#### A. Direct egress
+
+The Supervisor management network **and** every workload / VKS node subnet reach
+`projects.packages.broadcom.com` on **TCP 443** (via whatever routed or NAT'd
+path — see [§3.4](#34-creating-the-external-ip-block-and-attaching-it-to-the-profile)
+on Default Outbound NAT for the pod/workload side). Simplest; needs outbound
+internet from those networks.
+
+> Verify from where it matters: a test pod / a node in a workload subnet —
+> `curl -I https://projects.packages.broadcom.com/v2/` should return **401**
+> (registry reachable, auth required), not a timeout.
+
+#### B. Through a proxy
+
+Image pulls traverse an HTTP(S) proxy. This is set at the **Supervisor** and
+**per VKS cluster** level (the containerd / TKG proxy config — HTTP proxy, HTTPS
+proxy, and a **no-proxy** list that must cover the Service and Pod CIDRs, the
+Supervisor API / control-plane addresses, vCenter, NSX Manager, and any
+in-cluster ranges). Set it at enablement and at each cluster's creation —
+retrofitting means reconciling every existing cluster.
+
+> This is a *different* proxy setting from the depot's `G5` fleet proxy. A site
+> can have the depot online-via-proxy while the workload networks have no proxy
+> at all — check both.
+
+#### C. Air-gapped — a local registry
+
+No egress from the workload / node networks. Run a local **OCI registry**
+(**Harbor** is the documented choice), in one of two shapes:
+
+- **Mirror** — on a connected host, pull the images your Kubernetes release and
+  add-ons need and push them into the local registry; then point the Supervisor
+  / VKS cluster configuration at it as the image source and **trust its CA**
+  (the *CA trust* row in [§5.5](#55-vks-guest-clusters--planning-inputs-after-enablement)).
+  Pairs with the offline **content-library** seeding in
+  [§5.4](#54-offline-depot-configured-is-not-the-same-as-populated). This is the
+  documented "install VKS on an air-gapped Supervisor" path.
+- **Proxy cache** — run Harbor in proxy-cache mode in front of
+  `projects.packages.broadcom.com`. Clients only talk to Harbor, but Harbor
+  still needs egress — a middle ground, not truly air-gapped.
+
+#### Choosing
+
+| Situation | Option |
+| --------- | ------ |
+| Workload / node networks have routed internet | **A** |
+| Workload / node networks reach the internet only through a proxy | **B** |
+| Only the management network has egress; workload networks do not | **C** — or extend egress (direct or proxy) to the workload networks |
+| Fully isolated site | **C** (mirror) |
+
+This decision is **independent of** the content-library / depot decision
+(§5.1–§5.4) — a site can be online for one and offline for the other — but they
+usually match. Firewall detail: `projects.packages.broadcom.com:443` from the
+workload / node subnets, plus the local-registry host if option C — see
+[`07-firewall-ports.md`](07-firewall-ports.md).
+
 ---
 
 
@@ -1222,7 +1310,7 @@ Finished is not the same as working. Check all of these.
 | CLI login | See below — the command changed in 9.1 |
 | Namespace | Create one and schedule a test workload |
 | Load balancer | Avi: NSX Cloud status green, Service Engines spawned, virtual service **placed**. Built-in: VIP responding |
-| Content library | Synced **and** listing a usable release ([§5](#5-content-library-for-supervisor--vks-images)) |
+| Content library | Synced **and** listing a usable release ([§5](#5-content-libraries-for-supervisor-and-vks-images)) |
 | North-south | Workload egress works and an ingress VIP is reachable from outside |
 
 **The CLI changed in 9.1** — it is the **VCF CLI**, not `kubectl vsphere login`,
@@ -1472,7 +1560,7 @@ The same two IP blocks as the centralized path, so the sizing caveat in
 ### 9.2 Classic NSX segment networking (API only in 9.1)
 
 Removed from the vSphere Client UI in 9.1 — see
-[§1.1](#11-centralized-is-ambiguous--resolve-it). Deployment "remains fully
+[§1.1](#the-word-centralized-is-ambiguous--resolve-it-before-you-build). Deployment "remains fully
 supported through the API", and the practical route is **Deploy a Supervisor by
 Importing a JSON Configuration File**, which "automatically populates all the
 configuration values in the Supervisor activation wizard" **[documented]**.
