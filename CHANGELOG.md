@@ -1,5 +1,38 @@
 # Changelog
 
+## v3.9.9 — 2026-09-09
+- **docs/19: full coherence pass against the Broadcom *Securing VCF Automation*
+  design page** (#288).
+  - **Naming (P3).** Adopted the design page's NSX naming scheme page-wide —
+    groups `grp-*`, custom services `svc-*`, firewall policies `policy-*`,
+    rules `allow-*` — replacing the previous two-styles split (unprefixed in
+    layer 1, `grp-`/`plcy-`/`svc-` in layer 5). Predefined NSX services keep
+    their names; each rule table now carries a *Design name* column mapping to
+    the design page's rules table. Supersedes the #285 "keep both styles"
+    decision.
+  - **Content gaps (P1).** New **Split DNS and split networking** section
+    (internal DNS → node IPs, external DNS → VIP; two external-block ranges;
+    service-runtime FQDN internal-only) with the design's **10-IP / ≥/27 / ≥/28**
+    addressing. Added the **`allow-api-server`** rule (`Any → grp-vsphere-supervisor
+    : 6443`) from the design's TGW table. Added **"activate the DFW first"**
+    (`NSX Manager > Security > Distributed Firewall > Settings`) to layer 2.
+    Added the **Active/Standby TGW / Active/Active Tier-0** connection note to
+    layer 1, folding in the active-active-across-two-VRFs → `ERR_CONNECTION_RESET`
+    field finding. New **Validate the whole tenant path** end-to-end section.
+    New **References** section (design page + Lateral Security + Exclusion List +
+    Efficient Rules).
+  - **Alignment (P2).** WAF `SecRule` corrected to the design's literal
+    (`id:5000020`, `t:lowercase`). New **VM web console ports (443 vs 902)**
+    note (design table says HTTPS, naming section says `svc-vc-webconsole` TCP
+    902 — it is both: 443 to vCenter + 902 to the host). Linked the *Lateral
+    Security for vDefend* TechDocs page where layers 2 and 5 defer to it. Noted
+    the design's **`vsvip` CLI** (`… _AVISEPARATOR_ … _PUBLIC`, pool default
+    port 443, `System-HTTP`) alongside `docs/14`'s UI method.
+  - Follow-up left open: `docs/14` should carry the `vsvip` CLI form for a
+    plain NSX-VPC integration; verbatim values (regex, ports, rule IDs) still
+    want a human check against the live design page.
+  - *(Next CHANGELOG bump rolls to 4.0.0 — `3.9.9` is the last `.9`.)*
+
 ## v3.9.8 — 2026-09-09
 - **docs: bring the remaining build guides to the same walkthrough format**
   (follow-on from #280). Added a `## The full sequence, start to finish` lead-in
