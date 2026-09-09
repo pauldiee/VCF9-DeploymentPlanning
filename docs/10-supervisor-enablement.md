@@ -43,7 +43,8 @@ firewall matrix). Pick the edition that matches the target build:
 | 2 | [Pre-flight gate](#2-pre-flight-gate) | The morning of — what to verify before opening the wizard |
 | 3 | [Build the Centralized Transit Gateway](#3-build-the-centralized-transit-gateway) | Edge cluster + Tier-0 + BGP + the IP blocks |
 | 4 | [Avi Load Balancer (only if used)](#4-avi-load-balancer-only-if-used) | Ordering, and the settings that cannot be changed later |
-| 5 | [Content libraries for Supervisor and VKS images](#5-content-libraries-for-supervisor-and-vks-images) | **Two libraries** — one is a hard prerequisite to enablement; §5.6 covers the separate **container image registry** (direct / proxy / air-gapped) |
+| 5 | [Content libraries for Supervisor and VKS images](#5-content-libraries-for-supervisor-and-vks-images) | **Two libraries** — one is a hard prerequisite to enablement |
+| 5.6 | [Container image registry connectivity](#56-container-image-registry-connectivity--the-three-options) | The **runtime image** path (`projects.packages.broadcom.com`) — direct / proxy / air-gapped; a separate decision from the depot |
 | 6 | [Activate the Supervisor](#6-activate-the-supervisor) | The wizard, screen by screen |
 | 7 | [Validate](#7-validate) | Proving it actually works, not just that it finished |
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |

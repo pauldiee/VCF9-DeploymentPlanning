@@ -1,5 +1,9 @@
 # Changelog
 
+## v4.0.5 — 2026-09-09
+- **docs/10: list §5.6 (container image registry connectivity) in the Contents
+  table** — its own `5.6` row instead of only a clause on the §5 row.
+
 ## v4.0.4 — 2026-09-09
 - **docs/10: new §5.6 — *Container image registry connectivity — the three
   options*.** The Supervisor and every VKS node pull **runtime container
