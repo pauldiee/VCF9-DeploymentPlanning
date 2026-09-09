@@ -478,9 +478,13 @@ so the field notes there apply here too.
    - `POST https://<VCFOps>/suite-api/api/auth/token/exchange` with header
      `Authorization: OpsToken <token>` and body `{"serviceKeys":["fleet-lcm"]}`
      → the Fleet LCM **Bearer JWT**
-2. **Find the runtime:** `GET https://<FleetLCM>/fleet-lcm/v1/components` → the
-   component whose `componentType` is `VSP`, take its `id`.
-3. **Set the proxy:**
+2. **Find the runtimes — plural.** `GET https://<FleetLCM>/fleet-lcm/v1/components`
+   → **every** component whose `componentType` is `VSP`. There is **one `VSP`
+   per VCF services runtime**, and there is more than one: the primary VCF
+   Management Services runtime, and — once it is deployed — **VCF Automation's
+   own runtime** (the `vspClusterSpec` cluster on the `/29`–`/27` node block you
+   gave the *Add VCF Automation* wizard). Others may appear too.
+3. **Set the proxy on *each* `VSP`:** for every id from step 2,
    `PATCH https://<FleetLCM>/fleet-lcm/v1/components/<vspId>/config`
 
    ```json
@@ -495,9 +499,20 @@ so the field notes there apply here too.
    }
    ```
 
-   Returns a task `id`.
-4. **Watch / verify:** `GET .../fleet-lcm/v1/tasks/<taskId>`, then
-   `GET .../fleet-lcm/v1/components/<vspId>/config`.
+   Each returns its own task `id`.
+4. **Watch / verify each:** `GET .../fleet-lcm/v1/tasks/<taskId>`, then
+   `GET .../fleet-lcm/v1/components/<vspId>/config` — per `VSP`.
+
+> **VCF Automation's runtime does not inherit the primary runtime's proxy.** It
+> is a **separate `VSP` component with its own `/config`** — if you set the
+> proxy on only one `VSP` (the natural mistake when following a single-runtime
+> procedure), VCF Automation's internet-bound traffic — the OCI container
+> registry for its image pulls, package updates, telemetry — has **no proxy**
+> and fails. Broadcom's own procedure says this outright: *"You must perform
+> this procedure on **each** VCF services runtime instance"*, and the component
+> lookup *"returns the IDs of **all** VCF services runtime instances in the VCF
+> fleet."* KB 447542's scripted process exists precisely because it iterates
+> every `VSP`.
 
 Optional `peerProxy` fields: `username` + `password` (with
 `credentialsEnabled: true` for an authenticating proxy), `encodedCertificate`
@@ -546,7 +561,7 @@ auth chain — download them straight from the site:
 | Script | What it does |
 | ------ | ------------ |
 | [**Get-VCFProxyConfig.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Get-VCFProxyConfig.ps1) | **Read-only.** Shows the `peerProxy` the platform *actually* stored on each `VSP` (VCF services runtime) component. Changes nothing |
-| [**Set-VCFProxyConfig.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Set-VCFProxyConfig.ps1) | **Sets the proxy** through the API. `-WhatIf` prints the exact payload (secrets masked) without sending it; supports an authenticating proxy (`-ProxyUsername`), a TLS proxy (`-CertificateFile`), and `-ExcludeDomains` / `-ExcludeIpAddresses`; **`-Remove`** clears it by sending **explicit empty values** (blank host, port 0) — the Fleet LCM PATCH is a merge, so a `null` peerProxy is a *silent no-op* (task completes, nothing changes). Verify with `Get-VCFProxyConfig.ps1` afterwards |
+| [**Set-VCFProxyConfig.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Set-VCFProxyConfig.ps1) | **Sets the proxy** through the API — **one `VSP` component per run**. With a single runtime it finds it automatically; with several (VCF Automation deployed) pass **`-VspComponentId <id>`** and **run it once per `VSP`** from `Get-VCFProxyConfig.ps1`'s list. `-WhatIf` prints the exact payload (secrets masked) without sending it; supports an authenticating proxy (`-ProxyUsername`), a TLS proxy (`-CertificateFile`), and `-ExcludeDomains` / `-ExcludeIpAddresses`; **`-Remove`** clears it by sending **explicit empty values** (blank host, port 0) — the Fleet LCM PATCH is a merge, so a `null` peerProxy is a *silent no-op* (task completes, nothing changes). Verify with `Get-VCFProxyConfig.ps1` afterwards (it reads **every** `VSP`) |
 
 ### Gotcha: the precheck is a netcat test from the *whole* node block — even when the documented access is in place
 
@@ -586,17 +601,24 @@ permitted, and it **times out**. This is the same trap as the backup target in
 [Backup Target §5](08-backup-target.md#the-clients-are-the-whole-services-runtime-block): **firewall the block, not
 the named hosts you think talk to it.**
 
-**Fix:** allow the **whole services-runtime node block** outbound to the proxy on
-its port (e.g. TCP 3128). List the exact source IPs to hand the network team with:
+**Fix:** allow **each runtime's whole node block** outbound to the proxy on its
+port (e.g. TCP 3128) — **the precheck runs per `VSP`**, so it fires once from the
+primary VCF Management Services runtime's nodes **and again from VCF Automation's
+own runtime nodes** (its `/29`–`/27` block). List the exact source IPs per
+runtime to hand the network team — from a `kubectl` session on each runtime's
+control plane:
 
 ```bash
-kubectl get nodes -o wide      # the INTERNAL-IP column = the source IPs to allow
+kubectl get nodes -o wide      # INTERNAL-IP column = the source IPs to allow
 ```
 
-Then re-submit (`Set-VCFProxyConfig.ps1` again, or let the platform retry) and the
-`nc` check passes. Because it is L4-only, an authenticating (`credentialsEnabled`)
-or TLS (`tlsEnabled`) proxy still has to clear this reachability gate **first** —
-fix the firewall before chasing credentials or certificates.
+(Or take the CIDRs directly: the VCF Management Services runtime block from the
+Step 1 network plan, and VCF Automation's `/29`–`/27` from the *Add VCF
+Automation* wizard.) Then re-submit — `Set-VCFProxyConfig.ps1` once **per
+`-VspComponentId`**, or let the platform retry — and each `nc` check passes.
+Because it is L4-only, an authenticating (`credentialsEnabled`) or TLS
+(`tlsEnabled`) proxy still has to clear this reachability gate **first** — fix
+the firewall before chasing credentials or certificates.
 
 ## 6. Upgrades — filling the depot for a fleet upgrade
 

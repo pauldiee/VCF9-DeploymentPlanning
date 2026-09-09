@@ -670,24 +670,33 @@ requires a local registry in the data path.
 
 ## VCF Automation reaches the OCI registry too — a different path
 
-**VCF Automation is not a Supervisor.** It runs on the **VCF services runtime**
-(the fleet Kubernetes runtime), and its own components — plus the VKS
-cluster-management it performs and its package updates — also pull runtime
-images from `projects.packages.broadcom.com`. The **Supervisor** proxy and the
+**VCF Automation is not a Supervisor.** It runs on **its own VCF services
+runtime** — a *separate* fleet Kubernetes cluster from the primary VCF
+Management Services runtime, on the `/29`–`/27` node block you gave the *Add VCF
+Automation* wizard. Its components, the VKS cluster-management it performs, and
+its package / telemetry traffic all pull from
+`projects.packages.broadcom.com`. The **Supervisor** proxy and the
 **`TkgServiceConfiguration`** from [§3](#3-b-proxy-path--walkthrough) do **not**
-apply to it. Handle it once, with the same A / B / C choice:
+apply to it. Same A / B / C choice, but set on the **services-runtime**, and —
+the trap — **per `VSP` component**:
 
-| Option | For VCF Automation |
-| ------ | ----------------- |
-| **A — Direct** | The **services-runtime network** reaches `projects.packages.broadcom.com:443`. It is already in the fleet's public-URL allowlist ([`prerequisites.md`](prerequisites.md)). Nothing extra. |
-| **B — Proxy** | Set the **services-runtime proxy** — *VCF Operations → Fleet Management → Configuring Management Components → Configure a Proxy Server for VCF Management Services Components and VCF Automation* (also scriptable, KB 447542). It "applies to **all components** hosted on that runtime instance", VCF Automation included. This is the **same proxy family as `09-binary-depot.md` §5's `G5`** — **not** the Supervisor proxy. |
-| **C — Air-gapped** | The Fleet's Software Depot OCI registry serves the services runtime directly on the management network — the "Standard" service YAML definitions target the depot; the "legacy" ones use direct image URLs. **When VCF Automation is deployed it *provides* the Supervisor Management Proxy** (`depot-image-proxy`) that [§4.7](#47-the-depot-image-proxy-so-the-supervisor-can-reach-the-depot) otherwise sets up by hand — so having VCFA present makes the Supervisor's air-gapped image path simpler, not harder. |
+| Option | For VCF Automation's runtime |
+| ------ | --------------------------- |
+| **A — Direct** | The **VCF Automation runtime node block** reaches `projects.packages.broadcom.com:443`. Already in the fleet public-URL allowlist ([`prerequisites.md`](prerequisites.md)). Nothing extra. |
+| **B — Proxy** | Set the **services-runtime proxy** — *VCF Operations → Fleet Management → Configuring Management Components → Configure a Proxy Server for VCF Management Services Components and VCF Automation* (scriptable, KB 447542). **Do it on *every* `VSP` component**, not just the primary one: `GET /fleet-lcm/v1/components` returns one `VSP` per runtime and **VCF Automation's runtime is its own `VSP` with its own `/config`** — it does **not** inherit the primary runtime's proxy. Then open the **proxy port from VCF Automation's *own* node block** — the platform runs a `peer-proxy-precheck` netcat **per runtime**, from that runtime's nodes, and a config submit whose precheck fails stores nothing. Full detail + the whole-block firewall gotcha: [`09-binary-depot.md` §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api). This is the `G5` proxy family — **not** the Supervisor proxy. |
+| **C — Air-gapped** | The Fleet's Software Depot OCI registry serves the services runtime on the management network — the "Standard" service YAML definitions target the depot; the "legacy" ones use direct image URLs. **When VCF Automation is deployed it *provides* the Supervisor Management Proxy** (`depot-image-proxy`) that [§4.7](#47-the-depot-image-proxy-so-the-supervisor-can-reach-the-depot) otherwise sets up by hand — so having VCFA present makes the Supervisor's air-gapped image path simpler, not harder. VCF Automation's own runtime still needs the depot reachable from its node block. |
 
-> **Practical upshot:** on a proxied or air-gapped site you configure **two
-> proxies / two image paths** — one for the services runtime (VCF Automation,
-> the depot, Identity Broker, telemetry) via Fleet Management, and one for the
-> Supervisor / VKS ([§3](#3-b-proxy-path--walkthrough) / [§4](#4-c-air-gapped-path--walkthrough)).
-> They are independent; a site can run one online and the other offline.
+> **Practical upshot — count the proxies.** On a proxied site you configure
+> **at least three** independent proxy settings, not one:
+> 1. the **Supervisor** proxy ([§3 Step 3](#step-3--set-the-supervisor-proxy-documented)),
+> 2. the VKS **`TkgServiceConfiguration`** proxy ([§3 Step 4](#step-4--set-the-vks-tkgserviceconfiguration-proxy)),
+> 3. the **primary VCF Management Services runtime** `VSP` proxy, **and**
+> 4. **VCF Automation's runtime** `VSP` proxy (and one more per any additional
+>    `VSP`).
+>
+> Each has its own no-proxy / exclusion list and — for 3 and 4 — its own node
+> block to open to the proxy. They are independent; a site can run some online
+> and some offline.
 
 *Sources: [Configure a Proxy Server for VCF Management Services Components and VCF Automation][mgmt-proxy] · [Scripted process to configure a proxy on VCF Management Services and VCF Automation (KB 447542)][kb447542] · [`09-binary-depot.md` §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)*
 

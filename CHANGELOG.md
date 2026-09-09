@@ -1,5 +1,27 @@
 # Changelog
 
+## v4.0.9 — 2026-09-09
+- **docs/09 + docs/20: the services-runtime proxy must be set on *every* `VSP`
+  component — VCF Automation's runtime is its own.**
+  - `docs/09` §5: "find the runtime" → "find the runtime**s** — plural". There
+    is one `VSP` per VCF services runtime, and once VCF Automation is deployed
+    its `vspClusterSpec` cluster (the `/29`–`/27` node block) is a **separate
+    `VSP`** with its own `/config`; it does **not** inherit the primary
+    runtime's proxy. `PATCH` each; verify each. New callout quoting Broadcom's
+    *"perform this procedure on **each** VCF services runtime instance"*.
+  - The whole-node-block `peer-proxy-precheck` gotcha now spelled out as
+    **per-runtime**: the netcat fires from the primary runtime's nodes **and
+    again from VCF Automation's own runtime nodes** — open the proxy port from
+    **both** blocks. `Set-VCFProxyConfig.ps1` note: one `-VspComponentId` per
+    run; `Get-VCFProxyConfig.ps1` already reads every `VSP`.
+  - `docs/20` "VCF Automation reaches the OCI registry too": VCFA runs on its
+    **own** services runtime; the proxy is set per `VSP`, and its node block
+    must be opened to the proxy separately. New "count the proxies" upshot — a
+    proxied site has **≥ 4** independent proxy settings (Supervisor,
+    `TkgServiceConfiguration`, primary-runtime `VSP`, VCFA-runtime `VSP`).
+- *(`4.0.9` is the last patch on the `4.0` line — the next CHANGELOG bump rolls
+  to `4.1.0`.)*
+
 ## v4.0.8 — 2026-09-09
 - **docs/20: expand every step to full detail** (720 lines, was ~420). Each step
   in all three paths now has the exact command / click path, a filled example
