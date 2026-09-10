@@ -260,6 +260,11 @@ Three things that bite Day-N planners specifically:
   have a healthy, fully-deployed, **unlicensed** fleet. Give the whole chain one
   owner. If the site **already runs Avi on an older version**, entitlement
   migration is a **pre-upgrade gate** with a hard 90-day clock (intake `E16a`).
+  Finish this **before** deploying VCF Automation or activating a Supervisor that
+  uses Avi: an unlicensed controller accepts config and looks healthy but does
+  not program the data path, which surfaces later as timed-out VIPs and
+  Supervisor Services stuck reconciling —
+  [`14-avi-load-balancer.md`](14-avi-load-balancer.md#an-unlicensed-controller-half-builds-its-objects).
 
 ---
 

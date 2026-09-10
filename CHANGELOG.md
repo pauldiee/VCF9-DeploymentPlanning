@@ -1,6 +1,20 @@
 # Changelog
 
-## v4.1.7 — 2026-09-10
+## v4.1.8 — 2026-09-10
+- **docs/14: field note — "An unlicensed controller half-builds its objects"**
+  (#299). An unlicensed / eval-expired Avi accepts config (VS green, pool up) but
+  does not program the data path — SE placement blocked, listeners left
+  unconfigured — so a "healthy" VIP still times out. Field signatures (depot /
+  image-proxy VIP `i/o timeout` on :80, Supervisor Services stuck
+  `ReconcileFailed` with `vendir` 502, VCFA "Services are not available for this
+  namespace"), how to verify it is licensing (LICENSE USAGE not Connectivity,
+  `license` events, `show licensestatus`, AKO logs), and recovery (assign licence
+  → restart AKO → retry Supervisor Services → sweep other VSes).
+  - **docs/05 §B.3** licensing-chain bullet: finish it before deploying VCFA /
+    activating an Avi-backed Supervisor; pointer to the docs/14 note.
+  - **docs/10 §4.1**: "deployed is not the same as licensed" callout before
+    Supervisor activation; **§8** new failure signature for the image-proxy 502 /
+    stuck Supervisor Service, pointing at docs/14 and docs/20.
 - **docs/10: promote the break-glass control-plane access section to `##`** so it
   appears in the site's "On this page" list (H2-only). Renamed to *Break-glass
   access to the Supervisor control plane*, pulled out of §8 as its own unnumbered
