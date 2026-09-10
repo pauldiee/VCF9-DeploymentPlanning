@@ -159,6 +159,13 @@ export const NAV: NavItem[] = [
     blurb: 'The runtime container-image supply chain for Supervisor / VKS: direct, proxy (Supervisor + TkgServiceConfiguration + the no-proxy list), and the fully air-gapped path (the VCF Software Depot OCI registry, imgpkg relocation, the depot image proxy).',
   },
   {
+    slug: '21-config-artifacts',
+    step: 'Reference',
+    label: 'Config Artifacts',
+    icon: 'file-export',
+    blurb: 'Pull re-submittable spec JSON out of a built VCF 9.1 instance (bring-up spec, Fleet LCM components, Supervisor export, the NSX policy hierarchy), then sanitise, parameterise and validate it into reusable templates.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference',
     label: 'Workbook Mapping',

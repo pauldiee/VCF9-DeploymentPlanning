@@ -1,5 +1,28 @@
 # Changelog
 
+## v4.1.0 — 2026-09-10
+- **docs: new `docs/21-config-artifacts.md` — capture reusable config artifacts
+  from a built environment** (#295, Phase 1). The reverse of the workbook flow:
+  pull re-submittable spec JSON out of a running VCF 9.1 instance, sanitise,
+  parameterise and validate it into a template library.
+  - **Reusability map** — round-trippable (bring-up spec, Fleet LCM component
+    specs *for every `VSP`*, Supervisor UI Export Configuration, the NSX
+    `GET/PATCH /policy/api/v1/infra` hierarchy, VKS cluster + `TkgServiceConfiguration`)
+    vs reconstructed (workload domains / clusters via `GET` + the `POST` schema;
+    vCenter config profiles — partial) vs read-only context.
+  - **Capture** — the token → `GET` → `jq`-prune → save pattern, with concrete
+    `curl`/`jq` per component (incl. the "loop every `VSP`" and NSX
+    realized-state stripping).
+  - **Sanitise + parameterise** — redact rules (`*password*` / `*secret*` /
+    license keys / cert PEM / NSX `_revision` etc.), optional tokenising with a
+    `token-map.json`, baseline + overlay + `jq -S` diff.
+  - **Validate before reuse** — `POST …/validations` per layer + the
+    fake-host-UUID trick (`"host not found"` = schema passed).
+  - **Data hygiene** — `.raw/` + filled templates are customer data → OneDrive,
+    not the repo; `artifacts/` and `.raw/` added to `.gitignore`.
+  - `web/src/nav.ts`, README and `CLAUDE.md` file-layout rows added. Phase 2 —
+    `tools/Get-VCFDeploymentArtifacts.ps1` — tracked in #295.
+
 ## v4.0.9 — 2026-09-09
 - **docs/09 + docs/20: the services-runtime proxy must be set on *every* `VSP`
   component — VCF Automation's runtime is its own.**

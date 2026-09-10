@@ -12,5 +12,10 @@ customers/
 # Working dumps from the workbook
 _workbook_dump/
 
+# Captured config artifacts (Get-VCFDeploymentArtifacts.ps1) — even sanitized,
+# these describe a real environment; keep them out of the public repo
+artifacts/
+.raw/
+
 # Generated at build time from tools/*.ps1 (see web/package.json prebuild)
 web/public/scripts/

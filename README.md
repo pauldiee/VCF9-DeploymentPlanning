@@ -50,6 +50,7 @@ This repo flips the order:
 | `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
 | `docs/19-securing-vcf-automation.md` | Hardening for an external-facing (Pattern 3) VCF Automation instance — the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall (walkthroughs for Broadcom's *Securing VCF Automation Deployment* design page) |
 | `docs/20-supervisor-image-registry.md` | Supervisor / VKS **runtime container image** connectivity — direct, the proxy walkthrough (Supervisor + `TkgServiceConfiguration` + the no-proxy list), and the fully air-gapped walkthrough (the VCF Software Depot OCI registry, `imgpkg` relocation, the depot image proxy, Harbor for user images) |
+| `docs/21-config-artifacts.md`       | Reverse direction — capture re-submittable spec JSON from a **built** VCF 9.1 instance (bring-up spec, Fleet LCM component specs, Supervisor export, NSX policy hierarchy), sanitise / parameterise / validate into reusable templates |
 | `docs/workbook-cell-mapping.md`     | Intake answers mapped to workbook cells                |
 
 ### Interactive tools (on the site)
