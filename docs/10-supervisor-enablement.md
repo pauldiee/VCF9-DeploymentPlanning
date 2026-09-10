@@ -509,6 +509,14 @@ Skip entirely if you are using the built-in NSX Edge load balancer.
 Build order: NSX (transport zones, uplink profile, transport nodes) → Tier-0 →
 **Avi Controller** → Supervisor activation.
 
+> **Deployed is not the same as licensed.** Activate the Supervisor only after the
+> Avi licensing chain is finished (endpoint switched to the hub, `Used` count
+> non-zero). An unlicensed controller lets the Supervisor's load-balancer objects
+> be created — they look healthy — but does not program the data path, and the
+> Supervisor either stalls on the load-balancer step or comes up with a VIP that
+> silently times out. See
+> [`14-avi-load-balancer.md`](14-avi-load-balancer.md#an-unlicensed-controller-half-builds-its-objects).
+
 ### 4.2 Controller
 
 - **Placement: the management domain**, always — one set per NSX instance, not
@@ -1429,6 +1437,19 @@ one-way for this purpose.
 **Deployment never completes at the transit-gateway stage.**
 → Suspect the private transit-gateway block size — see
 [§3.3](#33-the-ip-blocks-and-the-16-question). **[field-reported]**
+
+**A Supervisor Service is stuck `ReconcileFailed`** — `vendir` / `imgpkgBundle`
+logs `502 Bad Gateway` from `mgmt-image-proxy` / `depot-image-proxy`, then
+`dial tcp <vip>:80: i/o timeout`; the depot/image-proxy VIP is green in Avi with
+its pool up. The VCF Automation portal's **Services** view then shows *"Services
+are not available for this namespace"*.
+→ The image-proxy VIP is not actually serving. Most often an **unlicensed Avi
+controller** that created the VS but never programmed the listener — finish the
+licensing chain, restart AKO, retry the service
+([`14-avi-load-balancer.md`](14-avi-load-balancer.md#an-unlicensed-controller-half-builds-its-objects)).
+Otherwise a port mismatch between the in-cluster proxy and the VS, or the depot
+OCI registry not enabled ([`20-supervisor-image-registry.md`](20-supervisor-image-registry.md)).
+**[field-reported]**
 
 ### Traps that are requirements, not symptoms
 

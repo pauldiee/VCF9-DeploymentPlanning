@@ -389,6 +389,52 @@ the entitlement upgrade is a **portal action taken before any appliance work**,
 and that **once upgraded a licence cannot be downgraded** — so it is a
 one-way step to schedule deliberately, not to discover mid-deployment.
 
+### An unlicensed controller half-builds its objects
+
+**Finish the licensing chain before anything consumes Avi** — before you deploy
+VCF Automation, and before you activate a vSphere Supervisor that uses Avi for
+its load balancer. An unlicensed controller (factory state, or an expired
+keyless evaluation) is not inert: it **accepts configuration** and the objects
+look healthy — a Virtual Service shows green, its pool shows members up — but the
+controller will **not fully program the data path**. Service Engine placement and
+scale-out are blocked, and VS listeners can be left unconfigured, so a "green"
+VIP still refuses connections (usually a silent **`i/o timeout`**, because an SE
+with no matching listener drops rather than resets). **[field-reported]**
+
+Because the breakage is downstream and delayed, it rarely reads as a licensing
+problem. Signatures seen in the field:
+
+- A depot / image-proxy VIP that is green in Avi and `3/3` on the pool but still
+  `dial tcp <vip>:80: i/o timeout` from its client.
+- vSphere **Supervisor Services stuck `ReconcileFailed`** — `vendir` /
+  `imgpkgBundle` logs `502 Bad Gateway` then `dial tcp <vip>:80: i/o timeout`
+  ([`10-supervisor-enablement.md`](10-supervisor-enablement.md#8-field-notes)).
+- The VCF Automation provider portal's **Services** view showing *"Services are
+  not available for this namespace"* (the CCI Supervisor Service never came up).
+
+**Verify it is licensing, not the VS:**
+
+- **Administration → Licensing** — check **LICENSE USAGE** (Used / Available),
+  not just *Connectivity Status*; `0 Used / 0 Available` while VSes exist is the
+  tell. See the "Connected still means zero licences" note above.
+- **Operations → Events**, filter `license` — *"Virtual Service not placed"*,
+  *"SE not created"*, *"license limit exceeded"*.
+- Controller CLI: `show licensestatus`, `show serviceengine` (are SEs actually
+  up and scaled?).
+- AKO on the Supervisor: `kubectl -n <ako-ns> logs <ako-pod> | grep -iE 'license|403|forbidden|quota|not placed'`.
+
+**Recovery once the licence is assigned and endpoints are switched to the hub:**
+
+1. Confirm the data plane recovers — SEs healthy and scaling, VS placement no
+   longer blocked, licensing events clear.
+2. Restart AKO so it re-syncs every `LoadBalancer` Service to its VS / pool and
+   programs the listeners that failed while unlicensed:
+   `kubectl -n <ako-ns> rollout restart statefulset/ako`.
+3. Re-check the affected VS has **all** its service ports / listeners.
+4. Retry the failed Supervisor Services (delete / retry) so `vendir` re-pulls.
+5. Sweep any other VS created during the unlicensed window — VCF Automation, CCI,
+   the Supervisor API VS, tenant services — and re-reconcile or recreate.
+
 ## VCF Automation (external/customer access)
 
 *Sourcing convention: **[documented]** = confirmed elsewhere in this repo
