@@ -1,6 +1,18 @@
 # Changelog
 
-## v4.1.5 — 2026-09-10
+## v4.1.6 — 2026-09-10
+- **docs/10 §8: document break-glass root / admin-`kubectl` access to the
+  Supervisor control plane** (#298). New subsection — decrypt the rotating
+  control-plane `root` password on vCenter (`/usr/lib/vmware-wcp/decryptK8Pw.py`),
+  SSH from the VCSA to a CP VM, use the pre-loaded `/etc/kubernetes/admin.conf`
+  context. Framed as a support-diagnostic path (broader than the `vcf context
+  create` SSO login), with the auto-rotation / management-network-only / does-not-
+  persist caveats. Fills the gap left by the existing "SSH the control plane and
+  run journalctl..." bullet, which never said how to get on it.
+- **docs/19**: the "confirming a Supervisor-path drop" troubleshooting note gains
+  a third check — get a cluster-admin `kubectl` on the Supervisor (docs/10 §8)
+  and confirm `get svc,supervisorservices` is healthy there, to split "Supervisor
+  is down" from "path to the Supervisor is blocked".
 - **docs/19: add TCP 443 (WCP auth) to the VCFA -> Supervisor firewall path**
   (#297). Field finding: after the TGW gateway-firewall hardening, VCF Automation
   9.1 hit *"Services are not available for this namespace"* — [Broadcom KB

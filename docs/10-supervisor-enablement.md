@@ -1459,6 +1459,80 @@ satisfies both.
 
 *Sources: [Supervisor 9.1 release notes][relnotes] · [KB 442187][kb442187] · [KB 406786][kb406786] · [Troubleshooting the core Supervisor][ts-core]*
 
+### Break-glass: root shell and admin `kubectl` on the control plane
+
+The "SSH the control plane" line above assumes you can get onto it. The control
+plane VMs run no static password you were given at deployment — SSH is key-less
+password auth against a **rotating** `root` password that only vCenter holds. Get
+it from vCenter, not from the Supervisor. **[field-reported]**
+
+This is a **break-glass / support-diagnostic** path — it hands you the raw
+cluster-admin context, which is broader than the `vcf context create` SSO login
+in [§7.1](#71-followable-validation-runbook). Use it to *read* state when
+something upstream (a tenant portal, VCF Automation, a `vcf` login) says the
+Supervisor is unreachable and you need to know whether the Supervisor itself is
+healthy. Do not drive routine namespace work from here, and do not hand-edit
+cluster objects.
+
+**1. Decrypt the control-plane password on vCenter**
+
+SSH to the **vCenter Server Appliance** as `root`. If it opens the appliance
+shell (`Command>`), drop to bash with `shell` (run `shell.set --enabled true`
+first if it is disabled). Then:
+
+```
+/usr/lib/vmware-wcp/decryptK8Pw.py
+```
+
+Output is one block per Supervisor:
+
+```
+Read key from file
+Connected to PSQL
+
+Cluster: domain-c1006:<uuid>
+IP:      10.x.x.x            <- a control-plane VM management IP
+PWD:     <long random password>   <- current root password for that Supervisor's CP VMs
+```
+
+**2. SSH from vCenter to the control-plane VM**
+
+```
+ssh root@10.x.x.x
+```
+
+Run it **from the VCSA** (or another host on the management network) — the CP
+VMs only accept SSH from there, not from a general jumphost or your laptop. All
+three CP VMs share the same `root` password; the script prints one reachable IP,
+the API VIP floats to whichever node is active.
+
+**3. You already have cluster-admin**
+
+`kubectl` is on `PATH` with `/etc/kubernetes/admin.conf` active — no login step.
+For the "Services are not available for this namespace" class of problem, this is
+where you confirm the Supervisor side in isolation:
+
+```
+kubectl get nodes
+kubectl get pods -A | grep -Ev 'Running|Completed'
+kubectl -n <namespace> get svc,supervisorservices
+kubectl get svcbinding,supervisorservice -A          # the service catalog the portal reads
+```
+
+If those are healthy from here but the tenant portal or VCF Automation still
+fails, the break is on the path *to* the Supervisor (firewall / DFW / proxy
+no-proxy / cert trust / DNS — see
+[`19-securing-vcf-automation.md`](19-securing-vcf-automation.md)), not on the
+Supervisor.
+
+**Caveats**
+
+- The `root` password **auto-rotates** (roughly daily) — re-run `decryptK8Pw.py`
+  each session; a saved password will stop working.
+- vCenter-side operation — independent of the networking model (CTGW / DTGW /
+  classic segment / vDS).
+- Nothing here persists: on a Supervisor upgrade the CP VMs are replaced.
+
 ---
 
 ## 9. The other networking paths
