@@ -19,20 +19,27 @@
           clusters/  <cluster>.json
           fleet/     VSP-<name>.json  +  .config.json   (one pair per VSP)
           nsx/<host>/infra-<scope>.json
+          supervisor/<name>.json
+          vcenter/<host>/cluster-<name>-config.json
+          token-map.json            placeholder -> real value, only with -Tokenize
           .raw/                      unsanitised copies, only with -Raw
 
     What round-trips (a GET gives you close to the deploy shape):
 
-        BringUp   GET /v1/sddcs/{id}                        (the VCF Installer
+        BringUp         GET /v1/sddcs/{id}                  (the VCF Installer
                                                              keeps the cleaner
                                                              copy)
-        Fleet     GET /fleet-lcm/v1/components  -> every VSP
-                  GET /fleet-lcm/v1/components/{id}          VspComponentSpec
-                  GET /fleet-lcm/v1/components/{id}/config   VspClusterConfigSpec
-        Domains   GET /v1/domains/{id}    (prune to the POST /v1/domains schema)
-        Clusters  GET /v1/clusters/{id}   (prune to the POST /v1/clusters schema)
-        NSX       GET /policy/api/v1<scope>  -> re-submit via
-                  PATCH /policy/api/v1/infra (Hierarchical Policy API)
+        Fleet           GET /fleet-lcm/v1/components  -> every VSP
+                        GET /fleet-lcm/v1/components/{id}          VspComponentSpec
+                        GET /fleet-lcm/v1/components/{id}/config   VspClusterConfigSpec
+        Domains         GET /v1/domains/{id}    (prune to POST /v1/domains)
+        Clusters        GET /v1/clusters/{id}   (prune to POST /v1/clusters)
+        NSX             GET /policy/api/v1<scope>  -> PATCH /policy/api/v1/infra
+        Supervisor      GET /api/vcenter/namespace-management/clusters/{id}
+                        (the vSphere Client "Export Configuration" is the
+                         officially re-importable form; this is the API view)
+        vCenterProfiles GET /api/esx/settings/clusters/{id}/configuration
+                        (cluster desired-state config)
 
     Authentication:
         - VCF / SDDC Manager API : POST https://<SDDCManager>/v1/tokens -> Bearer
@@ -41,25 +48,31 @@
               POST https://<VCFOps>/suite-api/api/auth/token/exchange
                     serviceKeys=["fleet-lcm"]                          -> JWT
         - NSX Policy API         : HTTP Basic (admin)
+        - vSphere API            : POST https://<vCenter>/api/session (Basic)
+                                   -> vmware-api-session-id
 
     Sanitisation is ALWAYS applied to the files under <OutputPath>. Keys matching
     password / secret / passphrase / privateKey / token / apiKey are replaced
     with "__REDACTED__"; 5x5 licence keys are masked to the last group; NSX
     realised-state / revision fields are stripped so a PATCH back is accepted.
-    -Raw additionally writes the untouched responses under .raw/ - that tree is
-    real environment data, keep it in a secure location, not a public repo.
+    -Tokenize then replaces FQDNs, IPv4 addresses and CIDRs in every output file
+    with {{FQDN_n}} / {{IP_n}} / {{CIDR_n}} placeholders and writes token-map.json
+    (placeholder -> real value) so a template can be re-filled - the map is real
+    environment data, treat it like .raw/. -Raw additionally writes the untouched
+    responses under .raw/.
 
     This script only reads the environment. It never writes to it.
 
 .NOTES
     Script  : Get-VCFDeploymentArtifacts.ps1
-    Version : 1.0.0
+    Version : 1.1.0
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.1.0  2026-09-10  PD  Add Supervisor + vCenterProfiles capture and -Tokenize (#295)
     v1.0.0  2026-09-10  PD  Initial release -- capture BringUp / Domains / Clusters / Fleet / NSX (#295)
 
 .PARAMETER SDDCManager
@@ -83,12 +96,18 @@
 .PARAMETER NSXCredential
     Credentials for NSX (typically admin). Defaults to -Credential.
 
+.PARAMETER vCenter
+    FQDN of a vCenter Server. Required for Supervisor / vCenterProfiles.
+
+.PARAMETER vCenterCredential
+    Credentials for vCenter (SSO). Defaults to -Credential.
+
 .PARAMETER OutputPath
     Folder to write into. Default: .\artifacts\<stem>-<timestamp>.
 
 .PARAMETER Include
-    Limit to these groups: BringUp, Domains, Clusters, Fleet, NSX. Default: every
-    group whose endpoint you supplied.
+    Limit to these groups: BringUp, Domains, Clusters, Fleet, NSX, Supervisor,
+    vCenterProfiles. Default: every group whose endpoint you supplied.
 
 .PARAMETER Exclude
     Skip these groups (same value set as -Include).
@@ -96,6 +115,12 @@
 .PARAMETER Raw
     Also write the untouched API responses under .raw/ (unsanitised - handle as
     real environment data).
+
+.PARAMETER Tokenize
+    After sanitising, replace FQDNs / IPv4 addresses / CIDRs in every output file
+    with {{FQDN_n}} / {{IP_n}} / {{CIDR_n}} placeholders and write token-map.json
+    (placeholder -> real value). The map is real environment data - store it with
+    the secure copy, not in a shared template library.
 
 .PARAMETER SkipCertificateValidation
     Skip TLS certificate validation. Use while the appliances present their
@@ -122,18 +147,21 @@ param(
     [string]$VCFOps,
     [string]$FleetLCM,
     [string[]]$NSXManager,
+    [string]$vCenter,
     [System.Management.Automation.PSCredential]$Credential,
     [System.Management.Automation.PSCredential]$NSXCredential,
+    [System.Management.Automation.PSCredential]$vCenterCredential,
     [string]$OutputPath,
-    [ValidateSet('BringUp', 'Domains', 'Clusters', 'Fleet', 'NSX')]
+    [ValidateSet('BringUp', 'Domains', 'Clusters', 'Fleet', 'NSX', 'Supervisor', 'vCenterProfiles')]
     [string[]]$Include,
-    [ValidateSet('BringUp', 'Domains', 'Clusters', 'Fleet', 'NSX')]
+    [ValidateSet('BringUp', 'Domains', 'Clusters', 'Fleet', 'NSX', 'Supervisor', 'vCenterProfiles')]
     [string[]]$Exclude,
     [switch]$Raw,
+    [switch]$Tokenize,
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.1.0'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -466,6 +494,157 @@ elseif ((Test-Group 'NSX') -and ($Include -and $Include -contains 'NSX')) {
     Write-Host "NSX requested but -NSXManager not supplied - skipping." -ForegroundColor Yellow
 }
 
+# --- Auth + capture: vSphere (Supervisor, vCenter config profiles) ----------
+$wantVc = ((Test-Group 'Supervisor') -or (Test-Group 'vCenterProfiles')) `
+    -and ($Include -and (($Include -contains 'Supervisor') -or ($Include -contains 'vCenterProfiles')))
+if ($wantVc -and -not $vCenter) {
+    Write-Host "Supervisor / vCenterProfiles requested but -vCenter not supplied - skipping." -ForegroundColor Yellow
+}
+elseif ($vCenter -and ((Test-Group 'Supervisor') -or (Test-Group 'vCenterProfiles'))) {
+    if (-not $vCenterCredential) { $vCenterCredential = $Credential }
+    $vcSid = $null
+    if ($WhatIfPreference) {
+        Write-Host "`n[Supervisor / vCenterProfiles]" -ForegroundColor Cyan
+        Write-Host "  would POST https://$vCenter/api/session  then GET the namespace-management / esx-settings trees" -ForegroundColor DarkGray
+    }
+    else {
+        try {
+            $pair = "{0}:{1}" -f $vCenterCredential.UserName, $vCenterCredential.GetNetworkCredential().Password
+            $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pair))
+            $vcSid = Invoke-RestMethod -Uri "https://$vCenter/api/session" -Method POST `
+                -Headers @{ Authorization = "Basic $b64"; Accept = 'application/json' } @restArgs
+            $vcH = @{ 'vmware-api-session-id' = $vcSid; Accept = 'application/json' }
+            Write-Host "`nAuthenticated to vCenter $vCenter." -ForegroundColor Green
+        }
+        catch {
+            Write-Host "vCenter auth failed against $vCenter : $($_.Exception.Message)" -ForegroundColor Red
+        }
+
+        $h0 = ($vCenter -split '\.')[0]
+
+        if ($vcSid -and (Test-Group 'Supervisor')) {
+            Write-Host "`n[Supervisor]" -ForegroundColor Cyan
+            Write-Host "  Note: the vSphere Client 'Export Configuration' is the re-importable form;" -ForegroundColor DarkGray
+            Write-Host "  this captures the API view (reconstructable, not officially re-importable)." -ForegroundColor DarkGray
+            try {
+                $sups = Invoke-Api -Uri "https://$vCenter/api/vcenter/namespace-management/clusters" -Headers $vcH
+                foreach ($s in @($sups)) {
+                    $cid = Get-Prop $s 'cluster'; if (-not $cid) { $cid = Get-Prop $s 'id' }
+                    $cname = Get-Prop $s 'cluster_name'; if (-not $cname) { $cname = $cid }
+                    $safe = ($cname -replace '[^\w.\-]', '_')
+                    $full = Invoke-Api -Uri "https://$vCenter/api/vcenter/namespace-management/clusters/$cid" -Headers $vcH
+                    Save-Artifact -Object $full -Group 'Supervisor' -RelPath "supervisor/$safe.json" `
+                        -Source "https://$vCenter/api/vcenter/namespace-management/clusters/$cid"
+                }
+            }
+            catch { Write-Host "  Supervisor : $($_.Exception.Message)" -ForegroundColor Red }
+        }
+
+        if ($vcSid -and (Test-Group 'vCenterProfiles')) {
+            Write-Host "`n[vCenterProfiles]" -ForegroundColor Cyan
+            try {
+                $cls = Invoke-Api -Uri "https://$vCenter/api/vcenter/cluster" -Headers $vcH
+                foreach ($c in @($cls)) {
+                    $cid = Get-Prop $c 'cluster'
+                    $cname = Get-Prop $c 'name'; if (-not $cname) { $cname = $cid }
+                    $safe = ($cname -replace '[^\w.\-]', '_')
+                    try {
+                        $cfg = Invoke-Api -Uri "https://$vCenter/api/esx/settings/clusters/$cid/configuration" -Headers $vcH
+                        Save-Artifact -Object $cfg -Group 'vCenterProfiles' -RelPath "vcenter/$h0/cluster-$safe-config.json" `
+                            -Source "https://$vCenter/api/esx/settings/clusters/$cid/configuration"
+                    }
+                    catch {
+                        if ($_.Exception.Message -match '404|Not Found|not.*enabled') {
+                            Write-Host "    $cname : no config profile (not managed by a cluster image / config)" -ForegroundColor DarkGray
+                        }
+                        else { Write-Host "    $cname : $($_.Exception.Message)" -ForegroundColor DarkYellow }
+                    }
+                }
+            }
+            catch { Write-Host "  vCenterProfiles : $($_.Exception.Message)" -ForegroundColor Red }
+        }
+
+        if ($vcSid) {
+            try { Invoke-RestMethod -Uri "https://$vCenter/api/session" -Method DELETE -Headers @{ 'vmware-api-session-id' = $vcSid } @restArgs | Out-Null } catch { }
+        }
+    }
+}
+
+# --- Tokenise (optional) ----------------------------------------------------
+if ($Tokenize -and -not $WhatIfPreference -and $script:Manifest.Count -gt 0) {
+    Write-Host "`n[Tokenize]" -ForegroundColor Cyan
+
+    # domains / addresses that must NOT be tokenised (public / well-known).
+    $keepDomains = @(
+        'cluster.local', 'svc.cluster.local', 'broadcom.com', 'vmware.com',
+        'packages.broadcom.com', 'projects.packages.broadcom.com',
+        'wp-content.broadcom.com', 'localhost'
+    )
+    $skipIp = @('127.0.0.1', '0.0.0.0', '255.255.255.255')
+
+    $fqdnRx  = [regex]'(?i)\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){2,}[a-z]{2,63}\b'
+    $cidrRx  = [regex]'\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b'
+    $ipRx    = [regex]'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+
+    $files = Get-ChildItem -Path $OutputPath -Recurse -Filter *.json -File |
+    Where-Object { $_.FullName -notmatch '[\\/]\.raw[\\/]' -and $_.Name -ne '00-manifest.json' -and $_.Name -ne 'token-map.json' }
+
+    $map = [ordered]@{}          # placeholder -> real value
+    $rev = @{}                   # real value  -> placeholder
+    $nF = 0; $nC = 0; $nI = 0
+
+    function Get-Token {
+        param([string]$Value, [string]$Prefix)
+        if ($rev.ContainsKey($Value)) { return $rev[$Value] }
+        switch ($Prefix) {
+            'FQDN' { $script:nF++; $t = "{{FQDN_$script:nF}}" }
+            'CIDR' { $script:nC++; $t = "{{CIDR_$script:nC}}" }
+            'IP'   { $script:nI++; $t = "{{IP_$script:nI}}" }
+        }
+        $rev[$Value] = $t
+        $map[$t] = $Value
+        return $t
+    }
+
+    # Pass 1: scan every file, build the map (CIDR before IP before FQDN so a
+    # /nn suffix is kept with its address).
+    foreach ($f in $files) {
+        $text = Get-Content -LiteralPath $f.FullName -Raw
+        foreach ($m in $cidrRx.Matches($text)) { [void](Get-Token -Value $m.Value -Prefix 'CIDR') }
+        foreach ($m in $ipRx.Matches($text)) {
+            if ($skipIp -contains $m.Value) { continue }
+            if ($m.Value -match '^(169\.254\.|22[4-9]\.|23[0-9]\.)') { continue }
+            [void](Get-Token -Value $m.Value -Prefix 'IP')
+        }
+        foreach ($m in $fqdnRx.Matches($text)) {
+            $v = $m.Value.TrimEnd('.')
+            if ($keepDomains | Where-Object { $v -eq $_ -or $v.EndsWith(".$_") }) { continue }
+            [void](Get-Token -Value $v -Prefix 'FQDN')
+        }
+    }
+
+    # Pass 2: replace, longest real value first so substrings do not collide.
+    $ordered = $map.GetEnumerator() | Sort-Object { $_.Value.Length } -Descending
+    foreach ($f in $files) {
+        $text = Get-Content -LiteralPath $f.FullName -Raw
+        foreach ($kv in $ordered) { $text = $text.Replace($kv.Value, $kv.Key) }
+        Set-Content -LiteralPath $f.FullName -Value $text -Encoding UTF8
+    }
+
+    # Pass 3: drop tokens that ended up unused (e.g. a network address that only
+    # ever appeared inside a CIDR the longer token already consumed).
+    $used = @{}
+    foreach ($f in $files) {
+        $t = Get-Content -LiteralPath $f.FullName -Raw
+        foreach ($k in @($map.Keys)) { if ($t.Contains($k)) { $used[$k] = $true } }
+    }
+    foreach ($k in @($map.Keys)) { if (-not $used.ContainsKey($k)) { $map.Remove($k) } }
+
+    ($map | ConvertTo-Json -Depth 5) | Set-Content -LiteralPath (Join-Path $OutputPath 'token-map.json') -Encoding UTF8
+    Write-Host "  Tokenised $($files.Count) file(s): $script:nF FQDN, $script:nC CIDR, $script:nI IP -> token-map.json" -ForegroundColor Green
+    Write-Host "  token-map.json holds the real values - store it with the secure copy, not a shared library." -ForegroundColor Yellow
+}
+
 # --- Manifest -----------------------------------------------------------------
 if (-not $WhatIfPreference) {
     $manifest = [pscustomobject]@{
@@ -474,10 +653,12 @@ if (-not $WhatIfPreference) {
         capturedAt  = (Get-Date).ToString('o')
         capturedBy  = $Credential.UserName
         endpoints   = [pscustomobject]@{
-            sddcManager = $SDDCManager; vcfOps = $VCFOps; fleetLCM = $FleetLCM; nsxManager = $NSXManager
+            sddcManager = $SDDCManager; vcfOps = $VCFOps; fleetLCM = $FleetLCM
+            nsxManager = $NSXManager; vCenter = $vCenter
         }
         groups      = @($script:Manifest | ForEach-Object { $_.group } | Select-Object -Unique)
         sanitised   = $true
+        tokenised   = [bool]$Tokenize
         rawIncluded = [bool]$Raw
         files       = $script:Manifest
     }
@@ -491,7 +672,9 @@ if ($WhatIfPreference) {
 else {
     Write-Host "  Captured $($script:Manifest.Count) file(s) into $OutputPath" -ForegroundColor Cyan
     Write-Host "  Sanitised: secrets redacted, licence keys masked." -ForegroundColor DarkCyan
+    if ($Tokenize) { Write-Host "  Tokenised: FQDNs / IPs / CIDRs -> placeholders (token-map.json holds the real values)." -ForegroundColor DarkCyan }
     if ($Raw) { Write-Host "  .raw/ holds the unsanitised responses - handle as real environment data." -ForegroundColor Yellow }
-    Write-Host "  Next: tokenise + validate per docs/21-config-artifacts.md." -ForegroundColor DarkGray
+    $nextHint = if ($Tokenize) { 'validate' } else { 'tokenise (-Tokenize) + validate' }
+    Write-Host "  Next: $nextHint per docs/21-config-artifacts.md." -ForegroundColor DarkGray
 }
 Write-Host ('=' * 62) -ForegroundColor DarkCyan

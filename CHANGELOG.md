@@ -1,5 +1,26 @@
 # Changelog
 
+## v4.1.3 — 2026-09-10
+- **tools: `Get-VCFDeploymentArtifacts.ps1` v1.1.0** (#295, Phase 3).
+  - **Supervisor** group — `GET /api/vcenter/namespace-management/clusters/{id}`
+    per Supervisor (with a note that the vSphere Client *Export Configuration*
+    is the officially re-importable form); **vCenterProfiles** group —
+    `GET /api/esx/settings/clusters/{id}/configuration` per cluster. New
+    `-vCenter` / `-vCenterCredential`; vSphere `POST /api/session` auth, session
+    released after.
+  - **`-Tokenize`** — after sanitising, a three-pass replace of every FQDN /
+    IPv4 / CIDR across the output with `{{FQDN_n}}` / `{{IP_n}}` / `{{CIDR_n}}`
+    (public + `*.cluster.local` names left alone; loopback / link-local /
+    multicast skipped; CIDR before IP so `/nn` stays attached; unused tokens
+    pruned), plus a `token-map.json` (placeholder → real value — flagged as
+    real environment data). `00-manifest.json` gains `tokenised` + the vCenter
+    endpoint.
+  - **docs/21 §2.0 recast as tables** (site convention) — a `Script | What it
+    does` row plus a `Group | Captures | Needs` table so `-Include` values and
+    their required endpoints are visible at a glance; §3.2 notes what
+    `-Tokenize` does vs what to finish by hand. README / `CLAUDE.md` rows
+    updated.
+
 ## v4.1.2 — 2026-09-10
 - **tools: `Get-VCFDeploymentArtifacts.ps1` v1.0.0** (#295, Phase 2) — read-only
   capture of re-submittable spec JSON from a built VCF 9.1 instance.

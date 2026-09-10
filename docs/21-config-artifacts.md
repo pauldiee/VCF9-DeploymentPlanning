@@ -61,29 +61,36 @@ Network pools (`GET /v1/network-pools`), license keys (`GET /v1/license-keys` �
 
 ### 2.0 The script
 
-**[`Get-VCFDeploymentArtifacts.ps1`](https://vcf-planning.hollebollevsan.nl/scripts/Get-VCFDeploymentArtifacts.ps1)**
-does the read-only capture — the bring-up spec, every Fleet LCM `VSP`
-component + its config, domain / cluster specs, and a curated set of NSX policy
-scopes — into `<OutputPath>/` with a `00-manifest.json`. It is **read-only** and
-**sanitises on write** (secrets → `"__REDACTED__"`, licence keys masked, NSX
-realised-state stripped); `-Raw` also keeps the untouched responses under
-`.raw/` (real environment data — §5). Runs on Windows PowerShell 5.1+.
+| Script | What it does |
+| ------ | ------------ |
+| [**Get-VCFDeploymentArtifacts.ps1**](https://vcf-planning.hollebollevsan.nl/scripts/Get-VCFDeploymentArtifacts.ps1) | **Read-only.** Captures the round-trippable spec JSON (§1) into `<OutputPath>/` with a `00-manifest.json`. **Sanitises on write** — secrets → `"__REDACTED__"`, 5×5 licence keys masked, NSX realised-state / `_revision` stripped. `-Tokenize` then swaps FQDNs / IPs / CIDRs for `{{FQDN_n}}` / `{{IP_n}}` / `{{CIDR_n}}` and writes `token-map.json` (real values — treat like `.raw/`). `-Raw` keeps the untouched responses under `.raw/`. `-Include` / `-Exclude` per group, `-WhatIf` lists the endpoints. Windows PowerShell 5.1+ or PS7. Reuses the `Get-VCFProxyConfig.ps1` auth chain. |
+
+Groups and what each one needs:
+
+| `-Include` | Captures | Needs |
+| ---------- | -------- | ----- |
+| `BringUp` | `GET /v1/sddcs/{id}` (the VCF Installer keeps the cleaner copy) | `-SDDCManager` |
+| `Domains` | `GET /v1/domains/{id}`, pruned of `status` / `tasks` / `capacity` | `-SDDCManager` |
+| `Clusters` | `GET /v1/clusters/{id}`, pruned | `-SDDCManager` |
+| `Fleet` | `GET /fleet-lcm/v1/components` → **every `VSP`** → `/{id}` + `/{id}/config` | `-VCFOps` **and** `-FleetLCM` |
+| `NSX` | a curated set of `GET /policy/api/v1/infra/...` scopes (T0/T1, segments, groups, gateway-policies, services, ip-blocks, ip-pools) | `-NSXManager` (one or more) |
+| `Supervisor` | `GET /api/vcenter/namespace-management/clusters/{id}` — the API view (the vSphere Client *Export Configuration* is the officially re-importable one) | `-vCenter` |
+| `vCenterProfiles` | `GET /api/esx/settings/clusters/{id}/configuration` — cluster desired-state config | `-vCenter` |
 
 ```powershell
-.\Get-VCFDeploymentArtifacts.ps1 `
-  -SDDCManager sddc01.sfo.example.io `
-  -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io `
-  -NSXManager nsx01.sfo.example.io `
-  -SkipCertificateValidation
-
-# limit the scope, dry-run first:
+# everything, dry-run first
 .\Get-VCFDeploymentArtifacts.ps1 -SDDCManager sddc01.sfo.example.io `
-  -Include Domains,Clusters -SkipCertificateValidation -WhatIf
+  -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io `
+  -NSXManager nsx01.sfo.example.io -vCenter vc01.sfo.example.io `
+  -SkipCertificateValidation -WhatIf
+
+# a scoped capture, sanitised + tokenised, ready for a template library
+.\Get-VCFDeploymentArtifacts.ps1 -SDDCManager sddc01.sfo.example.io `
+  -Include Domains,Clusters -Tokenize -SkipCertificateValidation
 ```
 
-The rest of this section is the **manual** pattern — for one-offs, for scopes
-the script does not cover yet (Supervisor export, vCenter config profiles), or
-to see exactly what it calls. Everywhere it is the same: **token → `GET` →
+The rest of this section is the **manual** pattern — for a one-off, or to see
+exactly what the script calls. Everywhere it is the same: **token → `GET` →
 `jq` to prune → save**.
 
 ### 2.1 VCF / Fleet API token
@@ -189,19 +196,27 @@ jq 'walk(if type=="object"
 ### 3.2 Tokenise (optional, for a true template)
 
 Replace per-environment values with placeholders and keep a **`token-map.json`**
-so the template can be re-filled (or reversed):
+so the template can be re-filled (or reversed).
 
-| Value class | Token |
-| ----------- | ----- |
-| FQDNs | `{{FQDN_1}}`, `{{FQDN_2}}`, … |
-| IPs / CIDRs | `{{IP_1}}` / `{{CIDR_1}}` |
-| VLAN IDs, BGP ASNs | `{{VLAN_MGMT}}`, `{{ASN_EDGE}}` |
-| datastore / pool / cluster / DC names | `{{DS_1}}`, `{{POOL_1}}`, … |
-| SSL thumbprints | `{{THUMBPRINT_1}}` |
+**`Get-VCFDeploymentArtifacts.ps1 -Tokenize`** does the automatic pass — every
+**FQDN**, **IPv4 address** and **CIDR** across the output becomes `{{FQDN_n}}` /
+`{{IP_n}}` / `{{CIDR_n}}` (public / cluster-internal names like
+`svc.cluster.local` and `projects.packages.broadcom.com` are left alone), and
+`token-map.json` (placeholder → real value) is written. That map is real
+environment data — keep it with the secure copy, not in a shared library.
+
+Finish by hand where it matters:
+
+| Value class | Token | Done by |
+| ----------- | ----- | ------- |
+| FQDNs, IPs, CIDRs | `{{FQDN_n}}`, `{{IP_n}}`, `{{CIDR_n}}` | `-Tokenize` |
+| VLAN IDs, BGP ASNs | `{{VLAN_MGMT}}`, `{{ASN_EDGE}}` | hand |
+| datastore / pool / cluster / DC names | `{{DS_1}}`, `{{POOL_1}}`, … | hand |
+| SSL thumbprints | `{{THUMBPRINT_1}}` | hand |
 
 Keep **enum values, booleans and array shapes** intact — only the identifiers
 change. Render a template back to a concrete spec by substituting the map (a
-`jq --argjson map` pass, `envsubst`, or the Phase-2 script).
+`jq --argjson map` pass, `envsubst`, or a small script).
 
 ### 3.3 Manage them like code
 
