@@ -34,23 +34,60 @@ This repo flips the order:
 
 ### Reference — per-component build guides
 
+Grouped by the part of the platform they build. The `docs/NN-` file numbers are
+stable identifiers (linked from across the repo), not a reading order — within a
+band the guides are listed roughly in the order you would tackle them. The site
+sidebar mirrors these bands.
+
+**Foundation** — built once, close to bring-up:
+
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `docs/07-firewall-ports.md`         | Deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
 | `docs/08-backup-target.md`          | Build guide for the SFTP backup target (building, verifying, field-notes gotchas) |
 | `docs/09-binary-depot.md`           | Build guide for the offline depot / VCF Download Tool (feed the depot, connect VCF, the fleet proxy) |
-| `docs/10-supervisor-enablement.md`  | Build guide for enabling a vSphere Supervisor on a workload domain (end-to-end walkthrough, Centralized Transit Gateway + Avi, VKS planning, validation, field notes; combined 9.0/9.1 prep template) |
 | `docs/11-esx-coredump.md`           | Build guide for the ESXi network Dump Collector (enable on vCenter, point every host at it, verify) |
 | `docs/12-sso-configuration.md`      | Build guide for configuring fleet SSO via the VCF Identity Broker (identity provider, per-product federation, role mapping, verification) |
-| `docs/13-shutdown-startup.md`       | The ordered fleet shutdown / startup runbook (the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, infrastructure VMs last) |
-| `docs/14-avi-load-balancer.md`      | Build guide for deploying Avi Load Balancer (VCF Operations wizard, controller first-login setup, the licensing chain) |
+
+**Load balancer & licensing:**
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
 | `docs/15-license-hub.md`            | Build guide for deploying License Hub (2.0 standalone OVA and 5.1.2 SSP Installer flows, post-deploy registration/licensing chain) |
-| `docs/16-remove-components.md`      | Cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
-| `docs/17-vcfa-tenant-config.md`     | Build guide for first-time VCF Automation tenant/org config (Login Provider Manual setup — region, external IP block, external connections, organization + Avi) |
-| `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
-| `docs/19-securing-vcf-automation.md` | Hardening for an external-facing (Pattern 3) VCF Automation instance — the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall (walkthroughs for Broadcom's *Securing VCF Automation Deployment* design page) |
+| `docs/14-avi-load-balancer.md`      | Build guide for deploying Avi Load Balancer (VCF Operations wizard, controller first-login setup, the licensing chain) |
+
+**Supervisor & VKS:**
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `docs/10-supervisor-enablement.md`  | Build guide for enabling a vSphere Supervisor on a workload domain (end-to-end walkthrough, Centralized Transit Gateway + Avi, VKS planning, validation, field notes; combined 9.0/9.1 prep template) |
 | `docs/20-supervisor-image-registry.md` | Supervisor / VKS **runtime container image** connectivity — direct, the proxy walkthrough (Supervisor + `TkgServiceConfiguration` + the no-proxy list), and the fully air-gapped walkthrough (the VCF Software Depot OCI registry, `imgpkg` relocation, the depot image proxy, Harbor for user images) |
+
+**VCF Automation:**
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `docs/17-vcfa-tenant-config.md`     | Build guide for first-time VCF Automation tenant/org config (Login Provider Manual setup — region, external IP block, external connections, organization + Avi) |
+| `docs/19-securing-vcf-automation.md` | Hardening for an external-facing (Pattern 3) VCF Automation instance — the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall (walkthroughs for Broadcom's *Securing VCF Automation Deployment* design page) |
+
+**Security services:**
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
+
+**Operations** — runbooks and reverse-direction tooling:
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `docs/13-shutdown-startup.md`       | The ordered fleet shutdown / startup runbook (the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, infrastructure VMs last) |
+| `docs/16-remove-components.md`      | Cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
 | `docs/21-config-artifacts.md`       | Reverse direction — capture re-submittable spec JSON from a **built** VCF 9.1 instance (bring-up spec, Fleet LCM component specs, Supervisor export, NSX policy hierarchy), sanitise / parameterise / validate into reusable templates |
+
+**Reference data:**
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
 | `docs/workbook-cell-mapping.md`     | Intake answers mapped to workbook cells                |
 
 ### Interactive tools (on the site)

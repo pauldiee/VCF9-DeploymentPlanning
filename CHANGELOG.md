@@ -1,6 +1,19 @@
 # Changelog
 
-## v4.1.3 — 2026-09-10
+## v4.1.4 — 2026-09-10
+- **docs: group the reference build guides into bands** (#296). The flat
+  "Reference" bucket (docs/07-21 + workbook mapping, 16 items in filename order)
+  is split into **Foundation** (07, 08, 09, 11, 12) / **Load balancer &
+  licensing** (15, 14) / **Supervisor & VKS** (10, 20) / **VCF Automation**
+  (17, 19) / **Security services** (18) / **Operations** (13, 16, 21) /
+  **Reference data** (workbook mapping).
+  - `web/src/nav.ts` — new `band` field + `REFERENCE_BANDS`, `navFlowItems()`,
+    `navReferenceBands()`; array reordered into band order (also the prev/next
+    pager order). Sidebar and home page render the bands with subheadings; the
+    per-page eyebrow now shows the band.
+  - **No files renamed** — `docs/NN-` numbers stay as stable identifiers; only
+    the presentation/grouping changed. README "Reference — per-component build
+    guides" resectioned to match.
 - **tools: `Get-VCFDeploymentArtifacts.ps1` v1.1.0** (#295, Phase 3).
   - **Supervisor** group — `GET /api/vcenter/namespace-management/clusters/{id}`
     per Supervisor (with a note that the vSphere Client *Export Configuration*
