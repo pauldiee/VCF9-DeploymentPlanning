@@ -1,6 +1,21 @@
 # Changelog
 
-## v4.1.4 — 2026-09-10
+## v4.1.5 — 2026-09-10
+- **docs/19: add TCP 443 (WCP auth) to the VCFA -> Supervisor firewall path**
+  (#297). Field finding: after the TGW gateway-firewall hardening, VCF Automation
+  9.1 hit *"Services are not available for this namespace"* — [Broadcom KB
+  449287](https://knowledge.broadcom.com/external/article/449287/error-services-are-not-available-for-thi.html).
+  The design page's rule opens only **6443** (kube API); VCFA also needs **443**
+  (WCP login / token exchange), and `default-deny` was dropping it.
+  - `allow-vcfa-supervisor` now carries **HTTPS (443) + `svc-vsphere-supervisor`
+    (6443)**; `allow-api-server` (Any-sourced) stays 6443-only. Updated the
+    `grp-vsphere-supervisor` / `svc-vsphere-supervisor` descriptions, the
+    Validate list, the "full sequence" step 4, and the port field-caveat.
+  - New field-caveat note: on the runtime/pod deployment model, confirm a
+    Supervisor-path drop by reading the TGW GFW log (source IP = the runtime's
+    egress/SNAT address, what `grp-vcfa` must contain) or testing from the
+    automation pod's netns (`kubectl exec` / `debug --target`), not from an SSH
+    session on the runtime node. KB 449287 added to References.
 - **docs: group the reference build guides into bands** (#296). The flat
   "Reference" bucket (docs/07-21 + workbook mapping, 16 items in filename order)
   is split into **Foundation** (07, 08, 09, 11, 12) / **Load balancer &

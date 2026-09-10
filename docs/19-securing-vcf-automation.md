@@ -240,7 +240,7 @@ applied yet — fix that first.
 | **`grp-vcfa-mgmt`** | the appliance's **management interface(s)** |
 | **`grp-vcfa-vip`** | the **external-facing virtual-service VIP** (from the external IP block) |
 | **`grp-orchestrator`** | the VCF Automation **Orchestrator** endpoint (workflow engine; embedded or external) |
-| **`grp-vsphere-supervisor`** | the Supervisor **control-plane VIP(s)** — the Kubernetes API |
+| **`grp-vsphere-supervisor`** | the Supervisor **control-plane VIP(s)** — WCP authentication on **443** and the Kubernetes API on **6443** |
 | **`grp-esx-hosts`** | the management-domain **ESXi hosts** (for the VM web console) |
 | **`grp-mgmt-admin`** | the management / jump-host networks operators connect from — *only for the optional `policy-mgmt-access`* |
 
@@ -249,7 +249,7 @@ predefined entry for these ports):
 
 | Service | Protocol / port | Design name |
 | ------- | --------------- | ----------- |
-| **`svc-vsphere-supervisor`** | TCP 6443 | `svc-vsphere-supervisor` |
+| **`svc-vsphere-supervisor`** | TCP 6443 | `svc-vsphere-supervisor` (the Supervisor **kube API**; the WCP auth on **443** uses the predefined **HTTPS** service — see the note under step 3) |
 | **`svc-vcfa-health`** | TCP 8008 | *(design uses the raw port)* |
 | **`svc-vc-webconsole`** | TCP 902 **and** TCP 443 | `svc-vc-webconsole` (TCP 902) — see [§ VM web console ports](#vm-web-console-ports-443-vs-902) |
 
@@ -299,7 +299,7 @@ top-down; keep this order.
 | Rule | Source | Destination | Service | Action | Design name |
 | ---- | ------ | ----------- | ------- | ------ | ----------- |
 | `allow-vcfa-orchestrator` | `grp-vcfa` | `grp-orchestrator` | **HTTPS** | Allow | `allow-vcfa-orchestrator` |
-| `allow-vcfa-supervisor` | `grp-vcfa` | `grp-vsphere-supervisor` | **`svc-vsphere-supervisor`** (6443) | Allow | `allow-vcfa-supervisor` |
+| `allow-vcfa-supervisor` | `grp-vcfa` | `grp-vsphere-supervisor` | **`svc-vsphere-supervisor`** (6443) **+ HTTPS** (443) | Allow | `allow-vcfa-supervisor` |
 | `allow-api-server` | Any | `grp-vsphere-supervisor` | **`svc-vsphere-supervisor`** (6443) | Allow | `api-server` |
 | `allow-gw-health-check` | Any | `grp-vcfa-vip` | **`svc-vcfa-health`** (8008) | Allow | `gw-health-check` |
 | `allow-vc-webconsole` | `grp-vcfa-mgmt` | `grp-esx-hosts` | **`svc-vc-webconsole`** (902 + 443) | Allow | `VC Webconsole` |
@@ -310,6 +310,17 @@ top-down; keep this order.
 > `allow-vcfa-supervisor` (which is VCFA-only); keep it only if tenants consume
 > the Supervisor API directly through this path — otherwise the VCFA-scoped rule
 > is enough.
+
+> **VCFA → Supervisor needs *two* ports, not just 6443 [field caveat].** The
+> design page's rule lists only **TCP 6443** (the Kubernetes API), but VCF
+> Automation also authenticates to the Supervisor on **TCP 443** (WCP login /
+> token exchange). With only 6443 open, `default-deny` drops the 443 handshake
+> and the provider portal's **Services** view fails with *"Services are not
+> available for this namespace, try again later or check with your
+> administrator"* — [Broadcom KB 449287](https://knowledge.broadcom.com/external/article/449287/error-services-are-not-available-for-thi.html).
+> That is why `allow-vcfa-supervisor` above carries **HTTPS (443) + 6443**. The
+> `Any`-sourced `allow-api-server` stays 6443-only; widen it to 443 only if
+> tenants also drive WCP login directly through this path.
 
 **`policy-mgmt-access`** *(optional — not in the design page; see note)*
 
@@ -394,8 +405,12 @@ Logging is **per rule** (the `Logging` toggle you set on each staged rule).
   port/host is dropped.
 - `allow-gw-health-check`: the load-balancer probe to **8008** succeeds and the VS
   stays green.
+- The provider portal's **Services** view lists the Supervisor namespaces (no
+  *"Services are not available for this namespace"* error) — `allow-vcfa-supervisor`
+  is carrying **both** 443 (WCP auth) and 6443 (kube API). See the troubleshooting
+  note below if it fails.
 - Deploy a test workload — `allow-vcfa-orchestrator` (HTTPS) and
-  `allow-vcfa-supervisor` (6443) carry the reconcile.
+  `allow-vcfa-supervisor` (443 + 6443) carry the reconcile.
 - A VM **web console** opens from the VCFA UI (`grp-vcfa-mgmt` →
   `grp-esx-hosts`, 902 / 443).
 - If you added `policy-mgmt-access`: `ssh` from `grp-mgmt-admin` to a VCFA node and
@@ -404,11 +419,29 @@ Logging is **per rule** (the `Logging` toggle you set on each staged rule).
 - `default-deny` hit counter catches only noise.
 
 > **The port list is the design's example, not a validated superset [field
-> caveat].** `TCP 8008` is VCFA's built-in-LB health port and `6443` the
-> Supervisor API, but cross-check the live set against
+> caveat].** `TCP 8008` is VCFA's built-in-LB health port; the Supervisor path
+> is **443** (WCP auth) **and 6443** (kube API) — see the KB 449287 note under
+> step 3. Cross-check the live set against
 > [`07-firewall-ports.md`](07-firewall-ports.md) and the VCFA / Supervisor
 > port docs before turning on `default-deny`. On a **CTGW** build do **not**
 > re-create these rules on the upstream Tier-0 — enforce once, on the TGW.
+
+> **Confirming a Supervisor-path drop on the runtime deployment model.** VCF
+> Automation 9 runs as pods on a services runtime, so an SSH session on the
+> runtime node tests the *node's* egress, not the automation pods' path (a
+> different egress / SNAT address, plus a sidecar in that namespace). Two
+> reliable checks:
+> - **Read the TGW GFW log** ([Reading the gateway-firewall log](#reading-the-gateway-firewall-log))
+>   with `default-deny` staged as **Allow + Logging**: reproduce the Services
+>   view, then filter for `DROP` to the Supervisor control-plane VIP on **dst
+>   443**. The source IP in the drop line is what `grp-vcfa` must contain —
+>   often the runtime's **egress/SNAT IP**, not a node management address.
+> - **Test from the pod's netns** — `kubectl -n <automation-ns> exec` (the
+>   Photon-based pods usually have `curl`) or, for a distroless container,
+>   `kubectl -n <automation-ns> debug -it <pod> --target=<ctr> --image=<local-registry>/netshoot`
+>   then `nc -zv <sup-cp-vip> 443` and `6443`. In an air-gapped site the debug
+>   image has to be in the depot / local registry
+>   ([`20-supervisor-image-registry.md`](20-supervisor-image-registry.md)).
 
 #### VM web console ports (443 vs 902)
 
@@ -908,7 +941,8 @@ check end to end — it exercises every layer at once:
 3. **Tenant access control works** — log in as a tenant user and confirm the
    org's integrated access control (roles, projects, catalog) behaves.
 4. **Deploy a workload** — it provisions; `allow-vcfa-orchestrator` and
-   `allow-vcfa-supervisor` carry the reconcile, the WAF logs no `REJECTED` on
+   `allow-vcfa-supervisor` (443 + 6443) carry the reconcile, the **Services**
+   view lists the Supervisor namespaces, and the WAF logs no `REJECTED` on
    the API bodies ([layer 4](#web-application-firewall-on-the-vcfa-virtual-service)).
 5. **Open a VM web console** from the VCFA UI — `grp-vcfa-mgmt → grp-esx-hosts`
    on 443 / 902 ([VM web console ports](#vm-web-console-ports-443-vs-902)).
@@ -933,6 +967,9 @@ check end to end — it exercises every layer at once:
 - [Manage a Firewall Exclusion List](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/manage-a-firewall-exclusion-list.html)
   — the DFW exclusion-list operations in [layer 2](#the-dfw-exclusion-list-sequence).
 - [Guidance to Write Efficient vDefend Firewall Rules](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/guidance-to-write-efficient-and-secure-firewall-rules.html)
+- [Broadcom KB 449287 — "Services are not available for this namespace"](https://knowledge.broadcom.com/external/article/449287/error-services-are-not-available-for-thi.html)
+  — VCFA cannot reach the Supervisor on **443 (WCP auth) / 6443 (kube API)**; the
+  failure mode this guide's `allow-vcfa-supervisor` rule (443 + 6443) prevents.
 - **Field write-up** — Tom Fojta, [Load Balancing VCF Automation with Avi](https://fojta.wordpress.com/2025/08/16/load-balancing-vcf-automation-with-avi/)
   — the DMZ VPC + Avi VS build this guide's prerequisites come from, the split-DNS
   "redirects back to the internal VIP" failure mode, and an HTTP/2 (`gRPC` /
