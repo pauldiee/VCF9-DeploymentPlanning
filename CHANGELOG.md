@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.1.7 — 2026-09-10
+- **docs/10: promote the break-glass control-plane access section to `##`** so it
+  appears in the site's "On this page" list (H2-only). Renamed to *Break-glass
+  access to the Supervisor control plane*, pulled out of §8 as its own unnumbered
+  section (same pattern as *Container image registry connectivity*), Contents row
+  added, docs/19 cross-link anchor updated.
+
 ## v4.1.6 — 2026-09-10
 - **docs/10 §8: document break-glass root / admin-`kubectl` access to the
   Supervisor control plane** (#298). New subsection — decrypt the rotating

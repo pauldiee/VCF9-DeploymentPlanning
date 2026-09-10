@@ -444,7 +444,7 @@ Logging is **per rule** (the `Logging` toggle you set on each staged rule).
 >   ([`20-supervisor-image-registry.md`](20-supervisor-image-registry.md)).
 > - **Check the Supervisor side in isolation** — get a cluster-admin `kubectl` on
 >   the Supervisor control plane
->   ([`10-supervisor-enablement.md` §8](10-supervisor-enablement.md#break-glass-root-shell-and-admin-kubectl-on-the-control-plane))
+>   ([`10-supervisor-enablement.md`](10-supervisor-enablement.md#break-glass-access-to-the-supervisor-control-plane))
 >   and confirm `kubectl -n <ns> get svc,supervisorservices` is healthy there. If
 >   it is, the break is on the path *to* the Supervisor (this firewall, the DFW,
 >   a proxy no-proxy gap, cert trust, or DNS), not on the Supervisor.

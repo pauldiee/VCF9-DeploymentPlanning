@@ -48,6 +48,7 @@ firewall matrix). Pick the edition that matches the target build:
 | 6 | [Activate the Supervisor](#6-activate-the-supervisor) | The wizard, screen by screen |
 | 7 | [Validate](#7-validate) | Proving it actually works, not just that it finished |
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |
+| — | [Break-glass access to the Supervisor control plane](#break-glass-access-to-the-supervisor-control-plane) | Get a `root` shell / cluster-admin `kubectl` on a CP VM when something upstream says the Supervisor is unreachable |
 | 9 | [The other networking paths](#9-the-other-networking-paths) | Distributed TGW, classic NSX segment, vDS |
 | 10 | [References](#10-references) | The TechDocs and KBs behind the above |
 
@@ -1459,12 +1460,14 @@ satisfies both.
 
 *Sources: [Supervisor 9.1 release notes][relnotes] · [KB 442187][kb442187] · [KB 406786][kb406786] · [Troubleshooting the core Supervisor][ts-core]*
 
-### Break-glass: root shell and admin `kubectl` on the control plane
+---
 
-The "SSH the control plane" line above assumes you can get onto it. The control
-plane VMs run no static password you were given at deployment — SSH is key-less
-password auth against a **rotating** `root` password that only vCenter holds. Get
-it from vCenter, not from the Supervisor. **[field-reported]**
+## Break-glass access to the Supervisor control plane
+
+The "SSH the control plane" line in [§8](#8-field-notes) assumes you can get onto
+it. The control-plane VMs run no static password you were given at deployment —
+SSH is key-less password auth against a **rotating** `root` password that only
+vCenter holds. Get it from vCenter, not from the Supervisor. **[field-reported]**
 
 This is a **break-glass / support-diagnostic** path — it hands you the raw
 cluster-admin context, which is broader than the `vcf context create` SSO login
