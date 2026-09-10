@@ -58,7 +58,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |
 | `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
 | `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing, deployment-plan export & deployment-tracker tools |
-| `tools/`                         | Helper scripts. `Get-VCFBackupConfig.ps1` (read-only) + `Set-VCFBackupConfig.ps1` (PATCH) — the VCF 9.1 *VCF Management* backup config via the Fleet LCM API (#145) |
+| `tools/`                         | Helper scripts. `Get-/Set-VCFBackupConfig.ps1` (backup config via Fleet LCM API, #145); `Get-/Set-VCFProxyConfig.ps1` (services-runtime `peerProxy`); `Get-VCFCredentials.ps1`; `Set-ESXCoredump.ps1`; `Get-VCFDeploymentArtifacts.ps1` (read-only capture of re-submittable spec JSON — bring-up / Fleet LCM VSPs / domains / clusters / NSX — sanitised on write; #295) |
 
 Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment-plan export tools) **plus** a small `tools/` set. Scripts follow the conventions used by the sister projects: required `$scriptVersion`/`$scriptAuthor`/`$scriptBlogUrl` variables, 62-char banner, `.NOTES` field order, `.CHANGELOG` newest-first, max 10 values on every version component (`.0`–`.9`). They must also parse under **Windows PowerShell 5.1** (ASCII only — no em-dashes; 5.1 has no `-SkipCertificateCheck`), because that is what a customer will run them on.
 

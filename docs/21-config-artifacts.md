@@ -59,7 +59,32 @@ Network pools (`GET /v1/network-pools`), license keys (`GET /v1/license-keys` �
 
 ## 2. Capture
 
-Until `tools/Get-VCFDeploymentArtifacts.ps1` lands (see [#295](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/295)), capture by hand. The pattern is the same everywhere: **token → `GET` → `jq` to prune → save**.
+### 2.0 The script
+
+**[`Get-VCFDeploymentArtifacts.ps1`](https://vcf-planning.hollebollevsan.nl/scripts/Get-VCFDeploymentArtifacts.ps1)**
+does the read-only capture — the bring-up spec, every Fleet LCM `VSP`
+component + its config, domain / cluster specs, and a curated set of NSX policy
+scopes — into `<OutputPath>/` with a `00-manifest.json`. It is **read-only** and
+**sanitises on write** (secrets → `"__REDACTED__"`, licence keys masked, NSX
+realised-state stripped); `-Raw` also keeps the untouched responses under
+`.raw/` (real environment data — §5). Runs on Windows PowerShell 5.1+.
+
+```powershell
+.\Get-VCFDeploymentArtifacts.ps1 `
+  -SDDCManager sddc01.sfo.example.io `
+  -VCFOps ops01.sfo.example.io -FleetLCM fleet01.sfo.example.io `
+  -NSXManager nsx01.sfo.example.io `
+  -SkipCertificateValidation
+
+# limit the scope, dry-run first:
+.\Get-VCFDeploymentArtifacts.ps1 -SDDCManager sddc01.sfo.example.io `
+  -Include Domains,Clusters -SkipCertificateValidation -WhatIf
+```
+
+The rest of this section is the **manual** pattern — for one-offs, for scopes
+the script does not cover yet (Supervisor export, vCenter config profiles), or
+to see exactly what it calls. Everywhere it is the same: **token → `GET` →
+`jq` to prune → save**.
 
 ### 2.1 VCF / Fleet API token
 

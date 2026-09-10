@@ -1,5 +1,22 @@
 # Changelog
 
+## v4.1.2 — 2026-09-10
+- **tools: `Get-VCFDeploymentArtifacts.ps1` v1.0.0** (#295, Phase 2) — read-only
+  capture of re-submittable spec JSON from a built VCF 9.1 instance.
+  - Captures **BringUp** (`GET /v1/sddcs/{id}`), **Domains** / **Clusters**
+    (`GET /v1/{kind}/{id}`, pruned of `status`/`tasks`/`capacity`), **Fleet**
+    (`GET /fleet-lcm/v1/components` → **every `VSP`** → `/{id}` + `/{id}/config`),
+    and **NSX** (a curated set of `GET /policy/api/v1/infra/...` scopes).
+  - **Sanitises on write** — keys matching `password|secret|privateKey|token|…`
+    → `"__REDACTED__"`, 5×5 licence keys masked, NSX realised-state / `_revision`
+    fields stripped so a `PATCH` back is accepted. `-Raw` keeps the untouched
+    responses under `.raw/`.
+  - `-Include` / `-Exclude` per group, `-WhatIf` lists the endpoints, one
+    `00-manifest.json` per run. WinPS 5.1 + PS7; the `Get-VCFProxyConfig.ps1`
+    auth-chain / cert-shim pattern.
+  - Auto-published to the site (`…/scripts/Get-VCFDeploymentArtifacts.ps1`);
+    README + `CLAUDE.md` tool tables and `docs/21` §2 updated.
+
 ## v4.1.1 — 2026-09-10
 - **docs/21: rewrite the data-hygiene section as generic reader guidance.** It
   referenced `CLAUDE.md` (a repo-internal file) and a hard-coded personal

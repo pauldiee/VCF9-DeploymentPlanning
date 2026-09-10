@@ -82,6 +82,7 @@ This repo flips the order:
 | `tools/Get-VCFProxyConfig.ps1`      | Read-only check of the proxy (`peerProxy`) stored on the VCF services runtime (VSP) via the Fleet LCM API |
 | `tools/Set-VCFProxyConfig.ps1`      | Sets that proxy through the API (`-WhatIf`, authenticating / TLS proxy, exclude lists) — or clears it (`-Remove`) — so the fleet can download bundles without direct internet |
 | `tools/Set-ESXCoredump.ps1`         | Points every ESX host (or a chosen subset) at a Dump Collector via `esxcli` / PowerCLI (`-WhatIf`, firewall ruleset check). **Assumes the Dump Collector service is already enabled on vCenter** — see `docs/11-esx-coredump.md` |
+| `tools/Get-VCFDeploymentArtifacts.ps1` | Read-only capture of re-submittable spec JSON from a built instance — bring-up spec, every Fleet LCM `VSP` component + config, domain / cluster specs, a curated set of NSX policy scopes. Sanitises on write (secrets redacted, licence keys masked, NSX realised-state stripped); `-Raw`, `-Include`, `-WhatIf`. See `docs/21-config-artifacts.md` |
 | `tools/third-party/`                | **Not our work.** Mirrored third-party scripts, each with its licence alongside. Currently `fleet_lcm_deploy_vcf_automation_to_different_network.ps1` — © 2022 William Lam, BSD 2-Clause, unmodified mirror of [his script](https://github.com/lamw/vmware-scripts) for deploying VCF Automation to a non-management network, hosted for air-gapped use. Prefer upstream; see `docs/05-day2-deployments.md` section D. Copied to the site alongside `tools/*.ps1` at build time |
 
 ### The site itself
