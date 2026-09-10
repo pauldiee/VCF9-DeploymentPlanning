@@ -25,7 +25,7 @@ back into inputs.
 | 2 | [Capture](#2-capture) | Pulling the JSON — per component |
 | 3 | [Sanitize and parameterise](#3-sanitize-and-parameterise) | Turning a captured spec into a template |
 | 4 | [Validate before reuse](#4-validate-before-reuse) | Proving a template still deploys |
-| 5 | [Data hygiene](#5-data-hygiene) | Where the outputs are allowed to live |
+| 5 | [Handle the output as sensitive data](#5-handle-the-output-as-sensitive-data) | Storing and sharing the captures safely |
 | 6 | [Limitations](#6-limitations) | What you cannot get this way |
 | 7 | [References](#7-references) | APIs, tools, sister repos |
 
@@ -207,18 +207,25 @@ template:
 
 ---
 
-## 5. Data hygiene
+## 5. Handle the output as sensitive data
 
-Per the **Customer data hygiene** section of `CLAUDE.md` (repo root):
+A capture describes a real environment. The **unsanitised** capture and any
+**filled** template contain FQDNs, public and private IPs, BGP AS numbers,
+certificate thumbprints, and secret-adjacent fields — the same sensitivity class
+as a completed planning workbook.
 
-- The **`.raw/`** capture (unsanitized) and any **filled** template are customer
-  data → `C:/Users/paul/OneDrive - ITQ/<customer>/VCF9-Deployment/` (or the
-  engagement's secure store), **never** this repo.
-- `artifacts/` and `.raw/` are in `.gitignore`.
-- **Sanitised + tokenised** templates (no real FQDNs/IPs/secrets, Rainpole-style
-  placeholders only) *may* live in a template library — check them the same way
-  you check a sample before committing.
-- Re-check after any session that touched a real environment.
+- **Store the raw capture in a secure, access-controlled location** — an
+  encrypted store, a private repository, or your document-management system —
+  **not** a public or shared repository, and not committed alongside code in a
+  public tree.
+- **Only fully sanitised *and* tokenised artifacts are safe to circulate** — no
+  real names, addresses or secrets, placeholder values only (§3). Review one the
+  way you would review a worked example before it goes into a shared template
+  library.
+- If you keep captures inside a working tree, add the output directory
+  (e.g. `artifacts/`, `.raw/`) to `.gitignore`.
+- Re-check any working copy for leaked real values before you publish or share
+  it.
 
 ---
 

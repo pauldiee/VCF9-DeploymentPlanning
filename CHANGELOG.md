@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.1.1 — 2026-09-10
+- **docs/21: rewrite the data-hygiene section as generic reader guidance.** It
+  referenced `CLAUDE.md` (a repo-internal file) and a hard-coded personal
+  OneDrive path — consultant-for-customer framing that does not belong on the
+  public site (#89). Now *"Handle the output as sensitive data"*: the raw
+  capture and any filled template are the same sensitivity class as a completed
+  planning workbook — store them in a secure / private location, circulate only
+  fully sanitised **and** tokenised artifacts, gitignore the output directory,
+  re-check working copies before sharing.
+
 ## v4.1.0 — 2026-09-10
 - **docs: new `docs/21-config-artifacts.md` — capture reusable config artifacts
   from a built environment** (#295, Phase 1). The reverse of the workbook flow:
