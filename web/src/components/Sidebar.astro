@@ -1,5 +1,5 @@
 ---
-import { NAV } from '../nav';
+import { navFlowItems, navReferenceBands } from '../nav';
 import { docHref as href, withBase } from '../lib/path';
 
 interface Props {
@@ -12,8 +12,8 @@ const planExportHref = withBase('tools/deployment-plan/');
 const planTrackerHref = withBase('tools/plan-tracker/');
 const testPlanHref = withBase('tools/test-plan/');
 const versionOverviewHref = withBase('version-overview/');
-const flowItems = NAV.filter((item) => item.step !== 'Reference');
-const referenceItems = NAV.filter((item) => item.step === 'Reference');
+const flowItems = navFlowItems();
+const referenceBands = navReferenceBands();
 ---
 
 <aside class="sidebar" aria-label="Planning docs">
@@ -100,18 +100,22 @@ const referenceItems = NAV.filter((item) => item.step === 'Reference');
       </span>
     </a>
     {
-      referenceItems.map((item) => (
-        <a
-          class:list={['sidebar__link', { 'is-active': active === item.slug }]}
-          href={href(item.slug)}
-          aria-current={active === item.slug ? 'page' : undefined}
-        >
-          <i class={`fa-solid fa-${item.icon} sidebar__icon`} aria-hidden="true" />
-          <span class="sidebar__text">
-            <span class="sidebar__step">{item.step}</span>
-            <span class="sidebar__label">{item.label}</span>
-          </span>
-        </a>
+      referenceBands.map((group) => (
+        <>
+          <p class="sidebar__eyebrow itq-eyebrow sidebar__band">{group.band}</p>
+          {group.items.map((item) => (
+            <a
+              class:list={['sidebar__link', { 'is-active': active === item.slug }]}
+              href={href(item.slug)}
+              aria-current={active === item.slug ? 'page' : undefined}
+            >
+              <i class={`fa-solid fa-${item.icon} sidebar__icon`} aria-hidden="true" />
+              <span class="sidebar__text">
+                <span class="sidebar__label">{item.label}</span>
+              </span>
+            </a>
+          ))}
+        </>
       ))
     }
   </details>

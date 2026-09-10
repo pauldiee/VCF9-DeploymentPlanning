@@ -1,10 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { NAV } from '../nav';
+import { navFlowItems, navReferenceBands } from '../nav';
 import { docHref as href, withBase } from '../lib/path';
 
-const flowItems = NAV.filter((item) => item.step !== 'Reference');
-const referenceItems = NAV.filter((item) => item.step === 'Reference');
+const flowItems = navFlowItems();
+const referenceBands = navReferenceBands();
 
 const TOOLS = [
   {
@@ -130,23 +130,31 @@ const TOOLS = [
     <div class="workflow__inner">
       <p class="itq-eyebrow">Build guides</p>
       <h2 class="workflow__heading">Reference: per-component build guides</h2>
-      <div class="card-grid">
-        {
-          referenceItems.map((item) => (
-            <a class="planning-card" href={href(item.slug)}>
-              <div class="planning-card__top">
-                <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
-              </div>
-              <span class="planning-card__step itq-eyebrow">{item.step}</span>
-              <h3 class="planning-card__title">{item.label}</h3>
-              <p class="planning-card__blurb">{item.blurb}</p>
-              <span class="planning-card__cta">
-                Open <i class="fa-solid fa-arrow-right" aria-hidden="true" />
-              </span>
-            </a>
-          ))
-        }
-      </div>
+      <p class="workflow__intro itq-intro">
+        Grouped by the part of the platform they build. Pick the band you're working on;
+        within a band the guides are roughly in the order you'd tackle them.
+      </p>
+      {
+        referenceBands.map((group) => (
+          <div class="workflow__band">
+            <h3 class="workflow__band-heading">{group.band}</h3>
+            <div class="card-grid">
+              {group.items.map((item) => (
+                <a class="planning-card" href={href(item.slug)}>
+                  <div class="planning-card__top">
+                    <i class={`fa-solid fa-${item.icon} planning-card__icon`} aria-hidden="true" />
+                  </div>
+                  <h4 class="planning-card__title">{item.label}</h4>
+                  <p class="planning-card__blurb">{item.blurb}</p>
+                  <span class="planning-card__cta">
+                    Open <i class="fa-solid fa-arrow-right" aria-hidden="true" />
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))
+      }
     </div>
   </section>
 

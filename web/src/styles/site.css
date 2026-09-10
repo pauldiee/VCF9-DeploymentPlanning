@@ -208,6 +208,13 @@ textarea {
 }
 details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); }
 .sidebar__reference > a { margin-top: var(--space-2); }
+.sidebar__band {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-eyebrow);
+}
+.sidebar__band:first-of-type { margin-top: var(--space-3); }
 .sidebar__list {
   list-style: none;
   padding: 0;
@@ -542,6 +549,16 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-5);
+}
+.workflow__intro { margin-bottom: var(--space-7); max-width: 60ch; }
+.workflow__band { margin-top: var(--space-7); }
+.workflow__band:first-of-type { margin-top: 0; }
+.workflow__band-heading {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width) solid var(--border-default);
 }
 .planning-card {
   display: flex;
