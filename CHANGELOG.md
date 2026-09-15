@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.1.9 — 2026-09-15
+- **docs/07: add vCenter <-> ESXi host management, VCF Operations, and License
+  Server port detail** (#300). Section B gained the vCenter <-> ESXi host
+  management row (443 vpxa, 902 heartbeat/NFC) that was missing entirely.
+  Section E's collapsed "Collected endpoints / Cloud Proxy -> VCF Operations"
+  row is replaced with the actual endpoint VM -> Cloud Proxy -> cluster/ESXi
+  flows, and License Server flows (vCenter -> License Server 443 license sync;
+  License Server -> VCF Operations 443 status updates) are added — neither was
+  documented anywhere in the repo before. Verified against the Broadcom Ports
+  and Protocols portal (VCF release 9.1, `VCF Operations` + `VCF Management
+  Services` products, 118 rows total).
+
 ## v4.1.8 — 2026-09-10
 - **docs/14: field note — "An unlicensed controller half-builds its objects"**
   (#299). An unlicensed / eval-expired Avi accepts config (VS green, pool up) but

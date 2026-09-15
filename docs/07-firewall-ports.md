@@ -62,6 +62,8 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 | Jump / bastion host | vCenter, SDDC Manager, NSX Manager, VCF Operations | 443 | TCP | Admin UIs / APIs |
 | Jump / bastion host | ESXi hosts, appliances | 22 | TCP | SSH (as needed) |
 | Jump / bastion host | ESXi hosts | 902 | TCP | Host management / console |
+| vCenter | ESXi hosts | 443 | TCP | Host management (vpxa) |
+| vCenter ⇄ ESXi hosts | vCenter ⇄ ESXi hosts | 902 | TCP/UDP | Heartbeat, NFC file transfer |
 
 ## C. NSX fabric & north-south — Edge ↔ ToR
 
@@ -87,11 +89,28 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 
 | Source | Destination | Port(s) | Proto | Purpose |
 | ------ | ----------- | ------- | ----- | ------- |
-| Collected endpoints / Cloud Proxy | VCF Operations | 443, 4505, 4506 | TCP | Operations collection; Telegraf app monitoring (9.1) |
+| VCF Operations endpoint VM | VCF Operations Cloud Proxy | 443, 4505-4506, 8443 | TCP | Endpoint HTTPS, Salt control plane, Telegraf app monitoring |
+| VCF Operations Cloud Proxy | VCF Operations cluster nodes | 443 | TCP | Cloud Proxy to cluster |
+| VCF Operations Cloud Proxy | ESX management IPs | 443 | TCP | Cloud Proxy to ESXi hosts hosting endpoint VMs |
+| Management workstations | VCF Operations cluster nodes | 443, 80, 22 | TCP | UI/API, HTTP redirect, admin SSH |
+| VCF Operations cluster nodes | vCenter (Management IP) | 443 | TCP | vCenter integration |
+| vCenter (Management IP) | License Server (Management IP) | 443 | TCP | License synchronization with vCenter |
+| License Server (Management IP) | VCF Operations (Management IP) | 443 | TCP | License Server sends status updates to VCF Operations |
 | Management components | vCenter (syslog) | **1514** | TCP | Syslog — **9.1 change: use 1514 (TLS); plain 514 is blocked** |
 | Fleet appliances | VCF Operations / License Server | 443 | TCP | Fleet management, licensing |
 | Jump / bastion host, VCF Operations | Avi Controller VIP + nodes | 443 | TCP | Avi controller UI / API (only if Avi LB in scope) |
 | Avi Service Engines | Avi Controllers | 8443 | TCP | SE ↔ controller secure channel (full Avi matrix: see the tools above) |
+
+> **VCF Operations and License Server, verified 2026-09-15 against the
+> [Broadcom Ports and Protocols portal](https://ports.broadcom.com/view/)**
+> (VCF release 9.1, `VCF Operations` + `VCF Management Services` products,
+> 118 rows total). The table above pulls out the deployment-critical subset;
+> notably the License Server flows (443 both directions, vCenter ⇄ License
+> Server ⇄ VCF Operations) aren't documented anywhere else in this repo. The
+> full 118-row set also covers VCF Operations Cloud Proxy internals (Gemfire,
+> Postgres, ClickHouse), AD/DNS/NTP/SNMP/SMTP client flows, and Log Assist
+> Worker flows to NSX/vCenter/ESXi/SDDC Manager — pull those from the portal
+> directly rather than hand-copying them here, they change often.
 
 > **9.1 gotchas worth flagging to the firewall team:**
 > - **Syslog moved 514 → 1514.** vCenter 9.1 blocks the unencrypted 514; syslog
