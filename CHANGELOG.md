@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.2.8 — 2026-09-15
+- **docs/05: document the normal Cloud Proxy going-online delay (~15 min)**
+  (#310). Field finding: a Cloud Proxy showed connected/"going online" in
+  VCF Operations for a while before settling — turned out to be normal
+  registration time, not the Docker Subnet overlap gotcha (docs/09 §5.3) it
+  first looked like. One-line note added to the Cloud Proxy row: expect up
+  to ~15 minutes before chasing that as a fault.
+
 ## v4.2.7 — 2026-09-15
 - **docs/05: promote §B.4 to `##` so it appears in the site's "On this page"
   list** (#309). The new root-password-complexity section from v4.2.6 was
