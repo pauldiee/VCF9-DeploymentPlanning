@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.2.10 — 2026-09-15
+- **`CLAUDE.md`: simplify the no-customer-data-with-Claude wording.**
+  Dropped the internal memory-persistence detail from v4.2.9's addition –
+  this file is public, and explaining Claude's memory mechanics there
+  reads oddly to an outside reader. Now a plain, unqualified statement:
+  customer data is never used with Claude on this repo, period.
+
 ## v4.2.9 — 2026-09-15
 - **`CLAUDE.md`: explicit no-customer-data-with-Claude rule.** Added a
   paragraph under "Customer data hygiene" stating plainly that real
