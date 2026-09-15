@@ -57,8 +57,8 @@ network placement from section C.
 
 | Component                     | Appliances / nodes                                             | Notes                                                        |
 | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| **VCF Operations**            | Primary, Replica, Data nodes (+ a **VIP** only if an external LB fronts the cluster — see B.1) | **Reuse / additional-instance case only** — a fleet's first VCF Operations is deployed **at bring-up** (see D2); `useExistingDeployment` connects an additional instance to it |
-| **Cloud Proxy** (Ops collector)| One or more collector appliances                              | **Additional collectors only** — a unified cloud proxy is configured **by default at bring-up** by the VCF Installer. Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement. **Friendly Name** on the Add wizard is just a display label — TechDocs doesn't document the field, keep it consistent with your FQDN naming. **Set the Docker Subnet CIDR explicitly** — see the field note in [`09-binary-depot.md` §5.3](09-binary-depot.md#53-cloud-proxy-ova--proxy-related-deploy-fields) |
+| **VCF Operations**            | Primary, Replica, Data nodes (+ a **VIP** only if an external LB fronts the cluster — see B.1) | **Reuse / additional-instance case only** — a fleet's first VCF Operations is deployed **at bring-up** (see D2); `useExistingDeployment` connects an additional instance to it. **Root password complexity — see B.4** |
+| **Cloud Proxy** (Ops collector)| One or more collector appliances                              | **Additional collectors only** — a unified cloud proxy is configured **by default at bring-up** by the VCF Installer. Stays on the VLAN / VM-mgmt side (`localRegion`) even for NSX-overlay placement. **Friendly Name** on the Add wizard is just a display label — TechDocs doesn't document the field, keep it consistent with your FQDN naming. **Set the Docker Subnet CIDR explicitly** — see the field note in [`09-binary-depot.md` §5.3](09-binary-depot.md#53-cloud-proxy-ova--proxy-related-deploy-fields). **Root password complexity — see B.4** |
 | **License Server**            | One appliance                                                  | **Additional license server only** — the first one is deployed **automatically at bring-up**. Tied to VCF Operations |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | Appliance mode: a **three-node cluster** ([TechDocs deployment modes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/deployment-models-for-sso.html)) | **Additional instance only** — the first broker arrives **at bring-up** with the VCF Management Services (no opt-in; FQDN + services-runtime IP asked by the Installer). A Day-N **appliance-mode** broker is deployed via VCF Operations fleet management, e.g. to serve **up to five VCF instances** from one broker or to create a separate SSO boundary. Day-N work on the bring-up broker itself is configuration: identity provider (AD/LDAP), user/group provisioning |
@@ -265,6 +265,27 @@ Three things that bite Day-N planners specifically:
   not program the data path, which surfaces later as timed-out VIPs and
   Supervisor Services stuck reconciling —
   [`14-avi-load-balancer.md`](14-avi-load-balancer.md#an-unlicensed-controller-half-builds-its-objects).
+
+### B.4 — Root password requirements for VCF Ops-family appliances (VCF Operations, Cloud Proxy)
+
+The **root password ships blank** on a freshly deployed appliance — you set
+it the first time by logging in via the vSphere console, and SSH as root
+fails until it's set to a non-blank value. Broadcom KB 325005 ("Reset root
+password for VCF Ops nodes and Cloud Proxies"), verbatim, on what that first
+password must satisfy:
+
+- Minimum of 8 characters
+- Minimum of 1 uppercase letter
+- Minimum of 1 lowercase letter
+- Minimum of 1 number
+- Minimum of 1 special character from this list: `!@#$%^&*+=`
+
+Fail complexity enough times and the same KB is what the product itself
+points you at — but note its main content is the **lockout recovery**
+procedure (root locks after 3 bad attempts, auto-unlocks after 10 minutes,
+or reset via single-user mode if forgotten entirely), not the complexity
+rule itself — that's in the KB's *Additional Information* section, easy to
+miss on a first read.
 
 ---
 
