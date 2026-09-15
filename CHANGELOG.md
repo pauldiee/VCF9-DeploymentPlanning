@@ -1,13 +1,11 @@
 # Changelog
 
 ## v4.2.11 — 2026-09-15
-- **Scrub the personal OneDrive path from `CLAUDE.md` and
-  `tools/Get-VCFCredentials.ps1`.** Both referenced a specific local
-  folder structure (`C:/Users/paul/OneDrive - ITQ/<customer>/...`) as the
-  place per-engagement customer data belongs. Replaced with generic
-  "separate per-engagement storage" language – the exact path was never
-  meaningful to a reader anyway, and a public repo shouldn't reveal local
-  filesystem layout. `Get-VCFCredentials.ps1` bumped to v1.2.1.
+- **`CLAUDE.md` / `tools/Get-VCFCredentials.ps1`: generalize where
+  per-engagement customer data belongs.** A hard-coded local folder
+  reference is now generic "separate per-engagement storage" language – a
+  public repo shouldn't spell out local filesystem layout.
+  `Get-VCFCredentials.ps1` bumped to v1.2.1.
 
 ## v4.2.10 — 2026-09-15
 - **`CLAUDE.md`: simplify the no-customer-data-with-Claude wording.**
