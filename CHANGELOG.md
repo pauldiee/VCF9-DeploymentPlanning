@@ -1,5 +1,22 @@
 # Changelog
 
+## v4.2.2 — 2026-09-15
+- **docs/07: field note — Test Connection blocks an SSL-terminating proxy,
+  but Save doesn't gate on it** (#303). §A.1's SSL-inspection callout gains
+  the exact Test Connection error text (*"SSL-terminating proxy detected.
+  VCF Operations requires a pass-through (non-SSL-terminating) proxy."*) and
+  a field-verified note that saving the proxy config **without** passing
+  Test Connection first still persists it, and licensing activation
+  succeeded through the same SSL-terminating proxy anyway. Framed as an
+  unsupported workaround-of-last-resort, not a recommendation — the
+  no-inspection bypass rule is still the correct fix.
+- **docs/04: document core counting for VCF/VVF licensing** (#304). New
+  "Licensing: counting cores" section — physical CPU cores only
+  (hyperthreading/logical cores excluded), with a 16-core-per-CPU minimum
+  applied per socket (Broadcom KB 313548, verbatim example: 2 CPUs × 8 cores
+  licenses as 2 × 16 = 32 cores). Distinguished explicitly from the sizing
+  tool's "per-host cores" capacity input, which is a different question.
+
 ## v4.2.1 — 2026-09-15
 - **docs/07: promote §E.1 to `##` so it appears in the site's "On this page"
   list** (#302). The new VVF/standalone-VCF-Operations proxy section from

@@ -58,14 +58,27 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 > **If the egress proxy does SSL inspection (TLS termination/re-signing),
 > exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection — don't
 > assume the appliance can be pointed at the proxy's re-signing CA.**
-> **VCF Operations cannot.** TechDocs, verbatim, on VCF Operations' own proxy
-> setting (Administration → Global Settings → Network Settings → HTTP Proxy):
-> *"SSL termination proxy is not supported in VCF Operations."* There is no
-> field there to import a custom CA for an inspecting proxy — if the proxy
-> re-signs the cert on the path to `eapi.broadcom.com`/`vcf.broadcom.com`,
-> licensing connectivity fails and there is no supported workaround inside
-> VCF Operations itself. Ask the proxy/security team for a **no-inspection
-> bypass rule** for those two hostnames instead.
+> **VCF Operations cannot** — not officially. TechDocs, verbatim, on VCF
+> Operations' own proxy setting (Administration → Global Settings → Network
+> Settings → HTTP Proxy): *"SSL termination proxy is not supported in VCF
+> Operations."* There is no field there to import a custom CA for an
+> inspecting proxy. Ask the proxy/security team for a **no-inspection bypass
+> rule** for those two hostnames — that is the supported fix.
+> **The Test Connection button actively checks for this and blocks on it.**
+> Field-verified 2026-09-15: submitting an SSL-terminating proxy in Network
+> Settings and clicking **Test Connection** returns *"SSL-terminating proxy
+> detected. VCF Operations requires a pass-through (non-SSL-terminating)
+> proxy."*
+> **But the check only gates Test Connection, not Save.** Field-verified
+> 2026-09-15: saving the proxy config **without** passing Test Connection
+> first still persists it, and licensing activation against
+> `eapi.broadcom.com`/`vcf.broadcom.com` **succeeded** through the same
+> SSL-terminating proxy the test had just rejected. Treat this as an
+> unsupported, unverified-long-term state, not a green light — it's the
+> Test Connection check being stricter than what the underlying licensing
+> path actually enforces, and Broadcom could tighten that gap in a future
+> release. The no-inspection bypass rule is still the correct fix to pursue;
+> this is a workaround of last resort if that isn't available in time.
 > **Cloud Proxy is the one appliance where SSL inspection *is* supported** —
 > its OVA deploy wizard has a **Custom CA** field (paste the inspecting
 > proxy's root CA, `-----BEGIN CERTIFICATE-----` / `-----END CERTIFICATE-----`)
