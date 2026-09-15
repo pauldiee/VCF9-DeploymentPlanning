@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.2.5 — 2026-09-15
+- **docs/09: promote §5.1–§5.3 to `##` so they appear in the site's "On this
+  page" list** (#307). The new proxy-configuration subsections from v4.2.4
+  were written as `###`, so the H2-only TOC filter
+  (`web/src/pages/docs/[...slug].astro`) skipped them — same pattern as
+  #298 and #302. Anchor IDs unchanged, so the cross-doc links from docs/07
+  and docs/05 still resolve. Verified locally with `npm run build`.
+
 ## v4.2.4 — 2026-09-15
 - **docs: move proxy-configuration content from docs/07 to docs/09 §5**
   (#306). docs/07-firewall-ports.md's §A.1 callout and §E.1 had grown into
