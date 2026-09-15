@@ -623,7 +623,7 @@ Because it is L4-only, an authenticating (`credentialsEnabled`) or TLS
 (`tlsEnabled`) proxy still has to clear this reachability gate **first** — fix
 the firewall before chasing credentials or certificates.
 
-### 5.1 Proxying VCF Operations without a VCF Management Services runtime (VVF / standalone)
+## 5.1 Proxying VCF Operations without a VCF Management Services runtime (VVF / standalone)
 
 Everything above in §5 is the Fleet LCM / `VSP` flow — it only applies where a
 VCF Management Services runtime exists. A **VVF deployment with VCF Operations
@@ -650,7 +650,7 @@ If Cloud Proxies are also deployed in this topology, each one takes its own
 proxy setting at OVA-deploy time (§5.3 below) — they don't inherit VCF
 Operations' Global Settings proxy.
 
-### 5.2 SSL-inspecting (TLS-terminating) proxies
+## 5.2 SSL-inspecting (TLS-terminating) proxies
 
 **If the egress proxy does SSL inspection (TLS termination/re-signing),
 exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection** — don't
@@ -678,7 +678,7 @@ actually enforces, and Broadcom could tighten that gap in a future release.
 The no-inspection bypass rule is still the correct fix to pursue; this is a
 workaround of last resort if that isn't available in time.
 
-### 5.3 Cloud Proxy OVA — proxy-related deploy fields
+## 5.3 Cloud Proxy OVA — proxy-related deploy fields
 
 **Cloud Proxy is the one appliance where SSL inspection *is* supported** —
 its OVA deploy wizard has a **Custom CA** field (paste the inspecting
