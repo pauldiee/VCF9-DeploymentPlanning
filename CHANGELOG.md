@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.2.6 — 2026-09-15
+- **docs/05: document root password complexity for VCF Ops-family
+  appliances** (#308). Field finding: hit a complexity error after
+  deploying the Cloud Proxy OVA, which pointed at Broadcom KB 325005 ("Reset
+  root password for VCF Ops nodes and Cloud Proxies"). New §B.4 — the
+  complexity rule (min 8 chars, 1 upper, 1 lower, 1 number, 1 special char
+  from `!@#$%^&*+=`), screenshot-verified against the KB directly since its
+  main content is actually the lockout-recovery procedure, with the
+  complexity rule tucked into an easy-to-miss "Additional Information"
+  section. Applies to both VCF Operations nodes and Cloud Proxy appliances.
+  Cross-linked from both table rows.
+
 ## v4.2.5 — 2026-09-15
 - **docs/09: promote §5.1–§5.3 to `##` so they appear in the site's "On this
   page" list** (#307). The new proxy-configuration subsections from v4.2.4
