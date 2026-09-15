@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.2.1 — 2026-09-15
+- **docs/07: promote §E.1 to `##` so it appears in the site's "On this page"
+  list** (#302). The new VVF/standalone-VCF-Operations proxy section from
+  v4.2.0 was written as `###`, so the site's H2-only TOC filter
+  (`web/src/pages/docs/[...slug].astro`) skipped it — same pattern as the
+  docs/10 break-glass section fix in v4.1.8 (#298). Verified locally with
+  `npm run build`.
+
 ## v4.2.0 — 2026-09-15
 - **docs/07: document the SSL-inspection bypass need and the VVF (no-VSP)
   licensing proxy path** (#301). §A.1 gains a callout: VCF Operations' own

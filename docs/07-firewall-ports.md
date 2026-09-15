@@ -150,7 +150,7 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 >   that is filtering it is an awkward thing to debug afterwards. See
 >   [`prerequisites.md`](prerequisites.md) → License Hub.
 
-### E.1 Proxying licensing traffic without a VCF Management Services runtime (VVF / standalone VCF Operations)
+## E.1 Proxying licensing traffic without a VCF Management Services runtime (VVF / standalone VCF Operations)
 
 The Fleet LCM / `VSP` proxy flow in
 [`09-binary-depot.md` §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)
