@@ -55,19 +55,22 @@
 
     Password hygiene (SDDC Manager mode): the on-screen table masks passwords by
     default. Pass -ShowPasswords to reveal them, or -ExportCsv <path> to write
-    the full inventory. Treat any such file as customer data -- the engagement's
-    OneDrive folder, not this repo. (VCF Management mode has no passwords to
-    mask.)
+    the full inventory. Treat any such file as customer data -- keep it in
+    separate per-engagement storage, not this repo. (VCF Management mode has
+    no passwords to mask.)
 
 .NOTES
     Script  : Get-VCFCredentials.ps1
-    Version : 1.2.0
+    Version : 1.2.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1 (both modes verified against a live lab)
 
 .CHANGELOG
+    v1.2.1  2026-09-15  PD  Comment-based help / console wording: replace the specific
+                            OneDrive-path reference with generic "per-engagement
+                            storage" language
     v1.2.0  2026-07-20  PD  VCF Management mode now takes a -Credential: mints an Ops
                             token and calls /suite-api/internal with the
                             X-Ops-API-use-unsupported flag, so no browser session or
@@ -108,8 +111,8 @@
 
 .PARAMETER ExportCsv
     Also write the results to this CSV path. In SDDC Manager mode this includes
-    passwords -- treat it as customer data (OneDrive engagement folder, not the
-    repo). In VCF Management mode it is the no-secrets account inventory.
+    passwords -- treat it as customer data (separate per-engagement storage,
+    not the repo). In VCF Management mode it is the no-secrets account inventory.
 
 .PARAMETER SkipCertificateValidation
     Skip TLS certificate validation (self-signed appliance certificates).
@@ -148,7 +151,7 @@ param(
     [switch]$Raw
 )
 
-$scriptVersion = '1.2.0'
+$scriptVersion = '1.2.1'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -434,7 +437,7 @@ if ($ExportCsv) {
         $rows | Export-Csv -Path $ExportCsv -NoTypeInformation -Encoding UTF8
         Write-Host "`nWrote $($rows.Count) credential(s), passwords included, to:" -ForegroundColor Green
         Write-Host "  $ExportCsv" -ForegroundColor Green
-        Write-Host "  Treat this file as customer data -- OneDrive engagement folder," -ForegroundColor DarkYellow
+        Write-Host "  Treat this file as customer data -- separate per-engagement storage," -ForegroundColor DarkYellow
         Write-Host "  never the repo. Delete it when the task is done." -ForegroundColor DarkYellow
     }
     catch {

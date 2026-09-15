@@ -55,7 +55,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/21-config-artifacts.md`    | Reverse of the workbook flow — capture re-submittable spec JSON from a **built** instance (bring-up spec, Fleet LCM component specs, domain/cluster specs, NSX policy hierarchy, Supervisor, vCenter config profiles), sanitise / tokenise / validate into templates. Backed by `tools/Get-VCFDeploymentArtifacts.ps1` (#295) |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
-| `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data → OneDrive** |
+| `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data, kept outside this repo** |
 | `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
 | `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing, deployment-plan export & deployment-tracker tools |
 | `tools/`                         | Helper scripts. `Get-/Set-VCFBackupConfig.ps1` (backup config via Fleet LCM API, #145); `Get-/Set-VCFProxyConfig.ps1` (services-runtime `peerProxy`); `Get-VCFCredentials.ps1`; `Set-ESXCoredump.ps1`; `Get-VCFDeploymentArtifacts.ps1` (read-only capture of re-submittable spec JSON — bring-up / Fleet LCM VSPs / domains / clusters / NSX / Supervisor / vCenter config profiles — sanitised on write, `-Tokenize`; #295) |
@@ -115,13 +115,9 @@ working on this repo – not in chat text, not in a screenshot.
 
 ### Where customer-engagement files live
 
-Per-engagement working files (filled intake, filled workbook, network plan with real VLANs/IPs, BGP peers, follow-up emails) live **outside the repo**, in:
+Per-engagement working files (filled intake, filled workbook, network plan with real VLANs/IPs, BGP peers, follow-up emails) live **outside the repo entirely**, in separate per-engagement storage.
 
-```
-C:/Users/paul/OneDrive - ITQ/<customer>/VCF9-Deployment/
-```
-
-That folder is the source of truth for everything customer-specific. The repo only ever contains generic templates and Rainpole-style examples. When asked to "draft the intake for $customer" or "fill in the workbook for $customer", default to writing to the customer's OneDrive folder, not the repo.
+That separate storage is the source of truth for everything customer-specific. The repo only ever contains generic templates and Rainpole-style examples. When asked to "draft the intake for $customer" or "fill in the workbook for $customer", default to writing to that per-engagement storage, not the repo.
 
 ### Customer-facing language
 
