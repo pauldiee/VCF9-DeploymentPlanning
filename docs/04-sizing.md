@@ -186,6 +186,24 @@ totals. Figures are transcribed from the pinned workbook and match the
 > below Large. A workload domain's Edge cluster runs on that domain's hosts, so
 > it is advisory only there — not added to the management-domain totals.
 
+## Licensing: counting cores
+
+**"Per-host cores" in the sizing tool above is a capacity input — how much
+CPU the cluster has to work with. It is not the same question as how many
+cores you need to *license*.** For VCF/VVF per-core licensing, count only
+**physical CPU cores** — hyperthreading/logical cores are not counted at
+all. On top of that, a **16-core-per-CPU minimum** applies: license at least
+16 physical cores per socket even if the CPU has fewer. The two rounding
+rules apply **per CPU**, not per host, so they don't average out — Broadcom
+KB 313548 ("Counting Cores for VMware Cloud Foundation and vSphere
+Foundation and TiBs for vSAN"), verbatim example: a host with **2 CPUs × 8
+cores** licenses as **2 × 16 = 32 cores**, not 16.
+
+> When sizing hardware against this tool's per-host core input, remember the
+> license quantity you'll actually buy can be **higher** than the physical
+> core count on a low-core-count CPU — factor the 16-core-per-CPU floor into
+> the licensing budget, separately from the vCPU/RAM/storage fit check above.
+
 ## Source
 
 Figures come from `reference/vcf-9.1-planning-and-preparation-workbook.xlsx`
