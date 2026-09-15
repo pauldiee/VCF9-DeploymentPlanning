@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.2.9 — 2026-09-15
+- **`CLAUDE.md`: explicit no-customer-data-with-Claude rule.** Added a
+  paragraph under "Customer data hygiene" stating plainly that real
+  customer names, IPs, hostnames, credentials, or other identifying data
+  are never entered into a Claude session or included in a shared
+  screenshot while working on this repo, and nothing customer-specific is
+  ever persisted in Claude's memory for it.
+
 ## v4.2.8 — 2026-09-15
 - **docs/05: document the normal Cloud Proxy going-online delay (~15 min)**
   (#310). Field finding: a Cloud Proxy showed connected/"going online" in

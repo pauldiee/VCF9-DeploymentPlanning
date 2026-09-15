@@ -108,6 +108,14 @@ The official Broadcom workbook **is** kept in the repo (`reference/vcf-9.1-plann
 
 `.gitignore` excludes these patterns. Re-check after any session that worked with real customer values.
 
+**This also governs Claude sessions and memory, period, no exceptions.**
+Real customer names, IPs, hostnames, credentials, or other identifying
+data are never entered into a Claude session or included in a screenshot
+shared with it while working on this repo – not in chat text, not in an
+attached screenshot (screenshots carry more than intended: other browser
+tabs, file names, window titles, taskbar). Nothing customer-specific is
+ever persisted in Claude's memory for this project.
+
 ### Where customer-engagement files live
 
 Per-engagement working files (filled intake, filled workbook, network plan with real VLANs/IPs, BGP peers, follow-up emails) live **outside the repo**, in:
