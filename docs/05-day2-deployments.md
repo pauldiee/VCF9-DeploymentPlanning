@@ -266,7 +266,7 @@ Three things that bite Day-N planners specifically:
   Supervisor Services stuck reconciling —
   [`14-avi-load-balancer.md`](14-avi-load-balancer.md#an-unlicensed-controller-half-builds-its-objects).
 
-### B.4 — Root password requirements for VCF Ops-family appliances (VCF Operations, Cloud Proxy)
+## B.4 — Root password requirements for VCF Ops-family appliances (VCF Operations, Cloud Proxy)
 
 The **root password ships blank** on a freshly deployed appliance — you set
 it the first time by logging in via the vSphere console, and SSH as root

@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.2.7 — 2026-09-15
+- **docs/05: promote §B.4 to `##` so it appears in the site's "On this page"
+  list** (#309). The new root-password-complexity section from v4.2.6 was
+  written as `###` — same pattern as #298/#302/#307. B.0–B.3 stay as `###`
+  (unchanged siblings). Verified with `npm run build`.
+
 ## v4.2.6 — 2026-09-15
 - **docs/05: document root password complexity for VCF Ops-family
   appliances** (#308). Field finding: hit a complexity error after
