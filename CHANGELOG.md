@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.2.0 — 2026-09-15
+- **docs/07: document the SSL-inspection bypass need and the VVF (no-VSP)
+  licensing proxy path** (#301). §A.1 gains a callout: VCF Operations' own
+  proxy setting doesn't support SSL-inspecting proxies at all (TechDocs,
+  verbatim: *"SSL termination proxy is not supported in VCF Operations"*) —
+  the fix is a no-inspection bypass for `eapi.broadcom.com`/`vcf.broadcom.com`
+  on the proxy side, not a client-side trust setting; Cloud Proxy is the one
+  appliance where a Custom CA field exists, but that only covers Cloud
+  Proxy's own path. New §E.1 documents the proxy path for a VVF deployment
+  with VCF Operations deployed standalone (no VCF Management Services runtime
+  / `VSP` to PATCH via Fleet LCM): Administration → Global Settings → Network
+  Settings → HTTP Proxy on VCF Operations itself, and reconfirms the License
+  Server needs no proxy at all (KB 441747: redeploy without one).
+
 ## v4.1.9 — 2026-09-15
 - **docs/07: add vCenter <-> ESXi host management, VCF Operations, and License
   Server port detail** (#300). Section B gained the vCenter <-> ESXi host
