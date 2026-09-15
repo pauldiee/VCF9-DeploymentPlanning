@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.2.4 — 2026-09-15
+- **docs: move proxy-configuration content from docs/07 to docs/09 §5**
+  (#306). docs/07-firewall-ports.md's §A.1 callout and §E.1 had grown into
+  full proxy-configuration procedure (VCF Operations Test Connection
+  behavior, Cloud Proxy Custom CA field, Docker Subnet CIDR field, VVF
+  standalone proxy UI steps) — out of scope for a page about "what port to
+  open." That material now lives with the rest of the proxy-configuration
+  content in docs/09-binary-depot.md §5, as new §5.1 (VVF/standalone
+  proxying), §5.2 (SSL-inspecting proxy behavior), §5.3 (Cloud Proxy OVA
+  fields). docs/07 keeps short pointers to those subsections; docs/05's
+  Cloud Proxy row repointed accordingly. Verified locally with `npm run
+  build` — all cross-doc anchors resolve.
+
 ## v4.2.3 — 2026-09-15
 - **docs/07 + docs/05: document the Cloud Proxy OVA's Docker Subnet CIDR and
   Friendly Name fields** (#305). Field finding on 9.1.1: the deploy wizard

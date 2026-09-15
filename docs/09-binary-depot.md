@@ -35,6 +35,9 @@ backs up to.
 | 4 | [Using the Download Tool standalone](#4-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
 | 5 | [Proxy for the VCF services runtime](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
 | | ↳ [Gotcha: precheck is a netcat test from the whole node block](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place) | **Precheck times out even with the documented access** — firewall the whole services-runtime block |
+| | ↳ [5.1 Proxying VCF Operations without a VSP (VVF / standalone)](#51-proxying-vcf-operations-without-a-vcf-management-services-runtime-vvf--standalone) | No Fleet LCM / `VSP` to PATCH — set the proxy on VCF Operations itself |
+| | ↳ [5.2 SSL-inspecting (TLS-terminating) proxies](#52-ssl-inspecting-tls-terminating-proxies) | VCF Operations doesn't support one; what actually happens when you point it at one anyway |
+| | ↳ [5.3 Cloud Proxy OVA — proxy-related deploy fields](#53-cloud-proxy-ova--proxy-related-deploy-fields) | Custom CA, Outbound Network Proxy Settings, and the Docker Subnet CIDR gotcha |
 | 6 | [Upgrades — filling the depot for a fleet upgrade](#6-upgrades--filling-the-depot-for-a-fleet-upgrade) | The fleet is **already deployed** and you are patching it |
 | | ↳ [The loop](#the-loop-sync--check--export--download--re-check) | Sync → check → export → download → re-check |
 | | ↳ [Two ways to get the binaries](#two-ways-to-get-the-binaries) | The spec file, or a filtered catalog pull — and the size trade |
@@ -619,6 +622,89 @@ Automation* wizard.) Then re-submit — `Set-VCFProxyConfig.ps1` once **per
 Because it is L4-only, an authenticating (`credentialsEnabled`) or TLS
 (`tlsEnabled`) proxy still has to clear this reachability gate **first** — fix
 the firewall before chasing credentials or certificates.
+
+### 5.1 Proxying VCF Operations without a VCF Management Services runtime (VVF / standalone)
+
+Everything above in §5 is the Fleet LCM / `VSP` flow — it only applies where a
+VCF Management Services runtime exists. A **VVF deployment with VCF Operations
+deployed standalone** (no Fleet LCM / `VSP`) has no such component to PATCH —
+the proxy goes on VCF Operations itself instead:
+
+1. Log in to VCF Operations → **Administration** → **Global Settings** →
+   **Network Settings** category → **HTTP Proxy**.
+2. Enter the proxy IP/hostname, port, and credentials.
+3. **Test Connection**, then save.
+
+This is the **only** flow that needs a proxy in this topology. The **License
+Server has no outbound path to Broadcom at all** — confirmed both by the
+Broadcom Ports and Protocols data in
+[`07-firewall-ports.md` §E](07-firewall-ports.md#e-fleet--operations-cloud-proxy-license-server-syslog)
+(License Server only talks to vCenter and VCF Operations, both internal) and
+by Broadcom KB 441747 ("VCF License Server unable to connect to VCF
+Operations with proxy configured"), whose fix is to **redeploy the License
+Server without a proxy configured** — it has no external network connection
+requirements. Putting a proxy on the License Server is the wrong fix and
+breaks it.
+
+If Cloud Proxies are also deployed in this topology, each one takes its own
+proxy setting at OVA-deploy time (§5.3 below) — they don't inherit VCF
+Operations' Global Settings proxy.
+
+### 5.2 SSL-inspecting (TLS-terminating) proxies
+
+**If the egress proxy does SSL inspection (TLS termination/re-signing),
+exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection** — don't
+assume VCF Operations can be pointed at the proxy's re-signing CA.
+**It can't — not officially.** TechDocs, verbatim, on VCF Operations' own
+proxy setting (§5.1 above): *"SSL termination proxy is not supported in VCF
+Operations."* There is no field there to import a custom CA for an
+inspecting proxy. Ask the proxy/security team for a **no-inspection bypass
+rule** for those two hostnames — that is the supported fix.
+
+**The Test Connection button actively checks for this and blocks on it.**
+Field-verified 2026-09-15: submitting an SSL-terminating proxy in Network
+Settings and clicking **Test Connection** returns *"SSL-terminating proxy
+detected. VCF Operations requires a pass-through (non-SSL-terminating)
+proxy."*
+
+**But the check only gates Test Connection, not Save.** Field-verified
+2026-09-15: saving the proxy config **without** passing Test Connection
+first still persists it, and licensing activation against
+`eapi.broadcom.com`/`vcf.broadcom.com` **succeeded** through the same
+SSL-terminating proxy the test had just rejected. Treat this as an
+unsupported, unverified-long-term state, not a green light — it's the Test
+Connection check being stricter than what the underlying licensing path
+actually enforces, and Broadcom could tighten that gap in a future release.
+The no-inspection bypass rule is still the correct fix to pursue; this is a
+workaround of last resort if that isn't available in time.
+
+### 5.3 Cloud Proxy OVA — proxy-related deploy fields
+
+**Cloud Proxy is the one appliance where SSL inspection *is* supported** —
+its OVA deploy wizard has a **Custom CA** field (paste the inspecting
+proxy's root CA, `-----BEGIN CERTIFICATE-----` / `-----END CERTIFICATE-----`)
+under "Set up a proxy server", separate from the Outbound Network Proxy
+Settings added in 9.1.1 for Broadcom Portal traffic specifically. That only
+covers Cloud Proxy's own outbound path, not VCF Operations' licensing calls
+(§5.2 above).
+
+**The same wizard also has a Docker Subnet CIDR field — set it explicitly,
+don't take the default.** TechDocs, verbatim: the field takes an *"IP in
+CIDR format"*, *"must be /27 or larger (for example, /27, /26, /25, /24
+etc)"*, and *"if a custom value is not provided, the Docker's default value
+gets assigned automatically (for example, /16 subnets starting from
+172.17.0.0)"*. The risk of leaving it on default: Broadcom KB 392302 —
+*"If a Docker network overlaps with the external environment network,
+connectivity problems may occur, as network packets won't be routed
+outside the Cloud Proxy but will instead be routed internally."* That's a
+**silent** failure (looks like the destination is unreachable, not a config
+error), and the KB says outright *"there is no permanent resolution to
+update the docker bridge network pool"* after the fact — recreating the
+Docker networks is the only fix, not a setting change. Pick a **/24** from
+a block you're certain isn't routed anywhere in the estate (not
+management/VM VLANs, not NSX overlay ranges, not any other appliance's
+internal Docker/K8s range) and record it in the network plan like any
+other reserved allocation — it's invisible until it collides.
 
 ## 6. Upgrades — filling the depot for a fleet upgrade
 

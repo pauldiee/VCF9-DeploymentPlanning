@@ -56,52 +56,15 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 | **License Hub** (connected mode only) | `portal.pulse.broadcom.com` | 443 | TCP | **Avi Cloud Console** — registration, license assignment, usage reporting. Only if **vDefend or Avi** is in scope. **Not on Broadcom's Public URLs list** — it will not appear in a proxy allowlist built from that page alone |
 
 > **If the egress proxy does SSL inspection (TLS termination/re-signing),
-> exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection — don't
-> assume the appliance can be pointed at the proxy's re-signing CA.**
-> **VCF Operations cannot** — not officially. TechDocs, verbatim, on VCF
-> Operations' own proxy setting (Administration → Global Settings → Network
-> Settings → HTTP Proxy): *"SSL termination proxy is not supported in VCF
-> Operations."* There is no field there to import a custom CA for an
-> inspecting proxy. Ask the proxy/security team for a **no-inspection bypass
-> rule** for those two hostnames — that is the supported fix.
-> **The Test Connection button actively checks for this and blocks on it.**
-> Field-verified 2026-09-15: submitting an SSL-terminating proxy in Network
-> Settings and clicking **Test Connection** returns *"SSL-terminating proxy
-> detected. VCF Operations requires a pass-through (non-SSL-terminating)
-> proxy."*
-> **But the check only gates Test Connection, not Save.** Field-verified
-> 2026-09-15: saving the proxy config **without** passing Test Connection
-> first still persists it, and licensing activation against
-> `eapi.broadcom.com`/`vcf.broadcom.com` **succeeded** through the same
-> SSL-terminating proxy the test had just rejected. Treat this as an
-> unsupported, unverified-long-term state, not a green light — it's the
-> Test Connection check being stricter than what the underlying licensing
-> path actually enforces, and Broadcom could tighten that gap in a future
-> release. The no-inspection bypass rule is still the correct fix to pursue;
-> this is a workaround of last resort if that isn't available in time.
-> **Cloud Proxy is the one appliance where SSL inspection *is* supported** —
-> its OVA deploy wizard has a **Custom CA** field (paste the inspecting
-> proxy's root CA, `-----BEGIN CERTIFICATE-----` / `-----END CERTIFICATE-----`)
-> under "Set up a proxy server", separate from the Outbound Network Proxy
-> Settings added in 9.1.1 for Broadcom Portal traffic specifically. That only
-> covers Cloud Proxy's own outbound path, not VCF Operations' licensing calls.
-> **The same wizard also has a Docker Subnet CIDR field — set it explicitly,
-> don't take the default.** TechDocs, verbatim: the field takes an *"IP in
-> CIDR format"*, *"must be /27 or larger (for example, /27, /26, /25, /24
-> etc)"*, and *"if a custom value is not provided, the Docker's default value
-> gets assigned automatically (for example, /16 subnets starting from
-> 172.17.0.0)"*. The risk of leaving it on default: Broadcom KB 392302 —
-> *"If a Docker network overlaps with the external environment network,
-> connectivity problems may occur, as network packets won't be routed
-> outside the Cloud Proxy but will instead be routed internally."* That's a
-> **silent** failure (looks like the destination is unreachable, not a config
-> error), and the KB says outright *"there is no permanent resolution to
-> update the docker bridge network pool"* after the fact — recreating the
-> Docker networks is the only fix, not a setting change. Pick a **/24** from
-> a block you're certain isn't routed anywhere in the estate (not
-> management/VM VLANs, not NSX overlay ranges, not any other appliance's
-> internal Docker/K8s range) and record it in the network plan like any
-> other reserved allocation — it's invisible until it collides.
+> exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection** — VCF
+> Operations does not support an SSL-terminating proxy, and there is no
+> client-side workaround. This is a rule for the proxy/security team's change
+> request, same as the rest of this page; for VCF Operations' own Test
+> Connection behavior, the Cloud Proxy Custom CA field, and the Docker
+> Subnet CIDR gotcha, see
+> [`09-binary-depot.md` §5.2–§5.3](09-binary-depot.md#52-ssl-inspecting-tls-terminating-proxies) —
+> that's proxy *configuration* detail, which lives with the rest of the
+> proxy setup material rather than the port tables here.
 
 ## B. Admin / management access — jump host → management
 
@@ -180,32 +143,12 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 >   that is filtering it is an awkward thing to debug afterwards. See
 >   [`prerequisites.md`](prerequisites.md) → License Hub.
 
-## E.1 Proxying licensing traffic without a VCF Management Services runtime (VVF / standalone VCF Operations)
-
-The Fleet LCM / `VSP` proxy flow in
-[`09-binary-depot.md` §5](09-binary-depot.md#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api)
-only applies where a VCF Management Services runtime (the `VSP` component)
-exists. A **VVF deployment with VCF Operations deployed standalone** (no
-Fleet LCM / `VSP`) has no such component to PATCH — the proxy goes on VCF
-Operations itself instead:
-
-1. Log in to VCF Operations → **Administration** → **Global Settings** →
-   **Network Settings** category → **HTTP Proxy**.
-2. Enter the proxy IP/hostname, port, and credentials.
-3. **Test Connection**, then save.
-
-This is the **only** flow that needs a proxy in this topology. The **License
-Server has no outbound path to Broadcom at all** — confirmed both by the
-Broadcom Ports and Protocols data in §E above (License Server only talks to
-vCenter and VCF Operations, both internal) and by Broadcom KB 441747 ("VCF
-License Server unable to connect to VCF Operations with proxy configured"),
-whose fix is to **redeploy the License Server without a proxy configured** —
-it has no external network connection requirements. Putting a proxy on the
-License Server is the wrong fix and breaks it.
-
-If Cloud Proxies are also deployed in this topology, each one takes its own
-proxy setting at OVA-deploy time (see the SSL-inspection callout in §A.1) —
-they don't inherit VCF Operations' Global Settings proxy.
+> **Proxying licensing traffic without a `VSP` (VVF / standalone VCF
+> Operations)?** See
+> [`09-binary-depot.md` §5.1](09-binary-depot.md#51-proxying-vcf-operations-without-a-vcf-management-services-runtime-vvf--standalone) —
+> the License Server flows in the table above (no outbound path to Broadcom
+> at all) are the port-level fact; the proxy-configuration steps for that
+> topology live with the rest of the proxy setup material in docs/09.
 
 ---
 
