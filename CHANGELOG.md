@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.2.3 — 2026-09-15
+- **docs/07 + docs/05: document the Cloud Proxy OVA's Docker Subnet CIDR and
+  Friendly Name fields** (#305). Field finding on 9.1.1: the deploy wizard
+  asks for a Docker Subnet CIDR with no suggested value. §A.1 gains the
+  field note — TechDocs' `/27`-or-larger requirement and default-auto-assign
+  behavior, KB 392302's overlap symptom (traffic silently routed *inside*
+  the Cloud Proxy instead of out, with no fix after the fact short of
+  recreating the Docker networks), and a concrete recommendation (a `/24`
+  from a block that's certain not to be routed anywhere in the estate).
+  docs/05's Cloud Proxy row gains a one-line note on Friendly Name (a
+  display label TechDocs doesn't document by name) and a pointer to the
+  Docker Subnet note.
+
 ## v4.2.2 — 2026-09-15
 - **docs/07: field note — Test Connection blocks an SSL-terminating proxy,
   but Save doesn't gate on it** (#303). §A.1's SSL-inspection callout gains

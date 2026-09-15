@@ -85,6 +85,23 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 > under "Set up a proxy server", separate from the Outbound Network Proxy
 > Settings added in 9.1.1 for Broadcom Portal traffic specifically. That only
 > covers Cloud Proxy's own outbound path, not VCF Operations' licensing calls.
+> **The same wizard also has a Docker Subnet CIDR field — set it explicitly,
+> don't take the default.** TechDocs, verbatim: the field takes an *"IP in
+> CIDR format"*, *"must be /27 or larger (for example, /27, /26, /25, /24
+> etc)"*, and *"if a custom value is not provided, the Docker's default value
+> gets assigned automatically (for example, /16 subnets starting from
+> 172.17.0.0)"*. The risk of leaving it on default: Broadcom KB 392302 —
+> *"If a Docker network overlaps with the external environment network,
+> connectivity problems may occur, as network packets won't be routed
+> outside the Cloud Proxy but will instead be routed internally."* That's a
+> **silent** failure (looks like the destination is unreachable, not a config
+> error), and the KB says outright *"there is no permanent resolution to
+> update the docker bridge network pool"* after the fact — recreating the
+> Docker networks is the only fix, not a setting change. Pick a **/24** from
+> a block you're certain isn't routed anywhere in the estate (not
+> management/VM VLANs, not NSX overlay ranges, not any other appliance's
+> internal Docker/K8s range) and record it in the network plan like any
+> other reserved allocation — it's invisible until it collides.
 
 ## B. Admin / management access — jump host → management
 
