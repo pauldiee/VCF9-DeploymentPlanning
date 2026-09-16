@@ -1,5 +1,30 @@
 # Changelog
 
+## v4.7.0 — 2026-09-16
+- **New `docs/25-cluster-expansion.md`: cluster expansion runbook.** Adding
+  hosts to an existing, non-stretched cluster. Broadcom documents this
+  operation through the **vSphere Client** (Actions → Add Hosts → Add
+  Unassigned Hosts), not a dedicated SDDC Manager wizard — noted verbatim,
+  including the caveat that an SDDC Manager alternative exists but isn't
+  click-path documented. Covers pre-checks (matching principal storage type,
+  static TEP pool headroom, commissioning), the wizard steps, and what's
+  auto-configured per storage type (NFS/vVols auto-mount; VMFS on FC needs
+  manual zoning). Cross-linked from `24-cluster-creation.md` and
+  `22-stretch-execution.md`. Closes #314.
+
+## v4.6.0 — 2026-09-16
+- **New `docs/24-cluster-creation.md`: cluster creation runbook.** Adding a
+  cluster to an **existing** workload domain (distinct from creating a
+  domain and its first cluster together, `23-workload-domain-creation.md`).
+  Broadcom documents this only through the SDDC Manager Add Cluster wizard
+  for 9.1 — no dedicated API walkthrough page carried forward from older VCF
+  versions, so this runbook follows the wizard end to end (8 pages) rather
+  than an annotated API spec. Covers network-pool/host-commissioning prep
+  and the 9.1.1+ vDS-reuse conditions (same network pool + data center,
+  neither cluster stretched, vDS ceilings). Cross-linked from
+  `23-workload-domain-creation.md` and `25-cluster-expansion.md`. Closes
+  #313.
+
 ## v4.5.0 — 2026-09-16
 - **New `docs/23-workload-domain-creation.md`: workload domain creation
   runbook.** Same manual-vs-automated framing as `docs/22-stretch-execution.md`:

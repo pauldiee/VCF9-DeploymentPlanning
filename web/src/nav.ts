@@ -221,6 +221,22 @@ export const NAV: NavItem[] = [
     blurb: 'Manual prep (network pool, commissioned hosts, DNS) vs the creation wizard/API: page-by-page walkthrough, plus the DomainCreationSpec JSON path for LACP or no-cluster domains.',
   },
   {
+    slug: '24-cluster-creation',
+    step: 'Operations',
+    band: 'Operations',
+    label: 'Cluster Creation',
+    icon: 'object-group',
+    blurb: 'Adding a cluster to an existing workload domain: network pool + commissioned hosts, then the SDDC Manager Add Cluster wizard, including the 9.1.1+ vDS-reuse rules.',
+  },
+  {
+    slug: '25-cluster-expansion',
+    step: 'Operations',
+    band: 'Operations',
+    label: 'Cluster Expansion',
+    icon: 'square-plus',
+    blurb: 'Adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and does not) automate per storage type.',
+  },
+  {
     slug: '21-config-artifacts',
     step: 'Operations',
     band: 'Operations',

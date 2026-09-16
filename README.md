@@ -85,6 +85,8 @@ sidebar mirrors these bands.
 | `docs/21-config-artifacts.md`       | Reverse direction — capture re-submittable spec JSON from a **built** VCF 9.1 instance (bring-up spec, Fleet LCM component specs, Supervisor export, NSX policy hierarchy), sanitise / parameterise / validate into reusable templates |
 | `docs/22-stretch-execution.md`      | Stretch execution runbook — manual steps (AZ2 hosts, witness, AZ2 network pool) vs what the single stretch API call does for you, for management domain and workload domain |
 | `docs/23-workload-domain-creation.md` | Workload domain creation runbook — manual prep (network pool, commissioned hosts, DNS) vs the creation wizard, page by page, plus the DomainCreationSpec API path for LACP or no-cluster domains |
+| `docs/24-cluster-creation.md`       | Cluster creation runbook — adding a cluster to an existing workload domain: network pool + commissioned hosts, then the SDDC Manager Add Cluster wizard, page by page, including the 9.1.1+ vDS-reuse rules |
+| `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
 
 **Reference data:**
 
