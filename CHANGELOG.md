@@ -1,5 +1,22 @@
 # Changelog
 
+## v5.1.0 — 2026-09-17
+- **Replace the docs sidebar with a top mega-menu nav.** The Reference band
+  had grown to 8 items while others had 1-2; explored via an Artifact
+  mockup through several rounds, then brought to the live site.
+  Planning Flow (ordered dropdown), Reference (3-column mega-panel by
+  band), Tools (dropdown), Versions (plain link) — all one hover/click
+  away instead of a long persistent scroll. Breadcrumb (Reference → Band
+  → Page) added above content. Header actions trimmed to an icon cluster
+  (search, theme, version → CHANGELOG, feedback, blog, GitHub). The sticky
+  blue footer band is gone — replaced with a quiet one-line colophon,
+  which also fixed a real bug: `position: sticky` + flex `margin-auto`
+  were fighting, pinning the old footer over content that hadn't scrolled
+  into view yet at narrow widths. `Sidebar.astro` is repurposed (not
+  deleted) as the <900px hamburger-toggled mobile panel. Existing
+  `doc-toc`/`doc-pager` untouched. Built and browser-verified at desktop
+  and mobile widths on a branch, not yet merged to main. Closes #337.
+
 ## v5.0.4 — 2026-09-16
 - **Site footer: fix stale post-rebrand text, drop the templates/Rainpole
   line.** The rebrand commit (51e8774) updated the header product name to
