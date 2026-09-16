@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.8.5 — 2026-09-16
+- **`docs/26-vcf-operations-vvf-vcenter.md`: field-verified role script
+  (vCenter 8 and vCenter 9), with `Connect-VIServer -Menu` multi-vCenter
+  support.** `-Menu` prompts an interactive picker that can select more than
+  one vCenter; passing `-Server $vc` through `Get-VIPrivilege`/`New-VIRole`
+  creates the role on all of them in one pass. Role script drops its
+  `UNTESTED` marker (now field-verified); the Step 3 permission script
+  stays `UNTESTED` and is aligned to the same `$vc`/`$rolename` variables.
+  Closes #324.
+
 ## v4.8.4 — 2026-09-16
 - **`docs/26-vcf-operations-vvf-vcenter.md`: mark all three PowerCLI
   scripts `# UNTESTED` inline, not just in surrounding prose.** Visible at

@@ -61,37 +61,37 @@ action privileges into two roles for two accounts — see
 
 ### PowerCLI — create the role
 
-`New-VIRole` does this in one shot instead of the wizard. Confirmed against a
-current vCenter first — see the caution below the script:
+`New-VIRole` does this in one shot instead of the wizard. **Field-verified**
+against both a vCenter 8 and a vCenter 9 instance:
 
 ```powershell
-# UNTESTED against a live VCF 9 vCenter - privilege IDs are cross-checked
-# against Broadcom's vSphere 8.0 Defined Privileges reference (see the note
-# below), not run in a lab. Verify against your own vCenter before relying
-# on it.
-Connect-VIServer -Server sfo-w01-vc01.sfo.rainpole.io
-
-$roleName = 'VCF-Ops-vCenter-Adapter'
+$vc        = Connect-VIServer -Menu
+$resolved  = @()
+$missing   = @()
+$rolename  = 'VCF_Operations'
 
 # Base (Read Only) + the common monitoring/data-collection set from the
 # TechDocs table above. Add ExternalStatsProvider.* / action privileges only
 # if VCF Operations needs to write stats or run actions against this vCenter.
-$privilegeIds = @(
-    'System.Anonymous', 'System.View', 'System.Read',
-    'Datastore.Browse', 'Performance.ModifyIntervals',
+$privs = @(
+    'System.Anonymous',
+    'System.View',
+    'System.Read',
+    'Datastore.Browse',
+    'Performance.ModifyIntervals',
     'VirtualMachine.GuestOperations.Query',
     'VirtualMachine.GuestOperations.Modify',
     'VirtualMachine.GuestOperations.Execute',
-    'Global.ManageCustomFields', 'Global.SetCustomField',
-    'ExternalStatsProvider.Register', 'ExternalStatsProvider.Unregister',
+    'Global.ManageCustomFields',
+    'Global.SetCustomField',
+    'ExternalStatsProvider.Register',
+    'ExternalStatsProvider.Unregister',
     'ExternalStatsProvider.Update'
 )
 
-$resolved = @()
-$missing = @()
-foreach ($id in $privilegeIds) {
-    try { $resolved += Get-VIPrivilege -Id $id -ErrorAction Stop }
-    catch { $missing += $id }
+foreach ($priv in $privs) {
+    try     { $resolved += Get-VIPrivilege -Server $vc -Id $priv -ErrorAction Stop }
+    catch   { $missing  += $priv }
 }
 
 if ($missing) {
@@ -100,23 +100,22 @@ if ($missing) {
           "do not create the role with a silently reduced privilege set."
 }
 
-New-VIRole -Name $roleName -Privilege $resolved
+New-VIRole -Server $vc -Name $rolename -Privilege $resolved
 ```
 
-> **These IDs are cross-checked against Broadcom's vSphere 8.0 Defined
-> Privileges reference tables — not a vSphere/VCF 9-specific source**
-> (TechDocs has no 9.0 version of that reference yet; the 7.0/8.0 pages are
-> the newest available). They're the same stable `Category.Action` API IDs
-> vSphere has used for years, so vCenter 9 should recognize them, but this
-> has **not been run against a live VCF 9 vCenter**. **The script aborts
-> rather than creating the role if any ID fails to resolve** — a role with a
-> silently reduced privilege set is worse than a script that stops and makes
-> you look, because it fails quietly much later (a metric or action VCF
-> Operations can't perform, with no error pointing back to the role). If an
-> ID genuinely doesn't exist on your build, fix `$privilegeIds` and re-run
-> rather than dropping it and moving on. Add the action privileges (Step 1's
-> third bullet) to `$privilegeIds` the same way if you're not splitting into
-> two accounts.
+**`Connect-VIServer -Menu` is what gives this multiple-vCenter support** —
+it prompts an interactive picker (saved/recent connections, or type a new
+FQDN) and lets you select more than one vCenter in a single run. `$vc` then
+holds every server you picked, and passing `-Server $vc` through
+`Get-VIPrivilege`/`New-VIRole` (rather than relying on PowerCLI's default
+connection) creates the role on all of them in one pass instead of
+re-running the script per vCenter.
+
+The privilege-ID abort-on-missing behavior is unchanged from the design
+above: a role with a silently reduced privilege set is worse than a script
+that stops and makes you look, because it fails quietly much later (a
+metric or action VCF Operations can't perform, with no error pointing back
+to the role).
 
 ## Step 2 — Create the service account
 
@@ -158,12 +157,13 @@ selected."* Skipping either — assigning at a datacenter/cluster level
 instead, or leaving Propagate to children unchecked — means VCF Operations
 can't see everything under that root.
 
-PowerCLI one-liner, continuing the session from Step 1:
+PowerCLI one-liner, continuing the `$vc` / `$rolename` session from Step 1
+(this part is **UNTESTED against a live VCF 9 vCenter** — verify before
+relying on it, unlike the role-creation script above):
 
 ```powershell
-# UNTESTED against a live VCF 9 vCenter - verify before relying on it.
-$rootFolder = Get-Folder -NoRecursion
-New-VIPermission -Entity $rootFolder -Principal 'svc-vcfops-vc01' -Role $roleName -Propagate:$true
+$rootFolder = Get-Folder -Server $vc -NoRecursion
+New-VIPermission -Server $vc -Entity $rootFolder -Principal 'svc-vcfops-vc01' -Role $rolename -Propagate:$true
 ```
 
 `Get-Folder -NoRecursion` with no name filter returns the top-level folder
@@ -202,8 +202,11 @@ Per Broadcom's
   accounts."* Two accounts (monitoring-only + action-capable) is the
   tighter-blast-radius option if VCF Operations will run remediation actions
   against this vCenter, not just collect metrics.
-- **This is a one-time setup per vCenter instance** — repeat Steps 1-4 for
-  every additional vCenter you connect to this standalone VCF Operations.
+- **Repeat Steps 1-4 for every additional vCenter** you connect to this
+  standalone VCF Operations — Step 1's script handles the role creation for
+  several vCenters in one run (`Connect-VIServer -Menu` selects more than
+  one), but the service account, permission assignment, and the VCF
+  Operations adapter add in Steps 2-4 are still per-vCenter.
 - **Verify collection, not just Validate Connection.** A green Validate
   Connection only confirms reachability and credentials; check the account's
   collection state on the Integrations page afterward to confirm data is
