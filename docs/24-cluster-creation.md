@@ -8,14 +8,17 @@
 > hosts to an *existing* cluster is
 > [`25-cluster-expansion.md`](25-cluster-expansion.md).
 
-Unlike the [stretch runbook](22-stretch-execution.md), Broadcom's VCF 9.1
-documentation covers this operation **only through the SDDC Manager UI
-wizard** — there is no dedicated 9.1 API walkthrough page for adding a
-cluster (there was one for older VCF versions, but it isn't carried forward
-in the current docs set). The underlying API endpoint still exists and is
-what [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators)'s
-`New-VCFClusterSpec.ps1` drives, but this runbook follows Broadcom's own
-documented path: the wizard.
+Broadcom's VCF 9.1 documentation covers this operation primarily through the
+**SDDC Manager UI wizard** — there is no dedicated 9.1 API *walkthrough page*
+for adding a cluster (there was one for older VCF versions, but it isn't
+carried forward in the current docs set). **The underlying API endpoint
+itself is still live and reference-documented** (`POST /v1/clusters` with
+`ClusterCreationSpec`) — it's what
+[**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators)'s
+`New-VCFClusterSpec.ps1` drives — so section 3 below covers it as the
+scripted alternative, same framing as `23-workload-domain-creation.md` §5:
+wizard for a normal, click-through delivery; API for LACP, multi-vDS,
+EVC/HA settings the wizard doesn't expose, or scripted/repeatable delivery.
 
 ---
 
@@ -79,7 +82,106 @@ SDDC Manager → the target workload domain → **Add Cluster**.
 8. **Validation** — SDDC Manager runs its pre-checks; **Finish** only
    commits once validation completes.
 
-## 3. Acceptance
+## 3. Create the cluster — API (scripted alternative)
+
+`POST /v1/clusters` carrying a `ClusterCreationSpec`, validated first via
+`POST /v1/clusters/validations` — same validate-then-submit pattern as the
+stretch and domain-creation runbooks.
+
+### Building the JSON by hand
+
+Same lookups as `23-workload-domain-creation.md` §5 — host IDs
+(`GET /v1/hosts` with `status=UNASSIGNED_USEABLE`) and the cluster image ID
+— plus one more:
+
+- **Domain ID.** `GET /v1/domains`, copy the `id` of the workload domain
+  you're adding this cluster to — `ClusterCreationSpec` is domain-scoped,
+  not standalone.
+
+Trimmed example (2 hosts, vSAN principal storage) — field names and nesting
+verified against the
+[VCF API reference](https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/data-structures/ClusterCreationSpec/)'s
+`ClusterCreationSpec`:
+
+```json
+{
+  "domainId": "<workload domain ID>",
+  "computeSpec": {
+    "clusterSpecs": [
+      {
+        "name": "sfo-w01-cl02",
+        "clusterImageId": "<image catalog ID>",
+        "hostSpecs": [
+          {
+            "id": "<host 1 ID>",
+            "licenseKey": "<ESXi license key, or omit with deployWithoutLicenseKeys>",
+            "hostNetworkSpec": {
+              "vmNics": [
+                { "id": "vmnic0", "vdsName": "sfo-w01-cl02-vds01", "uplink": "uplink1" },
+                { "id": "vmnic1", "vdsName": "sfo-w01-cl02-vds01", "uplink": "uplink2" }
+              ],
+              "networkProfileName": "sfo-w01-cl02-network-profile01"
+            }
+          },
+          { "id": "<host 2 ID>", "...": "same shape as host 1" }
+        ],
+        "datastoreSpec": {
+          "vsanDatastoreSpec": {
+            "datastoreName": "sfo-w01-cl02-ds-vsan01",
+            "failuresToTolerate": 1,
+            "licenseKey": "<vSAN license key, or omit with deployWithoutLicenseKeys>"
+          }
+        },
+        "networkSpec": {
+          "vdsSpecs": [
+            { "name": "sfo-w01-cl02-vds01", "mtu": 9000 }
+          ],
+          "nsxClusterSpec": { "...": "ipAddressPoolsSpec + uplinkProfiles — identical shape to the stretch/domain-creation runbooks" },
+          "networkProfiles": [
+            { "name": "sfo-w01-cl02-network-profile01", "isDefault": true, "nsxtHostSwitchConfigs": [ "<binds the profile to the vDS + pool/uplink profile by name>" ] }
+          ]
+        },
+        "advancedOptions": {
+          "evcMode": "<EVC baseline, e.g. intel-icelake — omit to inherit the cluster default>",
+          "highAvailability": { "enabled": true }
+        }
+      }
+    ],
+    "skipFailedHosts": false
+  },
+  "deployWithoutLicenseKeys": true
+}
+```
+
+Field-by-field, the parts specific to cluster creation (everything else —
+`hostSpecs[].hostNetworkSpec`, `datastoreSpec`, `networkSpec.vdsSpecs`/
+`nsxClusterSpec`/`networkProfiles` — is identical in shape and gotchas to
+`23-workload-domain-creation.md` §5, since both specs nest the same
+`ComputeSpec.ClusterSpec` structure):
+
+- **`domainId`** — the one field this spec has that `DomainCreationSpec`
+  doesn't: which existing domain the cluster is added to. Get this from the
+  domain-ID lookup above, not the domain name.
+- **`computeSpec.skipFailedHosts`** — the API equivalent of the wizard's
+  "skip failed hosts" toggle (step 2.5 above): `true` proceeds with
+  whichever hosts pass pre-checks instead of blocking on one bad host.
+- **`clusterSpecs[].advancedOptions`** — **not exposed by the wizard at
+  all.** `evcMode` sets an Enhanced vMotion Compatibility baseline at
+  creation time instead of configuring it after the fact in vCenter;
+  `highAvailability.enabled` toggles vSphere HA on the cluster immediately
+  rather than as a separate post-creation step. This is one of the concrete
+  reasons to reach for the API path over the wizard even when you don't
+  need LACP or a reused vDS.
+- **`networkSpec.vdsSpecs[]`** — one entry per vDS; **to reuse an existing
+  vDS** (the four-condition check in §1 above) instead of creating a new
+  one, reference the existing vDS's `name` here rather than a new one —
+  the API doesn't have a separate "reuse" flag, reuse is just naming an
+  object that already exists.
+- **`deployWithoutLicenseKeys`** — same field and guidance as the stretch
+  and domain-creation runbooks: leave `true` unless you specifically want
+  the call to hard-fail on a missing license key.
+
+## 4. Acceptance
 
 - Cluster online in SDDC Manager, storage healthy for the chosen principal
   type.

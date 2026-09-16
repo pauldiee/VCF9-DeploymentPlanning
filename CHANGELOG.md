@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.9.0 — 2026-09-16
+- **`docs/24-cluster-creation.md` and `docs/25-cluster-expansion.md`: add
+  API walkthroughs (`ClusterCreationSpec` / `ClusterExpansionSpec`),
+  matching docs/23's depth.** Both operations turned out to have live,
+  reference-documented API endpoints neither doc previously covered — docs/24
+  said outright there was "no dedicated 9.1 API walkthrough page"; docs/25
+  only documented the vSphere Client click-path. New §3 in each: lookups,
+  a trimmed and syntax-validated JSON example, field-by-field breakdown.
+  docs/24 covers `advancedOptions` (EVC mode / HA), not exposed by the
+  wizard at all; docs/25 covers `interRackExpansion` and flags the
+  stretched-cluster-only fields (`witnessSpec` etc.) plus two deprecated
+  flags. Both cross-reference docs/22/23 for shared substructures instead
+  of duplicating them. Acceptance sections renumbered §3→§4 in both.
+  Closes #329.
+
 ## v4.8.9 — 2026-09-16
 - **`docs/23-workload-domain-creation.md` §5: expand the DomainCreationSpec
   API walkthrough to match `docs/22-stretch-execution.md`'s depth.** Was a
