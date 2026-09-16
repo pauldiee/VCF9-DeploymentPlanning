@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.8.9 — 2026-09-16
+- **`docs/23-workload-domain-creation.md` §5: expand the DomainCreationSpec
+  API walkthrough to match `docs/22-stretch-execution.md`'s depth.** Was a
+  top-level shape with `"..."` placeholders; now has the lookups needed
+  first (host IDs, cluster image ID, NSX license key), a full trimmed JSON
+  example (2 hosts, one cluster, vSAN) verified against the VCF API
+  reference (`DomainCreationSpec`, `VcenterSpec`, `ComputeSpec`,
+  `NsxTSpec`, `SsoDomainSpec`, `VdsSpec`, `HostNetworkSpec`,
+  `VsanDatastoreSpec`), and a field-by-field breakdown. Cross-references
+  docs/22 for the `networkSpec`/`nsxClusterSpec` structure shared between
+  both specs rather than duplicating it; ties `ssoDomainSpec` back to the
+  `vsphere.local` guidance from #326. Closes #328.
+
 ## v4.8.8 — 2026-09-16
 - **`docs/23-workload-domain-creation.md`: align the `DomainCreationSpec`
   JSON's `ssoDomainSpec` comment with the SSO domain guidance from v4.8.7.**

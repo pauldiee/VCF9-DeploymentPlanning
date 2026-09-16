@@ -131,19 +131,157 @@ expansion. The spec is `DomainCreationSpec`, submitted the same
 validate-then-PATCH pattern as the stretch runbook:
 `POST /v1/domains/validations` → `PUT /v1/domains`.
 
-Top-level shape (verified against the [VCF API reference](https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/data-structures/DomainCreationSpec/)):
+### Building the JSON by hand
+
+Same two lookups as the stretch runbook, plus one more specific to domain
+creation:
+
+- **Host IDs.** `GET /v1/hosts` with `status=UNASSIGNED_USEABLE`, copy the
+  `id` for each commissioned host (step 2 above).
+- **Cluster image ID.** From the image catalog you picked in the wizard's
+  equivalent step — `GET /v1/releases` or the image-management endpoints,
+  copy the `id` for `clusterImageId`.
+- **NSX license key** — `nsxTSpec.licenseKey` below; not needed at all if
+  `deployWithoutLicenseKeys: true`.
+
+Trimmed example (2 hosts, one cluster, vSAN principal storage) — field names
+and nesting verified against the
+[VCF API reference](https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/data-structures/DomainCreationSpec/)'s
+`DomainCreationSpec` and its nested types:
 
 ```json
 {
   "domainName": "sfo-w01",
   "orgName": "sfo",
-  "vcenterSpec": { "...": "vCenter FQDN/IP/gateway/root password" },
-  "computeSpec": { "...": "clusterSpec(s), hostSpecs, vdsSpecs, datastoreSpec" },
-  "nsxTSpec": { "...": "NSX Manager appliances, VIP, license, transport config" },
-  "ssoDomainSpec": { "...": "new SSO domain, named vsphere.local — see the SSO domain callout in step 4 above" },
+  "vcenterSpec": {
+    "name": "sfo-w01-vc01",
+    "networkDetailsSpec": {
+      "ipAddress": "10.11.14.10",
+      "dnsName": "sfo-w01-vc01.sfo.rainpole.io",
+      "gateway": "10.11.14.1",
+      "subnetMask": "255.255.255.0"
+    },
+    "rootPassword": "VMw@re1!VCF",
+    "datacenterName": "sfo-w01-dc01",
+    "vmSize": "medium",
+    "storageSize": "lstorage"
+  },
+  "computeSpec": {
+    "clusterSpecs": [
+      {
+        "name": "sfo-w01-cl01",
+        "clusterImageId": "<image catalog ID>",
+        "hostSpecs": [
+          {
+            "id": "<host 1 ID>",
+            "licenseKey": "<ESXi license key, or omit with deployWithoutLicenseKeys>",
+            "hostNetworkSpec": {
+              "vmNics": [
+                { "id": "vmnic0", "vdsName": "sfo-w01-cl01-vds01", "uplink": "uplink1" },
+                { "id": "vmnic1", "vdsName": "sfo-w01-cl01-vds01", "uplink": "uplink2" }
+              ],
+              "networkProfileName": "sfo-w01-cl01-network-profile01"
+            }
+          },
+          { "id": "<host 2 ID>", "...": "same shape as host 1" }
+        ],
+        "datastoreSpec": {
+          "vsanDatastoreSpec": {
+            "datastoreName": "sfo-w01-cl01-ds-vsan01",
+            "failuresToTolerate": 1,
+            "licenseKey": "<vSAN license key, or omit with deployWithoutLicenseKeys>"
+          }
+        },
+        "networkSpec": {
+          "vdsSpecs": [
+            {
+              "name": "sfo-w01-cl01-vds01",
+              "mtu": 9000,
+              "portGroupSpecs": [ "<one entry per traffic type — same idea as the wizard's vDS profile page>" ]
+            }
+          ],
+          "nsxClusterSpec": { "...": "ipAddressPoolsSpec + uplinkProfiles — identical shape to the stretch runbook's nsxClusterSpec" },
+          "networkProfiles": [
+            {
+              "name": "sfo-w01-cl01-network-profile01",
+              "isDefault": true,
+              "nsxtHostSwitchConfigs": [ "<binds the profile to the vDS + pool/uplink profile by name — see the stretch runbook>" ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "nsxTSpec": {
+    "nsxManagerSpecs": [
+      { "name": "sfo-w01-nsx01a", "networkDetailsSpec": { "...": "IP/gateway/DNS, same shape as vcenterSpec's" } },
+      { "name": "sfo-w01-nsx01b", "...": "same shape" },
+      { "name": "sfo-w01-nsx01c", "...": "same shape" }
+    ],
+    "vipFqdn": "sfo-w01-nsx01.sfo.rainpole.io",
+    "licenseKey": "<NSX license key, or omit with deployWithoutLicenseKeys>",
+    "nsxManagerAdminPassword": "VMw@re1!VCF",
+    "formFactor": "medium"
+  },
+  "ssoDomainSpec": {
+    "ssoDomainName": "vsphere.local",
+    "ssoDomainPassword": "VMw@re1!VCF"
+  },
   "deployWithoutLicenseKeys": true
 }
 ```
+
+Field-by-field, the parts that aren't self-explanatory or that overlap with
+the stretch runbook:
+
+- **`vcenterSpec`** — one vCenter appliance per domain, always. `vmSize` /
+  `storageSize` are the same tiering choice as the bring-up vCenter
+  (`tiny`/`small`/`medium`/`large`/`xlarge`; `lstorage`/`xlstorage`) — size
+  it against the domain's expected inventory, not just copy the management
+  domain's.
+- **`computeSpec.clusterSpecs[].hostSpecs[]`** — one entry per commissioned
+  host from step 2. `hostNetworkSpec.vmNics[]` is the **wizard's page-8 vDS
+  profile, expressed per host** instead of picked from a dropdown — get the
+  uplink-to-vDS mapping wrong here and the host fails to join the vDS,
+  exactly like the stretch runbook's `hostSpecs[].hostNetworkSpec.vmNics`.
+- **`computeSpec.clusterSpecs[].datastoreSpec`** — pick the block matching
+  your principal storage type: `vsanDatastoreSpec` (shown),
+  `nfsDatastoreSpecs[]`, `vmfsDatastoreSpec`, or `vvolDatastoreSpecs[]` —
+  only one applies per cluster, matching the wizard's step-6 branch.
+  `failuresToTolerate` is vSAN OSA-only; vSAN ESA clusters use `esaConfig`
+  instead.
+- **`computeSpec.clusterSpecs[].networkSpec.vdsSpecs[]`** — one entry **per
+  vDS**; this is the field that makes the API path mandatory for a
+  **more-than-one-vDS** domain, since the wizard's vDS profile page only
+  builds one. `mtu` applies per vDS, not per uplink.
+- **`networkSpec.nsxClusterSpec`** and **`networkSpec.networkProfiles[]`** —
+  identical shape and gotchas to the stretch runbook's `networkSpec` (the
+  AZ2 TEP pool + sub-TNP profile) — see
+  [`22-stretch-execution.md`](22-stretch-execution.md#building-the-json-by-hand)
+  for the field-by-field breakdown of `ipAddressPoolsSpec`,
+  `uplinkProfiles[]`, and `nsxtHostSwitchConfigs[]`. The one difference
+  here: `networkProfiles[].isDefault` is **always `true`** for a new
+  domain's first (and normally only) network profile — there's no
+  management-vs-workload split to make, because this *is* the domain's
+  cluster being created fresh, not a stretch being added to one that
+  already has a default profile.
+- **`nsxTSpec.nsxManagerSpecs[]`** — 1 appliance for a small/compact
+  deployment or 3 for a standard HA cluster, same choice as page 5's
+  "deploy a new one" branch. `vipFqdn` (shown) or `vip` — TechDocs: *"Can
+  be omitted if FQDN is provided"* — provide one or the other, not
+  necessarily both.
+- **`ssoDomainSpec`** — per the corrected guidance in step 4 above:
+  **always `ssoDomainName: "vsphere.local"`**, never a domain-specific
+  name. Omitting `ssoDomainSpec` entirely joins an existing SSO domain
+  instead of creating a new, isolated one — don't omit it unless that's
+  deliberately what you want.
+- **`deployWithoutLicenseKeys`** — same field and same guidance as the
+  stretch runbook: leave `true` unless you specifically want the call to
+  hard-fail on a missing license key. With it `true`, every
+  `licenseKey` field above can be omitted.
+- **`securitySpec`** (not shown) — optional; only needed to set
+  non-default password-complexity or account-lockout policy at creation
+  time rather than after the fact in vCenter/NSX directly.
 
 `vcenterSpec`, `computeSpec`, and `nsxTSpec` are each large, deeply-nested
 objects (per-host vmnic mappings, per-vDS uplink profiles, NSX transport
