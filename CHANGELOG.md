@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.7.3 — 2026-09-16
+- **`docs/09-binary-depot.md` §5.1: note the VVF/standalone vCenter adapter
+  needs a dedicated vCenter service account/role, created manually.** No
+  Fleet LCM to provision one in this topology. TechDocs-quoted base Read
+  Only role (`System.Anonymous`/`System.View`/`System.Read`), the
+  top-level-folder + Propagate to children requirement, and the option to
+  split monitoring vs. action privileges across two accounts. Closes #317.
+
 ## v4.7.2 — 2026-09-16
 - **`docs/09-binary-depot.md` §5.3: note the Cloud Proxy OVA Unique
   Registration Key expires 24 hours after generation.** TechDocs-quoted; no
