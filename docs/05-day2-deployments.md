@@ -287,6 +287,25 @@ or reset via single-user mode if forgotten entirely), not the complexity
 rule itself — that's in the KB's *Additional Information* section, easy to
 miss on a first read.
 
+## B.5 — vCenter adapter account for VCF Operations (VVF/standalone)
+
+**In VVF/standalone (no Fleet LCM — see
+[`09-binary-depot.md` §5.1](09-binary-depot.md#51-proxying-vcf-operations-without-a-vcf-management-services-runtime-vvf--standalone)),
+nothing auto-provisions or registers a vCenter service account for VCF
+Operations.** You create the user and role in vCenter yourself, then feed
+those credentials into VCF Operations' vCenter adapter instance. TechDocs
+([Privileges Required for Configuring a vCenter Adapter Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations/privileges-required-for-configuring-a-vcenter-adapter-instance.html))
+gives the base role as a **Read Only role with three system-defined
+privileges: `System.Anonymous`, `System.View`, and `System.Read`**, layering
+on more (guest operations, service configuration, storage views, custom
+attributes, `ExternalStatsProvider.*`) depending on what you want VCF
+Operations to monitor or act on. Two constraints that are easy to miss:
+**the permission must be set on the top-level folder of the vCenter Server
+inventory, with Propagate to children checked** — not at the datacenter or
+cluster level — and you can either combine everything into one role for one
+service account, or split monitoring privileges and action privileges
+across two separate accounts.
+
 ---
 
 ## C. Network placement — the options

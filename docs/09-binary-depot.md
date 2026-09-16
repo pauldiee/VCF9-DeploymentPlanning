@@ -650,22 +650,9 @@ If Cloud Proxies are also deployed in this topology, each one takes its own
 proxy setting at OVA-deploy time (§5.3 below) — they don't inherit VCF
 Operations' Global Settings proxy.
 
-> **Also for VVF/standalone: create the vCenter adapter account before you
-> add the vCenter connection.** With no Fleet LCM, nothing provisions or
-> registers a vCenter service account for VCF Operations automatically —
-> you create the user and role in vCenter yourself, then feed those
-> credentials into VCF Operations' vCenter adapter instance. TechDocs
-> ([Privileges Required for Configuring a vCenter Adapter Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations/privileges-required-for-configuring-a-vcenter-adapter-instance.html))
-> gives the base role as a **Read Only role with three system-defined
-> privileges: `System.Anonymous`, `System.View`, and `System.Read`**, layering
-> on more (guest operations, service configuration, storage views, custom
-> attributes, `ExternalStatsProvider.*`) depending on what you want VCF
-> Operations to monitor or act on. Two constraints that are easy to miss:
-> **the permission must be set on the top-level folder of the vCenter Server
-> inventory, with Propagate to children checked** — not at the datacenter or
-> cluster level — and you can either combine everything into one role for one
-> service account, or split monitoring privileges and action privileges
-> across two separate accounts.
+> Also for VVF/standalone: the vCenter adapter needs its own dedicated
+> service account, created manually since there's no Fleet LCM to provision
+> one — see [`05-day2-deployments.md` §B.5](05-day2-deployments.md#b5--vcenter-adapter-account-for-vcf-operations-vvfstandalone).
 
 ## 5.2 SSL-inspecting (TLS-terminating) proxies
 

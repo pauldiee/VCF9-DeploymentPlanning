@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.7.4 — 2026-09-16
+- **Moved the VVF/standalone vCenter adapter account note (v4.7.3) out of
+  `docs/09-binary-depot.md` into a new `docs/05-day2-deployments.md` §B.5.**
+  It's a VCF Operations topic, not a binary-depot one — §5.1 in docs/09 now
+  just cross-links to it. No content change beyond the move. Closes #318.
+
 ## v4.7.3 — 2026-09-16
 - **`docs/09-binary-depot.md` §5.1: note the VVF/standalone vCenter adapter
   needs a dedicated vCenter service account/role, created manually.** No
