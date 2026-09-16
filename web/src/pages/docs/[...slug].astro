@@ -14,7 +14,9 @@ export async function getStaticPaths() {
 
 const { doc } = Astro.props;
 const { Content, headings } = await render(doc);
-const sections = headings.filter((h) => h.depth === 2);
+// Every heading level gets a TOC entry (not just H2) — nested by depth so the
+// widget doubles as full in-page navigation, not just a section jump list.
+const sections = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
 
 const meta = navBySlug(doc.id);
 const idx = NAV.findIndex((n) => n.slug === doc.id);
@@ -37,7 +39,7 @@ const title = meta ? `${meta.label} — VCF 9 Deployment Planning and Operations
           <span class="doc-toc__label">On this page</span>
           <ul class="doc-toc__list">
             {sections.map((h) => (
-              <li>
+              <li class={`doc-toc__item doc-toc__item--h${h.depth}`}>
                 <a href={`#${h.slug}`} data-toc-target={h.slug}>
                   {h.text}
                 </a>
@@ -118,10 +120,17 @@ const title = meta ? `${meta.label} — VCF 9 Deployment Planning and Operations
     border-left-color: var(--itq-orange);
     font-weight: var(--fw-semibold);
   }
+  /* H3/H4 nest under their H2 — same vertical line, indented text and a
+     smaller/quieter treatment the deeper it goes. */
+  .doc-toc__item--h3 a { padding-left: calc(var(--space-3) + 12px); font-size: 0.94em; }
+  .doc-toc__item--h4 a { padding-left: calc(var(--space-3) + 24px); font-size: 0.88em; color: var(--text-quiet); }
+  .doc-toc__item--h4 a:hover,
+  .doc-toc__item--h4 a.is-active { color: var(--itq-orange); }
 
   /* Anchor targets inside the rendered markdown: keep headings clear of the sticky header */
   :global(.doc.prose h2),
-  :global(.doc.prose h3) {
+  :global(.doc.prose h3),
+  :global(.doc.prose h4) {
     scroll-margin-top: 90px;
   }
 

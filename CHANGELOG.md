@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.1.2 — 2026-09-17
+- **docs on-page TOC now includes every heading level (H2/H3/H4), not just
+  H2.** Several docs have real subsections (docs/24's "Reusing an existing
+  vDS", docs/19's 26 H4s) that never appeared. Nested visually under the
+  same vertical line with increasing indent, quieter the deeper it goes.
+  Scroll-spy and anchor scroll-margin extended to cover H4. Closes #339.
+
 ## v5.1.1 — 2026-09-17
 - **docs on-page TOC restyled to match the mega-menu mockup: sticky
   right-hand column, not a horizontal chip list.** Left untouched in
