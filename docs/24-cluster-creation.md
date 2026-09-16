@@ -39,7 +39,10 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
 
 - The **network pool** and the hosts you're adding must **already exist** —
   same ordering rule as `22-stretch-execution.md` and
-  `23-workload-domain-creation.md`: build the pool, then commission.
+  `23-workload-domain-creation.md`: build the pool, then commission. Image
+  and commission new hosts with
+  [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)
+  before this step.
 - Hosts must be **in active state**, commissioned, and use the **same
   principal storage type as the cluster** you're creating.
 - If this cluster's NSX Host Overlay uses **DHCP** rather than a static IP

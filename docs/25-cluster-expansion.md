@@ -43,9 +43,11 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
 - If this cluster's NSX Host Overlay uses a **static IP pool**, confirm it
   **has enough free addresses** for the hosts you're adding before you
   start — the wizard does not grow the pool for you.
-- Commission the host into SDDC Manager first (same network pool as the
-  existing cluster) — it must show as **unassigned** and **active** in the
-  Hosts inventory.
+- Image and commission the host into SDDC Manager first (same network pool
+  as the existing cluster) — use
+  [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)
+  to prep and commission quickly. It must show as **unassigned** and
+  **active** in the Hosts inventory.
 - **vSAN stretched clusters cannot use a shared vDS** — if this cluster is
   stretched, don't route this expansion through a vDS-reuse path meant for
   non-stretched clusters.

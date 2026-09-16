@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.0.2 — 2026-09-16
+- **Link VCFHostPreparation wherever a doc instructs commissioning hosts
+  as a step.** Repo-wide sweep of every "commission" mention — most were
+  incidental (background context, decommission, precondition callbacks),
+  not instructional steps. `docs/06`, `docs/22` §2, and `docs/23` §2
+  already linked it correctly. `docs/24` §1 and `docs/25` §1 treated
+  commissioning as a precondition without pointing at the script — fixed.
+  Closes #334.
+
 ## v5.0.1 — 2026-09-16
 - **Flag vVols as deprecated everywhere it's mentioned as a storage
   option.** TechDocs-verified (KB 401070): deprecated beginning VCF/VVF
