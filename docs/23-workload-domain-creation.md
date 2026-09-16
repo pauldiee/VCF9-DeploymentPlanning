@@ -70,7 +70,11 @@ the wizard starts; it validates DNS live.
 
 ## 4. Create the domain — wizard (primary path)
 
-SDDC Manager → Workload Domains → **Add Domain**. Deployment type **"Full
+**VCF Operations, not SDDC Manager** — SDDC Manager's own UI is deprecated
+in VCF 9 (see `CLAUDE.md`). TechDocs-verified click-path: **Operate →
+Overview → Inventory**, expand **VCF Instances** and select your instance,
+then the **Add workload domain** dropdown → **Create new** → review
+prerequisites → **Select All** → **Proceed**. Deployment type **"Full
 deployment with cluster"** builds vCenter + NSX + the first cluster in one
 run; **"Domain infrastructure only"** builds vCenter + NSX with no cluster
 (hosts/cluster added later — this is also the only path if you need a domain

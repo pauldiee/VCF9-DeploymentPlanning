@@ -40,11 +40,13 @@ vSAN ESA or OSA hosts for availability zone 2."* Build the pool first — the
 commission call binds each host to a pool by ID, so there is nothing to bind
 to until it exists.
 
-- **Build the AZ2 network pool first.** SDDC Manager → Administration →
-  Network Settings → Network Pools (or `POST /v1/network-pools`). Same shape
-  as intake `H8` / `docs/workbook-cell-mapping.md`: the **vMotion + vSAN**
-  VMkernel network definitions for AZ2 — VLAN, MTU, gateway, IP range. This
-  pool is a distinct object from the AZ2 host TEP (overlay) subnet below —
+- **Build the AZ2 network pool first.** In VCF 9, this is a **vSphere
+  Client** task, not SDDC Manager's own UI (deprecated for VCF 9 — see the
+  callout below): **Global Inventory Lists → Hosts → Network Pools →
+  Create Network Pool** (or `POST /v1/network-pools`). Same shape as intake
+  `H8` / `docs/workbook-cell-mapping.md`: the **vMotion + vSAN** VMkernel
+  network definitions for AZ2 — VLAN, MTU, gateway, IP range. This pool is
+  a distinct object from the AZ2 host TEP (overlay) subnet below —
   vMotion/vSAN and the NSX host overlay are configured and validated
   separately, don't treat "network pool" as covering both.
 - Image the AZ2 hosts with the supported ESXi ISO. Use

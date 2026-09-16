@@ -1,5 +1,26 @@
 # Changelog
 
+## v4.10.0 — 2026-09-16
+- **New CLAUDE.md convention: SDDC Manager UI is deprecated in VCF 9 —
+  never document it as the primary click-path.** Broadcom has deprecated
+  SDDC Manager's own web console in VCF 9 (removal planned in a future
+  release); workflows moved to VCF Operations and the vSphere Client.
+  TechDocs page titles/URLs are inconsistently named (a page slugged
+  "...using-the-sddc-manager-ui" often documents a VCF Operations or
+  vSphere Client flow instead), so always verify the actual click-path in
+  the page body. Carve-outs: the API/backend, and a menu literally named
+  "SDDC Manager" *inside* VCF Operations (e.g. the backup-config section in
+  `08-backup-target.md`).
+- **Swept docs/22, 23, 24, 25 for SDDC-Manager-UI click-paths and fixed
+  the two live ones**, TechDocs-verified: network pool creation
+  (docs/22 §2) is a vSphere Client task (Global Inventory Lists → Hosts →
+  Network Pools → Create Network Pool), and the workload domain "Add
+  Domain" wizard (docs/23 §4) actually lives in VCF Operations (Operate →
+  Overview → Inventory → VCF Instances → Add workload domain → Create
+  new), not SDDC Manager. docs/24 and docs/25 already had this right; their
+  cross-references to docs/23 as "genuinely SDDC Manager UI end to end"
+  were now wrong and updated. Closes #332.
+
 ## v4.9.2 — 2026-09-16
 - **`docs/25-cluster-expansion.md`: fix a stale cross-reference calling
   `docs/24-cluster-creation.md` an "SDDC Manager wizard end to end."** No

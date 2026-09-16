@@ -69,6 +69,35 @@ Docs **plus** an Astro site (`web/`, incl. the interactive sizing and deployment
 
 ---
 
+## SDDC Manager UI is deprecated in VCF 9 — never document it as the primary click-path
+
+Broadcom has deprecated SDDC Manager's own web console in VCF 9 (a future
+release removes it entirely); its wizards/workflows have moved to **VCF
+Operations** (`Operate → Overview → Inventory`, `Operate → Administration`,
+`Build → Lifecycle`) and the **vSphere Client** (`Global Inventory Lists`,
+per-object `Actions` menus). SDDC Manager UI often still *works* as an
+undocumented-click-path alternative during the deprecation window, and
+Broadcom's TechDocs URLs are inconsistently named (a page titled *"...Using
+the SDDC Manager UI"* may actually document the VCF Operations or vSphere
+Client flow, with SDDC Manager UI mentioned only as the fallback) — always
+verify the actual click-path in the page body, not the URL slug or title,
+before writing a runbook step.
+
+This does **not** apply to:
+- **SDDC Manager the API/backend** — `/v1/...` REST endpoints, "commissioned
+  into SDDC Manager" as a statement of system-of-record fact, and SDDC
+  Manager appliance references (root password, FIPS, backup target) are all
+  still accurate and unaffected.
+- **A menu item literally named "SDDC Manager" *inside* VCF Operations**
+  (e.g. `Operate → Administration → SDDC Manager` for backup config,
+  `08-backup-target.md` §1) — that's a section of VCF Operations' own UI,
+  not SDDC Manager's deprecated console.
+
+When adding or editing a runbook click-path, confirm against current
+TechDocs which console actually hosts it (#332).
+
+---
+
 ## Author
 
 | Field | Value                          |

@@ -8,13 +8,14 @@
 > grow its capacity.
 
 The documented **click-path** for this operation runs through the **vSphere
-Client**, not a dedicated SDDC Manager wizard — like
-`24-cluster-creation.md` (Create SDDC Cluster), **not** like
-`23-workload-domain-creation.md`, which genuinely is a SDDC Manager UI
-wizard end to end. Broadcom's own page notes *"you can instead perform this
-task using the SDDC Manager UI"* as an alternative but does not document
-that alternative's click path — treat the vSphere Client flow below as the
-supported, documented UI route.
+Client**, same as `24-cluster-creation.md` (Create SDDC Cluster) and
+`23-workload-domain-creation.md` (Add workload domain, from **VCF
+Operations**) — **none of the three runbooks in this set use SDDC Manager's
+own UI as the primary route**, which is deprecated in VCF 9 (see
+`CLAUDE.md`). Broadcom's own page notes *"you can instead perform this
+task using the SDDC Manager UI"* as a still-working alternative during the
+deprecation window, but does not document that alternative's click path —
+treat the vSphere Client flow below as the supported, documented UI route.
 
 **The underlying SDDC Manager API is fully reference-documented**, though
 (`PATCH /v1/clusters/{clusterId}` with `ClusterExpansionSpec`), and it's the

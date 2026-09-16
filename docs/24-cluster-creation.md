@@ -11,9 +11,9 @@
 **Broadcom's documented click-path for this runs through the vSphere
 Client, not SDDC Manager** — the same shape as `25-cluster-expansion.md`:
 you browse to the domain's vCenter and drive the wizard from there. TechDocs
-is explicit that the SDDC Manager UI is the *alternative* here, not the
-primary route: *"Additionally, you can perform this task using the SDDC
-Manager UI."* There is also no dedicated 9.1 API *walkthrough page* for
+is explicit that the SDDC Manager UI (**deprecated in VCF 9** — see
+`CLAUDE.md`) is the *alternative* here, not the primary route:
+*"Additionally, you can perform this task using the SDDC Manager UI."* There is also no dedicated 9.1 API *walkthrough page* for
 adding a cluster (there was one for older VCF versions, but it isn't carried
 forward in the current docs set). **The underlying API endpoint itself is
 still live and reference-documented** (`POST /v1/clusters` with
