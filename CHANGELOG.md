@@ -1,5 +1,11 @@
 # Changelog
 
+## v5.0.3 — 2026-09-16
+- **`docs/24-cluster-creation.md` §1: give the VCFHostPreparation link its
+  own bullet.** It was a trailing clause on the network-pool bullet from
+  v5.0.2 and easy to miss on a read-through — split out for visibility.
+  Closes #335.
+
 ## v5.0.2 — 2026-09-16
 - **Link VCFHostPreparation wherever a doc instructs commissioning hosts
   as a step.** Repo-wide sweep of every "commission" mention — most were
