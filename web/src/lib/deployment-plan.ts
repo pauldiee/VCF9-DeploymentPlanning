@@ -428,11 +428,12 @@ const E7_MGMT_STRETCH: Epic = {
     },
     {
       id: '7.2',
-      title: 'Install, configure & commission the second-AZ hosts',
+      title: 'Build the AZ2 network pool, then install, configure & commission the second-AZ hosts',
       tasks: [
-        `Image the AZ2 management hosts with the supported ESXi ISO (see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly); configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then commission them into SDDC Manager, ready for the stretch.`,
+        'Broadcom lists these as two separate, ordered prerequisites: create the network pool for AZ2 (vMotion + vSAN VMkernel networks) before commissioning, since the commission call binds each host to a pool by ID.',
+        `Image the AZ2 management hosts with the supported ESXi ISO (see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly); configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then commission them into SDDC Manager, into the AZ2 network pool, ready for the stretch.`,
       ],
-      acceptance: 'AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned and available in SDDC Manager.',
+      acceptance: 'AZ2 network pool created; AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned into that pool and available in SDDC Manager.',
     },
     {
       id: '7.3',
@@ -444,7 +445,7 @@ const E7_MGMT_STRETCH: Epic = {
       id: '7.4',
       title: 'Stretch the cluster',
       tasks: [
-        'SDDC Manager does the stretch for you: submit a stretch JSON spec via the SDDC Manager API (API-only — no UI workflow) and VCF builds the fault domains (AZ1 preferred / AZ2 secondary / witness), balances hosts across the AZs, and flips the datastore storage policy to site mirroring (stretched, ~2× capacity). You just supply the inputs from 7.1–7.3: an AZ2 network pool, the commissioned AZ2 hosts (equal count per AZ), and the witness. It will not stretch if the cluster shares a vSAN storage policy with another cluster, has DPU-backed hosts, or has L3-different subnets within an AZ. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html and 03-multi-az-prep.md.',
+        'SDDC Manager does the stretch for you: submit a stretch JSON spec via the SDDC Manager API (API-only — no UI workflow) and VCF builds the fault domains (AZ1 preferred / AZ2 secondary / witness), balances hosts across the AZs, and flips the datastore storage policy to site mirroring (stretched, ~2× capacity). You just supply the inputs from 7.1–7.3: an AZ2 network pool, the commissioned AZ2 hosts (equal count per AZ), and the witness. It will not stretch if the cluster shares a vSAN storage policy with another cluster, has DPU-backed hosts, has L3-different subnets within an AZ, or has vSphere Supervisor enabled (enable Supervisor only after the stretch). Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html and 03-multi-az-prep.md.',
         'Edge cluster before or after the stretch — both are supported, so the order is a design choice (this plan defaults to edges first, story 6.1, to verify north-south while still single-AZ). If the cluster already hosts an NSX Edge cluster, set isEdgeClusterConfiguredForMultiAZ: true in the stretch spec (set wrong, the edge-specific AZ configuration is skipped). Deploying an Edge cluster onto an already-stretched cluster is equally supported — new edge nodes are placed on AZ1 hosts. Either way the stretched Edge Overlay + Uplink networks must exist (03-multi-az-prep.md section D; Centralized connectivity only).',
       ],
       acceptance: 'SDDC Manager reports the cluster stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
@@ -688,9 +689,12 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
         { id: '9.1', title: 'WLD network prep (per-AZ)', tasks: ['Provision the per-WLD VLANs/subnets across both AZs (per-AZ networks) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.'], acceptance: 'Per-WLD VLANs/subnets provisioned across both AZs; the 5 mgmt-subnet IPs reserved; DNS in place.' },
         {
           id: '9.2',
-          title: 'Prepare & commission the WLD hosts (both AZs)',
-          tasks: [`Image the WLD hosts in both AZs with the supported ESXi ISO (${hostPrep}); configure the per-AZ management networks, DNS, NTP; then commission them into SDDC Manager.`],
-          acceptance: 'WLD hosts in both AZs reachable, matched ESXi build, commissioned in SDDC Manager.',
+          title: 'Build the AZ2 network pool, then prepare & commission the WLD hosts (both AZs)',
+          tasks: [
+            'Create the AZ2 network pool (vMotion + vSAN VMkernel networks) before commissioning — the commission call binds each host to a pool by ID.',
+            `Image the WLD hosts in both AZs with the supported ESXi ISO (${hostPrep}); configure the per-AZ management networks, DNS, NTP; then commission them into SDDC Manager, into the AZ2 network pool.`,
+          ],
+          acceptance: 'AZ2 network pool created; WLD hosts in both AZs reachable, matched ESXi build, commissioned into that pool in SDDC Manager.',
         },
         { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
         {
@@ -703,7 +707,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
           id: '9.5',
           title: 'Stretch the WLD cluster',
           tasks: [
-            "SDDC Manager stretches it for you, same as the management stretch — a JSON spec via the SDDC Manager API builds the fault domains, balances the per-AZ hosts, and sets the site-mirroring storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. The management domain must already be stretched (E7) before any workload-domain cluster can be stretched. Edge stretched only under NSX Centralized connectivity. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html",
+            "SDDC Manager stretches it for you, same as the management stretch — a JSON spec via the SDDC Manager API builds the fault domains, balances the per-AZ hosts, and sets the site-mirroring storage policy. Supply the AZ2 network pool, the commissioned WLD hosts (equal per AZ), and this WLD's witness. The management domain must already be stretched (E7) before any workload-domain cluster can be stretched, and the WLD cluster must not have vSphere Supervisor enabled yet — stretch first, enable Supervisor after. Edge stretched only under NSX Centralized connectivity. Ref: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html",
           ],
           acceptance: 'SDDC Manager reports the WLD stretched; vSAN healthy and storage-policy compliant (site mirroring); isolating one AZ keeps VMs running on the surviving site.',
         },

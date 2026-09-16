@@ -32,29 +32,44 @@ between AZ1/AZ2, witness RTT budget, MTU 9000 end-to-end, per-AZ subnets for
 ESX Management / vMotion / vSAN / **host TEP**, stretched L2 only for VM
 Management. This is a hard gate — resolve it before touching hosts.
 
-## 2. Manual — commission the AZ2 hosts
+## 2. Manual — build the AZ2 network pool, then commission the hosts
 
+Broadcom's own prerequisites list these as two separate, ordered items:
+*"Create a network pool for availability zone 2"* comes before *"Commission
+vSAN ESA or OSA hosts for availability zone 2."* Build the pool first — the
+commission call binds each host to a pool by ID, so there is nothing to bind
+to until it exists.
+
+- **Build the AZ2 network pool first.** SDDC Manager → Administration →
+  Network Settings → Network Pools (or `POST /v1/network-pools`). Same shape
+  as intake `H8` / `docs/workbook-cell-mapping.md`: the **vMotion + vSAN**
+  VMkernel network definitions for AZ2 — VLAN, MTU, gateway, IP range. This
+  pool is a distinct object from the AZ2 host TEP (overlay) subnet below —
+  vMotion/vSAN and the NSX host overlay are configured and validated
+  separately, don't treat "network pool" as covering both.
 - Image the AZ2 hosts with the supported ESXi ISO. Use
   [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) to
   prep and commission quickly.
 - Configure the per-AZ management network on each host (IP / VLAN / gateway),
   DNS, NTP, root credentials.
-- **Commission** them into SDDC Manager. They now sit as available/unassigned
-  hosts, ready for the stretch — SDDC Manager does not touch them until step 4.
-- Build the **AZ2 network pool** the hosts will bind to at commission time.
-  This is where the most common failure mode lives:
+- **Commission** them into SDDC Manager, into the AZ2 network pool you just
+  built. They now sit as available/unassigned hosts, ready for the stretch —
+  SDDC Manager does not touch them until step 4.
 
-  > **Host TEP must be a genuinely distinct per-AZ subnet, not a reused AZ1
-  > VLAN.** Per `03-multi-az-prep.md` section D, ESX Host Overlay (TEP) is
-  > *"unique per availability zone"* — there is no option to stretch it, even
-  > if every other network (VM Management aside) in your design is flat L2
-  > across sites. If you reuse AZ1's TEP VLAN/subnet for AZ2, the stretch API
-  > call in step 4 fails with `ipAssignmentType not found for the NSX overlay
-  > VDS for the cluster <id>` (`PUBLIC_INTERNAL_SERVER_ERROR`,
-  > `IllegalStateException`) — SDDC Manager/NSX have nothing to register as a
-  > second, distinct IP-assignment entry on the cluster's overlay VDS. Give
-  > AZ2 its own TEP VLAN/subnet even when the rest of the fabric is
-  > deliberately L2-stretched end to end.
+Separately, this is where the most common failure mode lives — not the
+network pool above, but the AZ2 host TEP:
+
+> **Host TEP must be a genuinely distinct per-AZ subnet, not a reused AZ1
+> VLAN.** Per `03-multi-az-prep.md` section D, ESX Host Overlay (TEP) is
+> *"unique per availability zone"* — there is no option to stretch it, even
+> if every other network (VM Management aside) in your design is flat L2
+> across sites. If you reuse AZ1's TEP VLAN/subnet for AZ2, the stretch API
+> call in step 4 fails with `ipAssignmentType not found for the NSX overlay
+> VDS for the cluster <id>` (`PUBLIC_INTERNAL_SERVER_ERROR`,
+> `IllegalStateException`) — SDDC Manager/NSX have nothing to register as a
+> second, distinct IP-assignment entry on the cluster's overlay VDS. Give
+> AZ2 its own TEP VLAN/subnet even when the rest of the fabric is
+> deliberately L2-stretched end to end.
 
 ## 3. Manual — deploy the witness
 
@@ -112,6 +127,8 @@ alone:
 - No DPU-backed hosts
 - No L3-different subnets **within** a single AZ (the per-AZ split in step 2
   is AZ1-vs-AZ2, not host-vs-host inside one AZ)
+- **vSphere Supervisor must not be enabled on the cluster** — enable
+  Supervisor only after the stretch, not before
 
 ### Reading the response
 

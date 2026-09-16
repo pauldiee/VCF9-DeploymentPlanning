@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.3.1 — 2026-09-16
+- **Fix: AZ2 network pool creation was missing/mis-ordered in the stretch
+  runbook.** `docs/22-stretch-execution.md` buried "build the AZ2 network
+  pool" as an afterthought bullet placed *after* host commissioning, with no
+  description of what the pool contains. Verified against Broadcom TechDocs
+  (`stretch-a-cluster.html`), which lists "Create a network pool for
+  availability zone 2" and "Commission ... hosts for availability zone 2" as
+  two separate, ordered prerequisites — pool first. Restructured step 2
+  accordingly, and separated the network pool (vMotion/vSAN) from the
+  unrelated host-TEP gotcha it had been bundled under. Also added the missing
+  4th stretch-blocking precondition (vSphere Supervisor enabled). Same fixes
+  applied to `docs/06-deployment-plan.md` E7/E9 (stories 7.2/7.4, 9.2/9.5)
+  and their generator, `web/src/lib/deployment-plan.ts`, to keep all three in
+  sync.
+
 ## v4.3.0 — 2026-09-16
 - **New `docs/22-stretch-execution.md`: stretch execution runbook.** A
   standalone, linear guide separating manual steps (commission AZ2 hosts,
