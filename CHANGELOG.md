@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.5.0 — 2026-09-16
+- **New `docs/23-workload-domain-creation.md`: workload domain creation
+  runbook.** Same manual-vs-automated framing as `docs/22-stretch-execution.md`:
+  network/host prep (network pool, commissioned hosts matching the principal
+  storage type, HOST TEP static pool/DHCP, DNS records), then the creation
+  step — the SDDC Manager UI wizard walked page by page (Broadcom's primary
+  documented path), plus the `DomainCreationSpec` API alternative for LACP
+  networking or a no-cluster domain. Flags the SSO-domain-isolation and
+  Supervisor-requires-a-later-Edge-cluster gotchas verbatim from TechDocs.
+  Cross-linked from `06-deployment-plan.md` E9. Closes #312.
+
 ## v4.4.0 — 2026-09-16
 - **Rebrand: "VCF9-DeploymentPlanning" → "VCF 9 Deployment Planning and
   Operations."** The repo has grown past pure planning content

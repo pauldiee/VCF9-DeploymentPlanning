@@ -213,6 +213,14 @@ export const NAV: NavItem[] = [
     blurb: 'Manual steps vs the one-call stretch API: AZ2 hosts, witness, network pool, then the PATCH that does the rest — for management and workload domains.',
   },
   {
+    slug: '23-workload-domain-creation',
+    step: 'Operations',
+    band: 'Operations',
+    label: 'Workload Domain Creation',
+    icon: 'cubes',
+    blurb: 'Manual prep (network pool, commissioned hosts, DNS) vs the creation wizard/API: page-by-page walkthrough, plus the DomainCreationSpec JSON path for LACP or no-cluster domains.',
+  },
+  {
     slug: '21-config-artifacts',
     step: 'Operations',
     band: 'Operations',

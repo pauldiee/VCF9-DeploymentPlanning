@@ -195,7 +195,7 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
 
 ### E9 — Workload domain  ·  Owner: Platform + Network (+ Storage if stretched)
-Ref: [`02-intake.md`](02-intake.md) section H (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) and [`22-stretch-execution.md`](22-stretch-execution.md) if stretched)
+Ref: [`02-intake.md`](02-intake.md) section H · step-by-step runbook: [`23-workload-domain-creation.md`](23-workload-domain-creation.md) (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) and [`22-stretch-execution.md`](22-stretch-execution.md) if stretched)
 
 **Repeat this epic per workload domain.** Each WLD is independently
 **non-stretched** or **stretched** — a stretched WLD gets its **own** second-AZ
