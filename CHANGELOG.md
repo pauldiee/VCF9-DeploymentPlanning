@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.7.1 — 2026-09-16
+- **`docs/22-stretch-execution.md`: explain `deployWithoutLicenseKeys` /
+  `witnessTrafficSharedWithVsanTraffic` instead of punting on them, and
+  surface the management-vs-workload `isDefault` switch before the JSON
+  example rather than ~100 lines after it.** `deployWithoutLicenseKeys`
+  defers license-key validation (leave `true` unless you want the call to
+  hard-fail on a missing key); `witnessTrafficSharedWithVsanTraffic` is the
+  vSAN witness traffic separation toggle, and the doc's own step 3 (witness
+  routed over ESX Management, not vSAN) already implies `false` is correct
+  here. Closes #315.
+
 ## v4.7.0 — 2026-09-16
 - **New `docs/25-cluster-expansion.md`: cluster expansion runbook.** Adding
   hosts to an existing, non-stretched cluster. Broadcom documents this

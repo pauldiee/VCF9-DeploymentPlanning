@@ -133,7 +133,11 @@ in the spec:
 
 Trimmed example (2 hosts; add one `hostSpecs` entry per AZ2 host, equal count
 to AZ1) — field names and shape verbatim from Broadcom's SDDC Manager API
-Explorer walkthrough:
+Explorer walkthrough. **The one field in here that changes between a
+management-domain stretch and a workload-domain stretch is
+`networkProfiles[].isDefault`** — shown below as `true` (management domain);
+set it `false` for a workload domain. Everything else in the spec is the
+same shape either way:
 
 ```json
 {
@@ -253,11 +257,22 @@ What each block is doing, and why it trips people up:
   `false` otherwise.
 - **`witnessSpec`** — `fqdn` / `vsanCidr` / `vsanIp` of the witness appliance
   deployed and gateway-fixed in step 3.
-- **`deployWithoutLicenseKeys`** and **`witnessTrafficSharedWithVsanTraffic`**
-  appear in Broadcom's example but aren't documented beyond the field name —
-  TechDocs gives no guidance on when to flip either from the example's
-  defaults, so leave them as shown unless you have a specific reason to
-  change one.
+- **`deployWithoutLicenseKeys`** — defers license-key validation for whatever
+  the call would otherwise check licensing on, same as the domain-creation
+  spec's field of the same name. `true` lets the stretch proceed on
+  evaluation/unlicensed capacity and enforces licensing later; `false` makes
+  the call fail up front if a required key isn't already assigned. Leave it
+  `true` (as shown) unless you specifically want the stretch to hard-fail on
+  a missing license.
+- **`witnessTrafficSharedWithVsanTraffic`** — the vSAN
+  [witness traffic separation](https://knowledge.broadcom.com/external/article/324702/) toggle: `true` tags witness traffic onto the
+  same VMkernel interface as vSAN data traffic; `false` routes it over a
+  separate interface instead. **This runbook's own step 3 puts witness
+  traffic on the ESX Management VMkernel, not the vSAN VMkernel** — so
+  `false` (as shown) is the value that matches the routing this doc has you
+  build. Only flip it to `true` if you've instead made the vSAN network
+  itself routable to the witness site and want witness traffic riding that
+  interface.
 
 Optionally build, validate, and submit the spec with
 [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators)'s
