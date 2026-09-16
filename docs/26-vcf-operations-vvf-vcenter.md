@@ -83,12 +83,20 @@ $privilegeIds = @(
     'ExternalStatsProvider.Update'
 )
 
-$privileges = $privilegeIds | ForEach-Object {
-    try { Get-VIPrivilege -Id $_ -ErrorAction Stop }
-    catch { Write-Warning "Privilege ID not found on this vCenter build: $_" }
+$resolved = @()
+$missing = @()
+foreach ($id in $privilegeIds) {
+    try { $resolved += Get-VIPrivilege -Id $id -ErrorAction Stop }
+    catch { $missing += $id }
 }
 
-New-VIRole -Name $roleName -Privilege $privileges
+if ($missing) {
+    throw "Aborting - not found on this vCenter build: $($missing -join ', '). " +
+          "Reconcile against the TechDocs privilege table before re-running; " +
+          "do not create the role with a silently reduced privilege set."
+}
+
+New-VIRole -Name $roleName -Privilege $resolved
 ```
 
 > **These IDs are cross-checked against Broadcom's vSphere 8.0 Defined
@@ -96,12 +104,15 @@ New-VIRole -Name $roleName -Privilege $privileges
 > (TechDocs has no 9.0 version of that reference yet; the 7.0/8.0 pages are
 > the newest available). They're the same stable `Category.Action` API IDs
 > vSphere has used for years, so vCenter 9 should recognize them, but this
-> has **not been run against a live VCF 9 vCenter**. The script is written
-> to **warn and skip**, not fail outright, on any ID your vCenter doesn't
-> recognize — run it, check the warnings, and reconcile the resulting role's
-> privilege list against the TechDocs table before pointing VCF Operations
-> at it. Add the action privileges (Step 1's third bullet) to
-> `$privilegeIds` the same way if you're not splitting into two accounts.
+> has **not been run against a live VCF 9 vCenter**. **The script aborts
+> rather than creating the role if any ID fails to resolve** — a role with a
+> silently reduced privilege set is worse than a script that stops and makes
+> you look, because it fails quietly much later (a metric or action VCF
+> Operations can't perform, with no error pointing back to the role). If an
+> ID genuinely doesn't exist on your build, fix `$privilegeIds` and re-run
+> rather than dropping it and moving on. Add the action privileges (Step 1's
+> third bullet) to `$privilegeIds` the same way if you're not splitting into
+> two accounts.
 
 ## Step 2 — Create the service account
 

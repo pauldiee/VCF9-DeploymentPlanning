@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.8.3 — 2026-09-16
+- **`docs/26-vcf-operations-vvf-vcenter.md`: PowerCLI role script now
+  aborts if any privilege ID fails to resolve, instead of warn-and-skip.**
+  A role silently created with a reduced privilege set is a trap this repo
+  specifically warns against elsewhere (the Docker Subnet CIDR gotcha in
+  docs/09, the workbook-formula-referencing-a-missing-cell note in
+  CLAUDE.md) — it looks fine and breaks quietly later, with nothing
+  pointing back to the role. Closes #322.
+
 ## v4.8.2 — 2026-09-16
 - **`docs/26-vcf-operations-vvf-vcenter.md`: tighten the privilege-ID
   caution — cross-checked against vSphere 8.0's Defined Privileges reference
