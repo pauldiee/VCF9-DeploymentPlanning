@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.8.8 — 2026-09-16
+- **`docs/23-workload-domain-creation.md`: align the `DomainCreationSpec`
+  JSON's `ssoDomainSpec` comment with the SSO domain guidance from v4.8.7.**
+  Swept the rest of the doc for similar "choice"/"decide with architect"
+  framing — nothing else found — but the JSON snippet still said "new vs
+  joined SSO domain" neutrally, inconsistent with the corrected callout
+  right above it. Closes #327.
+
 ## v4.8.7 — 2026-09-16
 - **`docs/23-workload-domain-creation.md` + `docs/02-intake.md` H2:
   correct the SSO domain guidance — always a new/separate domain, always

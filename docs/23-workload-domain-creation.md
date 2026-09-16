@@ -140,7 +140,7 @@ Top-level shape (verified against the [VCF API reference](https://developer.broa
   "vcenterSpec": { "...": "vCenter FQDN/IP/gateway/root password" },
   "computeSpec": { "...": "clusterSpec(s), hostSpecs, vdsSpecs, datastoreSpec" },
   "nsxTSpec": { "...": "NSX Manager appliances, VIP, license, transport config" },
-  "ssoDomainSpec": { "...": "new vs joined SSO domain" },
+  "ssoDomainSpec": { "...": "new SSO domain, named vsphere.local — see the SSO domain callout in step 4 above" },
   "deployWithoutLicenseKeys": true
 }
 ```
