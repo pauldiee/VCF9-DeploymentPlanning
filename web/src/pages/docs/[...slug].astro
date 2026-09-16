@@ -14,7 +14,9 @@ export async function getStaticPaths() {
 
 const { doc } = Astro.props;
 const { Content, headings } = await render(doc);
-const sections = headings.filter((h) => h.depth === 2);
+// Every heading level gets a TOC entry (not just H2) — nested by depth so the
+// widget doubles as full in-page navigation, not just a section jump list.
+const sections = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
 
 const meta = navBySlug(doc.id);
 const idx = NAV.findIndex((n) => n.slug === doc.id);
@@ -26,23 +28,28 @@ const title = meta ? `${meta.label} — VCF 9 Deployment Planning and Operations
 
 <BaseLayout title={title} description={meta?.blurb} active={doc.id}>
   {meta && <p class="doc-eyebrow itq-eyebrow">{meta.step}</p>}
-  {
-    sections.length > 2 && (
-      <nav class="doc-toc" aria-label="On this page" data-pagefind-ignore>
-        <span class="doc-toc__label">On this page</span>
-        <ul class="doc-toc__list">
-          {sections.map((h) => (
-            <li>
-              <a href={`#${h.slug}`}>{h.text}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    )
-  }
-  <article class="doc prose">
-    <Content />
-  </article>
+  <div class:list={['doc-body-grid', { 'doc-body-grid--no-toc': sections.length <= 2 }]}>
+    <article class="doc prose">
+      <Content />
+    </article>
+
+    {
+      sections.length > 2 && (
+        <aside class="doc-toc" aria-label="On this page" data-pagefind-ignore>
+          <span class="doc-toc__label">On this page</span>
+          <ul class="doc-toc__list">
+            {sections.map((h) => (
+              <li class={`doc-toc__item doc-toc__item--h${h.depth}`}>
+                <a href={`#${h.slug}`} data-toc-target={h.slug}>
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </div>
 
   <nav class="doc-pager" aria-label="Between documents" data-pagefind-ignore>
     {
@@ -67,54 +74,91 @@ const title = meta ? `${meta.label} — VCF 9 Deployment Planning and Operations
 </BaseLayout>
 
 <style>
+  .doc-body-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: var(--space-7);
+    align-items: start;
+  }
+  .doc-body-grid--no-toc { grid-template-columns: minmax(0, 1fr); }
+
   .doc-toc {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin: 0 0 1.5rem;
-    padding: 0.75rem 1rem;
-    background: var(--surface-subtle);
-    border-left: 3px solid var(--itq-orange);
-    border-radius: 4px;
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-5));
+    font-size: var(--fs-small);
   }
   .doc-toc__label {
-    font-weight: 600;
-    font-size: 0.8rem;
+    display: block;
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-eyebrow);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-body);
+    letter-spacing: var(--ls-caps);
+    color: var(--text-quiet);
+    margin-bottom: var(--space-3);
   }
   .doc-toc__list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.5rem;
+    flex-direction: column;
+    gap: var(--space-2);
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  /* The ITQ tokens (base.css) draw a brand square on every ul > li::before;
-     in this inline chip list it lands at the end of the previous chip. */
-  .doc-toc__list li::before {
-    display: none;
-  }
+  /* The ITQ tokens (base.css) draw a brand square on every ul > li::before. */
+  .doc-toc__list li::before { display: none; }
   .doc-toc__list a {
-    display: inline-block;
-    padding: 0.15rem 0.6rem;
-    background: var(--surface-card);
-    border: 1px solid var(--border-active);
-    border-radius: 999px;
-    font-size: 0.85rem;
+    display: block;
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--border-default);
     text-decoration: none;
-    color: var(--text-body);
+    color: var(--text-muted);
+    line-height: 1.4;
   }
-  .doc-toc__list a:hover {
-    border-color: var(--itq-orange);
+  .doc-toc__list a:hover { color: var(--itq-orange); }
+  .doc-toc__list a.is-active {
     color: var(--itq-orange);
+    border-left-color: var(--itq-orange);
+    font-weight: var(--fw-semibold);
   }
+  /* H3/H4 nest under their H2 — same vertical line, indented text and a
+     smaller/quieter treatment the deeper it goes. */
+  .doc-toc__item--h3 a { padding-left: calc(var(--space-3) + 12px); font-size: 0.94em; }
+  .doc-toc__item--h4 a { padding-left: calc(var(--space-3) + 24px); font-size: 0.88em; color: var(--text-quiet); }
+  .doc-toc__item--h4 a:hover,
+  .doc-toc__item--h4 a.is-active { color: var(--itq-orange); }
+
   /* Anchor targets inside the rendered markdown: keep headings clear of the sticky header */
   :global(.doc.prose h2),
-  :global(.doc.prose h3) {
+  :global(.doc.prose h3),
+  :global(.doc.prose h4) {
     scroll-margin-top: 90px;
   }
+
+  @media (max-width: 900px) {
+    .doc-body-grid { grid-template-columns: minmax(0, 1fr); }
+    .doc-toc { display: none; }
+  }
 </style>
+
+<script>
+  // Scroll-spy: highlight the TOC entry for the section currently in view.
+  const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.doc-toc__list a[data-toc-target]');
+  if (tocLinks.length) {
+    const sections = Array.from(tocLinks)
+      .map((link) => document.getElementById(link.dataset.tocTarget ?? ''))
+      .filter((el): el is HTMLElement => !!el);
+
+    const setActive = (slug: string) => {
+      tocLinks.forEach((link) => link.classList.toggle('is-active', link.dataset.tocTarget === slug));
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting);
+        if (visible.length > 0) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-100px 0px -70% 0px' }
+    );
+    sections.forEach((el) => observer.observe(el));
+  }
+</script>

@@ -3,24 +3,33 @@ import '../styles/site.css';
 import Sidebar from '../components/Sidebar.astro';
 import { withBase } from '../lib/path';
 import { siteVersion } from '../lib/version';
+import { navFlowItems, navReferenceBands, navBySlug } from '../nav';
+import { docHref as href } from '../lib/path';
 
 interface Props {
   title: string;
   description?: string;
-  /** Slug of the active doc, for sidebar highlighting. Omit on the landing page. */
+  /** Slug of the active doc, for nav highlighting and the breadcrumb. Omit on the landing page. */
   active?: string;
-  /** Hide the docs sidebar (landing page uses a full-width layout). */
+  /** Landing/tool pages that don't want the standard content max-width. */
   fullWidth?: boolean;
 }
 
 const { title, description, active, fullWidth = false } = Astro.props;
 const asset = withBase;
-const year = 2026;
 const repoUrl = 'https://github.com/pauldiee/VCF9-DeploymentPlanning';
 const feedbackUrl =
   `${repoUrl}/issues/new?template=site-feedback.yml` +
   `&page=${encodeURIComponent(Astro.url.pathname)}` +
   `&version=${encodeURIComponent(siteVersion)}`;
+
+const flowItems = navFlowItems();
+const referenceBands = navReferenceBands();
+const meta = active ? navBySlug(active) : undefined;
+const sizerHref = withBase('tools/mgmt-sizing/');
+const planExportHref = withBase('tools/deployment-plan/');
+const planTrackerHref = withBase('tools/plan-tracker/');
+const testPlanHref = withBase('tools/test-plan/');
 ---
 
 <!doctype html>
@@ -71,14 +80,122 @@ const feedbackUrl =
           <span class="site-header__divider" aria-hidden="true"></span>
           <span class="site-header__product">VCF 9 Deployment Planning and Operations</span>
         </a>
-        <nav class="site-header__nav">
-          <a href={asset('search/')}><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search</a>
-          <a href={asset('docs/prerequisites/')}>Docs</a>
-          <a href={asset('version-overview/')}>Versions</a>
+
+        <nav class="nav-primary" aria-label="Primary">
+          <div class="nav-item">
+            <button type="button" class="nav-trigger">
+              Planning Flow <i class="fa-solid fa-chevron-down nav-chev" aria-hidden="true"></i>
+            </button>
+            <div class="nav-panel nav-panel--flow">
+              <ul class="flow-list">
+                {
+                  flowItems.map((item) => (
+                    <li>
+                      <a
+                        class:list={['flow-link', { 'is-active': active === item.slug }]}
+                        href={href(item.slug)}
+                      >
+                        <i class={`fa-solid fa-${item.icon}`} aria-hidden="true" />
+                        <span>
+                          <span class="flow-step">{item.step}</span>
+                          <span class="flow-label">{item.label}</span>
+                        </span>
+                      </a>
+                    </li>
+                  ))
+                }
+              </ul>
+            </div>
+          </div>
+
+          <div class="nav-item">
+            <button type="button" class="nav-trigger">
+              Reference <i class="fa-solid fa-chevron-down nav-chev" aria-hidden="true"></i>
+            </button>
+            <div class="nav-panel nav-panel--reference">
+              <div class="ref-grid">
+                {
+                  referenceBands.map((group) => (
+                    <div class="ref-band">
+                      <h4>{group.band}</h4>
+                      <ul>
+                        {group.items.map((item) => (
+                          <li>
+                            <a
+                              class:list={['ref-link', { 'is-active': active === item.slug }]}
+                              href={href(item.slug)}
+                            >
+                              <i class={`fa-solid fa-${item.icon}`} aria-hidden="true" />
+                              {item.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-item">
+            <button type="button" class="nav-trigger">
+              Tools <i class="fa-solid fa-chevron-down nav-chev" aria-hidden="true"></i>
+            </button>
+            <div class="nav-panel nav-panel--tools">
+              <div class="ref-band">
+                <ul>
+                  <li>
+                    <a class:list={['ref-link', { 'is-active': active === 'tools/mgmt-sizing' }]} href={sizerHref}>
+                      <i class="fa-solid fa-calculator" aria-hidden="true" /> Sizing Calculator
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class:list={['ref-link', { 'is-active': active === 'tools/deployment-plan' }]}
+                      href={planExportHref}
+                    >
+                      <i class="fa-solid fa-sitemap" aria-hidden="true" /> Deployment Plan Export
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class:list={['ref-link', { 'is-active': active === 'tools/plan-tracker' }]}
+                      href={planTrackerHref}
+                    >
+                      <i class="fa-solid fa-bars-progress" aria-hidden="true" /> Deployment Tracker
+                    </a>
+                  </li>
+                  <li>
+                    <a class:list={['ref-link', { 'is-active': active === 'tools/test-plan' }]} href={testPlanHref}>
+                      <i class="fa-solid fa-clipboard-check" aria-hidden="true" /> Test Plan
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <a
+            class:list={['nav-plain', { 'is-active': active === 'version-overview' }]}
+            href={withBase('version-overview/')}
+          >
+            Versions
+          </a>
+        </nav>
+
+        <button type="button" class="hamburger" id="mobileNavToggle" aria-label="Open menu" aria-expanded="false">
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+
+        <div class="header-actions">
+          <a class="icon-btn" href={asset('search/')} title="Search docs">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          </a>
           <button
             type="button"
             id="themeToggle"
-            class="theme-toggle"
+            class="icon-btn theme-toggle"
             title="Switch between light and dark"
             aria-label="Switch between light and dark"
           >
@@ -86,43 +203,7 @@ const feedbackUrl =
             <i class="fa-solid fa-moon" aria-hidden="true"></i>
           </button>
           <a
-            class="site-header__blog"
-            href="https://www.hollebollevsan.nl"
-            target="_blank"
-            rel="noopener"
-          >
-            <i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Blog
-          </a>
-          <a
-            class="site-header__cta"
-            href="https://github.com/pauldiee/VCF9-DeploymentPlanning"
-            target="_blank"
-            rel="noopener"
-          >
-            <i class="fa-brands fa-github" aria-hidden="true"></i> GitHub
-          </a>
-        </nav>
-      </div>
-    </header>
-
-    <div class:list={['layout', { 'layout--full': fullWidth }]}>
-      {!fullWidth && <Sidebar active={active} />}
-      <main id="main" class:list={['content', { 'content--full': fullWidth }]} data-pagefind-body>
-        <slot />
-      </main>
-    </div>
-
-    <footer class="site-footer">
-      <div class="site-footer__inner">
-        <img src={asset('itq/assets/logo/itq-logo-white.png')} alt="ITQ" height="26" />
-        <p>
-          <strong>ITQ &ndash; What's Next.</strong> VCF 9.1 deployment-planning and operations helper material.
-          &copy; {year} Paul van Dieen.
-        </p>
-        <a href="https://hollebollevsan.nl" target="_blank" rel="noopener">hollebollevsan.nl</a>
-        <div class="site-footer__meta">
-          <a
-            class="site-footer__version"
+            class="header-version"
             href={`${repoUrl}/blob/main/CHANGELOG.md`}
             target="_blank"
             rel="noopener"
@@ -130,12 +211,78 @@ const feedbackUrl =
           >
             {siteVersion}
           </a>
-          <a class="site-footer__feedback" href={feedbackUrl} target="_blank" rel="noopener">
-            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i> Feedback
+          <a class="header-feedback icon-btn" href={feedbackUrl} target="_blank" rel="noopener" title="Feedback">
+            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
+          </a>
+          <a
+            class="icon-btn"
+            href="https://www.hollebollevsan.nl"
+            target="_blank"
+            rel="noopener"
+            title="Blog"
+          >
+            <i class="fa-solid fa-pen-nib" aria-hidden="true"></i>
+          </a>
+          <a class="icon-btn" href={repoUrl} target="_blank" rel="noopener" title="GitHub">
+            <i class="fa-brands fa-github" aria-hidden="true"></i>
           </a>
         </div>
       </div>
-    </footer>
+
+      {/* Mobile fallback (<900px): the hamburger toggles this instead of the
+          desktop mega-menu, reusing the same nav data via <Sidebar>. */}
+      <div class="mobile-nav" id="mobileNav">
+        <Sidebar active={active} />
+        <div class="mobile-nav__more">
+          <a href={asset('search/')}><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search</a>
+          <a href={`${repoUrl}/blob/main/CHANGELOG.md`} target="_blank" rel="noopener">
+            <i class="fa-solid fa-code-branch" aria-hidden="true"></i> {siteVersion}
+          </a>
+          <a href={feedbackUrl} target="_blank" rel="noopener">
+            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i> Feedback
+          </a>
+          <a href="https://www.hollebollevsan.nl" target="_blank" rel="noopener">
+            <i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Blog
+          </a>
+          <a href={repoUrl} target="_blank" rel="noopener">
+            <i class="fa-brands fa-github" aria-hidden="true"></i> GitHub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    {
+      meta && (
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          {meta.band ? (
+            <>
+              <span>Reference</span>
+              <i class="fa-solid fa-chevron-right" aria-hidden="true" />
+              <span>{meta.band}</span>
+              <i class="fa-solid fa-chevron-right" aria-hidden="true" />
+              <span class="breadcrumb__current">{meta.label}</span>
+            </>
+          ) : (
+            <>
+              <span>Planning Flow</span>
+              <i class="fa-solid fa-chevron-right" aria-hidden="true" />
+              <span class="breadcrumb__current">{meta.label}</span>
+            </>
+          )}
+        </nav>
+      )
+    }
+
+    <div class:list={['layout', { 'layout--full': fullWidth }]}>
+      <main id="main" class:list={['content', { 'content--full': fullWidth }]} data-pagefind-body>
+        <slot />
+      </main>
+    </div>
+
+    <p class="colophon">
+      <strong>ITQ &ndash; What's Next.</strong> VCF 9.1 deployment-planning and operations helper material.
+      &copy; 2026 Paul van Dieen. <a href="https://hollebollevsan.nl" target="_blank" rel="noopener">hollebollevsan.nl</a>
+    </p>
 
     {/* The toggle sets an explicit choice that wins over prefers-color-scheme
         in both directions, and remembers it. The icons themselves are swapped
@@ -168,6 +315,22 @@ const feedbackUrl =
         });
         media.addEventListener('change', label);
         label();
+      })();
+    </script>
+
+    {/* Mobile menu toggle: shows/hides the reused Sidebar content below the
+        header at <900px. Desktop hides both the button and the panel via CSS
+        regardless of this class, so it's a no-op above the breakpoint. */}
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('mobileNavToggle');
+        var panel = document.getElementById('mobileNav');
+        if (!btn || !panel) return;
+        btn.addEventListener('click', function () {
+          var open = panel.classList.toggle('is-open');
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          btn.querySelector('i').className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        });
       })();
     </script>
 

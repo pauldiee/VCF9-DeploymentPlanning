@@ -1,5 +1,39 @@
 # Changelog
 
+## v5.1.2 — 2026-09-17
+- **docs on-page TOC now includes every heading level (H2/H3/H4), not just
+  H2.** Several docs have real subsections (docs/24's "Reusing an existing
+  vDS", docs/19's 26 H4s) that never appeared. Nested visually under the
+  same vertical line with increasing indent, quieter the deeper it goes.
+  Scroll-spy and anchor scroll-margin extended to cover H4. Closes #339.
+
+## v5.1.1 — 2026-09-17
+- **docs on-page TOC restyled to match the mega-menu mockup: sticky
+  right-hand column, not a horizontal chip list.** Left untouched in
+  v5.1.0 since it predated that work, but it didn't match the style Paul
+  liked in the mockup. Article + TOC now sit in a two-column grid
+  (single column when a page has ≤2 sections); added scroll-spy
+  (IntersectionObserver) so the active section highlights for real,
+  instead of the mockup's static highlight. Hidden at <900px. Closes
+  #338.
+
+## v5.1.0 — 2026-09-17
+- **Replace the docs sidebar with a top mega-menu nav.** The Reference band
+  had grown to 8 items while others had 1-2; explored via an Artifact
+  mockup through several rounds, then brought to the live site.
+  Planning Flow (ordered dropdown), Reference (3-column mega-panel by
+  band), Tools (dropdown), Versions (plain link) — all one hover/click
+  away instead of a long persistent scroll. Breadcrumb (Reference → Band
+  → Page) added above content. Header actions trimmed to an icon cluster
+  (search, theme, version → CHANGELOG, feedback, blog, GitHub). The sticky
+  blue footer band is gone — replaced with a quiet one-line colophon,
+  which also fixed a real bug: `position: sticky` + flex `margin-auto`
+  were fighting, pinning the old footer over content that hadn't scrolled
+  into view yet at narrow widths. `Sidebar.astro` is repurposed (not
+  deleted) as the <900px hamburger-toggled mobile panel. Existing
+  `doc-toc`/`doc-pager` untouched. Built and browser-verified at desktop
+  and mobile widths on a branch, not yet merged to main. Closes #337.
+
 ## v5.0.4 — 2026-09-16
 - **Site footer: fix stale post-rebrand text, drop the templates/Rainpole
   line.** The rebrand commit (51e8774) updated the header product name to
