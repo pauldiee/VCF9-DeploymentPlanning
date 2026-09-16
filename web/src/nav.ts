@@ -244,6 +244,14 @@ export const NAV: NavItem[] = [
     icon: 'file-export',
     blurb: 'Pull re-submittable spec JSON out of a built VCF 9.1 instance (bring-up spec, Fleet LCM components, Supervisor export, the NSX policy hierarchy), then sanitise, parameterise and validate it into reusable templates.',
   },
+  {
+    slug: '26-vcf-operations-vvf-vcenter',
+    step: 'Operations',
+    band: 'Operations',
+    label: 'VCF Ops VVF vCenter Setup',
+    icon: 'id-badge',
+    blurb: 'No Fleet LCM in VVF/standalone to auto-register vCenter: create the vCenter role and service account by hand, assign the permission, then add the vCenter adapter instance in VCF Operations.',
+  },
 
   // --- Reference: Reference data ------------------------------------
   {
