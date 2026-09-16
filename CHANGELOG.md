@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.7.2 — 2026-09-16
+- **`docs/09-binary-depot.md` §5.3: note the Cloud Proxy OVA Unique
+  Registration Key expires 24 hours after generation.** TechDocs-quoted; no
+  repair path other than deleting the proxy and deploying a new one, or
+  Regenerate Key before a long deploy runs past the window. Closes #316.
+
 ## v4.7.1 — 2026-09-16
 - **`docs/22-stretch-execution.md`: explain `deployWithoutLicenseKeys` /
   `witnessTrafficSharedWithVsanTraffic` instead of punting on them, and

@@ -680,6 +680,15 @@ workaround of last resort if that isn't available in time.
 
 ## 5.3 Cloud Proxy OVA — proxy-related deploy fields
 
+**The Unique Registration Key generated in VCF Operations for the Cloud
+Proxy OVA expires 24 hours after generation** — TechDocs, verbatim: *"The
+unique registration key expires 24 hours after generation... Power on the
+cloud proxy within 24 hours of registration. After 24 hours, the Unique
+Registration Key expires. If the key expires, delete the proxy and deploy a
+new one."* There's no repair path for an expired key: generate it right
+before you power on the OVA rather than ahead of time, or use **Regenerate
+Key** in VCF Operations if the deploy is going to run long.
+
 **Cloud Proxy is the one appliance where SSL inspection *is* supported** —
 its OVA deploy wizard has a **Custom CA** field (paste the inspecting
 proxy's root CA, `-----BEGIN CERTIFICATE-----` / `-----END CERTIFICATE-----`)
