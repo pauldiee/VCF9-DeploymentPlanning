@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.0.1 — 2026-09-16
+- **Flag vVols as deprecated everywhere it's mentioned as a storage
+  option.** TechDocs-verified (KB 401070): deprecated beginning VCF/VVF
+  9.0, all vVol certifications for 9.0 discontinued effective immediately,
+  full removal planned in a future release — still works in 9.1 today.
+  `02-intake.md` H6 carries the full callout; `docs/23`,
+  `docs/24`, `docs/25` each flag their primary storage-type mention
+  inline, cross-referencing H6 rather than repeating the notice. Closes
+  #333.
+
 ## v5.0.0 — 2026-09-16
 - **New CLAUDE.md convention: SDDC Manager UI is deprecated in VCF 9 —
   never document it as the primary click-path.** Broadcom has deprecated

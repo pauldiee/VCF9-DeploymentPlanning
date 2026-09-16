@@ -50,8 +50,9 @@ From `01-network-dns-plan.md` and this domain's intake answers (`H1`-`H4`):
 ## 2. Manual — commission the hosts
 
 - **Hosts must be commissioned with the target principal storage type** —
-  vSAN, NFS, VMFS on FC, or vVol. Mixing storage types within one cluster is
-  not supported.
+  vSAN, NFS, VMFS on FC, or **vVol (deprecated as of VCF/VVF 9.0 — see
+  `02-intake.md` `H6`; don't default a new design to it)**. Mixing storage
+  types within one cluster is not supported.
 - For vSAN: SSD/NVMe disks with **no pre-existing partitions**, and a
   vSphere Lifecycle Manager image already present in the VCF image library.
 - For vVols: a VASA provider added to the inventory first.

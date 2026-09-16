@@ -73,9 +73,10 @@ access to the management domain vCenter, or your VCF Instance must be
 configured with VCF SSO and vCenter linking."*
 
 1. **Storage Type** — *"Select the storage type for the SDDC cluster and
-   click Begin."* Principal storage type: vSAN, NFS, VMFS on FC, or vVol.
-   Each cluster in a multi-cluster domain **can use a different type**, as
-   long as every host **within** that cluster matches.
+   click Begin."* Principal storage type: vSAN, NFS, VMFS on FC, or **vVol
+   (deprecated as of VCF/VVF 9.0 — see `02-intake.md` `H6`; don't default a
+   new design to it)**. Each cluster in a multi-cluster domain **can use a
+   different type**, as long as every host **within** that cluster matches.
 2. **Cluster naming & image** — *"Enter a name for the SDDC cluster"* and
    *"Select a cluster image from the drop-down menu"* (or extract from a
    reference host, same choice as workload domain creation).

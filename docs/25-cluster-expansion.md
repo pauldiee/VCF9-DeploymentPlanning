@@ -63,7 +63,8 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
 
 What the wizard automates for you, by storage type:
 
-- **NFS and vVols** — storage is auto-configured and mounted; no manual
+- **NFS and vVols** (**vVols deprecated as of VCF/VVF 9.0** — see
+  `02-intake.md` `H6`) — storage is auto-configured and mounted; no manual
   datastore steps.
 - **VMFS on FC** — storage is **not** automatic: you handle zoning,
   mounting the volume, and datastore creation yourself before or alongside
