@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.8.6 — 2026-09-16
+- **`docs/26-vcf-operations-vvf-vcenter.md` Step 2: recommend a local SSO
+  service account, not AD.** Matches how VCF handles every other
+  system-managed service account in the fleet — a local account keeps the
+  vCenter adapter working independently of the identity provider (AD
+  outage/misconfig/broken trust doesn't take it down too). Closes #325.
+
 ## v4.8.5 — 2026-09-16
 - **`docs/26-vcf-operations-vvf-vcenter.md`: field-verified role script
   (vCenter 8 and vCenter 9), with `Connect-VIServer -Menu` multi-vCenter

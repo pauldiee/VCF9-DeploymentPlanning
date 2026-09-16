@@ -21,7 +21,7 @@ vCenter adapter instance in VCF Operations.
 | # | Section | Use it when |
 | - | ------- | ----------- |
 | 1 | [Step 1 — Create the vCenter role](#step-1--create-the-vcenter-role) | Defining what the service account is allowed to do |
-| 2 | [Step 2 — Create the service account](#step-2--create-the-service-account) | Local SSO domain or AD |
+| 2 | [Step 2 — Create the service account](#step-2--create-the-service-account) | Local SSO domain, not AD — keeps it independent of your identity provider |
 | 3 | [Step 3 — Assign the permission](#step-3--assign-the-permission) | Top-level folder, not Global Permissions |
 | 4 | [Step 4 — Add the vCenter adapter in VCF Operations](#step-4--add-the-vcenter-adapter-in-vcf-operations) | Connecting VCF Operations to vCenter |
 | 5 | [Field notes](#field-notes) | One account vs. two, verification |
@@ -119,15 +119,19 @@ to the role).
 
 ## Step 2 — Create the service account
 
-Create a dedicated local (SSO domain) or AD service account for VCF
-Operations to use — don't reuse a personal or administrator account. Name it
-so its purpose is obvious in an audit (e.g. `svc-vcfops-vc01`), matching the
-service-account convention already used elsewhere in the fleet (bind
-accounts, depot accounts).
+**Use a local (SSO domain) account, not AD.** This matches how VCF itself
+handles every other system-managed service account in the fleet (bind
+accounts, depot accounts) — it's a deliberate pattern, not just the path of
+least resistance: a local account keeps this integration working
+independently of your identity provider. If AD is down, mis-configured, or
+the trust relationship breaks, an AD-backed service account takes the
+vCenter adapter down with it; a local account doesn't depend on anything
+outside vCenter itself. Don't reuse a personal or administrator account
+either way. Name it so its purpose is obvious in an audit (e.g.
+`svc-vcfops-vc01`).
 
-For a local SSO-domain account, PowerCLI's `VMware.vSphere.SsoAdmin` module
-does it in one line (install with
-`Install-Module VMware.vSphere.SsoAdmin -Scope CurrentUser` if it's not
+PowerCLI's `VMware.vSphere.SsoAdmin` module creates it in one line (install
+with `Install-Module VMware.vSphere.SsoAdmin -Scope CurrentUser` if it's not
 already present):
 
 ```powershell
@@ -137,9 +141,6 @@ Connect-SsoAdminServer -Server sfo-w01-vc01.sfo.rainpole.io -User 'administrator
 New-SsoPersonUser -UserName 'svc-vcfops-vc01' -Password $svcAccountPassword `
     -Description 'VCF Operations vCenter adapter service account'
 ```
-
-For an AD service account, create it through your existing AD provisioning
-process instead — same naming convention, no local-SSO step needed.
 
 ## Step 3 — Assign the permission
 
