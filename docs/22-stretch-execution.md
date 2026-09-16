@@ -71,6 +71,19 @@ network pool above, but the AZ2 host TEP:
 > AZ2 its own TEP VLAN/subnet even when the rest of the fabric is
 > deliberately L2-stretched end to end.
 
+**Reserve the AZ2 TEP subnet/range in your IP plan now — but don't build
+anything for it in NSX yet.** Unlike the network pool above, there is no
+manual NSX object to create here. The AZ2 host-overlay IP pool
+(`ipAddressPoolsSpec` in the step 4 JSON, e.g. a pool named
+`sfo-w01-az2-host-ip-pool01` with its own CIDR/gateway/range) and the
+transport-node sub-profile that consumes it are both declared **inline in the
+stretch API payload** and created **by the stretch call itself**. Broadcom is
+explicit: *"SDDC Manager automatically creates this sub-TNP during the
+stretch operation... Do not create the profile manually before submitting
+the API request."* Pre-building a TEP profile/pool in NSX Manager ahead of
+the stretch doesn't save a step — it conflicts with what step 4 creates for
+you.
+
 ## 3. Manual — deploy the witness
 
 - Deploy the vSAN witness appliance (`VMware-VirtualSAN-Witness-*.ova`) at the

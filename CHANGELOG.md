@@ -1,5 +1,22 @@
 # Changelog
 
+## v4.3.2 — 2026-09-16
+- **Clarify: the AZ2 host-TEP (overlay) IP pool is not a manual step.**
+  `docs/22-stretch-execution.md`'s TEP gotcha didn't say where the AZ2 TEP
+  subnet actually gets configured, leaving it ambiguous enough that a reader
+  could go build a TEP profile/pool in NSX Manager by hand, mirroring the
+  network pool step next to it. Verified against Broadcom TechDocs
+  (`stretch-a-cluster.html`): the AZ2 TEP IP pool and its transport-node
+  sub-profile are declared inline in the stretch API JSON
+  (`ipAddressPoolsSpec`) and created **by the stretch call itself** —
+  *"SDDC Manager automatically creates this sub-TNP during the stretch
+  operation... Do not create the profile manually before submitting the API
+  request."* Added an explicit note distinguishing this from the network
+  pool (which genuinely is a manual pre-created object). Also swept the full
+  TechDocs procedure for other gaps — witness, network pool, and commissioned
+  hosts remain the only three manual "must exist beforehand" items; nothing
+  else missing.
+
 ## v4.3.1 — 2026-09-16
 - **Fix: AZ2 network pool creation was missing/mis-ordered in the stretch
   runbook.** `docs/22-stretch-execution.md` buried "build the AZ2 network
