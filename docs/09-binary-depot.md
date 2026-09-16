@@ -651,8 +651,9 @@ proxy setting at OVA-deploy time (§5.3 below) — they don't inherit VCF
 Operations' Global Settings proxy.
 
 > Also for VVF/standalone: the vCenter adapter needs its own dedicated
-> service account, created manually since there's no Fleet LCM to provision
-> one — see [`05-day2-deployments.md` §B.5](05-day2-deployments.md#b5--vcenter-adapter-account-for-vcf-operations-vvfstandalone).
+> role and service account, created manually since there's no Fleet LCM to
+> provision one — see
+> [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md).
 
 ## 5.2 SSL-inspecting (TLS-terminating) proxies
 

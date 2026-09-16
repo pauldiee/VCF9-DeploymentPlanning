@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.8.0 — 2026-09-16
+- **New `docs/26-vcf-operations-vvf-vcenter.md`: standalone build guide for
+  connecting VCF Operations to vCenter in VVF/standalone.** No Fleet LCM in
+  this topology to auto-register vCenter, so this walks the full manual
+  flow: create the vCenter role (base Read Only privileges +
+  monitoring/action layers, TechDocs-cited), create the service account,
+  assign the permission on the top-level vCenter Server object (not Global
+  Permissions) with Propagate to children, then add the vCenter adapter
+  instance in VCF Operations (Integrations → Accounts → Add, page by page).
+  `docs/05-day2-deployments.md` §B.5 and `docs/09-binary-depot.md` §5.1 now
+  cross-link to it instead of carrying the detail inline. Closes #319.
+
 ## v4.7.4 — 2026-09-16
 - **Moved the VVF/standalone vCenter adapter account note (v4.7.3) out of
   `docs/09-binary-depot.md` into a new `docs/05-day2-deployments.md` §B.5.**
