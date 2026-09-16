@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.8.4 — 2026-09-16
+- **`docs/26-vcf-operations-vvf-vcenter.md`: mark all three PowerCLI
+  scripts `# UNTESTED` inline, not just in surrounding prose.** Visible at
+  the copy-paste point instead of requiring a read of the caution text
+  below the code block. Closes #323.
+
 ## v4.8.3 — 2026-09-16
 - **`docs/26-vcf-operations-vvf-vcenter.md`: PowerCLI role script now
   aborts if any privilege ID fails to resolve, instead of warn-and-skip.**

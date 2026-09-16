@@ -65,6 +65,10 @@ action privileges into two roles for two accounts — see
 current vCenter first — see the caution below the script:
 
 ```powershell
+# UNTESTED against a live VCF 9 vCenter - privilege IDs are cross-checked
+# against Broadcom's vSphere 8.0 Defined Privileges reference (see the note
+# below), not run in a lab. Verify against your own vCenter before relying
+# on it.
 Connect-VIServer -Server sfo-w01-vc01.sfo.rainpole.io
 
 $roleName = 'VCF-Ops-vCenter-Adapter'
@@ -128,6 +132,7 @@ does it in one line (install with
 already present):
 
 ```powershell
+# UNTESTED against a live VCF 9 vCenter - verify before relying on it.
 Connect-SsoAdminServer -Server sfo-w01-vc01.sfo.rainpole.io -User 'administrator@vsphere.local' -Password $ssoAdminPassword
 
 New-SsoPersonUser -UserName 'svc-vcfops-vc01' -Password $svcAccountPassword `
@@ -156,6 +161,7 @@ can't see everything under that root.
 PowerCLI one-liner, continuing the session from Step 1:
 
 ```powershell
+# UNTESTED against a live VCF 9 vCenter - verify before relying on it.
 $rootFolder = Get-Folder -NoRecursion
 New-VIPermission -Entity $rootFolder -Principal 'svc-vcfops-vc01' -Role $roleName -Propagate:$true
 ```
