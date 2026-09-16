@@ -226,7 +226,7 @@ WLD-level:
 | # | Question                                                                                  | Sheet   |
 |---|-------------------------------------------------------------------------------------------|---------|
 |H1 | WLD name (e.g. `sfo-w01`) + deployment type (full deployment with cluster)                 | `[WLD]` |
-|H2 | WLD vCenter FQDN + IP, SSO domain (e.g. `sfo-w01.local`). vCenter IP is on the **mgmt VM Mgmt** subnet | `[WLD]` |
+|H2 | WLD vCenter FQDN + IP, SSO domain — always new/separate, named `vsphere.local` (KISS, not a WLD-specific name). vCenter IP is on the **mgmt VM Mgmt** subnet | `[WLD]` |
 |H3 | NSX Manager: new instance or shared? If new — 3 node FQDNs+IPs + cluster VIP FQDN+IP (all on the **mgmt VM Mgmt** subnet) | `[WLD]` |
 |H4 | NSX connectivity: **Centralized** or **Distributed**? If Distributed — external VLAN + gateway CIDR + 2 Virtual Network Appliance FQDNs/IPs (on the ESX Mgmt network) | `[WLD]` |
 |H5 | Enable **vSphere Supervisor**? Its **north-south connectivity (`H4`) is a prerequisite** and must be up **before activation** — **Centralized:** Edge cluster + Tier-0 + the Supervisor **ingress/egress CIDRs**; **Distributed/VPC:** Transit Gateway + VNA + the routable **external IP block** and the **`/16` private transit-gateway block** (9.1). Needs Service CIDR + control-plane IP range (**5 consecutive IPs**: 3 nodes + floating + upgrade spare) plus an **API FQDN** with a DNS record. If yes: **load-balancer choice** — built-in NSX/VPC LB / Foundation Load Balancer / **Avi** (Avi → `E16`/`F11`, controller cluster **before activation**). Full checklist: `prerequisites.md` → vSphere Supervisor | `[WLD]` |

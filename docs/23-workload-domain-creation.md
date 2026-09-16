@@ -82,10 +82,14 @@ Page by page:
 1. **General Information** — domain name (3-20 chars), deployment type,
    **Enable vSphere Supervisor** toggle, optional dual-stack networking, SSO
    domain name.
-   > **SSO domain choice is a real fork, not a formality.** A new SSO domain
-   > *"creates a workload domain that is isolated from the other workload
-   > domains in your VCF instance"* — decide this with the architect before
-   > the wizard, per `02-intake.md` `H1`.
+   > **Always use a new, separate SSO domain per workload domain — this
+   > isn't really a "choice" to weigh with the architect, it's the standard
+   > answer.** A new SSO domain *"creates a workload domain that is isolated
+   > from the other workload domains in your VCF instance"*, and that
+   > isolation is what you want by default. **Name it `vsphere.local`**
+   > rather than something domain-specific — KISS: one name to remember
+   > across every domain, matching TechDocs' own examples, instead of a
+   > naming scheme to invent and keep consistent. See `02-intake.md` `H2`.
 2. **vCenter** — FQDN, IP, gateway (`H2`).
 3. **Cluster** — name, vLCM-images checkbox, vSphere Zone name.
 4. **Image** — pick from the image catalog, or extract one from a reference

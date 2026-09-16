@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.8.7 — 2026-09-16
+- **`docs/23-workload-domain-creation.md` + `docs/02-intake.md` H2:
+  correct the SSO domain guidance — always a new/separate domain, always
+  named `vsphere.local`.** Previously framed as "a real fork, not a
+  formality" to decide with the architect; it isn't a choice to weigh —
+  always keep it separate, and always use the default name for KISS (one
+  name across every domain, matching TechDocs' own examples). Intake H2's
+  example changed from `sfo-w01.local` accordingly. Closes #326.
+
 ## v4.8.6 — 2026-09-16
 - **`docs/26-vcf-operations-vvf-vcenter.md` Step 2: recommend a local SSO
   service account, not AD.** Matches how VCF handles every other
