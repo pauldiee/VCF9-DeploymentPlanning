@@ -91,15 +91,17 @@ $privileges = $privilegeIds | ForEach-Object {
 New-VIRole -Name $roleName -Privilege $privileges
 ```
 
-> **Privilege IDs drift between vSphere releases** — TechDocs' privilege
-> tables list display names, not the raw `Category.Action` IDs `Get-VIPrivilege`
-> takes, so the list above is a best-effort mapping, not a guaranteed match
-> for your build. The script is written to **warn and skip**, not fail
-> outright, on any ID your vCenter doesn't recognize — run it, check the
-> warnings, and reconcile the resulting role's privilege list against the
-> TechDocs table before pointing VCF Operations at it. Add the action
-> privileges (Step 1's third bullet) to `$privilegeIds` the same way if
-> you're not splitting into two accounts.
+> **These IDs are cross-checked against Broadcom's vSphere 8.0 Defined
+> Privileges reference tables — not a vSphere/VCF 9-specific source**
+> (TechDocs has no 9.0 version of that reference yet; the 7.0/8.0 pages are
+> the newest available). They're the same stable `Category.Action` API IDs
+> vSphere has used for years, so vCenter 9 should recognize them, but this
+> has **not been run against a live VCF 9 vCenter**. The script is written
+> to **warn and skip**, not fail outright, on any ID your vCenter doesn't
+> recognize — run it, check the warnings, and reconcile the resulting role's
+> privilege list against the TechDocs table before pointing VCF Operations
+> at it. Add the action privileges (Step 1's third bullet) to
+> `$privilegeIds` the same way if you're not splitting into two accounts.
 
 ## Step 2 — Create the service account
 

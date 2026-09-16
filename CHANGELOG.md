@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.8.2 — 2026-09-16
+- **`docs/26-vcf-operations-vvf-vcenter.md`: tighten the privilege-ID
+  caution — cross-checked against vSphere 8.0's Defined Privileges reference
+  (all IDs confirmed there), not a 9.0-specific source or a live VCF 9
+  vCenter.** Answers Paul's question about whether the script's privilege
+  IDs are vCenter-9-based: they're stable API IDs, not something pulled from
+  a 9.0-specific TechDocs page (none exists yet). Closes #321.
+
 ## v4.8.1 — 2026-09-16
 - **`docs/26-vcf-operations-vvf-vcenter.md`: add PowerCLI one-liners for
   every manual step, and add the guide to the site nav (Operations band).**
