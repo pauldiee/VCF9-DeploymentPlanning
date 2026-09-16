@@ -8,25 +8,29 @@
 > hosts to an *existing* cluster is
 > [`25-cluster-expansion.md`](25-cluster-expansion.md).
 
-Broadcom's VCF 9.1 documentation covers this operation primarily through the
-**SDDC Manager UI wizard** — there is no dedicated 9.1 API *walkthrough page*
-for adding a cluster (there was one for older VCF versions, but it isn't
-carried forward in the current docs set). **The underlying API endpoint
-itself is still live and reference-documented** (`POST /v1/clusters` with
+**Broadcom's documented click-path for this runs through the vSphere
+Client, not SDDC Manager** — the same shape as `25-cluster-expansion.md`:
+you browse to the domain's vCenter and drive the wizard from there. TechDocs
+is explicit that the SDDC Manager UI is the *alternative* here, not the
+primary route: *"Additionally, you can perform this task using the SDDC
+Manager UI."* There is also no dedicated 9.1 API *walkthrough page* for
+adding a cluster (there was one for older VCF versions, but it isn't carried
+forward in the current docs set). **The underlying API endpoint itself is
+still live and reference-documented** (`POST /v1/clusters` with
 `ClusterCreationSpec`) — it's what
 [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators)'s
 `New-VCFClusterSpec.ps1` drives — so section 3 below covers it as the
-scripted alternative, same framing as `23-workload-domain-creation.md` §5:
-wizard for a normal, click-through delivery; API for LACP, multi-vDS,
-EVC/HA settings the wizard doesn't expose, or scripted/repeatable delivery.
+scripted alternative: vSphere Client for a normal, click-through delivery;
+API for LACP, multi-vDS, EVC/HA settings the wizard doesn't expose, or
+scripted/repeatable delivery.
 
 ---
 
 ## The sequence, end to end
 
 ```
-network pool  →  commission hosts  →  create the cluster (wizard)
- (manual)          (manual)             one wizard, ~8 pages
+network pool  →  commission hosts  →  create the cluster (vSphere Client)
+ (manual)          (manual)             one wizard, ~6 pages
 ```
 
 ---
@@ -59,28 +63,46 @@ own, four conditions all apply:
 Get any of these wrong and the wizard's vDS step won't offer the existing
 switch as a reuse target — it isn't a soft warning, it's a hard filter.
 
-## 2. Create the cluster — wizard
+## 2. Create the cluster — vSphere Client
 
-SDDC Manager → the target workload domain → **Add Cluster**.
+In the vSphere Client for the domain's vCenter, browse to the VCF instance
+datacenter in the inventory, select it, then **Actions → New Cluster →
+Create SDDC Cluster**. TechDocs' own prerequisite matches the note in §1
+above, verbatim: *"To perform this task in the vSphere Client, you must have
+access to the management domain vCenter, or your VCF Instance must be
+configured with VCF SSO and vCenter linking."*
 
-1. **General Information** — cluster name.
-2. **Image** — select from the image catalog, or extract from a reference
-   host (same choice as workload domain creation).
-3. **Storage** — principal storage type: vSAN, NFS, VMFS on FC, or vVol.
+1. **Storage Type** — *"Select the storage type for the SDDC cluster and
+   click Begin."* Principal storage type: vSAN, NFS, VMFS on FC, or vVol.
    Each cluster in a multi-cluster domain **can use a different type**, as
    long as every host **within** that cluster matches.
-4. **Storage Details** — the type-specific configuration (vSAN
-   type/encryption/FTT, NFS server+path, FC datastore name, or vVol
-   protocol/provider/container) — same sub-pages as
-   `23-workload-domain-creation.md` step 4.
-5. **Host Selection** — pick from the commissioned, matching-storage-type
-   hosts from step 1. A **skip failed hosts** toggle lets the wizard proceed
-   with the hosts that pass pre-checks rather than blocking on one bad host.
-6. **vSphere Distributed Switch** — create a new vDS, or **reuse an
-   existing one** if the four conditions above are met.
-7. **Review** — verify every prior page's selections.
-8. **Validation** — SDDC Manager runs its pre-checks; **Finish** only
-   commits once validation completes.
+2. **Cluster naming & image** — *"Enter a name for the SDDC cluster"* and
+   *"Select a cluster image from the drop-down menu"* (or extract from a
+   reference host, same choice as workload domain creation).
+3. **Storage configuration** — the type-specific page matching what you
+   picked on page 1 (*"Enter the vSAN/NFS/FC/vVol Storage details and click
+   Next"*) — same sub-pages as `23-workload-domain-creation.md` step 4.
+4. **Host Selection** — *"select hosts for the SDDC cluster and click
+   Next"* — pick from the commissioned, matching-storage-type hosts from
+   step 1 above.
+5. **Distributed Switch** — *"Enter the Distributed Switch details and
+   click Next"* — create a new vDS, or **reuse an existing one** if the
+   four conditions above are met.
+6. **Review** — *"review the vSphere cluster details and click Finish."*
+
+TechDocs also flags a remediation consequence worth planning for, not just
+approving through: *"If the cluster image contains a different version of a
+vendor add-on or component than what is installed on the ESXi hosts you add
+to the cluster, the hosts will be remediated"* during creation — budget time
+for that if your commissioned hosts weren't imaged against the exact image
+you pick on page 2.
+
+**This flow has no "skip failed hosts" toggle or standalone validation
+page** — those exist at the API level (`computeSpec.skipFailedHosts` in §3
+below) and may exist in SDDC Manager's own UI alternative, but the six
+vSphere Client pages above are all there is. If a host fails here, sort it
+out and remove/replace it rather than looking for a way to proceed around
+it.
 
 ## 3. Create the cluster — API (scripted alternative)
 
@@ -162,16 +184,16 @@ Field-by-field, the parts specific to cluster creation (everything else —
 - **`domainId`** — the one field this spec has that `DomainCreationSpec`
   doesn't: which existing domain the cluster is added to. Get this from the
   domain-ID lookup above, not the domain name.
-- **`computeSpec.skipFailedHosts`** — the API equivalent of the wizard's
-  "skip failed hosts" toggle (step 2.5 above): `true` proceeds with
-  whichever hosts pass pre-checks instead of blocking on one bad host.
-- **`clusterSpecs[].advancedOptions`** — **not exposed by the wizard at
-  all.** `evcMode` sets an Enhanced vMotion Compatibility baseline at
-  creation time instead of configuring it after the fact in vCenter;
-  `highAvailability.enabled` toggles vSphere HA on the cluster immediately
-  rather than as a separate post-creation step. This is one of the concrete
-  reasons to reach for the API path over the wizard even when you don't
-  need LACP or a reused vDS.
+- **`computeSpec.skipFailedHosts`** — lets the call proceed with whichever
+  hosts pass pre-checks instead of blocking on one bad host; **the vSphere
+  Client flow in §2 has no equivalent toggle**, this is API-only.
+- **`clusterSpecs[].advancedOptions`** — **not exposed by the vSphere
+  Client wizard at all.** `evcMode` sets an Enhanced vMotion Compatibility
+  baseline at creation time instead of configuring it after the fact in
+  vCenter; `highAvailability.enabled` toggles vSphere HA on the cluster
+  immediately rather than as a separate post-creation step. This is one of
+  the concrete reasons to reach for the API path even when you don't need
+  LACP or a reused vDS.
 - **`networkSpec.vdsSpecs[]`** — one entry per vDS; **to reuse an existing
   vDS** (the four-condition check in §1 above) instead of creating a new
   one, reference the existing vDS's `name` here rather than a new one —

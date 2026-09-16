@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.9.1 — 2026-09-16
+- **`docs/24-cluster-creation.md`: correct the manual cluster-creation path
+  to the vSphere Client's Create SDDC Cluster wizard, not SDDC Manager's UI.**
+  TechDocs-verified: Datacenter → Actions → New Cluster → Create SDDC
+  Cluster is the documented primary route (SDDC Manager UI is TechDocs'
+  stated *alternative*), matching how docs/25 already treats the vSphere
+  Client as primary for host addition. Wizard pages reordered/renamed to
+  TechDocs' actual 6 pages, plus the image-remediation consequence TechDocs
+  flags. Noted the vSphere Client flow has no "skip failed hosts" toggle or
+  standalone validation page — those are API-only, §3 updated to match.
+  Closes #330.
+
 ## v4.9.0 — 2026-09-16
 - **`docs/24-cluster-creation.md` and `docs/25-cluster-expansion.md`: add
   API walkthroughs (`ClusterCreationSpec` / `ClusterExpansionSpec`),
