@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.2.12 — 2026-09-16
+## v4.3.0 — 2026-09-16
 - **New `docs/22-stretch-execution.md`: stretch execution runbook.** A
   standalone, linear guide separating manual steps (commission AZ2 hosts,
   build the AZ2 network pool incl. the per-AZ host-TEP subnet gotcha, deploy
