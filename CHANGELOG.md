@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.10.0 — 2026-09-16
+## v5.0.0 — 2026-09-16
 - **New CLAUDE.md convention: SDDC Manager UI is deprecated in VCF 9 —
   never document it as the primary click-path.** Broadcom has deprecated
   SDDC Manager's own web console in VCF 9 (removal planned in a future
