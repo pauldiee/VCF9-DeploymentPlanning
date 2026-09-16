@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.0.4 — 2026-09-16
+- **Site footer: fix stale post-rebrand text, drop the templates/Rainpole
+  line.** The rebrand commit (51e8774) updated the header product name to
+  "VCF 9 Deployment Planning and Operations" but missed the footer
+  paragraph, which still said "VCF 9.1 deployment-planning helper
+  material" — fixed to match. Also dropped "Generic templates only,
+  Rainpole-style placeholders." per Paul's request. Closes #336.
+
 ## v5.0.3 — 2026-09-16
 - **`docs/24-cluster-creation.md` §1: give the VCFHostPreparation link its
   own bullet.** It was a trailing clause on the network-pool bullet from
