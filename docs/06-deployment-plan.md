@@ -124,7 +124,7 @@ Order runs **core config → management stretch (E7) → Day-2 (E8) → workload
 domains (E9, one per WLD) → handover (E10)**.
 
 ### E7 — Stretch the management domain  ·  Owner: Network + Architect + Storage
-Ref: [`03-multi-az-prep.md`](03-multi-az-prep.md)
+Ref: [`03-multi-az-prep.md`](03-multi-az-prep.md) · step-by-step runbook: [`22-stretch-execution.md`](22-stretch-execution.md)
 
 Stretch sequence: **inter-AZ fabric → commission second-AZ hosts → witness →
 stretch** (the same order a stretched workload domain follows in E9).
@@ -195,7 +195,7 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
 
 ### E9 — Workload domain  ·  Owner: Platform + Network (+ Storage if stretched)
-Ref: [`02-intake.md`](02-intake.md) section H (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) if stretched)
+Ref: [`02-intake.md`](02-intake.md) section H (+ [`03-multi-az-prep.md`](03-multi-az-prep.md) and [`22-stretch-execution.md`](22-stretch-execution.md) if stretched)
 
 **Repeat this epic per workload domain.** Each WLD is independently
 **non-stretched** or **stretched** — a stretched WLD gets its **own** second-AZ

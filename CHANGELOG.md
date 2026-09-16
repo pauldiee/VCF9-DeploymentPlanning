@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.2.12 — 2026-09-16
+- **New `docs/22-stretch-execution.md`: stretch execution runbook.** A
+  standalone, linear guide separating manual steps (commission AZ2 hosts,
+  build the AZ2 network pool incl. the per-AZ host-TEP subnet gotcha, deploy
+  + route the witness) from what the single stretch `PATCH` API call does for
+  you (fault domains, host balancing, storage-policy flip, edge multi-AZ
+  wiring), plus the hard-fail preconditions and how to read the
+  `/validations` response. Covers both the management domain and a workload
+  domain. Cross-linked from `03-multi-az-prep.md` and `06-deployment-plan.md`
+  E7/E9. Closes #311.
+
 ## v4.2.11 — 2026-09-15
 - **`CLAUDE.md` / `tools/Get-VCFCredentials.ps1`: generalize where
   per-engagement customer data belongs.** A hard-coded local folder

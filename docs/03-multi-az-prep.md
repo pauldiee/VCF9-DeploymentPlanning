@@ -248,3 +248,6 @@ the single-AZ planning docs:
 
 Then continue with the normal workbook fill. A stretched build that clears this
 page will not surprise you at bring-up.
+
+For the step-by-step execution runbook (manual steps vs what the stretch API
+call does for you), see [`22-stretch-execution.md`](22-stretch-execution.md).
