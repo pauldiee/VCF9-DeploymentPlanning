@@ -1,4 +1,4 @@
-# VCF9-DeploymentPlanning — Claude Code Context
+# VCF 9 Deployment Planning and Operations — Claude Code Context
 
 > Auto-loaded by Claude Code. Conventions for any collaborator's Claude instance working in this repo.
 

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VCF 9.1 Deployment Planning: site styling.
+   VCF 9 Deployment Planning and Operations: site styling.
    Built entirely on the ITQ design tokens (see /itq/styles.css). No hard-coded
    brand colors: everything references the --itq-* / semantic custom properties.
 

@@ -21,7 +21,7 @@ const idx = NAV.findIndex((n) => n.slug === doc.id);
 const prev = idx > 0 ? NAV[idx - 1] : undefined;
 const next = idx >= 0 && idx < NAV.length - 1 ? NAV[idx + 1] : undefined;
 
-const title = meta ? `${meta.label} — VCF 9.1 Deployment Planning` : 'VCF 9.1 Deployment Planning';
+const title = meta ? `${meta.label} — VCF 9 Deployment Planning and Operations` : 'VCF 9 Deployment Planning and Operations';
 ---
 
 <BaseLayout title={title} description={meta?.blurb} active={doc.id}>

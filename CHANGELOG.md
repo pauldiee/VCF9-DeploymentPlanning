@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.4.0 — 2026-09-16
+- **Rebrand: "VCF9-DeploymentPlanning" → "VCF 9 Deployment Planning and
+  Operations."** The repo has grown past pure planning content
+  (`docs/13-shutdown-startup.md`, `docs/16-remove-components.md`,
+  `docs/22-stretch-execution.md`, and more operations runbooks landing next),
+  so the display name now says so. Branding/title text only — README H1,
+  `CLAUDE.md` header, site `<title>`/header product name, and the test-plan
+  export tool's credit line. The GitHub repo slug, GitLab mirror, and all
+  URLs are unchanged.
+
 ## v4.3.3 — 2026-09-16
 - **Add an annotated stretch-spec JSON walkthrough to `docs/22-stretch-execution.md`.**
   Step 4 previously described the API call only at a high level. Added the

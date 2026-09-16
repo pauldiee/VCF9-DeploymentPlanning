@@ -1,4 +1,4 @@
-# VCF9-DeploymentPlanning
+# VCF 9 Deployment Planning and Operations
 
 A field guide to the **VMware Cloud Foundation 9.1 Planning and
 Preparation Workbook** for anyone planning a from-scratch VCF 9
