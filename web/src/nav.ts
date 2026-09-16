@@ -205,6 +205,14 @@ export const NAV: NavItem[] = [
     blurb: 'Cleanly remove and reinstall optional Day-N fleet components — Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation — via cleanup_component.py.',
   },
   {
+    slug: '22-stretch-execution',
+    step: 'Operations',
+    band: 'Operations',
+    label: 'Stretch Execution',
+    icon: 'route',
+    blurb: 'Manual steps vs the one-call stretch API: AZ2 hosts, witness, network pool, then the PATCH that does the rest — for management and workload domains.',
+  },
+  {
     slug: '21-config-artifacts',
     step: 'Operations',
     band: 'Operations',
