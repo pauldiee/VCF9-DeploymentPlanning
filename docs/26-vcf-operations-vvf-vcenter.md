@@ -59,6 +59,48 @@ You can put everything in one role for one account, or split monitoring vs.
 action privileges into two roles for two accounts — see
 [Field notes](#field-notes).
 
+### PowerCLI — create the role
+
+`New-VIRole` does this in one shot instead of the wizard. Confirmed against a
+current vCenter first — see the caution below the script:
+
+```powershell
+Connect-VIServer -Server sfo-w01-vc01.sfo.rainpole.io
+
+$roleName = 'VCF-Ops-vCenter-Adapter'
+
+# Base (Read Only) + the common monitoring/data-collection set from the
+# TechDocs table above. Add ExternalStatsProvider.* / action privileges only
+# if VCF Operations needs to write stats or run actions against this vCenter.
+$privilegeIds = @(
+    'System.Anonymous', 'System.View', 'System.Read',
+    'Datastore.Browse', 'Performance.ModifyIntervals',
+    'VirtualMachine.GuestOperations.Query',
+    'VirtualMachine.GuestOperations.Modify',
+    'VirtualMachine.GuestOperations.Execute',
+    'Global.ManageCustomFields', 'Global.SetCustomField',
+    'ExternalStatsProvider.Register', 'ExternalStatsProvider.Unregister',
+    'ExternalStatsProvider.Update'
+)
+
+$privileges = $privilegeIds | ForEach-Object {
+    try { Get-VIPrivilege -Id $_ -ErrorAction Stop }
+    catch { Write-Warning "Privilege ID not found on this vCenter build: $_" }
+}
+
+New-VIRole -Name $roleName -Privilege $privileges
+```
+
+> **Privilege IDs drift between vSphere releases** — TechDocs' privilege
+> tables list display names, not the raw `Category.Action` IDs `Get-VIPrivilege`
+> takes, so the list above is a best-effort mapping, not a guaranteed match
+> for your build. The script is written to **warn and skip**, not fail
+> outright, on any ID your vCenter doesn't recognize — run it, check the
+> warnings, and reconcile the resulting role's privilege list against the
+> TechDocs table before pointing VCF Operations at it. Add the action
+> privileges (Step 1's third bullet) to `$privilegeIds` the same way if
+> you're not splitting into two accounts.
+
 ## Step 2 — Create the service account
 
 Create a dedicated local (SSO domain) or AD service account for VCF
@@ -66,6 +108,21 @@ Operations to use — don't reuse a personal or administrator account. Name it
 so its purpose is obvious in an audit (e.g. `svc-vcfops-vc01`), matching the
 service-account convention already used elsewhere in the fleet (bind
 accounts, depot accounts).
+
+For a local SSO-domain account, PowerCLI's `VMware.vSphere.SsoAdmin` module
+does it in one line (install with
+`Install-Module VMware.vSphere.SsoAdmin -Scope CurrentUser` if it's not
+already present):
+
+```powershell
+Connect-SsoAdminServer -Server sfo-w01-vc01.sfo.rainpole.io -User 'administrator@vsphere.local' -Password $ssoAdminPassword
+
+New-SsoPersonUser -UserName 'svc-vcfops-vc01' -Password $svcAccountPassword `
+    -Description 'VCF Operations vCenter adapter service account'
+```
+
+For an AD service account, create it through your existing AD provisioning
+process instead — same naming convention, no local-SSO step needed.
 
 ## Step 3 — Assign the permission
 
@@ -82,6 +139,19 @@ inventory, and verify that the Propagate to children check box is
 selected."* Skipping either — assigning at a datacenter/cluster level
 instead, or leaving Propagate to children unchecked — means VCF Operations
 can't see everything under that root.
+
+PowerCLI one-liner, continuing the session from Step 1:
+
+```powershell
+$rootFolder = Get-Folder -NoRecursion
+New-VIPermission -Entity $rootFolder -Principal 'svc-vcfops-vc01' -Role $roleName -Propagate:$true
+```
+
+`Get-Folder -NoRecursion` with no name filter returns the top-level folder
+of the connected vCenter's inventory — the same object the vSphere Client
+procedure above targets. Confirm it returns exactly one object before
+piping it into `New-VIPermission` (it will return more than one if you're
+connected to multiple vCenters in the same PowerCLI session).
 
 ## Step 4 — Add the vCenter adapter in VCF Operations
 

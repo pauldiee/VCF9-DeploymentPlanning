@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.8.1 — 2026-09-16
+- **`docs/26-vcf-operations-vvf-vcenter.md`: add PowerCLI one-liners for
+  every manual step, and add the guide to the site nav (Operations band).**
+  `New-VIRole` for the role (warn-and-skip on any privilege ID your vCenter
+  build doesn't recognize, rather than a hard fail — TechDocs' privilege
+  tables list display names, not raw IDs, so the mapping is best-effort),
+  `VMware.vSphere.SsoAdmin`'s `New-SsoPersonUser` for a local service
+  account, and `New-VIPermission` against the root folder for the
+  permission assignment. Build-verified locally (`npm run build`). Closes
+  #320.
+
 ## v4.8.0 — 2026-09-16
 - **New `docs/26-vcf-operations-vvf-vcenter.md`: standalone build guide for
   connecting VCF Operations to vCenter in VVF/standalone.** No Fleet LCM in
