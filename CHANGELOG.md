@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.1.1 — 2026-09-17
+- **docs on-page TOC restyled to match the mega-menu mockup: sticky
+  right-hand column, not a horizontal chip list.** Left untouched in
+  v5.1.0 since it predated that work, but it didn't match the style Paul
+  liked in the mockup. Article + TOC now sit in a two-column grid
+  (single column when a page has ≤2 sections); added scroll-spy
+  (IntersectionObserver) so the active section highlights for real,
+  instead of the mockup's static highlight. Hidden at <900px. Closes
+  #338.
+
 ## v5.1.0 — 2026-09-17
 - **Replace the docs sidebar with a top mega-menu nav.** The Reference band
   had grown to 8 items while others had 1-2; explored via an Artifact
