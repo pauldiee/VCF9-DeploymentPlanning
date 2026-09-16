@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.9.2 — 2026-09-16
+- **`docs/25-cluster-expansion.md`: fix a stale cross-reference calling
+  `docs/24-cluster-creation.md` an "SDDC Manager wizard end to end."** No
+  longer true after v4.9.1 corrected docs/24 to vSphere Client's Create
+  SDDC Cluster flow. docs/25's own vSphere Client click-path was checked
+  against TechDocs and is correct as written — only the docs/24 comparison
+  needed fixing; docs/23 remains the genuinely SDDC-Manager-UI-end-to-end
+  one. Closes #331.
+
 ## v4.9.1 — 2026-09-16
 - **`docs/24-cluster-creation.md`: correct the manual cluster-creation path
   to the vSphere Client's Create SDDC Cluster wizard, not SDDC Manager's UI.**
