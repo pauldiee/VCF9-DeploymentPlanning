@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.3.3 — 2026-09-16
+- **Add an annotated stretch-spec JSON walkthrough to `docs/22-stretch-execution.md`.**
+  Step 4 previously described the API call only at a high level. Added the
+  two prerequisite lookups (AZ2 host IDs via `GET /v1/hosts`, cluster ID via
+  `GET /v1/clusters`), a trimmed full example `clusterStretchSpec` (fields and
+  shape verbatim from Broadcom's SDDC Manager API Explorer walkthrough), and
+  a field-by-field explanation tying each block back to the doc's existing
+  gotchas — the sub-TNP naming/`isDefault` behaviour, the AZ2 TEP subnet
+  living in `nsxClusterSpec.ipAddressPoolsSpec`, the name-reference wiring
+  between `nsxtHostSwitchConfigs` and the pool/uplink profile, and why a
+  vmnic-to-vDS mismatch on new AZ2 hosts fails the join. Two fields
+  (`deployWithoutLicenseKeys`, `witnessTrafficSharedWithVsanTraffic`) are
+  flagged as present-but-undocumented in TechDocs rather than guessed at.
+
 ## v4.3.2 — 2026-09-16
 - **Clarify: the AZ2 host-TEP (overlay) IP pool is not a manual step.**
   `docs/22-stretch-execution.md`'s TEP gotcha didn't say where the AZ2 TEP

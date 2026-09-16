@@ -121,6 +121,144 @@ You supply: the AZ2 network pool (step 2), the commissioned AZ2 hosts (equal
 count to AZ1), and the witness (step 3). Nothing else — no separate call to
 build fault domains or flip the storage policy.
 
+### Building the JSON by hand
+
+Get the two lookups out of the way first — you need both before you can fill
+in the spec:
+
+- **AZ2 host IDs.** `GET /v1/hosts` with `status=UNASSIGNED_USEABLE`, copy the
+  `id` for each commissioned AZ2 host.
+- **Cluster ID.** `GET /v1/clusters`, copy the `id` of the cluster you're
+  stretching.
+
+Trimmed example (2 hosts; add one `hostSpecs` entry per AZ2 host, equal count
+to AZ1) — field names and shape verbatim from Broadcom's SDDC Manager API
+Explorer walkthrough:
+
+```json
+{
+  "clusterStretchSpec": {
+    "deployWithoutLicenseKeys": true,
+    "hostSpecs": [
+      {
+        "id": "<AZ2 host 1 ID>",
+        "hostname": "sfo02-m01-r01-esx01.sfo.rainpole.io",
+        "hostNetworkSpec": {
+          "networkProfileName": "sfo02-m01-r01-network-profile01",
+          "vmNics": [
+            { "id": "vmnic0", "vdsName": "sfo-m01-cl01-vds01", "uplink": "uplink1" },
+            { "id": "vmnic1", "vdsName": "sfo-m01-cl01-vds01", "uplink": "uplink2" }
+          ]
+        }
+      },
+      {
+        "id": "<AZ2 host 2 ID>",
+        "hostname": "sfo02-m01-r01-esx02.sfo.rainpole.io",
+        "hostNetworkSpec": {
+          "networkProfileName": "sfo02-m01-r01-network-profile01",
+          "vmNics": [
+            { "id": "vmnic0", "vdsName": "sfo-m01-cl01-vds01", "uplink": "uplink1" },
+            { "id": "vmnic1", "vdsName": "sfo-m01-cl01-vds01", "uplink": "uplink2" }
+          ]
+        }
+      }
+    ],
+    "networkSpec": {
+      "networkProfiles": [
+        {
+          "isDefault": true,
+          "name": "sfo02-m01-r01-network-profile01",
+          "nsxtHostSwitchConfigs": [
+            {
+              "ipAddressPoolName": "sfo02-m01-r01-ip-pool01-host",
+              "uplinkProfileName": "sfo02-m01-r01-uplink-profile01",
+              "vdsName": "sfo-m01-cl01-vds01",
+              "vdsUplinkToNsxUplink": [
+                { "nsxUplinkName": "uplink1", "vdsUplinkName": "uplink1" },
+                { "nsxUplinkName": "uplink2", "vdsUplinkName": "uplink2" }
+              ]
+            }
+          ]
+        }
+      ],
+      "nsxClusterSpec": {
+        "ipAddressPoolsSpec": [
+          {
+            "name": "sfo02-m01-r01-ip-pool01-host",
+            "subnets": [
+              {
+                "cidr": "10.12.14.0/24",
+                "gateway": "10.12.14.1",
+                "ipAddressPoolRanges": [
+                  { "start": "10.12.14.101", "end": "10.12.14.132" }
+                ]
+              }
+            ]
+          }
+        ],
+        "uplinkProfiles": [
+          {
+            "name": "sfo02-m01-r01-uplink-profile01",
+            "transportVlan": 1214,
+            "teamings": [
+              {
+                "name": "DEFAULT",
+                "policy": "LOADBALANCE_SRCID",
+                "standByUplinks": [],
+                "activeUplinks": ["uplink1", "uplink2"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "isEdgeClusterConfiguredForMultiAZ": true,
+    "witnessSpec": {
+      "fqdn": "sfo-m01-cl01-vsw01.sfo.rainpole.io",
+      "vsanCidr": "10.21.10.0/24",
+      "vsanIp": "10.21.10.218"
+    },
+    "witnessTrafficSharedWithVsanTraffic": false
+  }
+}
+```
+
+What each block is doing, and why it trips people up:
+
+- **`hostSpecs[]`** — one entry per AZ2 host. `id`/`hostname` come from the
+  two lookups above. `vmNics` **must mirror the exact vmnic-to-vDS mapping
+  the AZ1 hosts on this cluster already use** — same uplink names, same
+  count — or the host fails to join the cluster's vDS.
+- **`networkSpec.networkProfiles[]`** — this is the sub-TNP from the TEP
+  callout above. `name` is a label you choose; **don't pre-create it in
+  NSX** — SDDC Manager creates it from this spec during the PATCH. `isDefault`
+  is the field the management-vs-workload gotcha below turns on.
+- **`networkProfiles[].nsxtHostSwitchConfigs[]`** — the wiring: it binds the
+  network profile to the vDS (`vdsName`) and points it at the pool and uplink
+  profile defined below by **name reference**
+  (`ipAddressPoolName`/`uplinkProfileName`), not by inline value. Get a name
+  mismatch between here and `nsxClusterSpec` and the profile silently has no
+  pool to assign from.
+- **`networkSpec.nsxClusterSpec.ipAddressPoolsSpec[]`** — the actual AZ2 TEP
+  subnet: `cidr` / `gateway` / `ipAddressPoolRanges`. **This is the subnet
+  that must be genuinely distinct from AZ1's** — see the TEP callout above;
+  reusing AZ1's here is what produces the
+  `ipAssignmentType not found for the NSX overlay VDS` failure.
+- **`nsxClusterSpec.uplinkProfiles[]`** — `transportVlan` is the AZ2
+  host-overlay VLAN ID; `teamings[].activeUplinks` must match how AZ1's
+  uplink profile is already teamed (same policy, same uplink count) so the
+  two AZs' hosts behave identically on the shared vDS.
+- **`isEdgeClusterConfiguredForMultiAZ`** — `true` only if this cluster
+  already hosts an NSX Edge cluster (per the precondition list above); leave
+  `false` otherwise.
+- **`witnessSpec`** — `fqdn` / `vsanCidr` / `vsanIp` of the witness appliance
+  deployed and gateway-fixed in step 3.
+- **`deployWithoutLicenseKeys`** and **`witnessTrafficSharedWithVsanTraffic`**
+  appear in Broadcom's example but aren't documented beyond the field name —
+  TechDocs gives no guidance on when to flip either from the example's
+  defaults, so leave them as shown unless you have a specific reason to
+  change one.
+
 Optionally build, validate, and submit the spec with
 [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators)'s
 `New-VCFvSANStretchSpec.ps1`, which assembles the JSON, calls
