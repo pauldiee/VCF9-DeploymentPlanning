@@ -9,8 +9,10 @@
   resource migration) were only described in prose, not given as concrete
   PowerCLI privilege IDs. Added an opt-in `$actionPrivs` block, sourced
   from Broadcom's "Performing vCenter Actions" privilege table, using the
-  same resolve/abort-on-missing pattern as the base script. Marked
-  UNTESTED like Step 3's permission-assignment script. Closes #350.
+  same resolve/abort-on-missing pattern as the base script.
+  **Field-verified** same day against a live vCenter 9 lab: all 12 action
+  privilege IDs resolved and a combined 25-privilege role created/removed
+  cleanly. Closes #350.
 
 ## v5.2.4 — 2026-09-17
 - **Rename docs/26 and docs/27's titles to a consistent Deployment /

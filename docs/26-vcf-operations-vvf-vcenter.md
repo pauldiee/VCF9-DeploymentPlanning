@@ -133,8 +133,9 @@ to act, not just observe (field-reported gap: #350) — it's the same
 resolve/abort pattern as the base script above, extended with the
 action-oriented privileges from Broadcom's
 [Privileges Required for Configuring a vCenter Adapter Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations/privileges-required-for-configuring-a-vcenter-adapter-instance.html)'s
-"Performing vCenter Actions" section (**UNTESTED against a live VCF 9
-vCenter — verify before relying on it**, unlike the base script above):
+"Performing vCenter Actions" section. **Field-verified**: all 12 privilege
+IDs below resolved against a live vCenter 9 instance, and a role combining
+them with the base set created (and removed again) cleanly:
 
 ```powershell
 $actionPrivs = @(
