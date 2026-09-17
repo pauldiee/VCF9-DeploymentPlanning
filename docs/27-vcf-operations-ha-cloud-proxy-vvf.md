@@ -1,4 +1,4 @@
-# VCF Operations HA Cluster, Cloud Proxy & License Server — VVF/Standalone Build Guide
+# VCF Operations in VVF/Standalone — Deployment (Nodes, HA, Cloud Proxy, License Server)
 
 > Closes #346, #348. Companion to
 > [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md) —

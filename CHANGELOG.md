@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.2.4 — 2026-09-17
+- **Rename docs/26 and docs/27's titles to a consistent Deployment /
+  Post-Deployment Configuration pair.** docs/26's title ("vCenter Adapter
+  Setup") had gone stale after hostname-rename, password-expiry, and
+  AD/LDAP sections were added — it's now "VCF Operations in
+  VVF/Standalone — Post-Deployment Configuration". docs/27 becomes the
+  matching "— Deployment (Nodes, HA, Cloud Proxy, License Server)".
+  Filenames/slugs unchanged, only titles, nav labels/blurbs, and the
+  README rows.
+
 ## v5.2.3 — 2026-09-17
 - **docs/27: add License Server deployment (Step 5).** VVF/standalone has
   no Fleet LCM to auto-deploy the first License Server the way a fleet
