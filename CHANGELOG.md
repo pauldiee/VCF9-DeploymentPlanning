@@ -1,6 +1,20 @@
 # Changelog
 
-## v5.1.9 — 2026-09-17
+## v5.2.0 — 2026-09-17
+- **Add docs/27: VCF Operations HA cluster + Cloud Proxy build guide for
+  VVF/standalone.** New doc covering the full flow a VVF deployment needs
+  by hand (no Fleet LCM to do it automatically): OVA-deploy each node,
+  run the setup wizard (with HA activatable inline), the Day-N HA-enable
+  path as an alternative, and deploying/registering a Cloud Proxy —
+  sourced verbatim from Broadcom's VCF 9.1 Upgrade TechDocs tree (same
+  OVA/wizard as a fresh deployment) plus the non-upgrade "Configuring
+  Advanced Architectures for VCF Operations" HA procedure. Sits before
+  docs/26 in the doc sequence (deploy VCF Operations itself, then connect
+  it to vCenter). Moved docs/09's §5.1 (VVF proxy), §5.2 (SSL-inspecting
+  proxies), and §5.3 (Cloud Proxy OVA proxy fields) into docs/27's Step 4
+  / Field notes, since none of it was really about the binary depot;
+  docs/09 now stubs to docs/27. Fixed four now-stale cross-references in
+  docs/05, docs/07 (×2), and docs/26. Closes #346.
 - **docs/26 Step 2: document the (optional) service-account password-expiry
   problem and two ways to fix it.** Left alone, the service account's
   password expires on the domain's normal schedule and silently breaks the

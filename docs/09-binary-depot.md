@@ -623,102 +623,17 @@ Because it is L4-only, an authenticating (`credentialsEnabled`) or TLS
 (`tlsEnabled`) proxy still has to clear this reachability gate **first** — fix
 the firewall before chasing credentials or certificates.
 
-## 5.1 Proxying VCF Operations without a VCF Management Services runtime (VVF / standalone)
+## 5.1 VVF/standalone VCF Operations — moved
 
-Everything above in §5 is the Fleet LCM / `VSP` flow — it only applies where a
-VCF Management Services runtime exists. A **VVF deployment with VCF Operations
-deployed standalone** (no Fleet LCM / `VSP`) has no such component to PATCH —
-the proxy goes on VCF Operations itself instead:
-
-1. Log in to VCF Operations → **Administration** → **Global Settings** →
-   **Network Settings** category → **HTTP Proxy**.
-2. Enter the proxy IP/hostname, port, and credentials.
-3. **Test Connection**, then save.
-
-This is the **only** flow that needs a proxy in this topology. The **License
-Server has no outbound path to Broadcom at all** — confirmed both by the
-Broadcom Ports and Protocols data in
-[`07-firewall-ports.md` §E](07-firewall-ports.md#e-fleet--operations-cloud-proxy-license-server-syslog)
-(License Server only talks to vCenter and VCF Operations, both internal) and
-by Broadcom KB 441747 ("VCF License Server unable to connect to VCF
-Operations with proxy configured"), whose fix is to **redeploy the License
-Server without a proxy configured** — it has no external network connection
-requirements. Putting a proxy on the License Server is the wrong fix and
-breaks it.
-
-If Cloud Proxies are also deployed in this topology, each one takes its own
-proxy setting at OVA-deploy time (§5.3 below) — they don't inherit VCF
-Operations' Global Settings proxy.
-
-> Also for VVF/standalone: the vCenter adapter needs its own dedicated
-> role and service account, created manually since there's no Fleet LCM to
-> provision one — see
-> [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md).
-
-## 5.2 SSL-inspecting (TLS-terminating) proxies
-
-**If the egress proxy does SSL inspection (TLS termination/re-signing),
-exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection** — don't
-assume VCF Operations can be pointed at the proxy's re-signing CA.
-**It can't — not officially.** TechDocs, verbatim, on VCF Operations' own
-proxy setting (§5.1 above): *"SSL termination proxy is not supported in VCF
-Operations."* There is no field there to import a custom CA for an
-inspecting proxy. Ask the proxy/security team for a **no-inspection bypass
-rule** for those two hostnames — that is the supported fix.
-
-**The Test Connection button actively checks for this and blocks on it.**
-Field-verified 2026-09-15: submitting an SSL-terminating proxy in Network
-Settings and clicking **Test Connection** returns *"SSL-terminating proxy
-detected. VCF Operations requires a pass-through (non-SSL-terminating)
-proxy."*
-
-**But the check only gates Test Connection, not Save.** Field-verified
-2026-09-15: saving the proxy config **without** passing Test Connection
-first still persists it, and licensing activation against
-`eapi.broadcom.com`/`vcf.broadcom.com` **succeeded** through the same
-SSL-terminating proxy the test had just rejected. Treat this as an
-unsupported, unverified-long-term state, not a green light — it's the Test
-Connection check being stricter than what the underlying licensing path
-actually enforces, and Broadcom could tighten that gap in a future release.
-The no-inspection bypass rule is still the correct fix to pursue; this is a
-workaround of last resort if that isn't available in time.
-
-## 5.3 Cloud Proxy OVA — proxy-related deploy fields
-
-**The Unique Registration Key generated in VCF Operations for the Cloud
-Proxy OVA expires 24 hours after generation** — TechDocs, verbatim: *"The
-unique registration key expires 24 hours after generation... Power on the
-cloud proxy within 24 hours of registration. After 24 hours, the Unique
-Registration Key expires. If the key expires, delete the proxy and deploy a
-new one."* There's no repair path for an expired key: generate it right
-before you power on the OVA rather than ahead of time, or use **Regenerate
-Key** in VCF Operations if the deploy is going to run long.
-
-**Cloud Proxy is the one appliance where SSL inspection *is* supported** —
-its OVA deploy wizard has a **Custom CA** field (paste the inspecting
-proxy's root CA, `-----BEGIN CERTIFICATE-----` / `-----END CERTIFICATE-----`)
-under "Set up a proxy server", separate from the Outbound Network Proxy
-Settings added in 9.1.1 for Broadcom Portal traffic specifically. That only
-covers Cloud Proxy's own outbound path, not VCF Operations' licensing calls
-(§5.2 above).
-
-**The same wizard also has a Docker Subnet CIDR field — set it explicitly,
-don't take the default.** TechDocs, verbatim: the field takes an *"IP in
-CIDR format"*, *"must be /27 or larger (for example, /27, /26, /25, /24
-etc)"*, and *"if a custom value is not provided, the Docker's default value
-gets assigned automatically (for example, /16 subnets starting from
-172.17.0.0)"*. The risk of leaving it on default: Broadcom KB 392302 —
-*"If a Docker network overlaps with the external environment network,
-connectivity problems may occur, as network packets won't be routed
-outside the Cloud Proxy but will instead be routed internally."* That's a
-**silent** failure (looks like the destination is unreachable, not a config
-error), and the KB says outright *"there is no permanent resolution to
-update the docker bridge network pool"* after the fact — recreating the
-Docker networks is the only fix, not a setting change. Pick a **/24** from
-a block you're certain isn't routed anywhere in the estate (not
-management/VM VLANs, not NSX overlay ranges, not any other appliance's
-internal Docker/K8s range) and record it in the network plan like any
-other reserved allocation — it's invisible until it collides.
+Proxying VCF Operations without a VCF Management Services runtime,
+SSL-inspecting proxies, and the Cloud Proxy OVA's proxy-related deploy
+fields (Unique Registration Key expiry, Custom CA, Docker Subnet) all
+moved to
+[`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md) —
+the dedicated VVF/standalone VCF Operations deployment guide (Step 4 and
+Field notes) — since none of it is specific to the binary depot. See also
+[`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md) for
+the vCenter adapter setup that follows.
 
 ## 6. Upgrades — filling the depot for a fleet upgrade
 

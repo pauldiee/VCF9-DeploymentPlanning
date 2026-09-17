@@ -62,7 +62,7 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 > request, same as the rest of this page; for VCF Operations' own Test
 > Connection behavior, the Cloud Proxy Custom CA field, and the Docker
 > Subnet CIDR gotcha, see
-> [`09-binary-depot.md` §5.2–§5.3](09-binary-depot.md#52-ssl-inspecting-tls-terminating-proxies) —
+> [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md#field-notes) —
 > that's proxy *configuration* detail, which lives with the rest of the
 > proxy setup material rather than the port tables here.
 
@@ -145,7 +145,7 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 
 > **Proxying licensing traffic without a `VSP` (VVF / standalone VCF
 > Operations)?** See
-> [`09-binary-depot.md` §5.1](09-binary-depot.md#51-proxying-vcf-operations-without-a-vcf-management-services-runtime-vvf--standalone) —
+> [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md#field-notes) —
 > the License Server flows in the table above (no outbound path to Broadcom
 > at all) are the port-level fact; the proxy-configuration steps for that
 > topology live with the rest of the proxy setup material in docs/09.

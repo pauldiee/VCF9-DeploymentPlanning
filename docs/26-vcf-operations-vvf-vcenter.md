@@ -3,8 +3,9 @@
 > Closes #319. Companion to
 > [`05-day2-deployments.md`](05-day2-deployments.md) (VCF Operations B.x
 > topics for a fleet deployment) and
-> [`09-binary-depot.md` §5.1](09-binary-depot.md#51-proxying-vcf-operations-without-a-vcf-management-services-runtime-vvf--standalone)
-> (proxying VCF Operations in the same VVF/standalone topology).
+> [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md)
+> (deploying VCF Operations itself — nodes, HA, Cloud Proxy — in the same
+> VVF/standalone topology; do that doc first, this one second).
 
 **In a full VCF fleet, Fleet LCM registers vCenter with VCF Operations for
 you** as part of domain/cluster management — there's no manual adapter setup.
