@@ -255,8 +255,9 @@ What each block is doing, and why it trips people up:
   subnet: `cidr` / `gateway` / `ipAddressPoolRanges`. **This subnet must be
   genuinely distinct from AZ1's** — see the TEP callout above; reusing AZ1's
   address range here is what produces the `ipAssignmentType not found for
-  the NSX overlay VDS` failure. Broadcom's own API docs (Clusters
-  `#_usecase_stretchCluster`) do document a second, **API-level** meaning of
+  the NSX overlay VDS` failure. Broadcom's own
+  [Clusters API docs — Stretch Cluster use case](https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/clusters/#_usecase_stretchCluster)
+  do document a second, **API-level** meaning of
   "reuse" that doesn't contradict this: if the AZ2 pool object already
   exists in NSX (e.g. from an earlier attempt), you can reference it by name
   instead of re-declaring it inline — set only `name`, leave `subnets` out
