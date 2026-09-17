@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.1.6 — 2026-09-17
+- **docs/22: fix `hostname` → `hostName` casing bug; document the deprecated
+  `secondaryAzOverlayVlanId` field, both verified against the real VCF
+  9.1.1 OpenAPI spec.** Paul downloaded the actual spec bundle from
+  developer.broadcom.com/sdks/vcf-api-specification (`sddc-manager-openapi.json`,
+  `info.version: 9.1.1.0`) — a properly version-pinned source, unlike #341's
+  5.2.x docs page. Confirmed `HostSpec.hostName` (capital N) is the real
+  field name (the example JSON had lowercase `hostname`, which the schema
+  silently drops rather than rejects — same class of TechDocs-vs-real-API
+  mismatch flagged once before). Confirmed `clusterStretchSpec.secondaryAzOverlayVlanId`
+  is real, `deprecated: true`, superseded by `uplinkProfiles[].transportVlan`
+  — directly explains the original `SECONDARY_AZ_OVERLAY_VLANID cannot be
+  blank` error from the internal-Broadcom-channel thread. Closes #342.
+
 ## v5.1.5 — 2026-09-17
 - **docs/22: correct sourcing on the AZ2 TEP pool reuse shorthand — the
   linked Clusters API doc is VCF 5.2.x, not 9.x.** v5.1.3 cited

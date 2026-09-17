@@ -19,3 +19,7 @@ artifacts/
 
 # Generated at build time from tools/*.ps1 (see web/package.json prebuild)
 web/public/scripts/
+
+# Downloaded Broadcom API spec bundles (large, third-party, not the pinned
+# workbook — used as a research reference, never committed)
+research/

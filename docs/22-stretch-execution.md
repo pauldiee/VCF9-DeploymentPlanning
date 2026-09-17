@@ -154,7 +154,7 @@ same shape either way:
     "hostSpecs": [
       {
         "id": "<AZ2 host 1 ID>",
-        "hostname": "sfo02-m01-r01-esx01.sfo.rainpole.io",
+        "hostName": "sfo02-m01-r01-esx01.sfo.rainpole.io",
         "hostNetworkSpec": {
           "networkProfileName": "sfo02-m01-r01-network-profile01",
           "vmNics": [
@@ -165,7 +165,7 @@ same shape either way:
       },
       {
         "id": "<AZ2 host 2 ID>",
-        "hostname": "sfo02-m01-r01-esx02.sfo.rainpole.io",
+        "hostName": "sfo02-m01-r01-esx02.sfo.rainpole.io",
         "hostNetworkSpec": {
           "networkProfileName": "sfo02-m01-r01-network-profile01",
           "vmNics": [
@@ -272,7 +272,16 @@ What each block is doing, and why it trips people up:
 - **`nsxClusterSpec.uplinkProfiles[]`** — `transportVlan` is the AZ2
   host-overlay VLAN ID; `teamings[].activeUplinks` must match how AZ1's
   uplink profile is already teamed (same policy, same uplink count) so the
-  two AZs' hosts behave identically on the shared vDS.
+  two AZs' hosts behave identically on the shared vDS. This is also where
+  the `SECONDARY_AZ_OVERLAY_VLANID cannot be blank` validation error traces
+  back to: there's a **top-level, deprecated** `clusterStretchSpec.secondaryAzOverlayVlanId`
+  (integer) field from an older API shape, confirmed still present but
+  `"deprecated": true` in the real VCF 9.1.1 OpenAPI spec (SDDC Manager API
+  Reference Guide, `ClusterStretchSpec` schema) — *"the secondary AZ overlay
+  vlan id should be mentioned in the uplinkProfile field instead."* SDDC
+  Manager needs an overlay VLAN from one of the two places; omit
+  `networkSpec` entirely with nothing set in the deprecated field and that's
+  the blank-VLAN error. Use `transportVlan` here, not the deprecated field.
 - **`isEdgeClusterConfiguredForMultiAZ`** — `true` only if this cluster
   already hosts an NSX Edge cluster (per the precondition list above); leave
   `false` otherwise.
