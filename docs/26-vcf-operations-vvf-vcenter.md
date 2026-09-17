@@ -199,10 +199,12 @@ Per Broadcom's
 ## Renaming a node hostname
 
 **VVF/standalone only — do not attempt this on a VCF 9 fleet-managed VCF
-Operations cluster.** Broadcom's KB is explicit, verbatim: *"Changing the
-VCF Operations IP address is only supported for 'VVF or standalone'
-Operations clusters. This procedure is not supported for VCF 9.x
-environments."* On a fleet deployment, node identity is Fleet-LCM-managed —
+Operations cluster.** Broadcom's
+[KB 337564](https://knowledge.broadcom.com/external/article/337564/how-to-change-a-node-hostname-in-vrealiz.html)
+is explicit, verbatim: *"Changing the VCF Operations IP address is only
+supported for 'VVF or standalone' Operations clusters. This procedure is
+not supported for VCF 9.x environments."* On a fleet deployment, node
+identity is Fleet-LCM-managed —
 the supported fix there is removing the node from the analytics cluster and
 redeploying it with the correct name, not the steps below. This section is
 for a standalone/VVF cluster, same scope as the rest of this doc.
