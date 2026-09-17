@@ -141,11 +141,10 @@ in the spec:
 
 Trimmed example (2 hosts; add one `hostSpecs` entry per AZ2 host, equal count
 to AZ1) — field names and shape verbatim from Broadcom's SDDC Manager API
-Explorer walkthrough. **The one field in here that changes between a
-management-domain stretch and a workload-domain stretch is
-`networkProfiles[].isDefault`** — shown below as `true` (management domain);
-set it `false` for a workload domain. Everything else in the spec is the
-same shape either way:
+Explorer walkthrough. The shape is identical for a management-domain and a
+workload-domain stretch; there's no per-domain-type field to flip (see the
+`isDefault` note below the JSON — an earlier revision of this doc claimed
+one existed and that claim didn't hold up):
 
 ```json
 {
@@ -178,7 +177,6 @@ same shape either way:
     "networkSpec": {
       "networkProfiles": [
         {
-          "isDefault": true,
           "name": "sfo02-m01-r01-network-profile01",
           "nsxtHostSwitchConfigs": [
             {
@@ -243,8 +241,21 @@ What each block is doing, and why it trips people up:
   count — or the host fails to join the cluster's vDS.
 - **`networkSpec.networkProfiles[]`** — this is the sub-TNP from the TEP
   callout above. `name` is a label you choose; **don't pre-create it in
-  NSX** — SDDC Manager creates it from this spec during the PATCH. `isDefault`
-  is the field the management-vs-workload gotcha below turns on.
+  NSX** — SDDC Manager creates it from this spec during the PATCH. **Not
+  shown: `isDefault`.** An earlier revision of this doc had you set
+  `isDefault: true`/`false` here depending on management vs. workload
+  domain, sourced from "Broadcom's SDDC Manager API Explorer walkthrough."
+  That was wrong. The stretch call's network profile type
+  (`StretchClusterNetworkProfile`) has **no `isDefault` property at all** —
+  confirmed against the real VCF OpenAPI spec across 9.0.0.0, 9.1.0.0, and
+  9.1.1.0 (`isDefault` only exists on the separate `NetworkProfile` schema
+  used by cluster/domain *creation*, a different endpoint). Lab-verified
+  2026-09-17 against Holodeck (9.1.1): `isDefault` set to `true`, `false`,
+  omitted, and even an intentionally-wrong type (a string) all produced
+  byte-for-byte identical `/validations` responses — if the field were
+  real and validated, the wrong-type payload should have tripped a
+  schema-layer error and didn't. Leave it out; there's nothing to set here
+  for either domain type.
 - **`networkProfiles[].nsxtHostSwitchConfigs[]`** — the wiring: it binds the
   network profile to the vDS (`vdsName`) and points it at the pool and uplink
   profile defined below by **name reference**
@@ -308,11 +319,11 @@ Optionally build, validate, and submit the spec with
 [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators)'s
 `New-VCFvSANStretchSpec.ps1`, which assembles the JSON, calls
 `/validations`, and PATCHes it — setting `isEdgeClusterConfiguredForMultiAZ`
-for you. `networkProfiles[].isDefault` must be `true` for a management-domain
-stretch, `false` for a workload domain (`03-multi-az-prep.md` / the script's
-own gotcha notes cover why: management's AZ2 profile *is* the cluster's first
-VCF network profile, a workload domain's AZ1 default already exists and AZ2
-is a sub-config).
+for you. **That script still prompts for and sets `networkProfiles[].isDefault`**
+(management vs. workload domain) — per the finding above, this field
+doesn't exist on the stretch endpoint's schema and had no effect in lab
+testing, so treat that prompt as a no-op until the script is updated to
+match.
 
 ### Preconditions that hard-fail this call
 

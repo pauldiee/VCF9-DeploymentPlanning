@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.1.7 — 2026-09-17
+- **docs/22: remove the `isDefault` management-vs-workload gotcha — it
+  doesn't apply to the stretch endpoint.** Cross-checked the real VCF
+  OpenAPI spec across 9.0.0.0, 9.1.0.0, and 9.1.1.0: the stretch call's
+  network profile type (`StretchClusterNetworkProfile`) has no `isDefault`
+  property in any of the three versions — only the separate
+  cluster/domain-*creation* `NetworkProfile` schema has it. Differential
+  lab test against Holodeck (9.1.1) confirmed no observable effect,
+  including an intentionally-wrong-type control that should have failed
+  schema validation if the field were real. Removed the gotcha text and the
+  `"isDefault": true` line from the example JSON; flagged (not fixed) that
+  `VCFJsonSpecCreators/New-VCFvSANStretchSpec.ps1` still prompts for it.
+  Closes #343.
+
 ## v5.1.6 — 2026-09-17
 - **docs/22: fix `hostname` → `hostName` casing bug; document the deprecated
   `secondaryAzOverlayVlanId` field, both verified against the real VCF
