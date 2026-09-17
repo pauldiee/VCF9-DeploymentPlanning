@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.2.1 — 2026-09-17
+- **Fix scrape-versions.yml: retry the version-data push on a rejected
+  (non-fast-forward) push.** The Versions page showed "Last updated 15
+  Sept" — the daily scrape ran and detected real changes on 2026-09-16 but
+  its bare `git push` got rejected because `main` moved during the run
+  (other commits landing in the same window); the workflow had no
+  fetch/rebase/retry, so it just failed. Added a 3-attempt
+  fetch-rebase-push retry loop. Caught by Paul. Closes #347.
+
 ## v5.2.0 — 2026-09-17
 - **Add docs/27: VCF Operations HA cluster + Cloud Proxy build guide for
   VVF/standalone.** New doc covering the full flow a VVF deployment needs

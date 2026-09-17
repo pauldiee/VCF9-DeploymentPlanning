@@ -46,8 +46,21 @@ jobs:
           git config user.email "actions@github.com"
           git add web/src/data/vcf-versions.json
           git commit -m "chore: refresh VCF 9.1 version overview data (#179)"
-          git push
           echo "committed=true" >> "$GITHUB_OUTPUT"
+
+          # main can move between this job's checkout and this push (#347) --
+          # this bot only ever touches vcf-versions.json, so a rebase conflict
+          # should be near-impossible; retry a few times on a stale push.
+          for attempt in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt/3) -- fetching and rebasing before retry."
+            git fetch origin main
+            git rebase origin/main
+          done
+          echo "::error::git push failed after 3 attempts"
+          exit 1
 
       - name: Trigger Pages deploy
         # A GITHUB_TOKEN-authored push does not fire other workflows' `push`
