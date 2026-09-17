@@ -27,6 +27,7 @@ export const REFERENCE_BANDS = [
   'VCF Automation',
   'Security services',
   'Operations',
+  'VVF / Standalone',
   'Reference data',
 ] as const;
 
@@ -244,21 +245,23 @@ export const NAV: NavItem[] = [
     icon: 'file-export',
     blurb: 'Pull re-submittable spec JSON out of a built VCF 9.1 instance (bring-up spec, Fleet LCM components, Supervisor export, the NSX policy hierarchy), then sanitise, parameterise and validate it into reusable templates.',
   },
+
+  // --- Reference: VVF / Standalone --------------------------------------
   {
     slug: '27-vcf-operations-ha-cloud-proxy-vvf',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'VCF Ops HA + Cloud Proxy + License Server (VVF)',
+    step: 'VVF / Standalone',
+    band: 'VVF / Standalone',
+    label: 'VCF Ops VVF Deployment',
     icon: 'clone',
     blurb: 'No Fleet LCM in VVF/standalone to deploy VCF Operations for you: OVA-deploy each node by hand, run the setup wizard, enable HA, and deploy/register a Cloud Proxy and a License Server.',
   },
   {
     slug: '26-vcf-operations-vvf-vcenter',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'VCF Ops VVF vCenter Setup',
+    step: 'VVF / Standalone',
+    band: 'VVF / Standalone',
+    label: 'VCF Ops VVF Post-Deploy Config',
     icon: 'id-badge',
-    blurb: 'No Fleet LCM in VVF/standalone to auto-register vCenter: create the vCenter role and service account by hand, assign the permission, then add the vCenter adapter instance in VCF Operations.',
+    blurb: 'No Fleet LCM in VVF/standalone: the vCenter adapter (role, service account, permission), renaming a node hostname, service-account password expiry, and AD/LDAP authentication sources.',
   },
 
   // --- Reference: Reference data ------------------------------------

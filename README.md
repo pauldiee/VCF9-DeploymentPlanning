@@ -87,7 +87,7 @@ sidebar mirrors these bands.
 | `docs/23-workload-domain-creation.md` | Workload domain creation runbook — manual prep (network pool, commissioned hosts, DNS) vs the creation wizard, page by page, plus the DomainCreationSpec API path for LACP or no-cluster domains |
 | `docs/24-cluster-creation.md`       | Cluster creation runbook — adding a cluster to an existing workload domain: network pool + commissioned hosts, then the SDDC Manager Add Cluster wizard, page by page, including the 9.1.1+ vDS-reuse rules |
 | `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
-| `docs/26-vcf-operations-vvf-vcenter.md` | Build guide — VCF Operations in VVF/standalone: creating the vCenter role and service account by hand (no Fleet LCM), assigning the permission, adding the vCenter adapter instance, and renaming a node hostname |
+| `docs/26-vcf-operations-vvf-vcenter.md` | Build guide — VCF Operations in VVF/standalone post-deployment config: vCenter adapter (role, service account, permission), renaming a node hostname, service-account password expiry, and AD/LDAP authentication sources |
 | `docs/27-vcf-operations-ha-cloud-proxy-vvf.md` | Build guide — deploying VCF Operations itself in VVF/standalone: node OVA deploy, setup wizard, enabling HA (inline or Day-N), and deploying/registering a Cloud Proxy and a License Server. Precedes docs/26 |
 
 **Reference data:**
