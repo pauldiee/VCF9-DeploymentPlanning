@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.1.8 — 2026-09-17
+- **docs/26: add a "Renaming a node hostname" section for VVF/standalone
+  VCF Operations.** Per Broadcom KB 337564, this is explicitly VVF/standalone
+  only — not supported on a VCF 9.x fleet-managed cluster, where the
+  supported fix is removing and redeploying the node via Fleet LCM instead.
+  Covers analytics node steps (cluster offline → `sethostname.py` → restart
+  → cluster online), Cloud Proxy steps, and the `casa.db.script` fixup
+  needed on every analytics node if the old hostname was used at cluster
+  enrollment. Closes #344.
+
 ## v5.1.7 — 2026-09-17
 - **docs/22: remove the `isDefault` management-vs-workload gotcha — it
   doesn't apply to the stretch endpoint.** Cross-checked the real VCF

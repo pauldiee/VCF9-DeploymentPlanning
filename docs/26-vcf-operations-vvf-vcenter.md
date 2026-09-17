@@ -24,8 +24,9 @@ vCenter adapter instance in VCF Operations.
 | 2 | [Step 2 — Create the service account](#step-2--create-the-service-account) | Local SSO domain, not AD — keeps it independent of your identity provider |
 | 3 | [Step 3 — Assign the permission](#step-3--assign-the-permission) | Top-level folder, not Global Permissions |
 | 4 | [Step 4 — Add the vCenter adapter in VCF Operations](#step-4--add-the-vcenter-adapter-in-vcf-operations) | Connecting VCF Operations to vCenter |
-| 5 | [Field notes](#field-notes) | One account vs. two, verification |
-| 6 | [References](#references) | TechDocs behind the above |
+| 5 | [Renaming a node hostname](#renaming-a-node-hostname) | Fixing a wrong hostname baked in at deploy time — VVF/standalone only |
+| 6 | [Field notes](#field-notes) | One account vs. two, verification |
+| 7 | [References](#references) | TechDocs/KB behind the above |
 
 ---
 
@@ -195,6 +196,56 @@ Per Broadcom's
 9. **Add**, then **Start Collecting** from the account menu — collection
    doesn't start automatically on Add.
 
+## Renaming a node hostname
+
+**VVF/standalone only — do not attempt this on a VCF 9 fleet-managed VCF
+Operations cluster.** Broadcom's KB is explicit, verbatim: *"Changing the
+VCF Operations IP address is only supported for 'VVF or standalone'
+Operations clusters. This procedure is not supported for VCF 9.x
+environments."* On a fleet deployment, node identity is Fleet-LCM-managed —
+the supported fix there is removing the node from the analytics cluster and
+redeploying it with the correct name, not the steps below. This section is
+for a standalone/VVF cluster, same scope as the rest of this doc.
+
+**Prerequisite:** create valid forward *and* reverse DNS entries for the new
+hostname first — verify both directions with `nslookup` before touching a
+node.
+
+### Analytics node (primary, replica, or data)
+
+1. Log in to the VCF Operations admin UI (`https://<node>:5480`).
+2. Take the cluster **OFFLINE**.
+3. SSH into the node as `root`.
+4. `$VMWARE_PYTHON_BIN /usr/lib/vmware-vcopssuite/utilities/bin/sethostname.py <NewHostName>`
+5. Restart the node from vCenter.
+6. Bring the cluster back **ONLINE** from the admin UI.
+
+If the hostname doesn't stick after the restart in step 5, the KB points to
+the version-specific *"Restoring the vApp properties"* article (8.12-and-below
+vs. 8.14-and-later have separate sub-articles) and says to retry steps 3-5.
+
+### Cloud Proxy
+
+No cluster offline/online step needed:
+
+1. SSH into the Cloud Proxy as `root`.
+2. Same `sethostname.py <NewHostName>` command as above.
+3. Restart the node from vCenter (same vApp-properties fallback if it
+   doesn't stick).
+
+### If the old hostname was used at cluster enrollment
+
+Changing the OS-level hostname doesn't retroactively fix the cluster's own
+record of it — you also need to patch `casa.db.script`, **repeated on every
+analytics node** (primary, replica, and each data node):
+
+1. SSH/console in as `root`.
+2. `service vmware-casa stop`
+3. `cp /storage/db/casa/webapp/hsqldb/casa.db.script /tmp/casa.db.script.old`
+4. Edit the file, find the old hostname in the `ip_address` field, replace
+   it with the new hostname.
+5. `service vmware-casa start`
+
 ## Field notes
 
 - **One account vs. two.** TechDocs: *"You can configure these permissions
@@ -219,3 +270,4 @@ Per Broadcom's
 - [Privileges Required for Configuring a vCenter Adapter Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations/privileges-required-for-configuring-a-vcenter-adapter-instance.html)
 - [Create a vCenter Server Custom Role](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/7-0/vsphere-security/vsphere-permissions-and-user-management-tasks/using-roles-to-assign-privileges/create-a-custom-role.html)
 - [Using vCenter Server Global Permissions](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/8-0/vsphere-security/vsphere-permissions-and-user-management-tasks/global-permissions.html) — why this guide uses a top-level-object permission instead
+- [How to change a node hostname in Aria Operations (Broadcom KB 337564)](https://knowledge.broadcom.com/external/article/337564/how-to-change-a-node-hostname-in-vrealiz.html) — source for the "Renaming a node hostname" section, including the VCF-9-unsupported caveat
