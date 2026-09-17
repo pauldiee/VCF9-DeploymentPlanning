@@ -1,5 +1,17 @@
 # Changelog
 
+## v5.2.5 — 2026-09-17
+- **docs/26: add the action-privilege PowerCLI block for Operational
+  Actions.** Field report: enabling Activate for Operational Actions in
+  Step 4 warned the service account was missing privileges, because Step
+  1's role-creation script only built the base + monitoring set — the
+  action-oriented privileges (VM power/snapshot/config, cluster edit,
+  resource migration) were only described in prose, not given as concrete
+  PowerCLI privilege IDs. Added an opt-in `$actionPrivs` block, sourced
+  from Broadcom's "Performing vCenter Actions" privilege table, using the
+  same resolve/abort-on-missing pattern as the base script. Marked
+  UNTESTED like Step 3's permission-assignment script. Closes #350.
+
 ## v5.2.4 — 2026-09-17
 - **Rename docs/26 and docs/27's titles to a consistent Deployment /
   Post-Deployment Configuration pair.** docs/26's title ("vCenter Adapter

@@ -121,6 +121,49 @@ that stops and makes you look, because it fails quietly much later (a
 metric or action VCF Operations can't perform, with no error pointing back
 to the role).
 
+### PowerCLI — add the action privileges (only if you'll use Operational Actions)
+
+**If you leave the role at the base + monitoring set above but toggle
+Activate for Operational Actions in Step 4, VCF Operations will validate the
+connection fine (read-only is enough for that) and then warn that the
+account is missing privileges when it actually tries to act** — the
+Validate Connection check and the action-privilege check are not the same
+gate. Append this block **before** `New-VIRole` if you want VCF Operations
+to act, not just observe (field-reported gap: #350) — it's the same
+resolve/abort pattern as the base script above, extended with the
+action-oriented privileges from Broadcom's
+[Privileges Required for Configuring a vCenter Adapter Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations/privileges-required-for-configuring-a-vcenter-adapter-instance.html)'s
+"Performing vCenter Actions" section (**UNTESTED against a live VCF 9
+vCenter — verify before relying on it**, unlike the base script above):
+
+```powershell
+$actionPrivs = @(
+    'VirtualMachine.Interact.PowerOff',
+    'VirtualMachine.Interact.PowerOn',
+    'VirtualMachine.Interact.Reset',
+    'VirtualMachine.Config.Memory',
+    'VirtualMachine.Config.CPUCount',
+    'VirtualMachine.State.CreateSnapshot',
+    'VirtualMachine.State.RemoveSnapshot',
+    'VirtualMachine.Inventory.Delete',
+    'Host.Inventory.EditCluster',
+    'Resource.AssignVMToPool',
+    'Resource.ColdMigrate',
+    'Resource.HotMigrate'
+)
+
+foreach ($priv in $actionPrivs) {
+    try     { $resolved += Get-VIPrivilege -Server $vc -Id $priv -ErrorAction Stop }
+    catch   { $missing  += $priv }
+}
+```
+
+Then run the same `if ($missing) { throw ... }` check and `New-VIRole` from
+the base script — `$resolved` now carries both sets into one role. If
+you're splitting monitoring vs. action into two accounts (see
+[Field notes](#field-notes)), build `$actionPrivs` into a second role
+instead of merging it into `$resolved`.
+
 ## Step 2 — Create the service account
 
 **Use a local (SSO domain) account, not AD.** This matches how VCF itself
