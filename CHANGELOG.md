@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.1.3 — 2026-09-17
+- **docs/22: clarify AZ2 TEP pool reuse is officially supported at the API
+  level, distinct from the "must be a new subnet" design rule.** Broadcom's
+  own Cluster API docs (`#_usecase_stretchCluster`) document referencing an
+  already-existing NSX IP pool by `name` alone (`subnets` omitted) as a
+  supported shorthand — separate from the architectural requirement that
+  AZ2's TEP address range itself be distinct from AZ1's. Lab-reproduced the
+  `ipAssignmentType not found for the NSX overlay VDS` failure independently
+  against a Holodeck cluster to confirm it's a real failure mode, not
+  evidence pool-object reuse is unsupported. Closes #340.
+
 ## v5.1.2 — 2026-09-17
 - **docs on-page TOC now includes every heading level (H2/H3/H4), not just
   H2.** Several docs have real subsections (docs/24's "Reusing an existing
