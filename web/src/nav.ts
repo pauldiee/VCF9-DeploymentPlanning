@@ -245,6 +245,14 @@ export const NAV: NavItem[] = [
     blurb: 'Pull re-submittable spec JSON out of a built VCF 9.1 instance (bring-up spec, Fleet LCM components, Supervisor export, the NSX policy hierarchy), then sanitise, parameterise and validate it into reusable templates.',
   },
   {
+    slug: '27-vcf-operations-ha-cloud-proxy-vvf',
+    step: 'Operations',
+    band: 'Operations',
+    label: 'VCF Ops HA + Cloud Proxy (VVF)',
+    icon: 'clone',
+    blurb: 'No Fleet LCM in VVF/standalone to deploy VCF Operations for you: OVA-deploy each node by hand, run the setup wizard, enable HA, and deploy/register a Cloud Proxy.',
+  },
+  {
     slug: '26-vcf-operations-vvf-vcenter',
     step: 'Operations',
     band: 'Operations',
