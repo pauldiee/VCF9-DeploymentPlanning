@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.1.5 — 2026-09-17
+- **docs/22: correct sourcing on the AZ2 TEP pool reuse shorthand — the
+  linked Clusters API doc is VCF 5.2.x, not 9.x.** v5.1.3 cited
+  developer.broadcom.com's Clusters API docs as "Broadcom's own" without
+  checking which VCF line it covers; its version selector shows `latest` =
+  5.2.4, with no 9.x Clusters API reference published there at all. Reworded
+  the callout to lead with the independent Holodeck lab verification
+  (VCF 9.1.1) as the actual source for this repo's claim, and demote the
+  5.2.x doc to corroborating precedent rather than a VCF-9-confirmed
+  citation. Caught by Paul. Closes #341.
+
 ## v5.1.4 — 2026-09-17
 - **docs/22 step 2: cross-reference the AZ2 TEP pool reuse shorthand added in
   v5.1.3.** The step 2 callout said flatly not to pre-build a TEP pool

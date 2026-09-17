@@ -255,15 +255,20 @@ What each block is doing, and why it trips people up:
   subnet: `cidr` / `gateway` / `ipAddressPoolRanges`. **This subnet must be
   genuinely distinct from AZ1's** — see the TEP callout above; reusing AZ1's
   address range here is what produces the `ipAssignmentType not found for
-  the NSX overlay VDS` failure. Broadcom's own
-  [Clusters API docs — Stretch Cluster use case](https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/clusters/#_usecase_stretchCluster)
-  do document a second, **API-level** meaning of
+  the NSX overlay VDS` failure. There's a second, **API-level** meaning of
   "reuse" that doesn't contradict this: if the AZ2 pool object already
   exists in NSX (e.g. from an earlier attempt), you can reference it by name
   instead of re-declaring it inline — set only `name`, leave `subnets` out
   (`null`/omitted), and skip `cidr`/`gateway`/`ipAddressPoolRanges`
   entirely. That's a shorthand for pointing at an already-created AZ2 pool,
-  not license to point AZ2 at AZ1's pool.
+  not license to point AZ2 at AZ1's pool. **Lab-verified against VCF 9.1.1**
+  (Holodeck, `/v1/clusters/{id}/validations`, 2026-09-17): a payload using
+  this by-name-only shape passed schema validation. The
+  [Clusters API docs — Stretch Cluster use case](https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/clusters/#_usecase_stretchCluster)
+  describe the same mechanism and match this behavior, but that page is
+  pinned to the **VCF 5.2.x line** (`latest` = 5.2.4 as of 2026-09-17,
+  developer.broadcom.com has no published 9.x Clusters API reference) — cite
+  it as corroborating precedent, not as a VCF-9-confirmed source.
 - **`nsxClusterSpec.uplinkProfiles[]`** — `transportVlan` is the AZ2
   host-overlay VLAN ID; `teamings[].activeUplinks` must match how AZ1's
   uplink profile is already teamed (same policy, same uplink count) so the
