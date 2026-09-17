@@ -26,8 +26,9 @@ vCenter adapter instance in VCF Operations.
 | 3 | [Step 3 — Assign the permission](#step-3--assign-the-permission) | Top-level folder, not Global Permissions |
 | 4 | [Step 4 — Add the vCenter adapter in VCF Operations](#step-4--add-the-vcenter-adapter-in-vcf-operations) | Connecting VCF Operations to vCenter |
 | 5 | [Renaming a node hostname](#renaming-a-node-hostname) | Fixing a wrong hostname baked in at deploy time — VVF/standalone only |
-| 6 | [Field notes](#field-notes) | One account vs. two, verification |
-| 7 | [References](#references) | TechDocs/KB behind the above |
+| 6 | [Configuring an AD/LDAP authentication source](#configuring-an-adldap-authentication-source) | Letting AD users log into VCF Operations without an Identity Broker |
+| 7 | [Field notes](#field-notes) | One account vs. two, verification |
+| 8 | [References](#references) | TechDocs/KB behind the above |
 
 ---
 
@@ -302,6 +303,67 @@ analytics node** (primary, replica, and each data node):
    it with the new hostname.
 5. `service vmware-casa start`
 
+## Configuring an AD/LDAP authentication source
+
+**VVF/standalone has no Identity Broker** — that's a VCF-fleet-only
+component (`12-sso-configuration.md`), not available here. If you want AD
+users logging into VCF Operations with their own credentials instead of
+sharing the local `admin`/service accounts, VCF Operations has its own
+native mechanism for this, independent of the Identity Broker: **Authentication
+Sources**. Per Broadcom's
+[Authentication Sources: Add Authentication Source for User and Group Import](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/-configuring-administration-settings/managing-user-access-control/authentication-sources-overview/authentication-sources-add-authentication-source-for-user-and-group-import.html):
+
+1. **Operate → Administration → Control Panel → Authentication Sources
+   tile → Add.**
+2. **Source Display Name** — a name you choose for this source.
+3. **Source Type** — for AD, pick **Open LDAP** (the same LDAP-based type
+   Active Directory uses here — TechDocs doesn't split out a
+   separate "Active Directory" option; **Other** covers non-AD LDAP
+   directories like Novell or OpenDJ).
+4. Choose an integration mode:
+   - **Basic** — give VCF Operations a **Domain/Subdomain** (use the
+     **root** domain, e.g. `corp.com`, not a subdomain, or you limit
+     visibility to just that subdomain's users/groups) and a **User
+     Name**/password that can log in to the LDAP host. VCF Operations
+     discovers the **Host** and populates a **Base DN** from that —
+     **verify the Base DN before saving**, TechDocs is explicit VCF
+     Operations only auto-populates it, an administrator still has to
+     confirm it's correct. **Common Name** defaults to
+     `userPrincipalName` (the standard AD attribute).
+   - **Advanced** — same fields, but you supply **Host** and **Base DN**
+     yourself instead of letting VCF Operations derive them.
+   - Either mode: check **Use SSL/TLS** for secure LDAP. No certificate
+     import needed — VCF Operations prompts you to view/accept the LDAP
+     server's certificate thumbprint instead. **If AD uses a self-signed
+     certificate, the certificate's Subject Alternative Name must match
+     the domain controller's hostname/IP** — a mismatch here is a silent
+     integration failure, not an obvious error.
+5. **Search Criteria** (both modes) — VCF Operations pre-populates **Group
+   Search Criteria**, **Member Attribute**, **User Search Criteria**, and
+   **Member Match Field** with sensible LDAP defaults; verify them against
+   your directory's actual schema rather than assuming they're right.
+6. **Test** — checks the host is reachable with the credentials given.
+   **This does not validate the Base DN or Common Name** — a passing test
+   doesn't mean the search will actually find your users.
+7. **Save.**
+
+**Importing the source doesn't grant anyone access by itself** — it makes
+AD/LDAP users and groups available to VCF Operations' Access Control, the
+same as local users. Assign them a role (Access Control → Users/User
+Groups) same as you would a local account.
+
+> **This is a different mechanism from admin-interface AD/LDAP
+> integration.** The steps above are the main VCF Operations product UI
+> (regular dashboard/tenant login). There's a **separate**, lower-level AD/LDAP
+> integration under the cluster **admin interface**
+> (`https://<primary-node>/admin` → **Administration → Control Panel →
+> Administrator Settings → Active Directory/Open LDAP Integration**) —
+> that one grants AD/LDAP users **administrator access to the cluster
+> admin interface itself** (the same admin UI used for HA node management
+> in `27-vcf-operations-ha-cloud-proxy-vvf.md` Step 3), a narrower,
+> separate concern from regular product login. Don't conflate the two —
+> setting up one does not configure the other.
+
 ## Field notes
 
 - **One account vs. two.** TechDocs: *"You can configure these permissions
@@ -329,3 +391,5 @@ analytics node** (primary, replica, and each data node):
 - [Create a vCenter Server Custom Role](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/7-0/vsphere-security/vsphere-permissions-and-user-management-tasks/using-roles-to-assign-privileges/create-a-custom-role.html)
 - [Using vCenter Server Global Permissions](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/8-0/vsphere-security/vsphere-permissions-and-user-management-tasks/global-permissions.html) — why this guide uses a top-level-object permission instead
 - [How to change a node hostname in Aria Operations (Broadcom KB 337564)](https://knowledge.broadcom.com/external/article/337564/how-to-change-a-node-hostname-in-vrealiz.html) — source for the "Renaming a node hostname" section, including the VCF-9-unsupported caveat
+- [Authentication Sources: Add Authentication Source for User and Group Import](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/-configuring-administration-settings/managing-user-access-control/authentication-sources-overview/authentication-sources-add-authentication-source-for-user-and-group-import.html) — source for "Configuring an AD/LDAP authentication source"
+- [Give Administrator Access to AD or LDAP Users](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/-configuring-administration-settings/managing-user-access-control/authentication-sources-overview/ad-ldap-integration-admin-ui.html) — the separate, admin-interface-level AD/LDAP integration mentioned in that section's callout

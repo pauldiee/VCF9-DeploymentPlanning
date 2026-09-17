@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.2.2 — 2026-09-17
+- **docs/26: add AD/LDAP authentication source setup for VVF/standalone.**
+  No Identity Broker in this topology (VCF-fleet-only) — VCF Operations'
+  own native Authentication Sources mechanism is the equivalent: Open
+  LDAP source type, Basic vs. Advanced integration mode, Search Criteria
+  defaults to verify against your directory's schema, and the Test
+  button's real limits (doesn't validate Base DN/Common Name). Flagged the
+  separate, easy-to-confuse admin-interface-level AD/LDAP integration
+  (grants cluster admin access, not product login) via a callout so the
+  two aren't conflated. Closes #349.
+
 ## v5.2.1 — 2026-09-17
 - **Fix scrape-versions.yml: retry the version-data push on a rejected
   (non-fast-forward) push.** The Versions page showed "Last updated 15
