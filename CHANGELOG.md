@@ -1,5 +1,18 @@
 # Changelog
 
+## v5.2.6 — 2026-09-17
+- **docs/26: add the Extension-privileges PowerCLI block (vSphere Client
+  plug-in warning).** Follow-up field report to #350: adding the vCenter
+  system also warns *"The credentials you use do not have the Extension
+  Privileges assigned. The vSphere Client plug-in will not be
+  available."* A third, narrower privilege category (`Extension.Register`
+  / `.Unregister` / `.Update`) than both the base/monitoring set and the
+  action set added in v5.2.5. Added an opt-in `$extensionPrivs` block to
+  Step 1 (same resolve/abort pattern) and a Step 4 note that the warning
+  is safe to dismiss unless the vSphere-Client-embedded plug-in is
+  wanted. **Field-verified** the same way — all 3 privilege IDs resolved
+  against the live vCenter 9 lab. Closes #351.
+
 ## v5.2.5 — 2026-09-17
 - **docs/26: add the action-privilege PowerCLI block for Operational
   Actions.** Field report: enabling Activate for Operational Actions in

@@ -165,6 +165,36 @@ you're splitting monitoring vs. action into two accounts (see
 [Field notes](#field-notes)), build `$actionPrivs` into a second role
 instead of merging it into `$resolved`.
 
+### PowerCLI — add the Extension privileges (only if you'll use the vSphere Client plug-in)
+
+**Adding the vCenter system in vCenter's own "Manage vCenter Server
+Connections" (or similar plug-in registration flow) warns *"The credentials
+you use do not have the Extension Privileges assigned. The vSphere Client
+plug-in will not be available"*** if the account's role is missing these —
+a separate, narrower category from both the base/monitoring set and the
+`$actionPrivs` block above, and worth ignoring (click **Add** anyway) if you
+don't use the VCF Operations plug-in inside the vSphere Client UI. Sourced
+from the same TechDocs page's "vSphere Client plug-in" row, under
+"Performing vCenter Actions." **Field-verified** the same way as
+`$actionPrivs` — resolved against a live vCenter 9 instance:
+
+```powershell
+$extensionPrivs = @(
+    'Extension.Register',
+    'Extension.Unregister',
+    'Extension.Update'
+)
+
+foreach ($priv in $extensionPrivs) {
+    try     { $resolved += Get-VIPrivilege -Server $vc -Id $priv -ErrorAction Stop }
+    catch   { $missing  += $priv }
+}
+```
+
+Same pattern as `$actionPrivs`: fold into `$resolved` before `New-VIRole` if
+you want the plug-in available, or build it into whichever account (single
+or split) you decided on above.
+
 ## Step 2 — Create the service account
 
 **Use a local (SSO domain) account, not AD.** This matches how VCF itself
@@ -289,7 +319,12 @@ Per Broadcom's
    Actions Password** if you split monitoring vs. action accounts.
 6. **Cloud Proxy/Group** — select the collector for this vCenter account.
 7. **Validate Connection**, accept the certificate if it matches your
-   target vCenter.
+   target vCenter. **If a *"The credentials you use do not have the
+   Extension Privileges assigned. The vSphere Client plug-in will not be
+   available"* warning appears here, it's safe to click Add anyway unless
+   you use the VCF Operations plug-in inside the vSphere Client UI** — see
+   [Step 1's Extension-privileges block](#powercli--add-the-extension-privileges-only-if-youll-use-the-vsphere-client-plug-in)
+   if you want it available instead.
 8. Toggle **Activate for Operational Actions**, **Activate Log Collection**,
    **Activate Network and Flow** as needed; expand **Advanced Settings** if
    required.
