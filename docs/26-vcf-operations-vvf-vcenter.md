@@ -143,6 +143,59 @@ New-SsoPersonUser -UserName 'svc-vcfops-vc01' -Password $svcAccountPassword `
     -Description 'VCF Operations vCenter adapter service account'
 ```
 
+**Optional: set the account's password to never expire.** Left on the
+domain default, this service account's password expires like any other
+local account and the vCenter adapter integration silently breaks whenever
+that happens — the failure shows up as a `PasswordExpiredException` in
+`/var/log/vmware/sso/websso.log`, not anywhere in VCF Operations itself.
+Whether that's a problem depends on how you handle credential rotation for
+this account — if you already rotate it on a schedule shorter than the
+domain's password lifetime, you don't need either option below. Two ways to
+avoid the silent-break scenario, not mutually exclusive:
+
+- **Raise the domain-wide password policy** (Administration → Single Sign
+  On → Configuration → Password Policy in the vSphere Client, or
+  `Set-SsoPasswordPolicy -PasswordLifetimeDays <N>` /
+  `-PasswordLifetimeDays 0` for no expiry via PowerCLI). Simpler, but it's
+  **global** — every local SSO account's password lifetime changes, not
+  just this service account's, so only do this if that's an acceptable
+  trade-off for the whole `vsphere.local` domain.
+- **Override just this one account**, leaving the domain policy untouched.
+  There's no per-account toggle in the vSphere Client or in
+  `New-SsoPersonUser`/`Set-SsoPersonUser` — per Broadcom's
+  [KB 367383 — Set password expiry policy for a specific SSO user in vCenter](https://knowledge.broadcom.com/external/article/367383),
+  the only supported way is `dir-cli`, run on the VCSA itself:
+
+  ```
+  # SSH into the vCenter Server Appliance, then:
+  shell
+  /usr/lib/vmware-vmafd/bin/dir-cli user modify --account svc-vcfops-vc01 --password-never-expires
+  ```
+
+  **When prompted for a password, use the SSO administrator's
+  (`administrator@vsphere.local`) credentials — not the appliance root
+  password.** The KB is explicit that using root here fails with
+  `ERROR_LOGON_FAILURE (1326)`. Verify the change stuck with
+  `dir-cli user find-by-name --account svc-vcfops-vc01 --level 2` — look for
+  `Password never expires: TRUE` in the output.
+
+  **Scriptable end-to-end**, per the official
+  [dir-cli Command Reference](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere-sdks-tools/8-0/dir-cli-utility.html):
+  `dir-cli user modify` takes `--login <admin_user_id>` /
+  `--password <admin_password>` to authenticate non-interactively instead
+  of prompting, so the whole thing can run unattended:
+
+  ```
+  /usr/lib/vmware-vmafd/bin/dir-cli user modify --account svc-vcfops-vc01 --password-never-expires --login administrator@vsphere.local --password '<sso-admin-password>'
+  ```
+
+  The remaining manual piece is getting a shell on the VCSA at all — its
+  default SSH shell is the restricted `appliancesh`, not BASH, so a
+  non-interactive script needs either `ssh <vcsa> "shell dir-cli ..."`
+  (passing the command directly to `shell` rather than typing it
+  interactively) or BASH set as the SSH account's default shell ahead of
+  time (`chsh -s /bin/bash <user>`, a one-time appliance-side change).
+
 ## Step 3 — Assign the permission
 
 **Assign the role on the top-level object of the vCenter Server inventory —
@@ -268,6 +321,8 @@ analytics node** (primary, replica, and each data node):
 
 ## References
 
+- [Set password expiry policy for a specific SSO user in vCenter (Broadcom KB 367383)](https://knowledge.broadcom.com/external/article/367383) — source for Step 2's `dir-cli --password-never-expires` guidance
+- [dir-cli Command Reference](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere-sdks-tools/8-0/dir-cli-utility.html) — `--login`/`--password` flags for non-interactive `dir-cli` use
 - [Configuring a vCenter Server Cloud Account in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations.html)
 - [Privileges Required for Configuring a vCenter Adapter Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations/privileges-required-for-configuring-a-vcenter-adapter-instance.html)
 - [Create a vCenter Server Custom Role](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/7-0/vsphere-security/vsphere-permissions-and-user-management-tasks/using-roles-to-assign-privileges/create-a-custom-role.html)

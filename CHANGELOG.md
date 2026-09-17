@@ -1,5 +1,21 @@
 # Changelog
 
+## v5.1.9 — 2026-09-17
+- **docs/26 Step 2: document the (optional) service-account password-expiry
+  problem and two ways to fix it.** Left alone, the service account's
+  password expires on the domain's normal schedule and silently breaks the
+  vCenter adapter integration (`PasswordExpiredException` in
+  `/var/log/vmware/sso/websso.log`, invisible from VCF Operations). Added
+  as optional, not a hard requirement — some environments already rotate
+  this credential on a shorter schedule and don't need either fix. Two
+  options: raise the domain-wide SSO password policy (simple, but affects
+  every local account) or override just this one account via `dir-cli user
+  modify --account <name> --password-never-expires` (per Broadcom KB
+  367383; SSO admin credentials, not root). Also documented the
+  non-interactive `--login`/`--password` form (per the official dir-cli
+  Command Reference) and the `appliancesh` vs. BASH shell gotcha for
+  scripting it end to end. Closes #345.
+
 ## v5.1.8 — 2026-09-17
 - **docs/26: add a "Renaming a node hostname" section for VVF/standalone
   VCF Operations.** Per Broadcom KB 337564, this is explicitly VVF/standalone
