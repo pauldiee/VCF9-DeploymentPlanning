@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.2.3 — 2026-09-17
+- **docs/27: add License Server deployment (Step 5).** VVF/standalone has
+  no Fleet LCM to auto-deploy the first License Server the way a fleet
+  does at bring-up — this is the only path to one. Sourced from
+  Broadcom's "Deploy a License Server" TechDocs (a third source tree,
+  separate from the Upgrade-path pages Steps 1/2/4 and the
+  Advanced-Architectures page Step 3): obtaining the Unique Registration
+  Key from VCF Operations first, the OVA Customize Template property
+  table, and registering with the VCF Business Services Console
+  afterward. Cross-linked into the existing "no outbound path to
+  Broadcom" Field note — the OVA's own Egress proxy fields corroborate it
+  (they're for reaching VCF Operations, not the internet). Updated the
+  doc title, nav label/blurb, and README row. Closes #348.
+
 ## v5.2.2 — 2026-09-17
 - **docs/26: add AD/LDAP authentication source setup for VVF/standalone.**
   No Identity Broker in this topology (VCF-fleet-only) — VCF Operations'

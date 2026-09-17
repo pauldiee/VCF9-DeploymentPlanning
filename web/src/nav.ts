@@ -248,9 +248,9 @@ export const NAV: NavItem[] = [
     slug: '27-vcf-operations-ha-cloud-proxy-vvf',
     step: 'Operations',
     band: 'Operations',
-    label: 'VCF Ops HA + Cloud Proxy (VVF)',
+    label: 'VCF Ops HA + Cloud Proxy + License Server (VVF)',
     icon: 'clone',
-    blurb: 'No Fleet LCM in VVF/standalone to deploy VCF Operations for you: OVA-deploy each node by hand, run the setup wizard, enable HA, and deploy/register a Cloud Proxy.',
+    blurb: 'No Fleet LCM in VVF/standalone to deploy VCF Operations for you: OVA-deploy each node by hand, run the setup wizard, enable HA, and deploy/register a Cloud Proxy and a License Server.',
   },
   {
     slug: '26-vcf-operations-vvf-vcenter',

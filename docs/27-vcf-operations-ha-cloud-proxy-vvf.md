@@ -1,21 +1,23 @@
-# VCF Operations HA Cluster + Cloud Proxy — VVF/Standalone Build Guide
+# VCF Operations HA Cluster, Cloud Proxy & License Server — VVF/Standalone Build Guide
 
-> Closes #346. Companion to
+> Closes #346, #348. Companion to
 > [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md) —
-> this doc deploys VCF Operations itself (nodes, HA, Cloud Proxy); docs/26
-> already assumes VCF Operations exists and only covers connecting it to
-> vCenter. Do this doc first, docs/26 second. Also companion to
-> [`05-day2-deployments.md`](05-day2-deployments.md) §B.1/§B.4 (fleet-managed
-> VCF Operations topics, for contrast — this doc is the VVF/standalone,
-> no-Fleet-LCM path) and
+> this doc deploys VCF Operations itself (nodes, HA, Cloud Proxy, License
+> Server); docs/26 already assumes VCF Operations exists and only covers
+> connecting it to vCenter. Do this doc first, docs/26 second. Also
+> companion to [`05-day2-deployments.md`](05-day2-deployments.md)
+> §B.1/§B.4 (fleet-managed VCF Operations topics, for contrast — this doc
+> is the VVF/standalone, no-Fleet-LCM path) and
 > [`09-binary-depot.md`](09-binary-depot.md) (proxy config for the VCF
 > services runtime, a different topology).
 
-**In a full VCF fleet, the Installer deploys VCF Operations automatically at
-bring-up** (`05-day2-deployments.md` D2). **A VVF deployment has no Fleet
-LCM to do that** — you deploy the nodes yourself from OVA, run the setup
-wizard, optionally enable HA, and deploy a Cloud Proxy by hand. This doc
-covers that whole flow for a fresh VVF/standalone deployment.
+**In a full VCF fleet, the Installer deploys VCF Operations, its Cloud
+Proxy, and a License Server all automatically at bring-up**
+(`05-day2-deployments.md` D2, §B.4). **A VVF deployment has no Fleet LCM to
+do that** — you deploy the VCF Operations nodes yourself from OVA, run the
+setup wizard, optionally enable HA, deploy a Cloud Proxy, and deploy a
+License Server, all by hand. This doc covers that whole flow for a fresh
+VVF/standalone deployment.
 
 **Sourcing note:** the OVA-deploy and Cloud Proxy procedures below are
 pulled verbatim from Broadcom's *VCF 9.1 Upgrade* TechDocs tree — that's
@@ -25,7 +27,12 @@ OVA, same wizard, same appliance regardless of whether you arrived at this
 appliance via an upgrade or a fresh VVF deployment — the steps apply
 either way. The HA-conversion procedure (Step 3) comes from the
 non-upgrade *"Configuring Advanced Architectures for VCF Operations"*
-TechDocs section, which **does** apply generically.
+TechDocs section, which **does** apply generically. The License Server
+procedure (Step 5) comes from a third tree —
+*"Adding or Removing VCF Components Post Deployment"* — Broadcom's
+standard manual-add flow, and the one genuinely universal path to a
+License Server in VVF/standalone (there's no separate "at bring-up"
+variant to source it from, since VVF has no such automation).
 
 ---
 
@@ -38,8 +45,9 @@ TechDocs section, which **does** apply generically.
 | 3 | [Step 2 — Run the setup wizard](#step-2--run-the-setup-wizard) | Create the primary node; optionally enable HA inline |
 | 4 | [Step 3 — Enable HA after the fact](#step-3--enable-ha-after-the-fact) | Converting an already-running single-node cluster, instead of Step 2's inline option |
 | 5 | [Step 4 — Deploy and register the Cloud Proxy](#step-4--deploy-and-register-the-cloud-proxy) | Needed before you can add a vCenter/VCF instance integration |
-| 6 | [Field notes](#field-notes) | LB expectations, password rules, proxy behavior |
-| 7 | [References](#references) | TechDocs/KB behind the above |
+| 6 | [Step 5 — Deploy the License Server](#step-5--deploy-the-license-server) | Needed before licensing works at all |
+| 7 | [Field notes](#field-notes) | LB expectations, password rules, proxy behavior |
+| 8 | [References](#references) | TechDocs/KB behind the above |
 
 ---
 
@@ -230,6 +238,66 @@ notice).
     should use it — `26-vcf-operations-vvf-vcenter.md` Step 4 does this
     as part of adding the vCenter adapter (**Cloud Proxy/Group** field).
 
+## Step 5 — Deploy the License Server
+
+VCF Operations needs at least one License Server before licensing works at
+all. In a fleet, the first one is deployed automatically at bring-up
+(`05-day2-deployments.md` §B.4); **VVF/standalone has no such automation —
+this manual OVA deploy is the only path to a License Server**, even for
+the very first one. Per Broadcom's
+[Deploy a License Server](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/manual-adding-vcf-components-post-deployment/add-license-server.html)
+(verbatim below):
+
+**Prerequisites:** administrator privileges in the VCF Operations instance
+you'll use for license management; administrator privileges in the vCenter
+instance you'll deploy into; a Broadcom Support Portal role with
+sufficient privileges to download the binaries; a unique FQDN for the
+License Server with A and PTR records already in DNS. **The License Server
+cannot be deployed on a standalone ESX host — it must go into a vCenter
+instance as an OVF template, and it doesn't support IPv6.**
+
+1. **Obtain the Unique Registration Key first, from VCF Operations**: log
+   in, **Manage → Licensing → Licenses & Registration**, in the
+   **Registration and License Server Status** card click **Manage License
+   Servers**, then **Add License Server** on the License Servers tab.
+   Copy and save the key it shows you.
+2. In vSphere Client, right-click the target vCenter instance → **Deploy
+   OVF template**.
+3. **Select an OVF template** → **Local file** → upload the License
+   Server OVA downloaded from the Broadcom Support Portal → **Next**.
+4. **Select a name and folder** — name the VM, pick a location.
+5. **Select a compute resource** — pick the destination compute resource;
+   check **Automatically power on deployed VM** at the bottom → **Next**.
+6. Review the OVF template details → **Next**.
+7. **Select storage** — where/how to store the deployed template's files.
+8. **Select networks** — pick a **Destination Network** → **Next**.
+9. **Customize template** — the properties that matter:
+
+   | Property | What it's for |
+   | --- | --- |
+   | **Hostname** | Best practice: set as an FQDN using the same domain suffix as **Domain Name** below. Add this FQDN to DNS — every vCenter using licenses from this server must resolve it. |
+   | **Unique Registration Key** | The key from Step 1. Time-bound; not the same thing as VCF Business Services Console registration (that comes later). |
+   | **Domain Name** | Primary DNS domain suffix (e.g. `corp.local`). Leave blank if using DHCP. |
+   | **Domain Name Search** | Domain search paths. Leave blank unless told otherwise. |
+   | **Default Gateway** | IPv4 gateway. Leave blank if using DHCP. |
+   | **Domain Name Servers** | DNS server IPv4 addresses. Leave blank if using DHCP. |
+   | **Network 1 IP Address** / **Network 1 IP Netmask** | Static IPv4 + netmask (dotted-decimal, e.g. `255.255.255.0`). Leave blank if using DHCP. |
+   | **Egress proxy IP / port / username / password** | **Not for internet access — the License Server never talks to the internet directly.** Only fill these in if a proxy sits between the License Server and *VCF Operations itself*. Leave blank otherwise. |
+   | **API Key** | Don't set unless support specifically instructs you to. |
+
+10. Review, **Finish**. Deployment takes up to **20 minutes**. Once the VM
+    powers on, it connects to VCF Operations automatically — check
+    **Connectivity to VCF Operations: Connected** on the License Server
+    Details page.
+11. Back in VCF Operations, click **Review License Servers** to see it
+    listed — a banner flags it as **unregistered** until the next step.
+12. **Register it with the VCF Business Services Console** — required
+    before it's actually usable, not optional. If this VCF Operations
+    instance is already registered, see
+    [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/add-license-server.html);
+    if it isn't yet, see
+    [Registering VCF Operations and a License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations.html).
+
 ## Field notes
 
 - **No built-in load balancer for the analytics cluster.** Same rule as
@@ -250,6 +318,10 @@ notice).
   The **License Server has no outbound path to Broadcom at all** — don't
   put a proxy on it; if you did, redeploy it without one (Broadcom
   [KB 441747](https://knowledge.broadcom.com/external/article/441747/vcf-license-server-unable-to-connect-to.html)).
+  This matches the OVA's own field description in Step 5: its **Egress
+  proxy** properties are explicitly for reaching *VCF Operations*, not the
+  internet — there's no field there that would even accept a
+  Broadcom-facing proxy.
 - **If that proxy does SSL inspection (TLS termination/re-signing),
   exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection.**
   VCF Operations' own Global Settings proxy field does **not** support an
@@ -285,6 +357,8 @@ notice).
 - [Deploy VCF Operations as Part of a VCF 9.1 Upgrade](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation/upgrade-backup-and-restore/deploy-vcf-operations.html) — source for Step 1/Step 2 (OVA deploy, setup wizard)
 - [Configure a VCF Operations Cluster for High Availability](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-and-configuration-of-components-for-advanced-architectures/run-the-setup-wizard-to-create-an-ha-node.html) — source for Step 3
 - [Deploy Cloud Proxy as part of a VCF 9.1 Upgrade](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation/upgrade-backup-and-restore/configuring-cloud-proxies-in-vrealize-operations-cloud.html) — source for Step 4
+- [Deploy a License Server](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/manual-adding-vcf-components-post-deployment/add-license-server.html) — source for Step 5
+- [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/add-license-server.html)
 - [Registering VCF Operations and a License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations.html)
 - [Collecting Data with Cloud Proxy in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/collecting-data-with-cloud-proxies-in-vrealize-operations-cloud.html)
 - [Broadcom KB 324340 — current Cloud Proxy sizing](https://knowledge.broadcom.com/external/article/324340)
