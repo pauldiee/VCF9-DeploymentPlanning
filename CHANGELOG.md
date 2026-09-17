@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.1.4 — 2026-09-17
+- **docs/22 step 2: cross-reference the AZ2 TEP pool reuse shorthand added in
+  v5.1.3.** The step 2 callout said flatly not to pre-build a TEP pool
+  in NSX since it "conflicts with what step 4 creates for you" — true for
+  the default path, but doesn't cover the retry case where the pool object
+  already exists. Added a pointer to step 4's `ipAddressPoolsSpec[]`
+  by-name-only shape instead of duplicating the explanation. Closes #340.
+
 ## v5.1.3 — 2026-09-17
 - **docs/22: clarify AZ2 TEP pool reuse is officially supported at the API
   level, distinct from the "must be a new subnet" design rule.** Broadcom's

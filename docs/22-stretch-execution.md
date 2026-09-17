@@ -86,6 +86,12 @@ the API request."* Pre-building a TEP profile/pool in NSX Manager ahead of
 the stretch doesn't save a step — it conflicts with what step 4 creates for
 you.
 
+If the AZ2 pool object already exists regardless (e.g. left over from a
+retry after a failed stretch attempt), you don't have to delete it and
+start over — step 4's `ipAddressPoolsSpec[]` supports referencing an
+existing pool **by name only** instead of declaring it inline; see that
+section for the exact shape.
+
 ## 3. Manual — deploy the witness
 
 - Deploy the vSAN witness appliance (`VMware-VirtualSAN-Witness-*.ova`) at the
