@@ -31,7 +31,8 @@ maintenance window and you are reading TechDocs at 02:00.
 | 4 | [Shutdown — the management domain](#4-shutdown--the-management-domain-11-steps) | The 11-step management sequence |
 | 5 | [Startup — the management domain](#5-startup--the-management-domain) | Powering back up |
 | 6 | [Startup — workload domains](#6-startup--workload-domains) | Including the **Restart Clusters** step people miss |
-| 7 | [References](#7-references) | The TechDocs pages and KBs behind the above |
+| 7 | [Timing — what to budget the window for](#7-timing--what-to-budget-the-window-for) | The wait times Broadcom actually documents, and the ones it doesn't |
+| 8 | [References](#8-references) | The TechDocs pages and KBs behind the above |
 
 ---
 
@@ -175,6 +176,15 @@ Manager appliance, `chmod +x` it, run it `--dry-run` first, then for real, and
 finally shut down the guest OS of the VMs the script lists. **Do not hand-stop
 the components** — the runtime has its own internal order.
 
+Broadcom's KB and TechDocs page give no run-time estimate for the script itself
+— budget it as an unknown until you've timed it once in your own environment.
+One field note worth carrying in regardless: [Ward Vissers' walkthrough of the
+same script](https://www.wardvissers.nl/2026/07/08/vcf-9-1-how-to-safely-shut-down-the-services-runtime-cluster-using-powershell/)
+flags powering off any **VCF Automation** VMs *before* running it, "to avoid
+interference with automation tasks" — consistent with VCF Automation already
+being step 1 in the table above, but worth confirming explicitly rather than
+assuming the ordering alone covers it.
+
 **Step 6 — VCF Operations** has a step people skip **[documented]**:
 
 1. VCF Operations admin UI at `https://<vcf_operations_fqdn>/admin` as the local
@@ -183,7 +193,10 @@ the components** — the runtime has its own internal order.
    > "This operation might take about an hour to complete." Budget for it.
 3. *Then* shut down the guest OS of each appliance in vCenter, "by following the
    order in Broadcom knowledge base article **341964**" — the appliance order
-   within the cluster matters and lives in that KB
+   within the cluster matters and lives in that KB. TechDocs times this step
+   too: shutting down the guest OS of each appliance individually **[documented]**
+   "takes several minutes to complete" — small per-appliance, but it multiplies
+   across however many nodes the VCF Operations cluster has.
 
 **Step 11 — hosts and vCenter.** For a vSAN cluster the documented path is the
 *vSAN Shutdown cluster* wizard **[documented]**: verify vSAN Skyline health and
@@ -220,7 +233,7 @@ The exact reverse of §4 **[documented]**:
 | 4 | **NSX Edge or VNA nodes** | |
 | 5 | **Protection and recovery** | If deployed |
 | 6 | **VCF Operations** | Power on per KB 341964, then bring the cluster online |
-| 7 | **VCF Management Services** | |
+| 7 | **VCF Management Services** | Worker nodes take the longest single wait in this table — see below |
 | 8 | **License Server** | |
 | 9 | **Cloud Proxy** | |
 | 10 | **VCF Operations for Networks** | |
@@ -242,6 +255,16 @@ Cluster Online**.
 > "Bringing the cluster online might take about an hour to complete."
 > **[documented]** Two of these hour-long waits — one on the way down, one on the
 > way up — belong in your maintenance-window estimate.
+
+**Step 7 — VCF Management Services** has the single longest documented wait in
+the whole startup sequence **[documented]**, per [Start VCF Management
+Services](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain/start-vcf-management-services.html):
+control-node startup "takes several minutes to complete", but "worker nodes
+startup takes about 20 minutes to complete" — and "the startup operation might
+redeploy some of the worker nodes", so don't take the appliances powering on
+in vCenter as done; confirm in VCF Operations that all worker nodes are
+running and none are still being (re)deployed before moving on to the next
+step.
 
 ---
 
@@ -272,15 +295,57 @@ workloads that rely on NSX services.
 
 ---
 
-## 7. References
+## 7. Timing — what to budget the window for
+
+Broadcom only publishes wait times for a handful of steps. Everything else
+in the sequence has to be timed in your own environment — host count, storage
+type, and cluster size all move the real numbers, and no vendor page or blog
+gives a generic formula for that. What follows is what's actually documented.
+
+| Step | Documented wait | Source |
+| ---- | ---------------- | ------ |
+| VCF Operations — **Take cluster offline** | "might take about an hour to complete" | **[documented]** — [Shut Down VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain/shut-down-vcf-operations.html) |
+| VCF Operations — guest OS shutdown, per appliance | "takes several minutes to complete" | **[documented]** — same page |
+| VCF Operations — **Bring Cluster Online** | "might take about an hour to complete" | **[documented]** — [Start the Management Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain.html) |
+| NSX Manager cluster — power-on to **Stable** | "takes several minutes to complete until the NSX Manager cluster becomes fully operational again" | **[documented]** — [Start the NSX Manager Nodes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain/start-the-nsx-t-manager-virtual-machines-in-the-management-domain.html) |
+| VCF Management Services — control node startup | "takes several minutes to complete" | **[documented]** — [Start VCF Management Services](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain/start-vcf-management-services.html) |
+| VCF Management Services — **worker node startup** | "takes about 20 minutes to complete" — the single longest documented wait in this table | **[documented]** — same page |
+| `vcf_services_runtime_shutdown.sh` run time (shutdown direction) | **Not documented** — no estimate in Broadcom KB 440874 or the TechDocs shutdown page | — |
+| vSAN Shutdown/Restart Cluster wizard | **Not documented** — depends on cluster size, resync state, and host count | — |
+| ESX host power-on via iLO/iDRAC, per host | **Not documented** — out-of-band, vendor-hardware-dependent | — |
+
+A few things to carry into a change-window estimate specifically:
+
+- **The two VCF Operations cluster waits are the biggest known-fixed costs** —
+  roughly an hour going offline, roughly an hour coming back online, and they
+  are not overlappable with anything else since rule 1 puts VCF Operations
+  last out / first in at the fleet level. That's ~2 hours before you even
+  count host power-cycle time.
+- **On the way back up, VCF Management Services' ~20-minute worker-node wait
+  is the next biggest fixed cost**, and it lands *after* the two VCF
+  Operations hours in the startup order (step 7 in the table above) — so the
+  hour-plus-hour-plus-20-minutes stacks sequentially rather than overlapping.
+- **Everything without a documented number should get timed once, deliberately,
+  outside a real maintenance window** — a dry run of the services-runtime
+  script, and a dry run (or at least a stopwatch) on the vSAN shutdown/restart
+  wizard against your actual cluster — so the first time you rely on a
+  duration estimate isn't during the maintenance window itself.
+
+---
+
+## 8. References
 
 - [Shutdown and Startup of VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup.html) — the parent page
 - [Shutting Down VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown.html) · [Shut Down the Management Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain.html) · [Shut Down a Workload Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-virtual-infrastructure-workload-domain.html)
 - [Starting Up VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup.html) · [Start the Management Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain.html) · [Start a Workload Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-virtual-infrastructure-workload-domain.html)
 - [Shut Down vSAN and the ESX Hosts in the Management Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain/shut-down-the-esx-hosts-in-management-domain/shut-down-vsan-and-the-esx-hosts-in-a-management-domain.html) · [Shut Down the vSAN Cluster Using the Shutdown Cluster Wizard](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsan-deployment-administration-and-monitoring/administering-vmware-vsan/expanding-and-managing-a-vsan-cluster/shutting-down-and-restarting-the-vsan-cluster/shut-down-the-vsan-cluster.html)
-- [Shut Down VCF Management Services](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain/shut-down-vcf-managament-services.html) · [Shut Down VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain/shut-down-vcf-operations.html) · [Start the NSX Manager Nodes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain/start-the-nsx-t-manager-virtual-machines-in-the-management-domain.html)
+- [Shut Down VCF Management Services](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain/shut-down-vcf-managament-services.html) · [Shut Down VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/vcf-shutdown/shut-down-the-management-domain/shut-down-vcf-operations.html) · [Start the NSX Manager Nodes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain/start-the-nsx-t-manager-virtual-machines-in-the-management-domain.html) · [Start VCF Management Services](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-shutdown-and-startup/sddc-startup/start-the-management-domain/start-vcf-management-services.html) — source of the control-node / worker-node startup timings in [§7](#7-timing--what-to-budget-the-window-for)
 - Broadcom KB **341964** — the appliance order within the VCF Operations cluster
   (referenced by both the shutdown and startup pages)
 - Broadcom KB [**440874**](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html) —
   `vcf_services_runtime_shutdown.sh`, covered in detail in
   [`08-backup-target.md` §7](08-backup-target.md#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services)
+- Ward Vissers, [VCF 9.1 How to Safely Shut Down the Services Runtime Cluster
+  Using PowerShell](https://www.wardvissers.nl/2026/07/08/vcf-9-1-how-to-safely-shut-down-the-services-runtime-cluster-using-powershell/) —
+  field note on powering off VCF Automation VMs before running the
+  services-runtime shutdown script, cited in [§4](#4-shutdown--the-management-domain-11-steps)

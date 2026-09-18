@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.2.7 — 2026-09-18
+- **docs/13: add a timing-budget section for shutdown/startup.** New §7
+  pulls together the wait times Broadcom actually documents across the
+  shutdown/startup TechDocs pages — VCF Operations cluster offline/online
+  (~1 hour each), NSX Manager startup ("several minutes" to Stable), and
+  VCF Management Services startup (control nodes "several minutes",
+  **worker nodes ~20 minutes**, with a caution that "the startup operation
+  might redeploy some of the worker nodes") — against the steps that have
+  no documented figure (the services-runtime shutdown script, the vSAN
+  shutdown/restart wizard, per-host iLO/iDRAC power-on). Also folds in a
+  field note from Ward Vissers' blog: power off VCF Automation VMs before
+  running `vcf_services_runtime_shutdown.sh`, to avoid interfering with
+  automation tasks. Closes #352.
+
 ## v5.2.6 — 2026-09-17
 - **docs/26: add the Extension-privileges PowerCLI block (vSphere Client
   plug-in warning).** Follow-up field report to #350: adding the vCenter
