@@ -87,6 +87,10 @@ const RELEASE_NOTES = `${TD}.html`;
 //   bomName:    the component's row label in the Bill of Materials table -- used to read its
 //               GA build when a line has no patch tree yet, or when it has shipped no patch leaf.
 //   knownBadRender: see extractLeafBuild() (#214).
+//   sinceZ:     the component's introducing line's maintenance-version digit (#353: Migration
+//               Service Engine shipped new in 9.1.1). Older lines never had it in their BOM
+//               either, so skip it there entirely rather than recording a spurious source error
+//               for "not found" on a line it never shipped on.
 const COMPONENTS = [
   // vCenter reads TechDocs, not KB 326316, since #230 (the KB lagged a security patch by a day).
   { key: 'vcenter', name: 'vCenter Server', category: 'Core',
@@ -123,8 +127,15 @@ const COMPONENTS = [
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'real-time-me(?:rt|tr)ics-store',
     bomName: 'Real-time metrics store' },
 
+  // Leaf slug is dashless at GA/9.1.0 ("vcfautomation-...") but dashed on its first 9.1.1 patch
+  // ("vcf-automation-9-1-1-0100-..."); tolerate both (#353, same family of inconsistency as the
+  // leafRe dash-optional fix below).
   { key: 'vcf-automation', name: 'VCF Automation', category: 'Automation',
-    indexPath: 'vcf-automation.html', leafSlug: 'vcfautomation', bomName: 'VCF Automation' },
+    indexPath: 'vcf-automation.html', leafSlug: 'vcf-?automation', bomName: 'VCF Automation' },
+  // New with the 9.1.1.0100 patch (#353): ships its own leaf under the vcf-automation.html tree.
+  { key: 'migration-service-engine', name: 'Migration Service Engine', category: 'Automation',
+    indexPath: 'vcf-automation.html', leafSlug: 'migration-service-engine',
+    bomName: 'Migration service engine (VCF service)', sinceZ: 1 },
 
   // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/).
   { key: 'fleet-lifecycle', name: 'Fleet Lifecycle Management', category: 'Management',
@@ -387,6 +398,7 @@ async function main() {
     });
     const comps = [];
     for (const c of COMPONENTS) {
+      if (c.sinceZ != null && line.z < c.sinceZ) continue;
       const base = { key: c.key, name: c.name, category: c.category };
       try {
         let r = line.patch ? await scrapeTechdocs(c, line) : null;
