@@ -349,6 +349,16 @@
           "patched": true
         },
         {
+          "key": "migration-service-engine",
+          "name": "Migration Service Engine",
+          "category": "Automation",
+          "version": "9.1.0.0",
+          "build": "25370929",
+          "releaseDate": "2026-05-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
+          "patched": false
+        },
+        {
           "key": "fleet-lifecycle",
           "name": "Fleet Lifecycle Management",
           "category": "Management",

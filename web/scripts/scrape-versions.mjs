@@ -84,13 +84,10 @@ const RELEASE_NOTES = `${TD}.html`;
 //               can't be mistaken for the product (e.g. "vcfoperations-" vs "vcf-operations-*-").
 //   nested:     the component's leaves live under version sub-indexes
 //               ("<tree>/9-1-<minor>-NNNN.html") rather than directly off the component index.
-//   bomName:    the component's row label in the Bill of Materials table -- used to read its
-//               GA build when a line has no patch tree yet, or when it has shipped no patch leaf.
+//   bomName:    the component's row label in the Bill of Materials table (tag-free spelling --
+//               see normBom()) -- used to read its GA build when a line has no patch tree yet,
+//               or when it has shipped no patch leaf.
 //   knownBadRender: see extractLeafBuild() (#214).
-//   sinceZ:     the component's introducing line's maintenance-version digit (#353: Migration
-//               Service Engine shipped new in 9.1.1). Older lines never had it in their BOM
-//               either, so skip it there entirely rather than recording a spurious source error
-//               for "not found" on a line it never shipped on.
 const COMPONENTS = [
   // vCenter reads TechDocs, not KB 326316, since #230 (the KB lagged a security patch by a day).
   { key: 'vcenter', name: 'vCenter Server', category: 'Core',
@@ -135,7 +132,7 @@ const COMPONENTS = [
   // New with the 9.1.1.0100 patch (#353): ships its own leaf under the vcf-automation.html tree.
   { key: 'migration-service-engine', name: 'Migration Service Engine', category: 'Automation',
     indexPath: 'vcf-automation.html', leafSlug: 'migration-service-engine',
-    bomName: 'Migration service engine (VCF service)', sinceZ: 1 },
+    bomName: 'Migration service engine' },
 
   // VCF Operations bundle sub-components (own leaf under vcf-operations/<ver>/).
   { key: 'fleet-lifecycle', name: 'Fleet Lifecycle Management', category: 'Management',
@@ -286,7 +283,11 @@ function extractLeafBuild(html, c) {
 // normalised name (the one alias is the "VCF Installer/ SDDC Manager" row, stripped to
 // "sddc manager"), so "VCF Operations" cannot swallow "VCF Operations for networks". The BOM
 // carries no per-row date, so the line's GA date is used.
-const normBom = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim().replace(/^vcf installer\/\s*/, '');
+// Some rows also gained a trailing "(VCF service)" tag between lines (#353: Migration Service
+// Engine is "Migration service engine" at 9.1.0 GA but "Migration service engine (VCF service)"
+// at 9.1.1 GA) -- strip it so bomName only needs the one, tag-free spelling.
+const normBom = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+  .replace(/^vcf installer\/\s*/, '').replace(/\s*\(vcf service\)$/, '');
 function extractBomBuild(html, c, line) {
   if (!c.bomName) return null;
   const want = normBom(c.bomName);
@@ -398,7 +399,6 @@ async function main() {
     });
     const comps = [];
     for (const c of COMPONENTS) {
-      if (c.sinceZ != null && line.z < c.sinceZ) continue;
       const base = { key: c.key, name: c.name, category: c.category };
       try {
         let r = line.patch ? await scrapeTechdocs(c, line) : null;
