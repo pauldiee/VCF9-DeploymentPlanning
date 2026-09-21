@@ -58,7 +58,7 @@ const FAMILY = '9.1';
 //           9.1.1.0 is ".../vmware-cloud-foundation-9-1-1-0-bill-of-material.html" (singular).
 const LINES = [
   {
-    v: '9.1.1', z: 1, ga: '2026-09-03', patch: null,
+    v: '9.1.1', z: 1, ga: '2026-09-03', patch: `${TD}/patch-releases-9-1-1-x`,
     bom: `${TD}/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html`,
   },
   {
@@ -223,7 +223,10 @@ const eehh = (s) => parseInt(String(s).slice(-4), 10); // "9-1-0-0400" or "0400"
 
 // The component leaf regex for a given maintenance version z:
 // "/<slug>-9-1-<z>-(\d{4})-release-notes.html$"  -- the (\d{4}) capture is the EEHH field.
-const leafRe = (slug, z) => new RegExp(`/${slug}-9-1-${z}-(\\d{4})-release-notes\\.html$`, 'i');
+// Dashes between the version digits are optional (#353): Broadcom is inconsistent even within
+// the same patch release -- e.g. 9.1.1.0100 shipped "fleet-lifecycle-9-1-1-0100-..." dashed but
+// "sddc-lifecycle-9110100-..." with the dashes dropped, both in the same sub-index.
+const leafRe = (slug, z) => new RegExp(`/${slug}-9-?1-?${z}-?(\\d{4})-release-notes\\.html$`, 'i');
 
 const MONTHS = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06', JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
 // Normalize "13 JUL 2026", "August 5, 2026" or "2026-07-13" to ISO "2026-07-13"; null if unrecognized.
@@ -295,7 +298,16 @@ function extractBomBuild(html, c, line) {
 async function scrapeTechdocs(c, line) {
   const index = `${line.patch}/${c.indexPath}`;
   const re = leafRe(c.leafSlug, line.z);
-  const indexHtml = await fetchText(index);
+  // A fresh line's patch tree doesn't grow every component's sub-index at once -- Broadcom adds
+  // one as that component first patches (#353: 9.1.1's tree opened with only vcf-operations.html
+  // and vcf-automation.html, days before vsphere/esx.html existed). A 404 here means "no patch
+  // tree for this component yet", the same as an empty sub-index list below -- fall back to BOM
+  // rather than surfacing it as a source error and freezing on the last-known value.
+  const indexHtml = await fetchText(index).catch((err) => {
+    if (/^HTTP 404$/.test(String(err.message || err))) return null;
+    throw err;
+  });
+  if (!indexHtml) return null;
   const subtreeDir = index.replace(/\.html$/i, '');
   const inSubtree = hrefs(indexHtml, index).filter((h) => h.startsWith(subtreeDir + '/'));
 
@@ -303,8 +315,11 @@ async function scrapeTechdocs(c, line) {
   if (c.nested) {
     // Gather this component's leaf across ALL EEHH sub-indexes for this line (#187): a
     // component's latest patch can live in an older sub-index than the family's newest.
-    const subRe = new RegExp(`/9-1-${line.z}-\\d{4}\\.html$`, 'i');
-    const subIdxs = inSubtree.filter((h) => subRe.test(h));
+    // Sub-index filenames are normally dashed ("9-1-0-0400.html") but 9.1.1's first one shipped
+    // as bare concatenated digits ("9100100.html", reusing the 9.1.0-style scheme) (#353), so
+    // match any href directly under the component index whose filename is purely digits/dashes
+    // rather than requiring the dashed shape.
+    const subIdxs = inSubtree.filter((h) => /\/[\d-]+\.html$/i.test(h));
     if (!subIdxs.length) return null; // no patch sub-index for this line yet
     const candidates = [];
     for (const s of subIdxs) {
