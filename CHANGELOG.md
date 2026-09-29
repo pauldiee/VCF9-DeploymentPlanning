@@ -1,5 +1,20 @@
 # Changelog
 
+## v5.3.0 — 2026-09-29
+- **docs/25: state which vSphere Client runs *Add Unassigned Hosts*.**
+  [KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)
+  says the option *"is not available the Workload Domain vCenter"*, and
+  the standard method is the *"Management vCenter UI"*. That matches the
+  TechDocs prerequisite on
+  [Add an ESX Host to an SDDC Cluster](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/working-with-workload-domains/expand-a-workload-domain/add-a-host-to-a-vsphere-cluster-using-the-sddc-manager-ui.html)
+  (management domain vCenter access, or VCF SSO + vCenter linking), which
+  docs/24 already carried but docs/25 did not. §1 gains the prerequisite;
+  §2 gains a note on reaching a workload-domain cluster (VCF SSO +
+  [vCenter linking](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/linking-vcenter-systems-in-vmware-cloud-foundation-operations.html),
+  otherwise the §3 API; the KB's SDDC Manager UI suggestion kept only as a
+  deprecated last resort) and step 1 now names the vCenter. docs/24 needed
+  no change. #358.
+
 ## v5.2.9 — 2026-09-29
 - **docs/prerequisites: new *Principal storage* section — 9.1 options
   matrix, converge-only options with drawbacks, and FC bring-up prep.**

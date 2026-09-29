@@ -58,10 +58,34 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
 - **9.1.1+ vDS limits still apply**: adding a host to a cluster on a shared
   vDS keeps you under 128 vDS per vCenter / 16 per ESX host — same ceiling
   as `24-cluster-creation.md`'s vDS-reuse rules.
+- **You need the right vSphere Client.** TechDocs: *"To perform this task in
+  the vSphere Client, you must have access to the management domain vCenter,
+  or your VCF Instance must be configured with VCF SSO and vCenter linking."*
+  The same prerequisite applies to `24-cluster-creation.md`. See the note
+  under §2 for what that means for a workload domain.
 
 ## 2. Add the host — vSphere Client
 
-1. Browse to the vSphere cluster in the vSphere Client inventory.
+> **Workload domain cluster and no *Add Unassigned Hosts* menu?** Broadcom
+> [KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)
+> says: *"Add Unassigned Hosts option is not available the Workload Domain
+> vCenter"*. It describes the standard method as the vSphere Client *"from
+> the Management vCenter UI"*. That matches the TechDocs prerequisite in §1.
+> In VCF 9 a workload domain's vCenter is not in Enhanced Linked Mode with
+> the management vCenter, so to reach a workload-domain cluster from a
+> vSphere Client that offers the wizard you need **VCF SSO + vCenter
+> linking** (*VCF Operations → Operate → Administration Configuration →
+> vCenter Linking*;
+> [Linking vCenter Instances in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/linking-vcenter-systems-in-vmware-cloud-foundation-operations.html):
+> a common identity provider on all vCenters, no ELM group, 2–15 vCenters per
+> group; fleet SSO setup is [`12-sso-configuration.md`](12-sso-configuration.md)).
+> Without linking, use the API (§3). The KB's other suggestion, the SDDC
+> Manager UI, still works during the deprecation window but is deprecated in
+> VCF 9 (see the intro), so treat it as a last resort.
+
+1. Open the vSphere Client of the **management domain vCenter** (or any
+   linked vCenter, once VCF SSO + vCenter linking are configured) and browse
+   to the vSphere cluster in the inventory.
 2. Select the cluster → **Actions → Add Hosts → Add Unassigned Hosts**.
 3. Select the commissioned host(s) to add → **Next**.
 4. Review the proposed switch/network configuration → **Next**.
