@@ -1705,7 +1705,7 @@ const TP5: WldEntry[] = [
       '**SDDC Manager → Inventory → Workload Domains** → this domain → **Clusters** — confirm the cluster shows as stretched.',
       'Confirm fault domains and balanced per-AZ hosts: **Cluster → Configure → vSAN → Fault Domains**, or `esxcli vsan faultdomain get`',
       'Confirm the storage policy is site mirroring and objects are COMPLIANT: **Cluster → Monitor → vSAN → Virtual Objects**.',
-      'If this WLD\'s stretch spec was built by hand, confirm `networkProfiles[].isDefault` was set to **false** — `true` is the management domain, and getting it wrong here misconfigures the profile.',
+      'If this WLD\'s stretch spec was built by hand, confirm it passed `POST /v1/clusters/{id}/validations` before the PATCH, and that the AZ2 TEP pool is a subnet distinct from AZ1\'s. Don\'t look for an `isDefault` flag: it is not a field of the stretch network profile (`StretchClusterNetworkProfile` has only `name`, `description`, `nsxtHostSwitchConfigs`), so nothing in the payload distinguishes a management from a workload-domain stretch.',
       'Isolate the secondary AZ (shut the inter-site links, or power its hosts off), confirm workloads survive on the primary, then restore and confirm resync completes: **Cluster → Monitor → vSAN → Resyncing Objects** back to zero and objects **Compliant**.',
     ],
     expected:

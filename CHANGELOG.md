@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.3.4 — 2026-09-29
+- **Tool sweep against already-verified facts (#362).** Checked the Deployment
+  Plan, Test Plan and sizing tools plus `tools/*.ps1` for claims corrected
+  elsewhere (stretch/vMSC, `isDefault`/`hostName`, VCF Operations floating
+  IP, VCF Automation built-in LB, License Hub vs License Server, vVols, Avi
+  placement, Supervisor LB, Identity Broker at bring-up, CA types, API doc
+  versions, Sync Inventory, VCF Ops internal API path, `/16` transit block,
+  `vra*` naming). Most held. Fixed: Test Plan TP-509 still told readers to set
+  `networkProfiles[].isDefault` to `false` for a workload-domain stretch; that
+  field doesn't exist on the stretch network profile (#343), so the step now
+  checks the `/validations` pass and a distinct AZ2 TEP subnet instead.
+  Split out: deprecated SDDC Manager UI click-paths in 7 Test Plan steps
+  (#363), and License Hub 2.0 missing from the plan/test/sizing tools (#364).
+
 ## v5.3.3 — 2026-09-29
 - **Correct "only vSAN can be stretched": FC and NFS stretch as a vSphere
   Metro Storage Cluster (vMSC).** The 9.1
