@@ -429,7 +429,7 @@ const TP0: Entry[] = [
     ],
     expected:
       'The principal datastore mounts on every host in the cluster with a consistent identifier, and read/write succeeds on all of them.',
-    note: 'Vendor verification material is vSAN-only throughout, so external principal storage has no coverage at all — this case exists to close that. Note that an NFS or FC cluster cannot be stretched.',
+    note: 'Vendor verification material is vSAN-only throughout, so external principal storage has no coverage at all — this case exists to close that. Note that an NFS or FC cluster cannot use VCF\'s automated (vSAN) stretch; it can only be stretched as a vendor-built vSphere Metro Storage Cluster (KB 417356), which these stretch cases do not cover.',
   },
   {
     id: 'TP-014',

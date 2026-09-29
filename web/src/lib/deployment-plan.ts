@@ -116,9 +116,12 @@ export function isVsanStorage(storage: StorageType): boolean {
 
 /**
  * Cross-choice constraints — certain choices exclude others:
- *  - Stretching is vSAN stretching (SDDC Manager's "Stretching vSAN Clusters"
- *    workflow), so NFS / VMFS-on-FC principal storage excludes a stretched
- *    management domain and stretched WLDs.
+ *  - The stretch epics model VCF's automated vSAN stretch (SDDC Manager's
+ *    "Stretching vSAN Clusters" workflow), so NFS / VMFS-on-FC principal
+ *    storage excludes a stretched management domain and stretched WLDs here.
+ *    (FC/NFS can be stretched as a vendor-built vSphere Metro Storage Cluster,
+ *    KB 417356, which VCF treats as a normal cluster; this tool doesn't model
+ *    it. See #361.)
  *  - A stretched WLD requires the management domain stretched first (E7), so
  *    any stretched WLD pulls the management stretch in.
  * The tool UI enforces these interactively; this keeps programmatic selections

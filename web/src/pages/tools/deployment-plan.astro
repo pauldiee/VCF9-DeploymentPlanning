@@ -37,7 +37,8 @@ const epics = selectedEpics(sel);
       <fieldset>
         <legend>Scope</legend>
         <p class="planx__hint">Core epics (E1–E6, E10) always apply. Add the variants you need.
-          Stretching requires <strong>vSAN</strong> principal storage (an NFS / FC cluster cannot be vSAN-stretched).</p>
+          Stretching requires <strong>vSAN</strong> principal storage (an NFS / FC cluster cannot be vSAN-stretched;
+          it can be stretched as a vendor-built vSphere Metro Storage Cluster, which this tool doesn't model).</p>
         <label class="planx__sublabel">NSX connectivity — management domain
           <select id="selConnectivity">
             {NSX_CONNECTIVITY.map((c) => <option value={c.value}>{c.label}</option>)}
