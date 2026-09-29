@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.3.1 — 2026-09-29
+- **docs/prerequisites: cross-host PowerCLI check for VMFS on FC.** The
+  two per-host `esxcli` lines in the VMFS-on-FC section left you comparing
+  output host by host. They are replaced by one PowerCLI snippet that
+  connects to each standalone host and prints a single comparison table:
+  datastore present, backing device, VMFS version, path selection policy,
+  active/dead paths, HBA model/firmware/driver. A "what a pass looks like"
+  list follows it. Parses under PowerShell 7 and Windows PowerShell 5.1;
+  `esxcli` options checked against the ESX 9.1 reference; not yet
+  lab-tested. Marked as interim: the full cross-host storage-readiness
+  check (FC, NFS v3, converge-only types) is tracked in
+  [VCFHostPreparation#10](https://github.com/pauldiee/VCFHostPreparation/issues/10).
+  #359.
+
 ## v5.3.0 — 2026-09-29
 - **docs/25: state which vSphere Client runs *Add Unassigned Hosts*.**
   [KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)

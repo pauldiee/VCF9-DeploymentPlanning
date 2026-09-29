@@ -327,12 +327,61 @@ So this is the checklist, from the 9.1
 - **Hosts:** minimum **2** per cluster, **4** recommended.
 - **No stretch:** an FC cluster can't be stretched across AZs (vSAN only).
 
-A quick check on each host before starting the Installer:
+**Check all hosts in one go** before starting the Installer. The hosts are
+still standalone at this point, so this PowerCLI snippet connects to each one
+directly and prints one row per host. You compare the rows, not each host's
+output separately:
 
+> **Warning: not tested yet.** This snippet has not been run against real hosts.
+> It is read-only (it changes nothing on the hosts), but check the output
+> makes sense before relying on it, and report anything that breaks.
+
+```powershell
+# VCF PowerCLI. Pre-bring-up: hosts are standalone, so connect to each directly.
+$esxHosts  = 'sfo01-m01-esx01.sfo.rainpole.io','sfo01-m01-esx02.sfo.rainpole.io'  # all mgmt hosts
+$datastore = 'sfo-m01-cl01-ds-vmfs01'   # exactly the name you will enter in the VCF Installer
+$cred      = Get-Credential root
+Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Scope Session -Confirm:$false | Out-Null
+
+$esxHosts | ForEach-Object {
+    $vi    = Connect-VIServer -Server $_ -Credential $cred -NotDefault
+    $esx   = Get-VMHost -Server $vi
+    $cli   = Get-EsxCli -VMHost $esx -V2
+    $ds    = Get-Datastore -Name $datastore -Server $vi -ErrorAction SilentlyContinue
+    $naa   = if ($ds) { $ds.ExtensionData.Info.Vmfs.Extent[0].DiskName }
+    $vmfs  = if ($ds) { $ds.FileSystemVersion }
+    $nmp   = if ($naa) { $cli.storage.nmp.device.list.Invoke(@{device = $naa}) }
+    $paths = if ($naa) { @($cli.storage.core.path.list.Invoke(@{device = $naa})) } else { @() }
+    $fc    = @($cli.storage.san.fc.list.Invoke())
+    [pscustomobject]@{
+        Host      = $_
+        Datastore = [bool]$ds
+        Device    = $naa
+        VMFS      = $vmfs
+        PSP       = $nmp.PathSelectionPolicy
+        Active    = @($paths | Where-Object State -eq 'active').Count
+        Dead      = @($paths | Where-Object State -eq 'dead').Count
+        HBA       = ($fc.ModelDescription | Sort-Object -Unique) -join ','
+        Firmware  = ($fc.FirmwareVersion  | Sort-Object -Unique) -join ','
+        Driver    = ($fc | ForEach-Object { "$($_.DriverName) $($_.DriverVersion)" } | Sort-Object -Unique) -join ','
+    }
+    Disconnect-VIServer -Server $vi -Confirm:$false
+} | Format-Table -AutoSize
 ```
-esxcli storage vmfs extent list      # datastore present, same device on every host
-esxcli storage nmp device list       # PSP = VMW_PSP_RR, expected path count
-```
+
+What a pass looks like: `Datastore` is `True` everywhere, the **same
+`Device`** (naa ID) on every row, `VMFS` 6.x, `PSP` = `VMW_PSP_RR`, the
+**same `Active` count** on every host with `Dead` = 0, and **identical
+`HBA` / `Firmware` / `Driver`** on every row. If any row differs, fix that
+host before bring-up.
+
+> **Interim snippet.** A full cross-host storage-readiness check (FC, NFS v3,
+> and the converge-only types) is being built into
+> [VCFHostPreparation](https://github.com/pauldiee/VCFHostPreparation)
+> ([#10](https://github.com/pauldiee/VCFHostPreparation/issues/10)); this
+> snippet will be replaced by a pointer to it once that lands. The `esxcli`
+> options are checked against the ESX 9.1 esxcli reference; the snippet
+> itself is **not yet lab-tested**.
 
 > The same "zoned, masked, formatted and mounted first" rule applies later to
 > every host you **commission** for an FC workload domain or cluster, and to
