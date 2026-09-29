@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "pauldiee-vcf": {
+      "source": {
+        "source": "github",
+        "repo": "pauldiee/vcf-knowledge"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "vcf-knowledge@pauldiee-vcf": true
+  }
+}

@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.3.2 — 2026-09-29
+- **Register the `vcf-knowledge` Claude Code plugin for this repo.** New
+  committed `.claude/settings.json` declares the `pauldiee-vcf` plugin
+  marketplace (`pauldiee/vcf-knowledge`, private) and enables its
+  `vcf-knowledge` skill: verified VCF 9.x facts, gotchas and research rules,
+  shared across Paul's VCF repos. People without access to the private repo
+  can't install it; the setting is harmless for them. See the
+  [Claude Code marketplace docs](https://code.claude.com/docs/en/plugins/host-marketplace#register-the-marketplace-for-everyone-in-a-repository).
+  #360.
+
 ## v5.3.1 — 2026-09-29
 - **docs/prerequisites: cross-host PowerCLI check for VMFS on FC.** The
   two per-host `esxcli` lines in the VMFS-on-FC section left you comparing
