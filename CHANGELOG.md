@@ -1,5 +1,18 @@
 # Changelog
 
+## v5.3.5 — 2026-09-29
+- **docs/26: licensing privileges for the VCF Operations vCenter account
+  (#365).** Field-observed on a VVF 9.1 upgrade: a role without
+  `Global.Licenses` leaves the vCenter monitoring-only and missing from
+  License Management → vCenter Systems. Step 1 now lists TechDocs' "Add
+  License to vCenter" privileges (Global > Licenses, Certificate
+  Management > Create/Delete (below Admins Priv)) with an untested PowerCLI
+  block, plus how to add it to an existing role and check effective
+  privileges. Step 2 adds the `LicenseService.Administrators` SSO group,
+  Step 4 adds Activate Management and the 15-minute appearance delay, and
+  a field note maps ManagementAdapter log lines to KB 436471 / 407724 /
+  440471 / 449286 (time drift also logs the Global.Licenses error).
+
 ## v5.3.4 — 2026-09-29
 - **Tool sweep against already-verified facts (#362).** Checked the Deployment
   Plan, Test Plan and sizing tools plus `tools/*.ps1` for claims corrected

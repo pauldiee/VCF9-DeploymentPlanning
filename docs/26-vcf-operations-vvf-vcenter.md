@@ -58,6 +58,19 @@ Privileges, per Broadcom's
   similar interaction privileges), `Host.Inventory.EditCluster`, Virtual
   machine → Snapshot management, and the other action-oriented privileges
   TechDocs lists alongside these.
+- **License management — required on 9.x if VCF Operations licenses this
+  vCenter:** TechDocs' "Add License to vCenter" row, verbatim: *"Membership
+  in the LicenseService.Administrators Single Sign-On group."*, *"Global >
+  Licenses"*, *"Certificate Management > Create/ Delete (below Admins
+  Priv)"*. The SSO group membership is set on the account, not the role —
+  see [Step 2](#add-the-account-to-licenseserviceadministrators). **Leave
+  these out and the vCenter is added for monitoring only** — TechDocs:
+  *"If you do not have the required privileges for license and vSphere
+  Client plug-in management, the vCenter account will be added only for
+  monitoring purposes."* It then never appears under License Management →
+  vCenter Systems (field-observed, see [Field notes](#field-notes)). On 9.1
+  licensing always goes through VCF Operations and the License Server, so
+  in practice this set is not optional.
 
 You can put everything in one role for one account, or split monitoring vs.
 action privileges into two roles for two accounts — see
@@ -195,6 +208,48 @@ Same pattern as `$actionPrivs`: fold into `$resolved` before `New-VIRole` if
 you want the plug-in available, or build it into whichever account (single
 or split) you decided on above.
 
+### PowerCLI — add the licensing privileges (needed for license management)
+
+**The base `$privs` set above does not include these**, and without them
+the vCenter lands monitoring-only (see the License management bullet
+above). Fold them into `$resolved` before `New-VIRole`, or add them to an
+existing role afterwards.
+
+> **UNTESTED against a live VCF 9 vCenter** — `Global.Licenses` is the
+> documented privilege ID, but the certificate privilege's ID isn't given
+> on the TechDocs page, so the block below looks it up by category instead
+> of guessing. Verify before relying on it.
+
+```powershell
+foreach ($priv in @('Global.Licenses')) {
+    try     { $resolved += Get-VIPrivilege -Server $vc -Id $priv -ErrorAction Stop }
+    catch   { $missing  += $priv }
+}
+
+# Find the ID of "Certificate Management > Create/Delete (below Admins
+# Priv)" on this build, then add it to the loop above by ID.
+Get-VIPrivilege -Server $vc | Where-Object { $_.Id -like 'CertificateManagement.*' } |
+    Select-Object Id, Name, Description
+```
+
+**Adding the privilege to an existing role** (the field fix, when the role
+was already created without it):
+
+```powershell
+# UNTESTED against a live VCF 9 vCenter - verify before relying on it.
+Set-VIRole -Server $vc -Role $rolename -AddPrivilege (Get-VIPrivilege -Server $vc -Id 'Global.Licenses')
+```
+
+**Check what the account actually ends up with**, including anything
+granted through a group — the role list alone can mislead:
+
+```powershell
+# UNTESTED against a live VCF 9 vCenter - verify before relying on it.
+$am   = Get-View (Get-View ServiceInstance -Server $vc).Content.AuthorizationManager -Server $vc
+$root = (Get-Folder -Server $vc -NoRecursion).ExtensionData.MoRef
+$am.FetchUserPrivilegeOnEntities(@($root), 'svc-vcfops-vc01@vsphere.local').Privileges -contains 'Global.Licenses'
+```
+
 ## Step 2 — Create the service account
 
 **Use a local (SSO domain) account, not AD.** This matches how VCF itself
@@ -273,6 +328,20 @@ avoid the silent-break scenario, not mutually exclusive:
   interactively) or BASH set as the SSH account's default shell ahead of
   time (`chsh -s /bin/bash <user>`, a one-time appliance-side change).
 
+### Add the account to LicenseService.Administrators
+
+**Required for license management**, alongside the Step 1 licensing
+privileges — this part lives on the account, not the role, so no role
+change covers it. vSphere Client → **Administration** → **Single Sign On**
+→ **Users and Groups** → **Groups** → `LicenseService.Administrators` →
+**Add Members** → the Step 2 service account.
+
+```powershell
+# UNTESTED against a live VCF 9 vCenter - verify before relying on it.
+$group = Get-SsoGroup -Name 'LicenseService.Administrators' -Domain 'vsphere.local'
+Get-SsoPersonUser -Name 'svc-vcfops-vc01' -Domain 'vsphere.local' | Add-UserToSsoGroup -TargetGroup $group
+```
+
 ## Step 3 — Assign the permission
 
 **Assign the role on the top-level object of the vCenter Server inventory —
@@ -330,6 +399,20 @@ Per Broadcom's
    required.
 9. **Add**, then **Start Collecting** from the account menu — collection
    doesn't start automatically on Add.
+10. **Activate Management** — licensing and the vSphere Client plug-in are
+    a separate switch from collection. Select the vCenter account and click
+    **Activate Management** (TechDocs also allows bulk activation for all
+    9.0+ vCenter accounts). If the account lacks the Step 1 licensing
+    privileges or the Step 2 SSO group, this is where it shows: **Manage
+    Integration** warns that the credentials *"must have the
+    Global.Licenses previleges assigned and be a member of the
+    LicenseService.Administration Single Sign-On group"* (KB 407724's
+    wording, typos included). Fix the account, re-validate the credentials,
+    then activate again.
+11. **Allow for the delay.** TechDocs: *"it takes up to 15 minutes before
+    the vCenter account appears in the License tab of VCF Operations"* —
+    check **License Management → vCenter Systems** after that, not
+    immediately.
 
 ## Renaming a node hostname
 
@@ -461,9 +544,36 @@ Groups) same as you would a local account.
   Connection only confirms reachability and credentials; check the account's
   collection state on the Integrations page afterward to confirm data is
   actually flowing.
+- **vCenter collecting but missing from License Management → vCenter
+  Systems.** Field-observed (2026-09-29, VVF upgrade to 9.1): the role
+  used by the VCF Operations account had no `Global.Licenses`, so the
+  vCenter sat in monitoring-only state. The documented fix (KB 436471) is
+  adding the privilege to the role (see
+  [Step 1](#powercli--add-the-licensing-privileges-needed-for-license-management)),
+  updating the credentials in VCF Operations and activating management
+  again. The deciding evidence is the
+  ManagementAdapter log on the VCF Operations node —
+  `/storage/log/vcops/log/adapters/ManagementAdapter/ManagementAdapter_*.log`
+  (KB 436471, KB 407724), or `/storage/log/vcops/log/ManagementAdapter.log`
+  (the path KB 449286 gives):
+
+  | Log line / UI message | Cause | Fix |
+  | --- | --- | --- |
+  | `missing the required permission Global.Licenses`, **no** SAML error before it | Account really lacks the privilege — often an AD account ([KB 436471](https://knowledge.broadcom.com/external/article/436471)) | Step 1 licensing privileges + Step 2 SSO group; update the credentials in VCF Operations; Activate Management |
+  | `Cannot acquire SAML token` / `TimeSynchronizationException`, **then** `missing … Global.Licenses` | **Time drift** between vCenter and VCF Operations — SAML tokens expire on issue ([KB 407724](https://knowledge.broadcom.com/external/article/407724)) | Same NTP server on both, vCenter time zone matching it; wait 5–10 minutes. Don't touch permissions — the Global.Licenses error here is a side effect |
+  | *"The selected vCenter systems are not eligible for activating management"* / *"missing valid license"* | 9.1 without a License Server, or the upgrade run out of order ([KB 440471](https://knowledge.broadcom.com/external/article/440471)) | Upgrade VCF Operations to 9.1, deploy VCF management services + License Server, register it, assign licenses |
+  | `Missing Entitlement Allocation Id` | vCenter 9.1 against VCF Operations 9.0.x ([KB 449286](https://knowledge.broadcom.com/external/article/449286)) | Upgrade VCF Operations |
+
+  The trap is row 2: time drift *also* logs the Global.Licenses error, so
+  check for a SAML error first before changing roles that are already
+  correct.
 
 ## References
 
+- [vCenter missing from License Management in VCF Operations (Broadcom KB 436471)](https://knowledge.broadcom.com/external/article/436471) — missing Global.Licenses → monitoring-only; Activate Management
+- [vCenter not displayed in the vCenter Systems table on the License page (Broadcom KB 407724)](https://knowledge.broadcom.com/external/article/407724) — time drift masquerading as a Global.Licenses error
+- [vCenter instances not connected to a license server after upgrade to 9.1 (Broadcom KB 440471)](https://knowledge.broadcom.com/external/article/440471) — "not eligible for activating management" without a License Server
+- [License assignment fails with "Licenses could not be assigned to the selected vCenter Systems" (Broadcom KB 449286)](https://knowledge.broadcom.com/external/article/449286) — VCF Operations 9.0.x vs vCenter 9.1
 - [Set password expiry policy for a specific SSO user in vCenter (Broadcom KB 367383)](https://knowledge.broadcom.com/external/article/367383) — source for Step 2's `dir-cli --password-never-expires` guidance
 - [dir-cli Command Reference](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere-sdks-tools/8-0/dir-cli-utility.html) — `--login`/`--password` flags for non-interactive `dir-cli` use
 - [Configuring a vCenter Server Cloud Account in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/connect-to-data-sources/vsphere/configuring-a-vcenter-server-cloud-account-in-vrealize-operations.html)
