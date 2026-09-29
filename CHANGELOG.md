@@ -1,5 +1,24 @@
 # Changelog
 
+## v5.3.3 — 2026-09-29
+- **Correct "only vSAN can be stretched": FC and NFS stretch as a vSphere
+  Metro Storage Cluster (vMSC).** The 9.1
+  [Storage Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/storage-models.html)
+  function matrix marks stretched clusters as supported for vSAN, FC and NFS,
+  footnote: *"Fibre Channel and NFS stretched cluster can be achieved using
+  vSphere Metro Storage Cluster (vMSC). See KB 417356"*.
+  [KB 417356](https://knowledge.broadcom.com/external/article/417356):
+  *"VMware Cloud Foundation is unaware of vMSC and treats it the same as a
+  vSphere cluster."* Only VCF's **automated** stretch workflow (docs/03,
+  docs/22, epic E7) is vSAN-only. `prerequisites.md` → Principal storage now
+  describes both models and the vMSC constraints from the KB (vendor-tested
+  with VCF 9.x, "Stretch all Layer-2 Networks" for the management domain's
+  initial cluster, ≤ 10 ms RTT, no Storage I/O Control, manual HA/DRS,
+  doubled host counts), and flags that the matrix and the KB disagree on
+  iSCSI/NVMe. `06-deployment-plan.md` scope table and a pointer in
+  `03-multi-az-prep.md` updated to match. Introduced in v5.2.8/v5.2.9 and
+  older in docs/06. #361.
+
 ## v5.3.2 — 2026-09-29
 - **Register the `vcf-knowledge` Claude Code plugin for this repo.** New
   committed `.claude/settings.json` declares the `pauldiee-vcf` plugin

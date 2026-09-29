@@ -25,7 +25,7 @@ more workload domains**, each independently **non-stretched or stretched**.
 | Block | What it is | Epics |
 | ----- | ---------- | ----- |
 | **Core** (always) | The management fleet: plan → intake → workbook → readiness gate → bring-up → config → handover | E1–E6, E10 |
-| **Stretch the management domain** | Management cluster stretched across two AZs + its own witness. **vSAN principal storage only** — stretching is vSAN stretching, so an NFS / FC cluster cannot stretch | + E7 |
+| **Stretch the management domain** | Management cluster stretched across two AZs + its own witness. **vSAN principal storage only** — E7 is VCF's automated vSAN stretch workflow. An NFS / FC cluster can't use it; it can instead be stretched as a vSphere Metro Storage Cluster built by the storage vendor, which VCF treats as a normal cluster and this plan doesn't model ([KB 417356](https://knowledge.broadcom.com/external/article/417356), see `prerequisites.md` → Principal storage) | + E7 |
 | **Day-2 fleet** | Deferred/added after bring-up: VCF Automation (if not taken at bring-up), Log Management, Operations for Networks, plus **fleet SSO via the Identity Broker** (the broker itself deploys **at bring-up** with the management services — Day-2 is its configuration; VCF Operations is likewise a **bring-up** component) | + E8 |
 | **Workload domain** (repeat per WLD) | A VI workload domain — **non-stretched** or **stretched** (its own hosts, and if stretched its own witness; a stretched WLD **requires the management domain stretched first**) | + E9 (one per WLD) |
 

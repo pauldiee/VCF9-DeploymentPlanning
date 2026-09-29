@@ -17,6 +17,14 @@ workflow. TechDocs:
 [Stretching vSAN Clusters](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters.html) ·
 [Stretch a vSAN ESA or OSA Cluster Using the SDDC Manager API](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/building-your-private-cloud-infrastructure/stretching-clusters/stretch-a-cluster.html).
 
+> **This page is the vSAN stretch.** VCF's automated stretch workflow needs
+> vSAN principal storage. A cluster on **FC or NFS** can still be stretched,
+> as a **vSphere Metro Storage Cluster (vMSC)** built by the storage vendor,
+> which VCF treats as a normal cluster: different prerequisites, no vSAN
+> witness, and the management domain's initial cluster needs all Layer-2
+> networks stretched. See `prerequisites.md` → *Principal storage* and
+> [KB 417356](https://knowledge.broadcom.com/external/article/417356).
+
 > Convention on this page: `sfo01` = **AZ1 / preferred** fault domain,
 > `sfo02` = **AZ2 / secondary** fault domain, `sfo-wit` = **witness** site.
 > Replace consistently. VLAN IDs and CIDRs are placeholders.

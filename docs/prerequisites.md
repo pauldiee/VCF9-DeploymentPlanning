@@ -171,8 +171,31 @@ How to read it:
   offers only vSAN (ESA/OSA), VMFS on FC and NFS v3** as principal storage.
   Everything marked with an asterisk is reachable **only** via converge
   (management domain) or import (workload domain); see the next subsection.
-- **Only vSAN can be stretched** (multi-AZ). An NFS or FC cluster cannot; see
-  [`03-multi-az-prep.md`](03-multi-az-prep.md).
+- **Stretching (multi-AZ) works two different ways.** The same page's
+  function matrix marks *Stretched Clusters* as supported for **vSAN, FC and
+  NFS** (not iSCSI or NVMe), with the footnote *"Fibre Channel and NFS
+  stretched cluster can be achieved using vSphere Metro Storage Cluster
+  (vMSC). See KB 417356"*.
+  - **vSAN** uses VCF's own **automated stretch workflow** (stretch API +
+    vSAN witness): [`03-multi-az-prep.md`](03-multi-az-prep.md) and
+    [`22-stretch-execution.md`](22-stretch-execution.md).
+  - **FC / NFS** stretch as a **vSphere Metro Storage Cluster**, built by the
+    storage vendor. *"VMware Cloud Foundation is unaware of vMSC and treats it
+    the same as a vSphere cluster"*
+    ([KB 417356](https://knowledge.broadcom.com/external/article/417356)).
+    Per that KB: the storage vendor must have tested the solution with
+    VCF 9.x (Broadcom doesn't test vMSC internally); the management domain's
+    initial cluster supports only **"Stretch all Layer-2 Networks"**; with NFS
+    the NFS Layer-2 network must be stretched too; ≤ 10 ms RTT between hosts
+    (the vendor's replication limit may be 5 ms); **no Storage I/O Control**
+    on a vMSC datastore; vSphere HA/DRS settings, DRS groups and VM/host
+    rules are configured by hand; host counts double (HA management domain:
+    minimum 3 + 3, recommended 4 + 4).
+  - **iSCSI / NVMe:** the matrix marks them as **not** supporting stretched
+    clusters, yet KB 417356 says vMSC storage connectivity *"using any other
+    storage type is supported with VCF Import when converging or upgrading an
+    existing vSphere environment"*. The two sources disagree; confirm with
+    Broadcom before designing a stretched iSCSI/NVMe cluster.
 - **Minimum hosts differ:** 2 for NFS/FC, 3 for vSAN in a simple deployment
   (see [Hardware](#management-domain)).
 - **vVols is not in the 9.1 matrix.** It is deprecated as of VCF/VVF 9.0; the
@@ -240,7 +263,10 @@ choice, so weigh the drawbacks before picking it:
   NFS v3 or VMFS datastore shared by the hosts can therefore win over the
   NFS 4.1 / iSCSI datastore you intended. Keep only the intended shared
   datastore common to all hosts.
-- **No stretch**, as for NFS/FC: stretching is vSAN only.
+- **Stretching is unclear at best.** VCF's automated stretch workflow is
+  vSAN-only, and the Storage Models matrix marks iSCSI and NVMe as not
+  stretchable, although KB 417356 allows vMSC with other storage types via
+  VCF Import (see [the options matrix notes](#options-matrix-vcf-91)).
 
 > Treat converge/import-only principal storage as a deliberate exception
 > (existing array investment, a storage team's standard), not a default. If
@@ -325,7 +351,12 @@ So this is the checklist, from the 9.1
 - **Multipathing:** **Round Robin** path selection policy recommended; check
   every host shows all expected paths before bring-up.
 - **Hosts:** minimum **2** per cluster, **4** recommended.
-- **No stretch:** an FC cluster can't be stretched across AZs (vSAN only).
+- **Stretch only as vMSC:** an FC cluster can't use VCF's automated (vSAN)
+  stretch workflow, but it can be stretched as a vSphere Metro Storage
+  Cluster built by the storage vendor
+  ([KB 417356](https://knowledge.broadcom.com/external/article/417356); see
+  [the options matrix notes](#options-matrix-vcf-91)). If you plan that, the
+  zoning and the VMFS datastore above span both sites.
 
 **Check all hosts in one go** before starting the Installer. The hosts are
 still standalone at this point, so this PowerCLI snippet connects to each one
