@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.2.8 — 2026-09-29
+- **docs/prerequisites: add an NFS principal-storage bring-up section.**
+  When the management domain uses NFS v3 and NFS should run on its own
+  VMkernel, that VMkernel (plus port group, and the datastore mount on the
+  host running the VCF Installer) must be built **before** bring-up. New
+  *NFS principal storage (only if in scope)* section covers the three
+  TechDocs layouts ([Mount NFS Datastore to an ESX Host](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/mount-nfs-datastore-to-an-esx-host(1).html)),
+  the Installer match-ups that otherwise fail pre-validation at *"NFS
+  Datastore Configuration"* ([KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html):
+  port group name, NFS IP pool, MTU, export ACL), and William Lam's
+  [single-NIC gotcha](https://williamlam.com/2025/07/workaround-for-single-nic-using-nfs-storage-with-vcf-9-0.html).
+  Also added to the bring-up gate checklist. TechDocs-sourced, not
+  field-verified. #354.
+
 ## v5.2.7 — 2026-09-18
 - **docs/13: add a timing-budget section for shutdown/startup.** New §7
   pulls together the wait times Broadcom actually documents across the

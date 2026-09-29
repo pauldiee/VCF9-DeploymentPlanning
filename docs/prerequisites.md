@@ -18,7 +18,7 @@ both places so a filled template can be checked straight against this doc:
 | Marker                     | Meaning                                                                                     |
 | -------------------------- | ------------------------------------------------------------------------------------------- |
 | **Bring-up**               | Must be true **before the VCF Installer runs**. A miss here stops the deployment.            |
-| **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the public URLs when anything is online). |
+| **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the NFS VMkernel when NFS is principal storage; the public URLs when anything is online). |
 | **Day-N**                  | Needed **after** bring-up, when you configure or deploy that piece. Collect the inputs early anyway — a missing value doesn't stop bring-up, it stops the day you need it. |
 | **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
 
@@ -29,6 +29,8 @@ Installer starts:
       existing partitions**, single hardware vendor
 - [ ] **VLANs + MTU** — every traffic type, jumbo where required (overlay ≥ 1600)
 - [ ] **Host Overlay TEP addressing** — static IP pool (recommended) or DHCP
+- [ ] **NFS VMkernel + datastore mount** — *NFS principal storage only*
+      ([below](#nfs-principal-storage-only-if-in-scope))
 - [ ] **BGP / ECMP to the ToRs** — *Centralized connectivity only*
 - [ ] **DNS** — forward **A** *and* reverse **PTR** for every bring-up FQDN,
       lowercase, each resolving to a unique unassigned IP
@@ -489,6 +491,58 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 > overlay (Host TEP) VLAN"* ([Create a New Workload Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/working-with-workload-domains/deploy-a-vi-workload-domain-using-the-sddc-manager-ui.html)).
 > TEP IP pools can also be created per cluster after bring-up
 > ([Create an IP Pool for Tunnel Endpoint IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/create-an-ip-pool-for-tunnel-endpoint-ip-addresses.html)).
+
+## NFS principal storage (only if in scope)
+
+*When needed: **Bring-up (if in scope)**.* Only when the management domain's
+principal storage is **NFS v3** (intake `A7`).
+
+The VCF Installer does not build the NFS path for you on the first host — per
+TechDocs, *"If you plan to deploy the VCF Installer appliance on an ESX host
+that will form the management domain and your storage type is NFS v3, you must
+manually mount the NFS datastore on that host."* So if NFS is to run on **its
+own VMkernel** (rather than over the management VMkernel, `vmk0`), that
+VMkernel has to exist **before** the Installer runs. TechDocs describes three
+layouts:
+
+| Layout | What you pre-create on the host | Mount |
+| ------ | ------------------------------- | ----- |
+| **No NFS VMkernel** | Nothing — the NFS server must be reachable through the **management VMkernel** | `esxcli storage nfs add -H <nfs-server-ip> -s <share-path> -v <datastore-name>` |
+| **NFS + management on the same vDS** | A port group on `vSwitch0`, then a **dedicated NFS VMkernel** on it with an IP from the NFS network range | With VMkernel binding: `esxcli storage nfs add --host-vmknic=<nfs-server-ip>:<vmkX> --volume-name=<datastore-name> --share=<share-path>`; without: the plain command above |
+| **NFS on its own vDS** | A separate NFS virtual switch matching the `dvsSpec`, an NFS port group on it, and the NFS VMkernel with an IP from the NFS network range | Same two variants |
+
+What has to line up with the Installer (or pre-validation fails at *"NFS
+Datastore Configuration"* —
+[KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html)):
+
+- **Port group name** — the pre-created port group must use **exactly** the
+  name you give the NFS vDS port group in the Installer (default
+  **`SDDC-DPortGroup-NFS`**, or the `portgroupKey` in a JSON spec). TechDocs:
+  *"During the deployment workflows in VCF Installer, you must use the same
+  port group name for the NFS vDS port group and define an NFS pool that
+  includes the assigned IP address."*
+- **NFS IP pool** — the Installer's NFS pool must **include** the IP you
+  assigned to the hand-built VMkernel.
+- **Dedicated VLAN** — the NFS network must be its own VLAN, not shared with
+  ESX management (see [`01-network-dns-plan.md`](01-network-dns-plan.md), NFS
+  row).
+- **MTU 9000 end to end** — ToR, pNIC, switch **and** VMkernel. Test from the
+  host before starting: `vmkping -I <vmkX> -s 8972 -d <nfs-server-ip>`.
+- **Export ACL / policy** — the NFS array must allow the **whole NFS
+  VMkernel subnet** (every management host), not just the first host's IP.
+
+> **Single-pNIC hosts:** William Lam documents (VCF 9.0) that the Installer can
+> migrate the only uplink to the vDS while leaving the NFS VMkernel and its
+> port group behind on `vSwitch0` — which then has no connectivity, so NFS
+> drops. The workaround is migrating the NFS VMkernel to the vDS port group by
+> hand in vCenter:
+> [Workaround for single NIC using NFS storage with VCF 9.0](https://williamlam.com/2025/07/workaround-for-single-nic-using-nfs-storage-with-vcf-9-0.html).
+> The normal 2-pNIC layout (see [Hardware](#management-domain)) avoids it.
+
+> TechDocs: [Mount NFS Datastore to an ESX Host](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/mount-nfs-datastore-to-an-esx-host(1).html)
+> (9.1). Principal-storage support overview:
+> [KB 416270](https://knowledge.broadcom.com/external/article/416270).
+> TechDocs-sourced — not yet field-verified in this repo.
 
 ## DNS
 
