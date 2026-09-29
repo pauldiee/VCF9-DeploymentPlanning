@@ -1,5 +1,20 @@
 # Changelog
 
+## v5.3.6 — 2026-09-29
+- **docs/26: licensing fix confirmed in the field, plus the proxy trap
+  (#365).** The licensing privilege set is now field-verified. The
+  PowerCLI uses `CertificateManagement.Manage` by ID (KB 443480) instead
+  of a lookup. `CertificateManagement.Administer` is not needed, since the
+  `trusted_root_chains.create` API accepts either (VMware SDK sample). The
+  troubleshooting table gains two rows for *"The license server SSL
+  certificates are not trusted by the vCenter instance"*: the KB 443480
+  certificate privilege, and, field-verified, vCenter 9.x routing License
+  Server traffic through its outbound proxy. Disabling the proxy for the
+  assignment fixed it; excluding it from the proxy, preferably via VAMI,
+  is the lasting fix (not yet verified end-to-end). Links to
+  VCFUpgradeGuide `docs/16`, which also records that hand-editing the
+  9.x proxy `config.json` broke vCenter's proxy service.
+
 ## v5.3.5 — 2026-09-29
 - **docs/26: licensing privileges for the VCF Operations vCenter account
   (#365).** Field-observed on a VVF 9.1 upgrade: a role without

@@ -215,22 +215,33 @@ the vCenter lands monitoring-only (see the License management bullet
 above). Fold them into `$resolved` before `New-VIRole`, or add them to an
 existing role afterwards.
 
-> **UNTESTED against a live VCF 9 vCenter** — `Global.Licenses` is the
-> documented privilege ID, but the certificate privilege's ID isn't given
-> on the TechDocs page, so the block below looks it up by category instead
-> of guessing. Verify before relying on it.
+**The privilege set is field-verified** (2026-09-29, VVF upgrade to 9.1):
+`Global.Licenses` + Certificate Management → Create/Delete (below Admins
+priv) + the SSO group got the vCenter into License Management. The
+PowerCLI below is not.
+
+> **UNTESTED against a live VCF 9 vCenter** — verify before relying on it.
+> `CertificateManagement.Manage` is the ID behind the "Create/Delete
+> (below Admins priv)" label, per
+> [KB 443480](https://knowledge.broadcom.com/external/article/443480).
+> **`CertificateManagement.Administer` (the "Admins priv" one) is not
+> needed.** The call it guards, `trusted_root_chains.create`, accepts
+> either privilege, per VMware's own SDK sample
+> ([`trusted_root_chains_create.py`](https://github.com/vmware/vcf-sdk-python/blob/main/vsphere-samples/vcenter/management/certificatemanagement/trusted_root_chains_create.py)).
+> KB 443480's fix grants both anyway, which is broader than needed.
 
 ```powershell
-foreach ($priv in @('Global.Licenses')) {
+foreach ($priv in @('Global.Licenses', 'CertificateManagement.Manage')) {
     try     { $resolved += Get-VIPrivilege -Server $vc -Id $priv -ErrorAction Stop }
     catch   { $missing  += $priv }
 }
-
-# Find the ID of "Certificate Management > Create/Delete (below Admins
-# Priv)" on this build, then add it to the loop above by ID.
-Get-VIPrivilege -Server $vc | Where-Object { $_.Id -like 'CertificateManagement.*' } |
-    Select-Object Id, Name, Description
 ```
+
+The certificate privilege is what lets VCF Operations push the License
+Server's root certificate into vCenter's trusted roots at license
+assignment (`trusted_root_chains.create`). Without it, assignment fails with
+`Failure to propagate LS Cert to VC` in the ManagementAdapter log
+(KB 443480).
 
 **Adding the privilege to an existing role** (the field fix, when the role
 was already created without it):
@@ -547,11 +558,11 @@ Groups) same as you would a local account.
 - **vCenter collecting but missing from License Management → vCenter
   Systems.** Field-observed (2026-09-29, VVF upgrade to 9.1): the role
   used by the VCF Operations account had no `Global.Licenses`, so the
-  vCenter sat in monitoring-only state. The documented fix (KB 436471) is
-  adding the privilege to the role (see
+  vCenter sat in monitoring-only state. **Confirmed fix** (as KB 436471
+  documents): add the privilege to the role (see
   [Step 1](#powercli--add-the-licensing-privileges-needed-for-license-management)),
-  updating the credentials in VCF Operations and activating management
-  again. The deciding evidence is the
+  update the credentials in VCF Operations and activate management again.
+  The deciding evidence is the
   ManagementAdapter log on the VCF Operations node —
   `/storage/log/vcops/log/adapters/ManagementAdapter/ManagementAdapter_*.log`
   (KB 436471, KB 407724), or `/storage/log/vcops/log/ManagementAdapter.log`
@@ -563,10 +574,15 @@ Groups) same as you would a local account.
   | `Cannot acquire SAML token` / `TimeSynchronizationException`, **then** `missing … Global.Licenses` | **Time drift** between vCenter and VCF Operations — SAML tokens expire on issue ([KB 407724](https://knowledge.broadcom.com/external/article/407724)) | Same NTP server on both, vCenter time zone matching it; wait 5–10 minutes. Don't touch permissions — the Global.Licenses error here is a side effect |
   | *"The selected vCenter systems are not eligible for activating management"* / *"missing valid license"* | 9.1 without a License Server, or the upgrade run out of order ([KB 440471](https://knowledge.broadcom.com/external/article/440471)) | Upgrade VCF Operations to 9.1, deploy VCF management services + License Server, register it, assign licenses |
   | `Missing Entitlement Allocation Id` | vCenter 9.1 against VCF Operations 9.0.x ([KB 449286](https://knowledge.broadcom.com/external/article/449286)) | Upgrade VCF Operations |
+  | Assignment fails: *"The license server SSL certificates are not trusted by the vCenter instance"*, with `Failure to propagate LS Cert to VC` / `Insufficient privileges` in the log | Account lacks the certificate privilege, so VCF Operations can't add the License Server's root certificate to vCenter's trusted roots ([KB 443480](https://knowledge.broadcom.com/external/article/443480)) | Add `CertificateManagement.Manage` (Step 1), re-validate the credentials, assign again |
+  | Same *"…SSL certificates are not trusted…"* message, but it still fails with `administrator@vsphere.local` | **vCenter 9.x sends its License Server traffic through its outbound proxy.** Field-verified 2026-09-29: from the vCenter shell, `curl -v https://<license-server-fqdn>/` shows `CONNECT` via `localhost:1082` and `CONNECT tunnel failed, response 502` | Disabling the proxy for the assignment fixed it. The lasting fix is to exclude the License Server (or the internal management domain) from vCenter's proxy, preferably in VAMI (not yet verified end-to-end). Hand-editing vCenter 9.x's proxy `config.json` broke its proxy service in the same engagement. See [vCenter proxy configuration (VCFUpgradeGuide)](https://docs.hollebollevsan.nl/docs/16-vcenter-proxy-configuration/#internal-vcf-components-must-bypass-the-proxy) |
 
-  The trap is row 2: time drift *also* logs the Global.Licenses error, so
-  check for a SAML error first before changing roles that are already
-  correct.
+  Two traps here. **Row 2:** time drift *also* logs the Global.Licenses
+  error, so check for a SAML error first, before changing roles that are
+  already correct. **The last row:** the error mentions certificates, but
+  privileges and certificates were both fine. If
+  `administrator@vsphere.local` fails the same way, check the proxy before
+  opening a support case.
 
 ## References
 
