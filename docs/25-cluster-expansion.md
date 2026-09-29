@@ -35,6 +35,10 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
 
 ## 1. Manual — before you add anything
 
+> **Cluster converged or imported with NFS 4.1, iSCSI, FCoE or NVMe-oF as
+> principal storage?** §1–§3 don't apply: those hosts can't be commissioned.
+> Go to [§5](#5-converged--imported-clusters-on-converge-only-storage).
+
 - **The host must match the existing cluster's configuration**: same
   principal storage type, and — per Broadcom — *"the ESX host to be added
   matches the configuration of the ESX hosts already in the SDDC cluster."*
@@ -156,3 +160,130 @@ Field-by-field, the parts specific to expansion:
   visible.
 - If a static TEP IP pool was used: the new host received an address from
   it, not from overflow/DHCP fallback.
+
+## 5. Converged / imported clusters on converge-only storage
+
+Everything above assumes a principal storage type that **host
+commissioning** understands: vSAN, NFS, VMFS on FC or vVol. A cluster that
+was **converged** (management domain) or **imported** (workload domain) with
+**NFS 4.1, iSCSI, FCoE or NVMe over Fabrics** (TCP, FC, RDMA) as principal
+storage doesn't fit that path. The commission wizard has no storage type to
+choose for it. So the §1 → §2 flow (commission → Add Unassigned Hosts) is
+**not** the route for these clusters. Why these storage types end up
+converge-only, and the other trade-offs, is in
+[`prerequisites.md` → Principal storage](prerequisites.md#converge--import-only-options-and-their-drawbacks).
+
+Broadcom's route: *"for day 2 operations other than LCM such as host
+commissioning, adding hosts or clusters, removing hosts or clusters, first
+perform these operations in the respective vCenter and then run the 'Sync
+Inventory' operation"*
+([KB 416270](https://knowledge.broadcom.com/external/article/416270)).
+[KB 405095](https://knowledge.broadcom.com/external/article/405095/unable-to-add-or-decommission-esxi-hosts.html)
+explains why the SDDC Manager path fails on these clusters (*"Cluster is
+marked as imported. This operation is not allowed on imported clusters"*,
+or an Add Host wizard whose **Next** stays greyed out at *"Selected
+resources: 0 Cores, 0 GB Memory, 0 GB Storage"*), and gives the manual
+route: add the host in the vSphere Client, *"ensuring configuration
+consistency (NTP, VMK, networking, NSX, storage)"*. Each of those five is
+yours to get right, because nothing in VCF configures them for this host.
+
+```
+build host to match  →  storage by hand  →  add in vCenter  →  NSX + image  →  VCF picks it up
+   (manual)              (manual, per type)    (vSphere Client)   (verify)        (9.0: Sync Inventory)
+```
+
+### 5.1 Build the host to match the cluster
+
+Same checks as §1, plus what converge itself requires:
+
+- **Same ESX build as the cluster's vLCM image.** Converge requires
+  image-managed clusters (*"Clusters using baselines for lifecycle
+  management"* are not supported), so the host has to be compliant with
+  that image. Install the same build, and remediate against the cluster
+  image after adding it if vCenter reports drift.
+- **Same NIC layout and count.** Hosts with more vmnics than their
+  cluster-mates can't use the extras: *"1 or more of those VMNICs will be
+  unusable due to the requirements to maintain a uniform host image"*
+  ([KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)).
+- **Static VMkernel IPs** for management, vMotion and storage.
+  *"Dynamically allocated VMkernel IP addresses"* are on the converge
+  not-supported list.
+- **NTP, DNS (A + PTR, lowercase FQDN), syslog and the ESX root password**
+  set the same way as on the existing hosts.
+  [VCFHostPreparation](https://github.com/pauldiee/VCFHostPreparation)
+  covers the host-level basics, but stop short of commissioning.
+
+### 5.2 Configure the principal storage by hand
+
+The host must see the **same** datastore as its cluster-mates **before**
+it joins, over the same kind of path. Per type (vSphere 9.0 Storage docs):
+
+| Storage type | On the new host | On the array / fabric |
+| ------------ | --------------- | --------------------- |
+| **iSCSI** | Enable the software iSCSI adapter; create one VMkernel per pNIC (1:1) on the storage port groups and **bind** them to the adapter ([port binding](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-0/vsphere-storage/configuring-iscsi-and-iser-adapters-and-storage-with-esxi/configure-port-binding-for-iscsi-and-iser-on-esxi.html)); add the same dynamic/static targets and CHAP settings as the other hosts; rescan | Add the new host's **IQN** to the initiator group / LUN masking. With port binding, *"make sure that all target portals are reachable from all VMkernel ports"* or sessions fail |
+| **NVMe/TCP, NVMe/RDMA** | VMkernel binding on the storage NICs, then [add the software NVMe over TCP / RDMA adapter](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-0/vsphere-storage/about-vmware-nvme-storage/configuring-nvme-over-rdma-roce-v2-on-esxi/add-software-nvme-over-rdma-or-nvme-over-tcp-adapters.html) and discover / connect the controllers. RDMA also needs [lossless Ethernet](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-0/vsphere-storage/about-vmware-nvme-storage/requirements-for-vmware-nvme-storage/requirements-for-vmware-nvme-storage.html) | Add the host's **host NQN** to the subsystem's allowed hosts. NVMe/TCP does **not** support LACP / port-channel on the host links; multipathing does the HA |
+| **NVMe/FC, FCoE** | HBA / CNA with the same firmware + driver as the cluster-mates | **Zoning** + masking of the new host's WWPNs / host NQN, as for VMFS on FC in §1 |
+| **NFS 4.1** | Mount with the **same server IP list** (session-trunking multipathing) and the **same security mode** as the other hosts; for Kerberos, join the host to AD and set the NFS Kerberos credentials first ([Create an NFS 4.1 Datastore](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-0/vsphere-storage/working-with-datastores-in-vsphere-storage-environment/nfs-datastore-concepts-and-operations-in-vsphere-environment/configuring-the-nfs-datastore/configuring-the-nfs-datastor-0.html)) | Add the new host's storage VMkernel IP(s) to the export policy. AUTH_SYS and Kerberos can't be mixed on one shared NFS 4.1 datastore |
+
+Then check it: the datastore appears on the new host with the **same name
+and backing device / share**, all expected paths are up
+(`esxcli storage nmp device list` for SCSI/NVMe devices), and MTU is
+correct end to end (`vmkping -I <vmkX> -s 8972 -d <target-ip>` for jumbo).
+
+> Don't let the new host bring **another** datastore that its cluster-mates
+> can also see (a stray NFS v3 mount, a shared VMFS LUN). VCF picks the
+> principal datastore by type priority (*"vSAN, NFS v3, VMFS, NFS 4.1,
+> iSCSI, vVols"*), and a newly common higher-priority datastore is not what
+> you want it to find.
+
+### 5.3 Add the host in the vSphere Client
+
+1. In the cluster's vCenter: **cluster → Actions → Add Hosts** (the plain
+   vCenter wizard: FQDN, root credentials, certificate). **Not** *Add
+   Unassigned Hosts*, which lists only commissioned hosts.
+2. Add the host to the **cluster's vDS** and migrate its VMkernels to the
+   matching distributed port groups (management, vMotion, the storage
+   VMkernels from §5.2), with the same uplink assignment as its cluster-mates.
+3. **NSX:** if the cluster has an NSX **transport node profile** attached,
+   NSX prepares the host itself: *"When you move an unprepared host into a
+   cluster applied with a transport node profile, NSX automatically prepares
+   the host as a transport node"*
+   ([Transport Node Profiles](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/advanced-network-management/administration-guide/host-transport-nodes/preparing-esxi-hosts-as-transport-nodes/transport-node-profile.html)).
+   Check it reaches **Success** in NSX (*System → Fabric → Hosts*) and got a
+   TEP address. If no profile is attached, prepare the host in NSX to match
+   the others.
+4. **vLCM:** check the host is **compliant** with the cluster image; if
+   not, remediate it (maintenance mode) before putting workloads on it.
+5. Exit maintenance mode.
+
+### 5.4 Let VCF pick it up
+
+- **9.0:** run **Sync Inventory**: *VCF Operations → Inventory → VCF
+  Instances → (domain) → Actions → Sync Inventory*
+  ([KB 405095](https://knowledge.broadcom.com/external/article/405095/unable-to-add-or-decommission-esxi-hosts.html),
+  [KB 425835](https://knowledge.broadcom.com/external/article/425835/synchronizing-vcenter-manual-changes-wit.html)).
+  Skip it and *"lifecycle management in VCF Operations will be blocked for
+  these hosts and clusters"*
+  ([KB 416270](https://knowledge.broadcom.com/external/article/416270)).
+  The CLI alternative on SDDC Manager is `vcf_brownfield.py sync
+  --domain-name '<domain-name>'` in
+  `/opt/vmware/vcf/domainmanager/scripts/vcf-import-tool` (KB 405095).
+- **9.1:** KB 416270: *"As of version 9.1 running 'Sync Inventory' in the
+  VCF Operations console is no longer required."* Still check that the host
+  shows up under the domain in VCF Operations before you call it done.
+  KB 405095 (which covers 9.x generally) still lists the sync, so running it
+  is a harmless fallback if the host doesn't appear.
+- **Root password:** VCF Operations' Password Management console doesn't
+  manage imported hosts' ESX passwords. If you need the credential in SDDC
+  Manager, [KB 388859](https://knowledge.broadcom.com/external/article/388859)
+  (`addEsxiRoot.py`) adds it.
+
+### 5.5 Removing a host again
+
+Same principle, reversed. KB 405095's manual steps: maintenance mode → move
+the host to the **datacenter level** in vCenter → remove NSX from it (*NSX →
+System → Fabric → Hosts → Standalone/Other Nodes*) → disconnect and remove
+from inventory → on 9.0, **Sync Inventory**. Then remove the host's
+initiator / NQN / IP from the array's access list.
+
+> TechDocs + KB-sourced, not yet field-verified in this repo.

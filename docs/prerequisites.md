@@ -18,7 +18,7 @@ both places so a filled template can be checked straight against this doc:
 | Marker                     | Meaning                                                                                     |
 | -------------------------- | ------------------------------------------------------------------------------------------- |
 | **Bring-up**               | Must be true **before the VCF Installer runs**. A miss here stops the deployment.            |
-| **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the NFS VMkernel when NFS is principal storage; the public URLs when anything is online). |
+| **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the NFS VMkernel or FC datastore when that is principal storage; the public URLs when anything is online). |
 | **Day-N**                  | Needed **after** bring-up, when you configure or deploy that piece. Collect the inputs early anyway — a missing value doesn't stop bring-up, it stops the day you need it. |
 | **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
 
@@ -29,8 +29,12 @@ Installer starts:
       existing partitions**, single hardware vendor
 - [ ] **VLANs + MTU** — every traffic type, jumbo where required (overlay ≥ 1600)
 - [ ] **Host Overlay TEP addressing** — static IP pool (recommended) or DHCP
+- [ ] **Principal storage decided** — greenfield offers vSAN, VMFS on FC or
+      NFS v3 only ([matrix](#options-matrix-vcf-91))
 - [ ] **NFS VMkernel + datastore mount** — *NFS principal storage only*
-      ([below](#nfs-principal-storage-only-if-in-scope))
+      ([below](#nfs-v3-only-if-in-scope))
+- [ ] **FC zoning + VMFS datastore mounted on all hosts** — *FC principal
+      storage only* ([below](#vmfs-on-fibre-channel-only-if-in-scope))
 - [ ] **BGP / ECMP to the ToRs** — *Centralized connectivity only*
 - [ ] **DNS** — forward **A** *and* reverse **PTR** for every bring-up FQDN,
       lowercase, each resolving to a unique unassigned IP
@@ -126,6 +130,215 @@ VI workload domains support up to **64 pNICs per host**.
 > hardware minimums themselves (all pNICs ≥ 10 GbE, vSAN hosts certified on the
 > [compatibility guide](https://compatibilityguide.broadcom.com)) come from the
 > workbook's *Prerequisite Checklist*, not that page.
+
+## Principal storage
+
+*When needed: **Bring-up** (the management domain's choice, intake `A7`) and
+**Day-N** (each workload domain / cluster, intake `H6`).* Principal storage is
+the datastore a cluster is created on. It is picked **once per cluster** and
+shapes the host hardware, the storage network and every later cluster
+operation, so settle it before ordering hardware.
+
+### Options matrix (VCF 9.1)
+
+Broadcom's 9.1 support matrix, verbatim from
+[Storage Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/storage-models.html):
+
+| Storage model | Mgmt domain — default cluster | Mgmt domain — additional clusters | Workload domain |
+| ------------- | ----------------------------- | --------------------------------- | --------------- |
+| Single-Rack vSAN ESA | Principal | Principal | Principal |
+| Single-Rack vSAN OSA | Principal | Principal | Principal |
+| Single-Rack vSAN Storage Cluster | Not supported | Principal | Principal |
+| Single-Rack vSAN Compute Cluster | Not supported | Principal | Principal |
+| Multi-Rack vSAN | Not supported | Principal | Principal |
+| Multi-Rack vSAN Compute Cluster | Not supported | Principal | Principal |
+| Fibre Channel (VMFS) | Principal, Supplemental | Principal, Supplemental | Principal, Supplemental |
+| NFS v3 | Principal, Supplemental | Principal, Supplemental | Principal, Supplemental |
+| NFS v4.1 | Principal\*, Supplemental | Principal\*, Supplemental | Principal\*, Supplemental |
+| iSCSI | Principal\*, Supplemental | Supplemental | Principal\*, Supplemental |
+| NVMe/TCP | Principal\*, Supplemental | Supplemental | Principal\*, Supplemental |
+| NVMe/FC | Principal\*, Supplemental | Supplemental | Principal\*, Supplemental |
+| NVMe/RDMA | Principal\*, Supplemental | Supplemental | Principal\*, Supplemental |
+
+> \* *"Principal Storage marked with an asterisk can be achieved by converging
+> existing virtual infrastructure to a VMware Cloud Foundation instance for a
+> management domain or importing an existing virtual infrastructure to a VMware
+> Cloud Foundation for a workload domain."*
+
+How to read it:
+
+- **A new build (the VCF Installer, or the workload-domain / cluster wizards)
+  offers only vSAN (ESA/OSA), VMFS on FC and NFS v3** as principal storage.
+  Everything marked with an asterisk is reachable **only** via converge
+  (management domain) or import (workload domain); see the next subsection.
+- **Only vSAN can be stretched** (multi-AZ). An NFS or FC cluster cannot; see
+  [`03-multi-az-prep.md`](03-multi-az-prep.md).
+- **Minimum hosts differ:** 2 for NFS/FC, 3 for vSAN in a simple deployment
+  (see [Hardware](#management-domain)).
+- **vVols is not in the 9.1 matrix.** It is deprecated as of VCF/VVF 9.0; the
+  workload-domain wizard still offers it, but don't design new clusters on it
+  (see the note under `H6` in [`02-intake.md`](02-intake.md)).
+- A workload domain can mix principal storage types **per cluster**, but every
+  host within one cluster uses the same type.
+
+### Converge / import-only options, and their drawbacks
+
+*When needed: **Bring-up (if in scope)**.* NFS v4.1, iSCSI, FCoE and NVMe over
+Fabrics (TCP, FC, RDMA) have no greenfield workflow. Broadcom's documented
+route ([KB 416270](https://knowledge.broadcom.com/external/article/416270)) is
+to build plain vSphere first and bring it into VCF afterwards:
+
+- **Management domain:** install ESX on the hosts → configure the datastore on
+  one host → deploy vCenter 9 onto it → build the vSphere cluster with all
+  hosts on that shared datastore → deploy the VCF Installer and run the
+  **Converge** workflow.
+- **Workload domain:** the same first four steps, then in VCF Operations
+  **Add Workload Domain → Import a vCenter** to turn it into a workload domain
+  with that datastore as principal storage.
+
+It works, and lifecycle management (patching / upgrades) of the converged
+clusters is fully supported afterwards. But it trades automation for storage
+choice, so weigh the drawbacks before picking it:
+
+- **You build and own the storage plumbing by hand.** No VCF workflow
+  configures iSCSI port binding, NVMe-oF adapters or NFS 4.1 multipathing /
+  Kerberos. Every host, now and every host added later, is configured manually
+  (or with your own host-profile / script tooling).
+- **Every future cluster or domain on that type repeats the build-then-import
+  route.** The Add Cluster / Create Workload Domain wizards still only offer
+  vSAN, NFS v3, VMFS on FC (and vVols). And in the **management domain**,
+  iSCSI and NVMe are **supplemental only** for additional clusters; only the
+  default cluster can use them as principal storage.
+- **Day-2 host and cluster changes happen in vCenter, not VCF.** Hosts can
+  only be added to an imported cluster through the vSphere Client, and
+  commissioning can't even describe these storage types (it offers only vSAN,
+  NFS, VMFS on FC and vVol). The host has to be prepared by hand and added in
+  vCenter; the full procedure is
+  [`25-cluster-expansion.md` §5](25-cluster-expansion.md#5-converged--imported-clusters-on-converge-only-storage).
+  After such a change, KB 416270 says *"If this step* [Sync Inventory] *is not
+  performed then lifecycle management in VCF Operations will be blocked for
+  these hosts and clusters"* on 9.0; *"As of version 9.1 running 'Sync
+  Inventory' in the VCF Operations console is no longer required."*
+- **ESX root passwords of imported hosts aren't managed by VCF Operations.**
+  Per the converge page, *"Password Management of imported ESX hosts via the
+  Password Management Console of VCF Operations"* is not available. The
+  workaround,
+  [KB 388859](https://knowledge.broadcom.com/external/article/388859), is a
+  script (`addEsxiRoot.py`, run as root on SDDC Manager) that adds the ESX
+  root credentials the import did not capture.
+- **Converge has its own entry bar.** The existing environment must meet
+  [Supported and Not Supported Configurations to Converge to VCF](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/converging-your-existing-vsphere-infrastructure-to-a-vcf-or-vvf-platform-/supported-and-not-supported-configurations.html):
+  among others a vSphere Distributed Switch (no Cisco virtual switches),
+  vLCM **images** rather than baselines, **fully automated DRS**, no vCenter
+  HA, no dynamically allocated VMkernel IPs, and no Enhanced Linked Mode
+  (for a converged management domain; for an import, not combined with an
+  existing NSX registration). And **all** clusters in the vCenter are
+  converged / imported; you can't pick a subset.
+- **Watch the principal-datastore pick.** *"If the default cluster includes
+  multiple datastore types, VCF determines the primary datastore using the
+  following priority: vSAN, NFS v3, VMFS, NFS 4.1, iSCSI, vVols."* A leftover
+  NFS v3 or VMFS datastore shared by the hosts can therefore win over the
+  NFS 4.1 / iSCSI datastore you intended. Keep only the intended shared
+  datastore common to all hosts.
+- **No stretch**, as for NFS/FC: stretching is vSAN only.
+
+> Treat converge/import-only principal storage as a deliberate exception
+> (existing array investment, a storage team's standard), not a default. If
+> the array also serves NFS v3 or FC, those give you the same storage through
+> the fully automated greenfield workflows.
+
+### NFS v3 (only if in scope)
+
+*When needed: **Bring-up (if in scope)**.* Only when the management domain's
+principal storage is **NFS v3** (intake `A7`).
+
+The VCF Installer does not build the NFS path for you on the first host — per
+TechDocs, *"If you plan to deploy the VCF Installer appliance on an ESX host
+that will form the management domain and your storage type is NFS v3, you must
+manually mount the NFS datastore on that host."* So if NFS is to run on **its
+own VMkernel** (rather than over the management VMkernel, `vmk0`), that
+VMkernel has to exist **before** the Installer runs. TechDocs describes three
+layouts:
+
+| Layout | What you pre-create on the host | Mount |
+| ------ | ------------------------------- | ----- |
+| **No NFS VMkernel** | Nothing — the NFS server must be reachable through the **management VMkernel** | `esxcli storage nfs add -H <nfs-server-ip> -s <share-path> -v <datastore-name>` |
+| **NFS + management on the same vDS** | A port group on `vSwitch0`, then a **dedicated NFS VMkernel** on it with an IP from the NFS network range | With VMkernel binding: `esxcli storage nfs add --host-vmknic=<nfs-server-ip>:<vmkX> --volume-name=<datastore-name> --share=<share-path>`; without: the plain command above |
+| **NFS on its own vDS** | A separate NFS virtual switch matching the `dvsSpec`, an NFS port group on it, and the NFS VMkernel with an IP from the NFS network range | Same two variants |
+
+What has to line up with the Installer (or pre-validation fails at *"NFS
+Datastore Configuration"* —
+[KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html)):
+
+- **Port group name** — the pre-created port group must use **exactly** the
+  name you give the NFS vDS port group in the Installer (default
+  **`SDDC-DPortGroup-NFS`**, or the `portgroupKey` in a JSON spec). TechDocs:
+  *"During the deployment workflows in VCF Installer, you must use the same
+  port group name for the NFS vDS port group and define an NFS pool that
+  includes the assigned IP address."*
+- **NFS IP pool** — the Installer's NFS pool must **include** the IP you
+  assigned to the hand-built VMkernel.
+- **Dedicated VLAN** — with a dedicated NFS VMkernel, the NFS network must be
+  its own VLAN, not shared with ESX management (William Lam, linked below;
+  see [`01-network-dns-plan.md`](01-network-dns-plan.md), NFS row).
+- **MTU 9000 end to end** — ToR, pNIC, switch **and** VMkernel. Test from the
+  host before starting: `vmkping -I <vmkX> -s 8972 -d <nfs-server-ip>`.
+- **Export ACL / policy** — the NFS array must allow the **whole NFS
+  VMkernel subnet** (every management host), not just the first host's IP.
+
+> **Single-pNIC hosts:** William Lam documents (VCF 9.0) that the Installer can
+> migrate the only uplink to the vDS while leaving the NFS VMkernel and its
+> port group behind on `vSwitch0` — which then has no connectivity, so NFS
+> drops. The workaround is migrating the NFS VMkernel to the vDS port group by
+> hand in vCenter:
+> [Workaround for single NIC using NFS storage with VCF 9.0](https://williamlam.com/2025/07/workaround-for-single-nic-using-nfs-storage-with-vcf-9-0.html).
+> The normal 2-pNIC layout (see [Hardware](#management-domain)) avoids it.
+
+> TechDocs: [Mount NFS Datastore to an ESX Host](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/mount-nfs-datastore-to-an-esx-host(1).html)
+> (9.1). Principal-storage support overview:
+> [KB 416270](https://knowledge.broadcom.com/external/article/416270).
+> TechDocs-sourced — not yet field-verified in this repo.
+
+### VMFS on Fibre Channel (only if in scope)
+
+*When needed: **Bring-up (if in scope)**.* Only when the management domain's
+principal storage is **VMFS on FC** (intake `A7`).
+
+FC needs **more** up-front work than NFS: the VCF Installer's storage page
+asks only for the datastore name, and states *"The datastore must already be
+created and mounted on all ESX hosts."* Nothing is zoned, masked or formatted
+for you, and unlike NFS, Broadcom's host-preparation section has no FC page.
+So this is the checklist, from the 9.1
+[Fibre Channel Storage Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/storage-models-9-x/fibre-channel-storage.html):
+
+- **HBAs:** on the Broadcom compatibility list, with **identical firmware
+  and drivers** on every host. One per host is the minimum; **two or more** is
+  recommended for failover and bandwidth.
+- **SAN zoning:** every management host zoned to the array (single- or
+  multi-initiator zoning, per your fabric standard).
+- **Array side:** host registration and **LUN masking**, so every host sees
+  the same LUN(s).
+- **VMFS 6 datastore:** created on the shared LUN and **mounted on every
+  management host** before the Installer runs, with the **exact name** you
+  will enter in the Installer (its pre-populated name, or yours). Broadcom
+  recommends provisioning VM disks **thick eager-zeroed**.
+- **Multipathing:** **Round Robin** path selection policy recommended; check
+  every host shows all expected paths before bring-up.
+- **Hosts:** minimum **2** per cluster, **4** recommended.
+- **No stretch:** an FC cluster can't be stretched across AZs (vSAN only).
+
+A quick check on each host before starting the Installer:
+
+```
+esxcli storage vmfs extent list      # datastore present, same device on every host
+esxcli storage nmp device list       # PSP = VMW_PSP_RR, expected path count
+```
+
+> The same "zoned, masked, formatted and mounted first" rule applies later to
+> every host you **commission** for an FC workload domain or cluster, and to
+> cluster expansion; see [`25-cluster-expansion.md`](25-cluster-expansion.md).
+> TechDocs: [Deploy a New VCF Fleet or VCF Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html)
+> (storage page). TechDocs-sourced — not yet field-verified in this repo.
 
 ## Network
 
@@ -491,58 +704,6 @@ e.g. a 4-node cluster × 2 pNICs = 8 IPs minimum.
 > overlay (Host TEP) VLAN"* ([Create a New Workload Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/working-with-workload-domains/deploy-a-vi-workload-domain-using-the-sddc-manager-ui.html)).
 > TEP IP pools can also be created per cluster after bring-up
 > ([Create an IP Pool for Tunnel Endpoint IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/transport-zones-and-transport-nodes/create-an-ip-pool-for-tunnel-endpoint-ip-addresses.html)).
-
-## NFS principal storage (only if in scope)
-
-*When needed: **Bring-up (if in scope)**.* Only when the management domain's
-principal storage is **NFS v3** (intake `A7`).
-
-The VCF Installer does not build the NFS path for you on the first host — per
-TechDocs, *"If you plan to deploy the VCF Installer appliance on an ESX host
-that will form the management domain and your storage type is NFS v3, you must
-manually mount the NFS datastore on that host."* So if NFS is to run on **its
-own VMkernel** (rather than over the management VMkernel, `vmk0`), that
-VMkernel has to exist **before** the Installer runs. TechDocs describes three
-layouts:
-
-| Layout | What you pre-create on the host | Mount |
-| ------ | ------------------------------- | ----- |
-| **No NFS VMkernel** | Nothing — the NFS server must be reachable through the **management VMkernel** | `esxcli storage nfs add -H <nfs-server-ip> -s <share-path> -v <datastore-name>` |
-| **NFS + management on the same vDS** | A port group on `vSwitch0`, then a **dedicated NFS VMkernel** on it with an IP from the NFS network range | With VMkernel binding: `esxcli storage nfs add --host-vmknic=<nfs-server-ip>:<vmkX> --volume-name=<datastore-name> --share=<share-path>`; without: the plain command above |
-| **NFS on its own vDS** | A separate NFS virtual switch matching the `dvsSpec`, an NFS port group on it, and the NFS VMkernel with an IP from the NFS network range | Same two variants |
-
-What has to line up with the Installer (or pre-validation fails at *"NFS
-Datastore Configuration"* —
-[KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html)):
-
-- **Port group name** — the pre-created port group must use **exactly** the
-  name you give the NFS vDS port group in the Installer (default
-  **`SDDC-DPortGroup-NFS`**, or the `portgroupKey` in a JSON spec). TechDocs:
-  *"During the deployment workflows in VCF Installer, you must use the same
-  port group name for the NFS vDS port group and define an NFS pool that
-  includes the assigned IP address."*
-- **NFS IP pool** — the Installer's NFS pool must **include** the IP you
-  assigned to the hand-built VMkernel.
-- **Dedicated VLAN** — the NFS network must be its own VLAN, not shared with
-  ESX management (see [`01-network-dns-plan.md`](01-network-dns-plan.md), NFS
-  row).
-- **MTU 9000 end to end** — ToR, pNIC, switch **and** VMkernel. Test from the
-  host before starting: `vmkping -I <vmkX> -s 8972 -d <nfs-server-ip>`.
-- **Export ACL / policy** — the NFS array must allow the **whole NFS
-  VMkernel subnet** (every management host), not just the first host's IP.
-
-> **Single-pNIC hosts:** William Lam documents (VCF 9.0) that the Installer can
-> migrate the only uplink to the vDS while leaving the NFS VMkernel and its
-> port group behind on `vSwitch0` — which then has no connectivity, so NFS
-> drops. The workaround is migrating the NFS VMkernel to the vDS port group by
-> hand in vCenter:
-> [Workaround for single NIC using NFS storage with VCF 9.0](https://williamlam.com/2025/07/workaround-for-single-nic-using-nfs-storage-with-vcf-9-0.html).
-> The normal 2-pNIC layout (see [Hardware](#management-domain)) avoids it.
-
-> TechDocs: [Mount NFS Datastore to an ESX Host](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/mount-nfs-datastore-to-an-esx-host(1).html)
-> (9.1). Principal-storage support overview:
-> [KB 416270](https://knowledge.broadcom.com/external/article/416270).
-> TechDocs-sourced — not yet field-verified in this repo.
 
 ## DNS
 

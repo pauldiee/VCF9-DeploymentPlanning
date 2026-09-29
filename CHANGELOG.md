@@ -1,5 +1,50 @@
 # Changelog
 
+## v5.2.9 — 2026-09-29
+- **docs/prerequisites: new *Principal storage* section — 9.1 options
+  matrix, converge-only options with drawbacks, and FC bring-up prep.**
+  - **Options matrix** reproduced verbatim from Broadcom's 9.1
+    [Storage Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/storage-models.html)
+    page (mgmt default cluster / mgmt additional clusters / workload
+    domain), with the key reading: a greenfield build offers only vSAN,
+    VMFS on FC and NFS v3; stretch is vSAN only; vVols is absent from the
+    9.1 matrix. #356.
+  - **Converge / import-only options** (NFS 4.1, iSCSI, FCoE, NVMe-oF): the
+    [KB 416270](https://knowledge.broadcom.com/external/article/416270)
+    build-then-converge route, plus the drawbacks — manual storage plumbing
+    per host, every future cluster repeats the route (iSCSI/NVMe
+    supplemental-only in additional mgmt clusters), Day-2 host changes via
+    the vSphere Client and no VCF Ops password management for imported
+    hosts, the [converge entry bar](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/converging-your-existing-vsphere-infrastructure-to-a-vcf-or-vvf-platform-/supported-and-not-supported-configurations.html),
+    and the principal-datastore priority order trap. #356.
+  - **VMFS on FC** bring-up prep: the Installer requires the datastore
+    *"already created and mounted on all ESX hosts"* — HBAs, zoning, LUN
+    masking, VMFS 6, Round Robin, name match, per the 9.1
+    [Fibre Channel Storage Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/storage-models-9-x/fibre-channel-storage.html).
+    #355.
+  - The v5.2.8 NFS section moved under the same heading (*NFS v3*); bring-up
+    gate checklist gains the storage-decision and FC items.
+  - `02-intake.md` A7/H6 now say *NFS v3* and point converge-only types at
+    the new section (no renumbering; mapping unchanged).
+- **docs/25: new §5, expanding converged/imported clusters on converge-only
+  storage.** Commissioning only knows vSAN / NFS / VMFS on FC / vVol, so a
+  host for an iSCSI, NFS 4.1, FCoE or NVMe-oF cluster follows the manual
+  route from [KB 416270](https://knowledge.broadcom.com/external/article/416270)
+  and [KB 405095](https://knowledge.broadcom.com/external/article/405095/unable-to-add-or-decommission-esxi-hosts.html):
+  build the host to match (image, NIC count, static VMkernels), configure
+  the storage by hand (per-type table with vSphere 9 Storage links and
+  array-side ACLs), add it in the vSphere Client, check NSX (transport node
+  profile) and vLCM compliance, then Sync Inventory on 9.0 (not required on
+  9.1). Also covers host removal. §1 points these clusters at §5. #357.
+- **Source re-check** of material cited in v5.2.8/v5.2.9 before shipping:
+  KB 388859 is a script adding missing ESX root credentials to SDDC Manager
+  (now described as such); the datastore priority order applies to the
+  converged *default cluster* (quote corrected); the ELM restriction is
+  converge/NSX-specific (reworded); the NFS dedicated-VLAN rule is scoped to
+  a dedicated NFS VMkernel and attributed to William Lam; the FC section's
+  `esxcli` checks were confirmed against TechDocs.
+  TechDocs/KB-sourced, not field-verified.
+
 ## v5.2.8 — 2026-09-29
 - **docs/prerequisites: add an NFS principal-storage bring-up section.**
   When the management domain uses NFS v3 and NFS should run on its own
