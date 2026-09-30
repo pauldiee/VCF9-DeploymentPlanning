@@ -51,12 +51,15 @@ const sspCpu: SizeMap = { Medium: 112, Large: 160, 'X-Large': 192 };
 const sspRam: SizeMap = { Medium: 414, Large: 606, 'X-Large': 734 };
 const sspDisk: SizeMap = { Medium: 4096, Large: 5120, 'X-Large': 6656 };
 
-// License Hub — the licensing appliance the SSP Installer deploys (installer +
-// controller + worker). It licenses vDefend AND Avi, so it is required whenever
-// EITHER is in scope, and one instance covers both (120 endpoints across NSX
-// Manager / SSP / Avi Controller). Disk is the workbook's figure; the TechDocs
-// component table sums to 810 (400 + 155 + 255) — divergence tracked in #176.
-const LICENSE_HUB = { nodes: 3, cpu: 10, ram: 30, disk: 710 };
+// License Hub 2.0 — one standalone appliance (#364). It licenses vDefend AND
+// Avi, so it is required whenever EITHER is in scope, and one instance covers
+// both (120 endpoints across NSX Manager / SSP / Avi Controller). Figures are
+// TechDocs' "License Hub Appliance System Requirements" for 2.0: 6 vCPU, 12 GB,
+// 256 GB. NOT the workbook's: its row still models the older 5.1.2 instance the
+// SSP Installer deploys (installer + controller + worker: 10 vCPU / 30 GB /
+// 710 GB in the workbook, 810 GB in TechDocs — #176), which has no upgrade
+// path to 2.0. A site staying on 5.1.2 adds the difference by hand (04-sizing.md).
+const LICENSE_HUB = { nodes: 1, cpu: 6, ram: 12, disk: 256 };
 
 const vcfaCpu: SizeMap = { Small: 24, Medium: 24, Large: 32 };
 const vcfaRam: SizeMap = { Small: 96, Medium: 96, Large: 128 };

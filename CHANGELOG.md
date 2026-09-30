@@ -1,5 +1,28 @@
 # Changelog
 
+## v5.4.7 — 2026-09-30
+- **Tools describe License Hub 2.0, with 5.1.2 as a pointer (#364).** The
+  Deployment Plan, Test Plan and sizer described only the 5.1.2 flow (SSP
+  Installer, two files, three FQDNs, three VMs). They now describe the
+  current standalone 2.0 OVA and send 5.1.2 sites to `15-license-hub.md`:
+  - **Deployment Plan story 8.2a** (tool and `06-deployment-plan.md`): one
+    ~11 GB OVA, three IPs and two FQDNs with the Kafka FQDN on the second
+    pool address, the internal cluster CIDR, DNS before power-on, the two
+    UIs, and a backup task.
+  - **Test Plan:** TP-408 checks the 2.0 appliance and service; TP-410 is
+    now "License Hub backup is configured and proven" instead of the SSP
+    Installer backup.
+  - **Sizer:** the License Hub row is **6 vCPU / 12 GB / 256 GB, one VM**,
+    from TechDocs'
+    [License Hub Appliance System Requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/license-hub-appliance-system-requirements.html),
+    down from the workbook's 5.1.2 figure of 10 / 30 / 710 across three
+    VMs. `04-sizing.md` records the divergence from the workbook and what a
+    5.1.2 site adds by hand.
+  - Backup scope and restore prerequisites are quoted from
+    [Back Up and Restore](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html).
+    TechDocs-sourced; the deploy-time behaviour comes from docs/15's
+    lab-verified notes. The backup steps are not lab- or field-verified.
+
 ## v5.4.6 — 2026-09-30
 - **Test Plan: SDDC Manager UI click-paths replaced (#363).** Eight steps
   in TP bring-up, TP-302, TP-304, TP-502, TP-503 and TP-509 used the
