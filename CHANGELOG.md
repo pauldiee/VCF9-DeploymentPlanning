@@ -1,5 +1,27 @@
 # Changelog
 
+## v5.4.6 — 2026-09-30
+- **Test Plan: SDDC Manager UI click-paths replaced (#363).** Eight steps
+  in TP bring-up, TP-302, TP-304, TP-502, TP-503 and TP-509 used the
+  deprecated SDDC Manager console as the primary path. Each now uses the
+  console TechDocs documents for 9.1, read verbatim, with an SDDC Manager
+  API check alongside:
+  - Hosts and network pools: vSphere Client **Global Inventory Lists →
+    Hosts → Unassigned Hosts / Network Pools**
+    ([View ESX Host Inventory](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/view-host-inventory.html),
+    [View Network Pool Details](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/about-network-pools/view-network-pool-details.html)).
+  - Domains: VCF Operations **Operate → Overview → Inventory → Detailed
+    View → VCF Instances**
+    ([Import an Existing vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/working-with-workload-domains/import-an-existing-vcenter-to-create-a-workload-domain.html),
+    [Delete a Workload Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/working-with-workload-domains/delete-a-workload-domain.html)).
+  - Stretched state and domain capacity: TechDocs documents no UI view
+    for either, so these are API checks (`GET /v1/clusters` →
+    `isStretched`, `GET /v1/domains` → `capacity`), run from the API
+    Explorer path in
+    [Stretch a vSAN ESA or OSA Cluster](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/stretching-clusters/stretch-a-cluster.html).
+    Endpoints and fields checked against the 9.1.1.0 SDDC Manager OpenAPI
+    spec. TechDocs-sourced, not lab- or field-verified.
+
 ## v5.4.5 — 2026-09-30
 - **`.gitignore` covers `.claude/settings.local.json` (#372).** The shared
   `.claude/settings.json` is committed on purpose (#360); the personal
