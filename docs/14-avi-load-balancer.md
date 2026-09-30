@@ -573,8 +573,9 @@ and none of it is done for you beyond what VCF Operations already handles
 
 > **The Avi security score on an externally-facing VS is additive, and
 > Broadcom's documented factors are necessary but not provably sufficient
-> [field-verified 2026-08-27].** Per Broadcom's Health Score Codes
-> documentation, the VS's **SSL Score** (a component of its security
+> [field-verified 2026-08-27].** Per Broadcom's
+> [Health Score Codes](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/31-1/monitoring-and-operability-guide/application-monitoring/health-score-codes.html)
+> documentation (Avi 31.1), the VS's **SSL Score** (a component of its security
 > penalty) is driven by: an insecure cipher in the SSL/TLS profile, the
 > certificate being expired or self-signed, and other SSL settings such as
 > HSTS not being enabled on the HTTP profile. **Expect each fix to move the
@@ -589,6 +590,24 @@ and none of it is done for you beyond what VCF Operations already handles
 > the new cert and cipher list are actually live on the Service Engine (not
 > just saved in the VS config) before assuming a further, undocumented
 > factor.
+>
+> **Where to look next [TechDocs, not yet field-verified].** A second page,
+> [SSL Visibility and Troubleshooting](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/31-1/monitoring-and-operability-guide/application-troubleshooting/ssl-visibility-and-troubleshooting.html)
+> (Avi 31.1), lists more factors than the three above and says where the
+> breakdown is shown: *"The SSL Score section in the Security tab of the
+> virtual service shows the major factors affecting the SSL Score penalty."*
+> The factors it names are **PFS Support**, **SSL Protocol Strength**,
+> **Weakest Encryption Algorithm**, **Symmetric Encryption Cipher Strength**,
+> **Certificate Expiration Time**, **Signature Algorithm**, **Disable Client
+> Renegotiation** (*"does not impact the security score"*) and **Trusted CA
+> Certificate**. It also explains the size of the deduction: *"Any penalty
+> here is multiplied by 5 when viewed in the virtual service health score.
+> For example, if a site does not use a trusted certificate, it carries a
+> local penalty of 4. This incurs a Security Penalty of 20 against the
+> virtual service health score."* So open the VS's **Security** tab and read
+> the per-factor SSL Score there; a remaining deduction most likely sits in
+> PFS, protocol version, weakest/symmetric cipher strength or signature
+> algorithm on the SSL/TLS profile.
 
 > **DNS cutover gotcha [field-reported] — and it's not what you'd expect.**
 > *"AFAIK there is no documented way how to change FQDN of VCFA

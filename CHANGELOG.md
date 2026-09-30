@@ -1,5 +1,17 @@
 # Changelog
 
+## v5.4.1 — 2026-09-30
+- **docs/14: Avi security-score callout gets its source links and a next
+  step (#250).** The callout named Broadcom's
+  [Health Score Codes](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/31-1/monitoring-and-operability-guide/application-monitoring/health-score-codes.html)
+  page without linking it. Added the link, plus what
+  [SSL Visibility and Troubleshooting](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/31-1/monitoring-and-operability-guide/application-troubleshooting/ssl-visibility-and-troubleshooting.html)
+  adds: the per-factor SSL Score sits on the virtual service's Security
+  tab, eight factors are named (not three), and penalties are multiplied
+  by 5 (untrusted certificate = local penalty 4 = 20 points). Quoted
+  verbatim from the Avi 31.1 pages; not field-verified. The unexplained
+  -18 stays open.
+
 ## v5.4.0 — 2026-09-30
 - **docs/05 §D: "license Avi first" gate at the VCF Automation deploy
   (#299).** The pointer to docs/14's *An unlicensed controller half-builds
