@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.4.3 — 2026-09-30
+- **Version Overview: VCF Download Tool added (#370).** The tool patches on
+  the same cadence as the other components and has its own
+  [patch release-notes tree](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vmware-download-tool.html),
+  but was not listed. It is now scraped per release line and shown under
+  Management next to Software Depot; a line without a patch leaf falls
+  back to its Bill of Materials build.
+
 ## v5.4.2 — 2026-09-30
 - **README: "VVF / Standalone" band added (#369).** The site nav has eight
   reference bands, the README had seven and listed docs/26 and docs/27
