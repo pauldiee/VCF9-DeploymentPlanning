@@ -1,5 +1,20 @@
 # Changelog
 
+## v5.4.8 — 2026-09-30
+- **Remaining License Hub docs lead with 2.0 (#373).** Follow-up to #364
+  and #236. `05-day2-deployments.md` §B.3 and its §E checklist,
+  `02-intake.md` `E17` and the password table, `workbook-cell-mapping.md`
+  `E17`, and `08-backup-target.md` §6 described only the 5.1.2 SSP
+  Installer flow. They now lead with the standalone 2.0 appliance (one
+  ~11 GB OVA, 6 vCPU / 12 GB / 256 GB, three IPs, two FQDNs with the Kafka
+  name on the second pool address, internal cluster CIDR, built-in SFTP
+  backup) and keep 5.1.2 as the noted older flow. `08` §6 says its three
+  field-verified differences were seen on the SSP Installer and not
+  re-tested on 2.0. No intake IDs changed. Sources:
+  [License Hub Appliance System Requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/license-hub-appliance-system-requirements.html),
+  [Deploy a License Hub Appliance](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/deploy-a-license-hub-appliance.html),
+  [Back Up and Restore](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html).
+
 ## v5.4.7 — 2026-09-30
 - **Tools describe License Hub 2.0, with 5.1.2 as a pointer (#364).** The
   Deployment Plan, Test Plan and sizer described only the 5.1.2 flow (SSP

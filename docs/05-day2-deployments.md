@@ -40,7 +40,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment / **NSX VPC subnet**? | Five options — see C. NSX Overlay needs an Edge cluster + transit gateway; **NSX VPC is not on the sheet and is API-only**. At Day-N *every* non-shared placement is API-only |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
-|D6 | **Is vDefend or Avi in scope?**                                     | If so there are **two more Day-N appliance sets**, and **neither comes from the Day-N sheet** — the **Avi Load Balancer** (via VCF Operations) and **License Hub** (via the SSP Installer, outside VCF entirely). See **B.3**; full detail in [`prerequisites.md`](prerequisites.md). Easy to miss precisely because the fleet tooling never mentions them |
+|D6 | **Is vDefend or Avi in scope?**                                     | If so there are **two more Day-N appliance sets**, and **neither comes from the Day-N sheet** — the **Avi Load Balancer** (via VCF Operations) and **License Hub** (its own standalone OVA in 2.0, or via the SSP Installer on 5.1.2 — outside VCF entirely either way). See **B.3**; full detail in [`prerequisites.md`](prerequisites.md). Easy to miss precisely because the fleet tooling never mentions them |
 
 Size the footprint of whatever you choose here on the
 [sizing tool](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)
@@ -236,14 +236,22 @@ appliance sets, both are substantial, and neither appears anywhere in the fleet
 Day-N tooling. Detail lives in [`prerequisites.md`](prerequisites.md); this is
 the Day-N planner's summary.
 
-| | **Avi Load Balancer** | **License Hub** (+ SSP Installer) |
+| | **Avi Load Balancer** | **License Hub 2.0** |
 | --- | --- | --- |
-| **When** | Only if Avi is the chosen LB (Supervisor, tenant LB, optionally fronting Automation) | Only if **vDefend or Avi** is in scope — Avi in scope means **both** rows apply |
-| **Deployed from** | **VCF Operations → Build → Lifecycle → VCF Instances → *domain* → Manage Components** (an *Optional Component*, included in entitlement) | The **SSP Installer** appliance — **outside VCF entirely** |
-| **Software** | **Depot-fed** — *"Software bundle is downloaded and ready"*; can't deploy until the depot has synced it | **Manual download**, two files, **~9.5 GB** from the Broadcom Support Portal. **Not in the depot** |
-| **Footprint** | 3 controller nodes in the **management domain**, **per NSX instance** — plus Service Engines **per cluster** in the WLD (min 2) | 3 VMs: installer + controller + worker |
-| **Addresses** | 4 per controller set (3 nodes + VIP) | ~9 in **two contiguous pools**, immutable after deployment |
-| **DNS** | Cluster FQDN **must resolve before the deploy** | 3 FQDNs; the instance + messaging names map to the **1st and 2nd service-pool IPs**, so fix the pool ranges *before* requesting records |
+| **When** | Only if Avi is the chosen LB (Supervisor, tenant LB, optionally fronting Automation) | Only if **vDefend or Avi** is in scope — Avi in scope means **both** columns apply |
+| **Deployed from** | **VCF Operations → Build → Lifecycle → VCF Instances → *domain* → Manage Components** (an *Optional Component*, included in entitlement) | A **standalone OVA**, deployed with the vSphere Client — **outside VCF entirely** |
+| **Software** | **Depot-fed** — *"Software bundle is downloaded and ready"*; can't deploy until the depot has synced it | **Manual download**, one file, **~11 GB**, from the Broadcom Support Portal under **VMware Avi Load Balancer → Primary Downloads**. **Not in the depot** |
+| **Footprint** | 3 controller nodes in the **management domain**, **per NSX instance** — plus Service Engines **per cluster** in the WLD (min 2) | 1 VM: **6 vCPU / 12 GB / 256 GB**, on a DRS-enabled cluster with shared storage |
+| **Addresses** | 4 per controller set (3 nodes + VIP) | **3**: the appliance IP + a 2-address contiguous Kafka pool, plus a non-routable internal cluster CIDR (≥512 addresses). Immutable after deployment |
+| **DNS** | Cluster FQDN **must resolve before the deploy** | **2 FQDNs** (appliance + Kafka); the Kafka name must resolve to the **2nd pool address** and is **validated at first boot**, so create the records *before* powering on |
+
+> **The License Hub column is 2.0, the current version.** A site still on
+> **License Hub 5.1.2** has a different shape: deployed from the **SSP
+> Installer**, two files (~9.5 GB), 3 VMs (installer + controller + worker),
+> ~9 addresses in two contiguous pools and 3 FQDNs. There is **no upgrade path**
+> from 5.1.2 to 2.0; both flows are in [`15-license-hub.md`](15-license-hub.md).
+> Sizing source for 2.0:
+> [License Hub Appliance System Requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/license-hub-appliance-system-requirements.html).
 
 Three things that bite Day-N planners specifically:
 
@@ -778,15 +786,23 @@ fleet Day-N workflows above:
       wizard input, so an absent A record has nowhere to be fixed later
 - [ ] A separate **Cluster Name** decided, distinct from that FQDN
 - [ ] The **Avi bundle has synced to the depot** (`09-binary-depot.md`)
-- [ ] **License Hub pool ranges settled first**, then A + PTR for the **1st and
-      2nd service-pool addresses** (instance + messaging FQDNs)
-- [ ] Both License Hub pools are **contiguous, unbroken blocks** in one subnet
-- [ ] The **SSP Installer's two files (~9.5 GB) are downloaded** — they do not
-      come through the depot
-- [ ] **vCenter root CA certificate to hand** for the SSP Installer connection,
-      and an **admin credential + certificate per endpoint** for onboarding
-- [ ] The **NSX DFW exclusion** for the License Hub VMs is raised with the
+- [ ] **License Hub addresses settled first**: the appliance IP and a
+      **2-address contiguous Kafka pool**, then A + PTR for the appliance FQDN
+      and for the **Kafka FQDN on the 2nd pool address** — in DNS **before**
+      the appliance is powered on
+- [ ] A **non-routable internal cluster CIDR** (≥512 addresses) that overlaps
+      nothing in the datacenter — the default `10.10.0.0/16` if it is free
+- [ ] The **License Hub 2.0 OVA (~11 GB) is downloaded** — it does not come
+      through the depot
+- [ ] An **admin credential + certificate per endpoint** to hand for
+      onboarding
+- [ ] The **NSX DFW exclusion** for the License Hub VM is raised with the
       vDefend policy owner
+- [ ] An **SFTP target** for the License Hub backup, and a place to store its
+      **passphrase** (`08-backup-target.md` §6)
+- [ ] On **License Hub 5.1.2** instead: the SSP Installer checklist in
+      [`15-license-hub.md`](15-license-hub.md#license-hub-512-ssp-installer-flow)
+      (two files, two contiguous pools, 3 FQDNs, vCenter root CA certificate)
 - [ ] Certificates and passphrases captured: the Avi **Passphrase** is
       **restore-critical** (lost = no controller restore)
 

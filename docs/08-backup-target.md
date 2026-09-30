@@ -475,9 +475,25 @@ Every client above points at the same target the same way. The **vDefend Securit
 Services Platform (SSP) Installer** — the appliance behind vDefend and Avi
 licensing, see [`prerequisites.md` → License Hub](prerequisites.md) — does not.
 Its backup matters more than most: it "is the only migration path if the vCenter
-FQDN/IP ever changes", which is why
-[`06-deployment-plan.md`](06-deployment-plan.md) carries it as acceptance
-criteria.
+FQDN/IP ever changes".
+
+> **License Hub 2.0 has no SSP Installer, and its own backup.** The standalone
+> 2.0 appliance backs up from the **License Hub service** (*Backup and Restore*),
+> and that is the backup [`06-deployment-plan.md`](06-deployment-plan.md) story
+> 8.2a now carries as acceptance criteria. The dialog has the same fields as
+> the one below (Server, port, Directory Path, Username and Password, SFTP
+> Server SSH Public Host Key, Passphrase), and TechDocs says of the password:
+> *"The username and password to log in to the SFTP server initially.
+> Subsequently, key-based authentication is used."* — which suggests the same
+> public-key behaviour described in point 1. The three differences below were
+> **field-verified on the SSP Installer, not re-tested on License Hub 2.0**.
+> The 2.0 backup holds endpoints, licence assignments, usage reports and
+> platform configuration, **not** the licences or the Avi Cloud Console
+> registration, and restores only to a **new appliance of the same version**
+> deployed with the same FQDN, Kafka FQDN, management IP and IP pool
+> ([Back Up and Restore](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)).
+> The SSP Installer backup still applies where the **vDefend SSP** or
+> **License Hub 5.1.2** is deployed.
 
 Three differences, all **[field-verified]**:
 
