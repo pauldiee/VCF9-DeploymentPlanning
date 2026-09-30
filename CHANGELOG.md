@@ -1,5 +1,11 @@
 # Changelog
 
+## v5.4.2 — 2026-09-30
+- **README: "VVF / Standalone" band added (#369).** The site nav has eight
+  reference bands, the README had seven and listed docs/26 and docs/27
+  under Operations. They now sit in their own band, docs/27 first, matching
+  the site.
+
 ## v5.4.1 — 2026-09-30
 - **docs/14: Avi security-score callout gets its source links and a next
   step (#250).** The callout named Broadcom's
