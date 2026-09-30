@@ -31,7 +31,8 @@
 // Author: Paul van Dieen  -  https://www.hollebollevsan.nl
 // Issues: #179 (page), #180 (VCF Operations nodes), #181 (optional add-ons), #184 (GA release dates),
 //         #187 (walk ALL sub-indexes; VSP/Identity Broker/Telemetry nested-with-GA-fallback; +3 Ops components),
-//         #214 (knownBadRender), #230 (vCenter off the KB), #258 (License Hub), #265 (per-minor lines)
+//         #214 (knownBadRender), #230 (vCenter off the KB), #258 (License Hub), #265 (per-minor lines),
+//         #370 (VCF Download Tool)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -150,6 +151,11 @@ const COMPONENTS = [
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'software-depot', bomName: 'Software depot',
     knownBadRender: { version: '9.1.0.0400', raw: '255070105', build: '25570105', verified: '2026-07-22',
       note: 'Broadcom inserts an extra 0 after the third digit; confirmed against product inventory' } },
+  // VCF Download Tool (#370): the CLI that feeds the depot. Own flat patch tree
+  // ("vmware-download-tool.html" -> "vcf-download-tool-9-1-Z-NNNN-release-notes.html") and its
+  // own BOM row, so a line without a patch leaf yet falls back to its GA build.
+  { key: 'vcf-download-tool', name: 'VCF Download Tool', category: 'Management',
+    indexPath: 'vmware-download-tool.html', leafSlug: 'vcf-download-tool', bomName: 'VCF download tool' },
 
   // Management components (#187): live in the vcf-operations/<ver>/ tree, patch on their own
   // cadence but not on every Express Patch -- walk the tree, and if no leaf exists yet fall back
