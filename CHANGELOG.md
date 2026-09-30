@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.3.9 — 2026-09-30
+- **docs/09: contents table no longer links to moved sections (#368).**
+  Three rows pointed at in-page anchors for 5.1-5.3, which moved to
+  `27-vcf-operations-ha-cloud-proxy-vvf.md`. They are replaced by one row
+  linking to the "moved" stub and to docs/27. Found by a link check over
+  every relative `.md` link in `docs/` and the README (634 links, these 3
+  broken).
+
 ## v5.3.8 — 2026-09-30
 - **docs/22-27: openers summarize the page (#367).** The six newer
   runbooks opened with a blockquote starting *"Closes #NNN. Companion

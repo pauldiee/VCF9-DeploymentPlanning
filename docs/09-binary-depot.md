@@ -35,9 +35,7 @@ backs up to.
 | 4 | [Using the Download Tool standalone](#4-using-the-download-tool-standalone) | Pulling binaries without standing up a depot |
 | 5 | [Proxy for the VCF services runtime](#5-proxy-for-the-vcf-services-runtime-via-the-fleet-lcm-api) | The fleet has no direct internet — set the `G5` proxy on the runtime via the Fleet LCM API (+ `tools/` scripts) |
 | | ↳ [Gotcha: precheck is a netcat test from the whole node block](#gotcha-the-precheck-is-a-netcat-test-from-the-whole-node-block--even-when-the-documented-access-is-in-place) | **Precheck times out even with the documented access** — firewall the whole services-runtime block |
-| | ↳ [5.1 Proxying VCF Operations without a VSP (VVF / standalone)](#51-proxying-vcf-operations-without-a-vcf-management-services-runtime-vvf--standalone) | No Fleet LCM / `VSP` to PATCH — set the proxy on VCF Operations itself |
-| | ↳ [5.2 SSL-inspecting (TLS-terminating) proxies](#52-ssl-inspecting-tls-terminating-proxies) | VCF Operations doesn't support one; what actually happens when you point it at one anyway |
-| | ↳ [5.3 Cloud Proxy OVA — proxy-related deploy fields](#53-cloud-proxy-ova--proxy-related-deploy-fields) | Custom CA, Outbound Network Proxy Settings, and the Docker Subnet CIDR gotcha |
+| | ↳ [5.1 VVF/standalone VCF Operations — moved](#51-vvfstandalone-vcf-operations--moved) | Proxying VCF Operations without a services runtime, SSL-inspecting proxies and the Cloud Proxy OVA's proxy fields now live in [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md) (Step 4 and Field notes) |
 | 6 | [Upgrades — filling the depot for a fleet upgrade](#6-upgrades--filling-the-depot-for-a-fleet-upgrade) | The fleet is **already deployed** and you are patching it |
 | | ↳ [The loop](#the-loop-sync--check--export--download--re-check) | Sync → check → export → download → re-check |
 | | ↳ [Two ways to get the binaries](#two-ways-to-get-the-binaries) | The spec file, or a filtered catalog pull — and the size trade |
