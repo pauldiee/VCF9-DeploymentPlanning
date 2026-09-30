@@ -227,7 +227,7 @@ export const NAV: NavItem[] = [
     band: 'Operations',
     label: 'Cluster Creation',
     icon: 'object-group',
-    blurb: 'Adding a cluster to an existing workload domain: network pool + commissioned hosts, then the SDDC Manager Add Cluster wizard, including the 9.1.1+ vDS-reuse rules.',
+    blurb: 'Adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard (or the API), including the 9.1.1+ vDS-reuse rules.',
   },
   {
     slug: '25-cluster-expansion',
