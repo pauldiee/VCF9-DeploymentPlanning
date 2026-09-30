@@ -571,27 +571,29 @@ and none of it is done for you beyond what VCF Operations already handles
 > *Enable SSL* **and** select an SSL Profile (System-Standard), with the SNI /
 > server host name set to the VCFA FQDN.
 
-> **The Avi security score on an externally-facing VS is additive, and
-> Broadcom's documented factors are necessary but not provably sufficient
-> [field-verified 2026-08-27].** Per Broadcom's
+> **The Avi security score on an externally-facing VS recovers slowly after a
+> fix — give it about a day before looking for another cause
+> [field-verified].** Per Broadcom's
 > [Health Score Codes](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/31-1/monitoring-and-operability-guide/application-monitoring/health-score-codes.html)
 > documentation (Avi 31.1), the VS's **SSL Score** (a component of its security
 > penalty) is driven by: an insecure cipher in the SSL/TLS profile, the
 > certificate being expired or self-signed, and other SSL settings such as
 > HSTS not being enabled on the HTTP profile. **Expect each fix to move the
-> score by roughly one point, not to clear it outright.** In the field case
-> behind this note: self-signed → CA-signed cert moved it **-20 → -19**;
-> removing an insecure cipher from the SSL/TLS profile moved it **-19 →
-> -18**; HSTS was checked next and found **already enabled**, with no score
-> change — so that documented cause was ruled out, not fixed, and **-18
-> remained unaccounted for**. The GUI's top-level security-score tile never
-> explained the breakdown at any point in this investigation. Don't assume
-> the cert/cipher/HSTS list is exhaustive — if you hit the same wall, verify
-> the new cert and cipher list are actually live on the Service Engine (not
-> just saved in the VS config) before assuming a further, undocumented
-> factor.
+> score by only about one point at first, not to clear it outright.** In the
+> field case behind this note (2026-08-27): self-signed → CA-signed cert moved
+> it **-20 → -19**; removing an insecure cipher from the SSL/TLS profile moved
+> it **-19 → -18**; HSTS was checked next and found **already enabled**, with
+> no score change. That left **-18** on the same day, which looked like an
+> undocumented fourth factor. It was not: **about a day later the score was
+> back at 100, with nothing else changed** on the virtual service or its
+> profiles. So the certificate and cipher fixes were sufficient; the score
+> simply lags the configuration. The GUI's top-level security-score tile shows
+> neither the breakdown nor that a recovery is in progress. If you see a
+> deduction linger after fixing the documented causes, **wait a day and
+> re-read the score** before changing anything else. Why it lags is not
+> documented on the pages linked here.
 >
-> **Where to look next [TechDocs, not yet field-verified].** A second page,
+> **Reading the breakdown [TechDocs, not field-verified].** A second page,
 > [SSL Visibility and Troubleshooting](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/31-1/monitoring-and-operability-guide/application-troubleshooting/ssl-visibility-and-troubleshooting.html)
 > (Avi 31.1), lists more factors than the three above and says where the
 > breakdown is shown: *"The SSL Score section in the Security tab of the
@@ -604,10 +606,10 @@ and none of it is done for you beyond what VCF Operations already handles
 > here is multiplied by 5 when viewed in the virtual service health score.
 > For example, if a site does not use a trusted certificate, it carries a
 > local penalty of 4. This incurs a Security Penalty of 20 against the
-> virtual service health score."* So open the VS's **Security** tab and read
-> the per-factor SSL Score there; a remaining deduction most likely sits in
-> PFS, protocol version, weakest/symmetric cipher strength or signature
-> algorithm on the SSL/TLS profile.
+> virtual service health score."* That matches the **-20** a self-signed
+> certificate starts at. If a deduction is still there after a day, open the
+> VS's **Security** tab and read the per-factor SSL Score to see which factor
+> carries it.
 
 > **DNS cutover gotcha [field-reported] — and it's not what you'd expect.**
 > *"AFAIK there is no documented way how to change FQDN of VCFA

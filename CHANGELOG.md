@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.4.9 — 2026-09-30
+- **docs/14: the Avi security score lags its fix — resolved (#250).** The
+  callout said 18 points stayed unaccounted for after the CA-signed
+  certificate and the cipher fix. Field-verified on the same deployment:
+  about a day later the score was back at 100 with nothing else changed.
+  The fixes were sufficient; the score recovers slowly. The callout now
+  says to wait a day and re-read the score before looking for another
+  cause, and keeps the TechDocs pointer to the per-factor breakdown on the
+  virtual service's Security tab.
+
 ## v5.4.8 — 2026-09-30
 - **Remaining License Hub docs lead with 2.0 (#373).** Follow-up to #364
   and #236. `05-day2-deployments.md` §B.3 and its §E checklist,
