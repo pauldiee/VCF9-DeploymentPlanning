@@ -23,3 +23,7 @@ web/public/scripts/
 # Downloaded Broadcom API spec bundles (large, third-party, not the pinned
 # workbook — used as a research reference, never committed)
 research/
+
+# Claude Code: personal, per-machine settings. The shared .claude/settings.json is
+# committed on purpose (#360); this one never is.
+.claude/settings.local.json

@@ -1,5 +1,11 @@
 # Changelog
 
+## v5.4.5 — 2026-09-30
+- **`.gitignore` covers `.claude/settings.local.json` (#372).** The shared
+  `.claude/settings.json` is committed on purpose (#360); the personal
+  local file was only excluded by a machine-global git ignore rule. The
+  repo now ignores it itself.
+
 ## v5.4.4 — 2026-09-30
 - **docs/24 is described as a vSphere Client runbook everywhere (#371).**
   The README contents table, `CLAUDE.md`'s file-layout table and the site
