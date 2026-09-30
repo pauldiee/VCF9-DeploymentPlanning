@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.4.4 — 2026-09-30
+- **docs/24 is described as a vSphere Client runbook everywhere (#371).**
+  The README contents table, `CLAUDE.md`'s file-layout table and the site
+  nav blurb still said "the SDDC Manager Add Cluster wizard"; docs/24 itself
+  has used the vSphere Client **Create SDDC Cluster** wizard since #330.
+  All three now say so. `CLAUDE.md`'s file-layout table also gains the
+  missing docs/27 row.
+
 ## v5.4.3 — 2026-09-30
 - **Version Overview: VCF Download Tool added (#370).** The tool patches on
   the same cadence as the other components and has its own
