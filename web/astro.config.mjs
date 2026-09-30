@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import { readdirSync } from 'node:fs';
+import { readdirSync, existsSync } from 'node:fs';
 
 // Deploy target is env-configurable so the same build serves GitHub Pages
 // (defaults below) and GitLab Pages (the `.gitlab-ci.yml` job sets SITE_URL /
@@ -22,13 +22,17 @@ const BASE = process.env.SITE_BASE || '';
  */
 function rehypeRewriteDocLinks() {
   const DOC_LINK = /^(?:\.\/|\.\.\/docs\/)?([\w-]+)\.md(#.*)?$/;
-  return (tree) => {
+  // From a Dutch doc (docs/nl/), `../<slug>.md` is the English original.
+  const NL_TO_EN_LINK = /^\.\.\/([\w-]+)\.md(#.*)?$/;
+  return (tree, file) => {
+    const nl = isNlFile(file);
     const visit = (node) => {
       if (node.type === 'element' && node.tagName === 'a' && node.properties) {
         const href = node.properties.href;
         if (typeof href === 'string') {
-          const m = href.match(DOC_LINK);
-          if (m) node.properties.href = `${BASE}/docs/${m[1]}/${m[2] ?? ''}`;
+          const up = nl ? href.match(NL_TO_EN_LINK) : null;
+          const m = up ?? href.match(DOC_LINK);
+          if (m) node.properties.href = docRoute(m[1], nl && !up) + (m[2] ?? '');
         }
       }
       if (node.children) node.children.forEach(visit);
@@ -37,12 +41,27 @@ function rehypeRewriteDocLinks() {
   };
 }
 
+const mdSlugs = (dir) => {
+  const url = new URL(dir, import.meta.url);
+  return new Set(
+    existsSync(url)
+      ? readdirSync(url)
+          .filter((f) => f.endsWith('.md') && f.toLowerCase() !== 'readme.md')
+          .map((f) => f.replace(/\.md$/, ''))
+      : []
+  );
+};
+
 // Doc slugs that exist as rendered pages, for the code-span linker below.
-const DOC_SLUGS = new Set(
-  readdirSync(new URL('../docs', import.meta.url))
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => f.replace(/\.md$/, ''))
-);
+const DOC_SLUGS = mdSlugs('../docs');
+
+// Dutch translations (pilot, #290): docs/nl/<slug>.md renders at /nl/docs/<slug>/.
+// A link between Dutch docs stays in Dutch only when the target is translated;
+// everything else falls back to the English page.
+const NL_SLUGS = mdSlugs('../docs/nl');
+const isNlFile = (file) => /[\\/]docs[\\/]nl[\\/]/.test(String(file?.path ?? file?.history?.[0] ?? ''));
+const docRoute = (slug, preferNl) =>
+  preferNl && NL_SLUGS.has(slug) ? `${BASE}/nl/docs/${slug}/` : `${BASE}/docs/${slug}/`;
 
 /**
  * Docs mention each other as inline code (`01-network-dns-plan.md`) at least as
@@ -53,7 +72,8 @@ const DOC_SLUGS = new Set(
  */
 function rehypeLinkCodeSpanDocRefs() {
   const CODE_REF = /^([\w-]+)\.md(#[\w-]+)?$/;
-  return (tree) => {
+  return (tree, file) => {
+    const nl = isNlFile(file);
     const visit = (node, insideLink) => {
       if (!node.children) return;
       node.children = node.children.map((child) => {
@@ -71,7 +91,7 @@ function rehypeLinkCodeSpanDocRefs() {
             return {
               type: 'element',
               tagName: 'a',
-              properties: { href: `${BASE}/docs/${m[1]}/${m[2] ?? ''}` },
+              properties: { href: docRoute(m[1], nl) + (m[2] ?? '') },
               children: [child],
             };
           }

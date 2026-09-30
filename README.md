@@ -101,6 +101,10 @@ sidebar mirrors these bands.
 | ----------------------------------- | ------------------------------------------------------ |
 | `docs/workbook-cell-mapping.md`     | Intake answers mapped to workbook cells                |
 
+**Dutch translations (pilot):** a small part of the docs is also available in
+Dutch under [`docs/nl/`](docs/nl/README.md), and on the site through the
+language toggle in the header. English remains the canonical text.
+
 ### Interactive tools (on the site)
 
 | Path                                | Purpose                                                |

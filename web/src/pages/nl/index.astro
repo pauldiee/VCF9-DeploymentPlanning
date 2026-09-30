@@ -1,0 +1,41 @@
+---
+// Landing page for the Dutch translation pilot (#290). The header language
+// toggle lands here from any English page that has no Dutch version yet, so a
+// reader who picks NL always sees what is, and is not, translated.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { navBySlug } from '../../nav';
+import { docHrefNl, withBase } from '../../lib/path';
+
+const docs = (await getCollection('docsNl')).sort((a, b) => a.id.localeCompare(b.id));
+---
+
+<BaseLayout
+  title="Nederlands — VCF 9 Deployment Planning and Operations"
+  description="Nederlandse vertalingen van de VCF 9 planning- en bouwhandleidingen (pilot)."
+  lang="nl"
+  altHref={withBase('')}
+>
+  <article class="prose">
+    <h1>Nederlandse vertalingen (pilot)</h1>
+    <p>
+      Deze site is in het Engels geschreven; de Engelse tekst is leidend. Als proef is een klein deel
+      in het Nederlands beschikbaar. De vertalingen zijn machinevertalingen die nog niet door een mens
+      zijn nagekeken. Productnamen, commando's en menupaden uit de producten zijn bewust niet vertaald.
+    </p>
+    <h2>Beschikbaar in het Nederlands</h2>
+    <ul>
+      {
+        docs.map((d) => (
+          <li>
+            <a href={docHrefNl(d.id)}>{navBySlug(d.id)?.label ?? d.id}</a>
+          </li>
+        ))
+      }
+    </ul>
+    <p>
+      Al het andere is alleen in het Engels beschikbaar: <a href={withBase('')}>naar de Engelse startpagina</a>.
+      De navigatie en de tools zijn in deze proef nog Engelstalig.
+    </p>
+  </article>
+</BaseLayout>

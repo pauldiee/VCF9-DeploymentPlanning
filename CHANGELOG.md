@@ -1,5 +1,31 @@
 # Changelog
 
+## v5.5.0 — 2026-09-30
+- **Dutch translation pilot (#290).** English stays the default and the
+  canonical text; this adds the machinery and one translated doc to see
+  what a translation costs to keep up.
+  - **One pilot doc:** `docs/nl/11-esx-coredump.md`, a machine first pass
+    that is labelled on the page as not yet reviewed by a person.
+  - **Site:** Dutch docs render at `/nl/docs/<slug>/`, with a small `/nl/`
+    landing page listing what is translated. Doc links inside a Dutch page
+    stay in Dutch where a translation exists and fall back to English
+    otherwise. The English and Dutch routes share one page component.
+  - **Language toggle** in the header, next to the theme toggle. It is a
+    plain link to the other language and remembers the choice
+    (`localStorage` key `itq-lang`). First visit is always English.
+  - **Drift check:** each Dutch file records the hash of the English file
+    it was translated from. When the English file changes, the Dutch page
+    shows a "may be out of date" banner and the build prints a warning
+    (`web/scripts/check-nl-sync.mjs`; `--strict` fails, `--stamp` records a
+    new hash).
+  - **Human review queue:** each Dutch file carries `reviewed: "no"` until
+    a person has read it, and the build lists what is waiting. The queue
+    and its rules are in `docs/nl/README.md`.
+  - `docs/nl/README.md` holds the sync procedure and the do-not-translate
+    glossary; `CLAUDE.md` gains a pre-commit checklist item.
+  - Not in the pilot: site navigation, search UI, the tools, README and the
+    CSV templates stay English.
+
 ## v5.4.9 — 2026-09-30
 - **docs/14: the Avi security score lags its fix — resolved (#250).** The
   callout said 18 points stayed unaccounted for after the CA-signed
