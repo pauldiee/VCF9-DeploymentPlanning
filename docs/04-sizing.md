@@ -66,13 +66,18 @@ footprint manually or fall back to the workbook:
   cluster in the workload domain** (minimum 2 per cluster), and are not modelled
   at all — add them to the WLD's own capacity. See
   [`prerequisites.md` → Avi Load Balancer](prerequisites.md).
-- **License Hub** is modelled (its own row, **10 vCPU / 30 GB / 710 GB** across
-  installer + controller + worker) and is added whenever **vDefend/SSP *or*
-  Avi** is in scope — once, even when both are. Its **710 GB is the workbook's
-  figure**; the TechDocs component table sums to **810 GB** (installer 400 +
-  controller 155 + worker 255). vCPU and RAM match exactly, only disk differs —
-  the same workbook-vs-TechDocs divergence flagged for Avi below (#176). See
-  [`prerequisites.md` → License Hub](prerequisites.md).
+- **License Hub** is modelled as **License Hub 2.0**, the current standalone
+  appliance: its own row, **6 vCPU / 12 GB / 256 GB**, one VM, per TechDocs'
+  [License Hub Appliance System Requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/license-hub-appliance-system-requirements.html).
+  It is added whenever **vDefend/SSP *or* Avi** is in scope — once, even when
+  both are. **This deliberately differs from the workbook**, whose row still
+  models the older **5.1.2** instance deployed from the SSP Installer
+  (installer + controller + worker: **10 vCPU / 30 GB / 710 GB**; the TechDocs
+  5.1.2 component table sums to **810 GB** — installer 400 + controller 155 +
+  worker 255, #176). A site staying on 5.1.2 should add the difference by hand:
+  **+4 vCPU, +18 GB RAM and +454 GB disk** against the workbook figure (+554 GB
+  against TechDocs). See [`15-license-hub.md`](15-license-hub.md) for both
+  flows and [`prerequisites.md` → License Hub](prerequisites.md).
 - A workload domain's Global Manager is sized the same as its local NSX Manager
   (the workbook allows a separate Global Manager size).
 
