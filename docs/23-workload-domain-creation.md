@@ -1,13 +1,14 @@
 # Workload Domain Creation Runbook — manual prep vs the wizard/API
 
-> Closes #312. Companion to [`06-deployment-plan.md`](06-deployment-plan.md)
-> epic **E9** (workload domain), which this doc expands into a linear
-> runbook, and [`workbook-cell-mapping.md`](workbook-cell-mapping.md)'s
-> **Deploy Workload Domain** sheet (intake `H1`-`H12`). Covers a **new** VI
-> workload domain — a **new** cluster added to an *existing* domain is
-> [`24-cluster-creation.md`](24-cluster-creation.md); adding hosts to an
-> *existing, non-stretched* cluster is
-> [`25-cluster-expansion.md`](25-cluster-expansion.md).
+Creating a **new** VI workload domain: the manual prep (network pool,
+commissioned hosts, DNS), then the creation wizard or API. This page expands
+[`06-deployment-plan.md`](06-deployment-plan.md) epic **E9** (workload
+domain) into a linear runbook; its inputs are the **Deploy Workload Domain**
+sheet in [`workbook-cell-mapping.md`](workbook-cell-mapping.md) (intake
+`H1`-`H12`). A **new** cluster added to an *existing* domain is
+[`24-cluster-creation.md`](24-cluster-creation.md); adding hosts to an
+*existing, non-stretched* cluster is
+[`25-cluster-expansion.md`](25-cluster-expansion.md).
 
 Creating a workload domain is mostly manual prep, unlike the [stretch
 runbook](22-stretch-execution.md)'s single API call — SDDC Manager's own
@@ -16,7 +17,6 @@ API path too (needed for LACP networking or a domain without a cluster), but
 it is not the primary documented route the way `clusterStretchSpec` is for
 stretching.
 
----
 > **Want NFS 4.1, iSCSI, FCoE or NVMe-oF as this domain's principal
 > storage?** This runbook doesn't apply: host commissioning and the creation
 > wizard/API only offer vSAN, NFS v3, VMFS on FC (and vVols). Those types are
@@ -28,6 +28,7 @@ stretching.
 > [`25-cluster-expansion.md` §5](25-cluster-expansion.md#5-converged--imported-clusters-on-converge-only-storage).
 > TechDocs/KB-sourced, not field-verified (#366).
 
+---
 
 ## The sequence, end to end
 

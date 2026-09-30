@@ -1,13 +1,5 @@
 # VCF Operations in VVF/Standalone — Post-Deployment Configuration
 
-> Closes #319. Companion to
-> [`05-day2-deployments.md`](05-day2-deployments.md) (VCF Operations B.x
-> topics for a fleet deployment) and
-> [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md)
-> (deploying VCF Operations itself — nodes, HA, Cloud Proxy, License
-> Server — in the same VVF/standalone topology; do that doc first, this
-> one second).
-
 **In a full VCF fleet, Fleet LCM registers vCenter with VCF Operations for
 you** as part of domain/cluster management — there's no manual adapter setup.
 **A VVF deployment with VCF Operations deployed standalone has no Fleet LCM**,
@@ -15,6 +7,13 @@ so nothing provisions a vCenter service account or adds the vCenter
 connection automatically. You do both by hand, in this order: create a role
 in vCenter → create a service account → assign the permission → add the
 vCenter adapter instance in VCF Operations.
+
+This page assumes VCF Operations is already deployed.
+[`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md)
+covers that (nodes, HA, Cloud Proxy, License Server) in the same
+VVF/standalone topology — do that doc first, this one second. The
+fleet-deployment equivalents are the VCF Operations B.x topics in
+[`05-day2-deployments.md`](05-day2-deployments.md).
 
 ---
 

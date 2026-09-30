@@ -1,16 +1,16 @@
 # Stretch Execution Runbook — manual steps vs the API
 
-> Closes #311. Companion to [`03-multi-az-prep.md`](03-multi-az-prep.md) (design/prep —
-> what stretches vs per-AZ, witness, capacity) and
-> [`06-deployment-plan.md`](06-deployment-plan.md) epics **E7** (management domain) /
-> **E9** (workload domain), which this doc expands into a linear runbook. Read
-> `03` first — this page assumes the design decisions there (M1-M6, section D) are
-> already made.
-
 A VCF cluster stretch is **one API call** doing a lot of work, bracketed by
 manual prep that the API cannot do for you. This page draws that line
 explicitly, for both the management domain (first) and a workload domain
 (after the management domain is stretched).
+
+It is the execution half of [`03-multi-az-prep.md`](03-multi-az-prep.md)
+(design/prep — what stretches vs per-AZ, witness, capacity), and expands
+[`06-deployment-plan.md`](06-deployment-plan.md) epics **E7** (management
+domain) / **E9** (workload domain) into a linear runbook. Read `03` first —
+this page assumes the design decisions there (M1-M6, section D) are already
+made.
 
 ---
 

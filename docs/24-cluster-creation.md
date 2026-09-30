@@ -1,12 +1,13 @@
 # Cluster Creation Runbook — adding a cluster to an existing workload domain
 
-> Closes #313. Companion to [`06-deployment-plan.md`](06-deployment-plan.md)
-> epic **E9**, story 9.3's `New-VCFClusterSpec.ps1` reference. Covers adding
-> a cluster to a **domain that already exists** — creating the **domain and
-> its first cluster together** is
-> [`23-workload-domain-creation.md`](23-workload-domain-creation.md); adding
-> hosts to an *existing* cluster is
-> [`25-cluster-expansion.md`](25-cluster-expansion.md).
+Adding a cluster to a **domain that already exists**: network pool and
+commissioned hosts, then the Create SDDC Cluster wizard or the API. This
+page expands [`06-deployment-plan.md`](06-deployment-plan.md) epic **E9**,
+story 9.3 (the `New-VCFClusterSpec.ps1` reference). Creating the **domain
+and its first cluster together** is
+[`23-workload-domain-creation.md`](23-workload-domain-creation.md); adding
+hosts to an *existing* cluster is
+[`25-cluster-expansion.md`](25-cluster-expansion.md).
 
 **Broadcom's documented click-path for this runs through the vSphere
 Client, not SDDC Manager** — the same shape as `25-cluster-expansion.md`:
@@ -37,7 +38,6 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
 
 ## 1. Manual — network pool and commissioned hosts
 
-- The **network pool** and the hosts you're adding must **already exist** —
 > **New cluster on NFS 4.1, iSCSI, FCoE or NVMe-oF as principal storage?**
 > This runbook doesn't apply: those hosts can't be commissioned, and the
 > wizard's Storage Type page only offers vSAN, NFS v3, VMFS on FC (and
@@ -49,6 +49,7 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
 > [`25-cluster-expansion.md` §5](25-cluster-expansion.md#5-converged--imported-clusters-on-converge-only-storage).
 > TechDocs/KB-sourced, not field-verified (#366).
 
+- The **network pool** and the hosts you're adding must **already exist** —
   same ordering rule as `22-stretch-execution.md` and
   `23-workload-domain-creation.md`: build the pool, then commission.
 - **Image and commission the new hosts before this step** — use

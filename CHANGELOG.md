@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.3.8 — 2026-09-30
+- **docs/22-27: openers summarize the page (#367).** The six newer
+  runbooks opened with a blockquote starting *"Closes #NNN. Companion
+  to..."*. Each now opens with a plain summary of what the page covers, in
+  the style of docs/01-21, followed by the same cross-links to the
+  neighbouring docs. The issue references are gone from the openers; no
+  content change below them.
+
 ## v5.3.7 — 2026-09-30
 - **docs/23 + docs/24: pointer to the converge/import-only storage route
   (#366).** The import/converge research from #356 and #357 never reached

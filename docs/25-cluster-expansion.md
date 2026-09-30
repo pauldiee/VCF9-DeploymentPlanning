@@ -1,11 +1,9 @@
 # Cluster Expansion Runbook — adding hosts to an existing cluster
 
-> Closes #314. Companion to
-> [`24-cluster-creation.md`](24-cluster-creation.md) (a **new** cluster) and
-> [`22-stretch-execution.md`](22-stretch-execution.md) (stretching an
-> existing cluster across AZs — a different operation from what's here).
-> This doc covers adding hosts to an **existing, non-stretched** cluster to
-> grow its capacity.
+Adding hosts to an **existing, non-stretched** cluster to grow its capacity.
+A **new** cluster is [`24-cluster-creation.md`](24-cluster-creation.md);
+stretching an existing cluster across AZs is a different operation, covered
+in [`22-stretch-execution.md`](22-stretch-execution.md).
 
 The documented **click-path** for this operation runs through the **vSphere
 Client**, same as `24-cluster-creation.md` (Create SDDC Cluster) and

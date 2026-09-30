@@ -1,16 +1,5 @@
 # VCF Operations in VVF/Standalone — Deployment (Nodes, HA, Cloud Proxy, License Server)
 
-> Closes #346, #348. Companion to
-> [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md) —
-> this doc deploys VCF Operations itself (nodes, HA, Cloud Proxy, License
-> Server); docs/26 already assumes VCF Operations exists and only covers
-> connecting it to vCenter. Do this doc first, docs/26 second. Also
-> companion to [`05-day2-deployments.md`](05-day2-deployments.md)
-> §B.1/§B.4 (fleet-managed VCF Operations topics, for contrast — this doc
-> is the VVF/standalone, no-Fleet-LCM path) and
-> [`09-binary-depot.md`](09-binary-depot.md) (proxy config for the VCF
-> services runtime, a different topology).
-
 **In a full VCF fleet, the Installer deploys VCF Operations, its Cloud
 Proxy, and a License Server all automatically at bring-up**
 (`05-day2-deployments.md` D2, §B.4). **A VVF deployment has no Fleet LCM to
@@ -18,6 +7,14 @@ do that** — you deploy the VCF Operations nodes yourself from OVA, run the
 setup wizard, optionally enable HA, deploy a Cloud Proxy, and deploy a
 License Server, all by hand. This doc covers that whole flow for a fresh
 VVF/standalone deployment.
+
+Connecting the deployed VCF Operations to vCenter is
+[`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md),
+which assumes VCF Operations already exists — do this doc first, docs/26
+second. For contrast, the fleet-managed VCF Operations topics are in
+[`05-day2-deployments.md`](05-day2-deployments.md) §B.1/§B.4, and
+[`09-binary-depot.md`](09-binary-depot.md) covers proxy config for the VCF
+services runtime, a different topology.
 
 **Sourcing note:** the OVA-deploy and Cloud Proxy procedures below are
 pulled verbatim from Broadcom's *VCF 9.1 Upgrade* TechDocs tree — that's
