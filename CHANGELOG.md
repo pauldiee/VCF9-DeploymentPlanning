@@ -1,5 +1,17 @@
 # Changelog
 
+## v5.3.7 — 2026-09-30
+- **docs/23 + docs/24: pointer to the converge/import-only storage route
+  (#366).** The import/converge research from #356 and #357 never reached
+  the two creation runbooks. Both now open with a callout: NFS 4.1, iSCSI,
+  FCoE and NVMe-oF can't be picked as principal storage in host
+  commissioning or the workload-domain / cluster wizards, so those builds
+  go through build-then-import instead. Links to `prerequisites.md` →
+  Principal storage and `25-cluster-expansion.md` §5. No new research
+  ([KB 416270](https://knowledge.broadcom.com/external/article/416270),
+  [Storage Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/storage-models.html));
+  not field-verified.
+
 ## v5.3.6 — 2026-09-29
 - **docs/26: licensing fix confirmed in the field, plus the proxy trap
   (#365).** The licensing privilege set is now field-verified. The

@@ -38,6 +38,17 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
 ## 1. Manual — network pool and commissioned hosts
 
 - The **network pool** and the hosts you're adding must **already exist** —
+> **New cluster on NFS 4.1, iSCSI, FCoE or NVMe-oF as principal storage?**
+> This runbook doesn't apply: those hosts can't be commissioned, and the
+> wizard's Storage Type page only offers vSAN, NFS v3, VMFS on FC (and
+> vVols). Every cluster on one of those types repeats the build-then-import
+> route, and in the **management domain** iSCSI and NVMe are supplemental
+> only for additional clusters. See
+> [`prerequisites.md` → Principal storage](prerequisites.md#converge--import-only-options-and-their-drawbacks);
+> host prep for such a cluster is
+> [`25-cluster-expansion.md` §5](25-cluster-expansion.md#5-converged--imported-clusters-on-converge-only-storage).
+> TechDocs/KB-sourced, not field-verified (#366).
+
   same ordering rule as `22-stretch-execution.md` and
   `23-workload-domain-creation.md`: build the pool, then commission.
 - **Image and commission the new hosts before this step** — use

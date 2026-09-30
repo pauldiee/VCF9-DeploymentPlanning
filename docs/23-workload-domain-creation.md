@@ -17,6 +17,17 @@ it is not the primary documented route the way `clusterStretchSpec` is for
 stretching.
 
 ---
+> **Want NFS 4.1, iSCSI, FCoE or NVMe-oF as this domain's principal
+> storage?** This runbook doesn't apply: host commissioning and the creation
+> wizard/API only offer vSAN, NFS v3, VMFS on FC (and vVols). Those types are
+> reachable only by building the vSphere cluster first and then running
+> **Add workload domain → Import a vCenter**. The route and its drawbacks are
+> in
+> [`prerequisites.md` → Principal storage](prerequisites.md#converge--import-only-options-and-their-drawbacks);
+> adding hosts to such a domain later is
+> [`25-cluster-expansion.md` §5](25-cluster-expansion.md#5-converged--imported-clusters-on-converge-only-storage).
+> TechDocs/KB-sourced, not field-verified (#366).
+
 
 ## The sequence, end to end
 
