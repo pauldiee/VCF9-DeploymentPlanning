@@ -13,9 +13,26 @@ interface Props {
   active?: string;
   /** Landing/tool pages that don't want the standard content max-width. */
   fullWidth?: boolean;
+  /** Page language. English is the default; 'nl' is the Dutch translation pilot (#290). */
+  lang?: 'en' | 'nl';
+  /** This same page in the other language, when one exists. Drives the header language toggle. */
+  altHref?: string;
 }
 
-const { title, description, active, fullWidth = false } = Astro.props;
+const { title, description, active, fullWidth = false, lang = 'en', altHref } = Astro.props;
+// The toggle always goes somewhere: to this page's counterpart when there is
+// one, otherwise to the other language's landing page.
+const otherLang = lang === 'nl' ? 'en' : 'nl';
+const langToggleHref = altHref ?? (lang === 'nl' ? withBase('') : withBase('nl/'));
+const langToggleTitle =
+  lang === 'nl'
+    ? 'Switch to English'
+    : altHref
+      ? 'Nederlands'
+      : 'Nederlands (deze pagina is nog niet vertaald)';
+// Only an English page with a real Dutch counterpart honours a stored "nl" choice.
+const nlCounterpart = lang === 'en' ? altHref : undefined;
+const nlRoot = withBase('nl/');
 const asset = withBase;
 const repoUrl = 'https://github.com/pauldiee/VCF9-DeploymentPlanning';
 const feedbackUrl =
@@ -33,10 +50,35 @@ const testPlanHref = withBase('tools/test-plan/');
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Language (pilot, #290). First visit is always English. A reader who chose
+        Dutch with the header toggle is sent to the Dutch version of a page that
+        has one, before first paint. Not when they arrived from a Dutch page:
+        following a link to the English original is a deliberate choice. */}
+    {
+      nlCounterpart && (
+        <script is:inline define:vars={{ nlCounterpart, nlRoot }}>
+          try {
+            if (localStorage.getItem('itq-lang') === 'nl') {
+              var fromNl = false;
+              try {
+                var ref = document.referrer ? new URL(document.referrer) : null;
+                fromNl = !!ref && ref.host === location.host && ref.pathname.indexOf(nlRoot) === 0;
+              } catch (e) {
+                /* unparseable referrer: treat as not from a Dutch page */
+              }
+              if (!fromNl) location.replace(nlCounterpart + location.hash);
+            }
+          } catch (e) {
+            /* storage blocked: stay on the English page */
+          }
+        </script>
+      )
+    }
+    {altHref && <link rel="alternate" hreflang={otherLang} href={altHref} />}
     {/* Before first paint: apply a stored theme choice so the page never
         flashes the wrong scheme. No stored choice means no attribute, and
         prefers-color-scheme decides. (#233) */}
@@ -203,6 +245,17 @@ const testPlanHref = withBase('tools/test-plan/');
             <i class="fa-solid fa-moon" aria-hidden="true"></i>
           </button>
           <a
+            id="langToggle"
+            class="icon-btn lang-toggle"
+            href={langToggleHref}
+            hreflang={otherLang}
+            data-lang={otherLang}
+            title={langToggleTitle}
+            aria-label={langToggleTitle}
+          >
+            {otherLang.toUpperCase()}
+          </a>
+          <a
             class="header-version"
             href={`${repoUrl}/blob/main/CHANGELOG.md`}
             target="_blank"
@@ -315,6 +368,22 @@ const testPlanHref = withBase('tools/test-plan/');
         });
         media.addEventListener('change', label);
         label();
+      })();
+    </script>
+
+    {/* Language toggle (pilot, #290): an ordinary link to the other language,
+        so it works without script. The script only remembers the choice. */}
+    <script is:inline>
+      (function () {
+        var link = document.getElementById('langToggle');
+        if (!link) return;
+        link.addEventListener('click', function () {
+          try {
+            localStorage.setItem('itq-lang', link.dataset.lang);
+          } catch (e) {
+            /* storage blocked: the choice just doesn't survive the page */
+          }
+        });
       })();
     </script>
 

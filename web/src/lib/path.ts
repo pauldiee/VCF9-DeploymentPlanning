@@ -9,3 +9,8 @@ export function withBase(path = ''): string {
 export function docHref(slug: string): string {
   return withBase(`docs/${slug}/`);
 }
+
+/** The Dutch translation of a doc (pilot, #290). Only valid for a translated slug. */
+export function docHrefNl(slug: string): string {
+  return withBase(`nl/docs/${slug}/`);
+}

@@ -259,7 +259,7 @@ body {
   .nav-primary,
   .header-version,
   .header-feedback,
-  .header-actions .icon-btn:not(.theme-toggle) {
+  .header-actions .icon-btn:not(.theme-toggle):not(.lang-toggle) {
     display: none;
   }
   .hamburger { display: flex; }
@@ -322,6 +322,22 @@ body {
 }
 .theme-toggle:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
 .theme-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* ---------- Language toggle (pilot, #290) ----------
+   Sits next to the theme toggle and matches its size. It is a link, not a
+   button: it shows the language you would switch TO. */
+.lang-toggle {
+  width: 2.1rem;
+  height: 2.1rem;
+  background: transparent;
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.lang-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 /* One icon per scheme, and it shows the scheme you would switch TO, matching
    the button's label. The CSS decides which is showing, so the button is
    correct on first paint, before the toggle script runs. */

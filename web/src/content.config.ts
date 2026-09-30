@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 // Resolve the content folders to absolute URLs anchored on this config file.
@@ -20,9 +20,26 @@ const docs = defineCollection({
   loader: glob({ pattern: '*.md', base: docsBase }),
 });
 
+// Dutch translations (pilot, #290): docs/nl/<slug>.md, one per translated doc,
+// same slug as its English source. Unlike the English docs these DO carry
+// frontmatter: the hash of the English file they were translated from, which
+// drives the "may be out of date" banner (scripts/nl-hash.mjs). The folder's
+// own README is maintainer notes, not a page.
+const docsNl = defineCollection({
+  loader: glob({ pattern: ['*.md', '!README.md'], base: new URL('../../docs/nl', import.meta.url) }),
+  schema: z.object({
+    lang: z.literal('nl'),
+    source: z.string(),
+    source_hash: z.string(),
+    synced: z.string(),
+    // "no" until a person has read the translation; then the review date.
+    reviewed: z.string(),
+  }),
+});
+
 // Rainpole-style worked examples (docs/ blank templates filled in).
 const samples = defineCollection({
   loader: glob({ pattern: '*.md', base: samplesBase }),
 });
 
-export const collections = { docs, samples };
+export const collections = { docs, docsNl, samples };

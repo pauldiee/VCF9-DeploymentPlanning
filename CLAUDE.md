@@ -59,6 +59,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/25-cluster-expansion.md`   | Cluster expansion runbook — adding hosts to an existing (non-stretched) cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does/doesn't automate per storage type. Companion to `24-cluster-creation.md` and `22-stretch-execution.md` (#314) |
 | `docs/26-vcf-operations-vvf-vcenter.md` | Build guide — VCF Operations in VVF/standalone: no Fleet LCM to auto-register vCenter, so this covers creating the vCenter role + service account by hand, assigning the permission, and adding the vCenter adapter instance in VCF Operations. Companion to `05-day2-deployments.md` §B.5 and `09-binary-depot.md` §5.1 (#319) |
 | `docs/27-vcf-operations-ha-cloud-proxy-vvf.md` | Build guide — deploying VCF Operations itself in VVF/standalone: node OVA deploy, setup wizard, enabling HA, deploying/registering a Cloud Proxy and a License Server. Precedes `26-vcf-operations-vvf-vcenter.md` (#346, #348) |
+| `docs/nl/`                       | Dutch translation **pilot** (#290): `docs/nl/<slug>.md` mirrors `docs/<slug>.md`, served at `/nl/docs/<slug>/`. English stays canonical. Each file's frontmatter records the hash of its English source; `docs/nl/README.md` holds the sync procedure and the do-not-translate glossary |
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data, kept outside this repo** |
@@ -125,6 +126,13 @@ Before committing any doc change:
    standalone), so a drifting build fails rather than shipping quietly. The
    tracker needs no sync — it imports the same generator. Note the drift runs
    **both ways**: the doc has been the correct one before now (#215).
+6. **`docs/nl/` (Dutch pilot, #290)** — if you edited a `docs/X.md` that has a
+   `docs/nl/X.md`, update the Dutch file in the same commit and re-stamp it
+   (`node scripts/check-nl-sync.mjs --stamp X` from `web/`). If the Dutch text
+   can't be updated now, leave the hash alone: the site then shows its
+   "may be out of date" banner, which is the honest state. Never re-stamp
+   without bringing the translation in line. `npm run build` reports stale
+   files as a warning (`--strict` fails instead).
 
 If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 values on every version component).
 

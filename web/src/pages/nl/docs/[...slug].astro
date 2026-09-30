@@ -1,0 +1,27 @@
+---
+// Dutch translations (pilot, #290): docs/nl/<slug>.md at /nl/docs/<slug>/.
+// Same page component as the English route; the only extra is the staleness
+// check against the English source the translation was made from.
+import { readFileSync } from 'node:fs';
+import { getCollection } from 'astro:content';
+import DocPage from '../../../components/DocPage.astro';
+import { sourceHash } from '../../../../scripts/nl-hash.mjs';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docsNl');
+  const nlSlugs = docs.map((d) => d.id);
+  return docs.map((doc) => ({
+    params: { slug: doc.id },
+    props: { doc, nlSlugs },
+  }));
+}
+
+const { doc, nlSlugs } = Astro.props;
+
+// Resolved from the project root (web/), where both `astro build` and
+// `astro dev` run. A translation whose English source is gone is a build error.
+const english = readFileSync(`../docs/${doc.id}.md`, 'utf8');
+const stale = sourceHash(english) !== doc.data.source_hash ? { synced: doc.data.synced } : undefined;
+---
+
+<DocPage doc={doc} lang="nl" nlSlugs={nlSlugs} stale={stale} />
