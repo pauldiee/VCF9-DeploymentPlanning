@@ -474,6 +474,15 @@ Both deploy paths need: VCF Automation FQDN, VCF services-runtime FQDN, node
 prefix, the node IP pool, and the admin password. Decide the method and the
 network placement (section C) together.
 
+> **If Avi is in scope, license it first.** When the Supervisor behind VCF
+> Automation uses Avi for its load balancer, or Avi will front Automation,
+> finish the Avi licensing chain (B.3) **before** you deploy. An unlicensed
+> controller accepts config and looks healthy but does not program the data
+> path; it surfaces after the deploy as timed-out VIPs, Supervisor Services
+> stuck in `ReconcileFailed`, and *"Services are not available for this
+> namespace"* in the provider portal. **[field-reported]** See
+> [`14-avi-load-balancer.md`](14-avi-load-balancer.md#an-unlicensed-controller-half-builds-its-objects).
+
 > **Size *is* the deployment model — they are not separate choices.** TechDocs
 > [VCF Automation Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-automation-deployment-models.html):
 > the **Simple** model is *"Single node. Applies to small appliance size"* and

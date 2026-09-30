@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.4.0 — 2026-09-30
+- **docs/05 §D: "license Avi first" gate at the VCF Automation deploy
+  (#299).** The pointer to docs/14's *An unlicensed controller half-builds
+  its objects* only sat in §B.3. §D, where the deploy method is chosen, now
+  carries the same gate for sites where Avi serves the Supervisor load
+  balancer or fronts Automation. Field-reported; no new content.
+
 ## v5.3.9 — 2026-09-30
 - **docs/09: contents table no longer links to moved sections (#368).**
   Three rows pointed at in-page anchors for 5.1-5.3, which moved to
