@@ -24,6 +24,34 @@ Everything runs in the browser — no data leaves the page.
 
 ---
 
+## Deployment profiles
+
+The workbook (and the tool) start from a **deployment model and size**. They set
+how many of each management appliance are deployed and at which size:
+
+| Profile | What it deploys | Fits | Reference fleet* |
+| ------- | --------------- | ---- | ---------------- |
+| **Simple** (Small) | Single NSX Manager, 1 services-runtime control node + workers (12 vCPU / 24 GB each), single-node VCF Operations; VCF Automation (optional) single-node — no management-plane HA | Labs, edge and small sites | 76 vCPU / 251 GB / 7,448 GB |
+| **HA-Small** | 3 NSX Managers, 3 control nodes + **smaller** workers (10 vCPU / 16 GB each), a **2-node** VCF Operations cluster (primary + replica); VCF Automation (optional) single-node — the HA layout on the small appliance sizes | The cheapest HA: no single points of failure in the core management plane | 106 vCPU / 335 GB / 8,422 GB |
+| **HA-Medium** | Medium vCenter, 3 NSX Managers, 3 control nodes + workers (12 vCPU / 24 GB each), 3-node VCF Operations; VCF Automation (optional) 3-node | Typical production fleet | 184 vCPU / 656 GB / 11,445 GB |
+| **HA-Large** | Large vCenter (XLarge storage) and NSX Managers, 3 larger control nodes + workers (16 vCPU / 32 GB each), 3-node VCF Operations; VCF Automation (optional) 3-node on Large | Large fleets, many workload domains | 298 vCPU / 949 GB / 15,357 GB |
+
+\* Management domain with VCF Operations, Cloud Proxy and VCF Automation, before
+workload domains and Day-N services — Broadcom's
+[VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html),
+which the tool reproduces exactly (see below). **VCF Automation is optional** in
+every profile (bring-up can defer it indefinitely); it is in the reference
+figures only because Broadcom's models include it, and the tool leaves it off by
+default. In HA-Small it is single-node, so not highly available. The worker
+count isn't fixed per profile: the workbook derives it from what runs on the
+services runtime, and the workers grow to a larger size once Log Management or
+Real-time Metrics are included (see below).
+
+The **Advanced management domain sizing** option overrides the profile-derived
+sizes when a fleet doesn't fit one of the four profiles (see below).
+
+---
+
 ## What it models
 
 **Fleet inputs** (the workbook's *Management Domain Sizing* inputs)
@@ -46,6 +74,12 @@ Everything runs in the browser — no data leaves the page.
   Identity Broker
 - Protection blueprints: Site Protection & DR (management, workload or both) and
   on-premises Ransomware Recovery, as VMware Live Recovery appliances
+- **Advanced management domain sizing** (the workbook's R24–R32): override the
+  management vCenter size and storage, NSX Manager model and size, VCF
+  Operations model and size, Cloud Proxy size and VCF Automation size instead of
+  taking them from the profile. While on, VCF Operations, its Cloud Proxy and VCF
+  Automation follow these choices (Exclude removes them), and the NSX Manager
+  model sets the host minimum (4 for an HA cluster)
 - A **workload-domain repeater** — each workload domain's vCenter, dedicated NSX
   Managers, Global Manager (own size), Avi controllers and SSP run inside the
   management domain, so they add to its footprint; DR coverage per domain; and an
@@ -80,9 +114,13 @@ Everything runs in the browser — no data leaves the page.
   A site staying on the older SSP-Installer-based 5.1.2 should add the difference
   by hand (TechDocs: installer 400 + controller 155 + worker 255 GB, #176). See
   [`15-license-hub.md`](15-license-hub.md).
-- **VCF Operations Continuous Availability** and the workbook's **Advanced
-  Management Domain Sizing** mode (per-component size overrides) are not offered
-  yet (#378 part 2).
+- **VCF Operations Continuous Availability** is not offered.
+- **One deliberate difference in advanced mode.** The workbook reads some advanced
+  cells even while the mode is *Unselected* — the License Server row checks the
+  advanced VCF Operations model, and the Cloud Proxy RAM / disk use the advanced
+  proxy size if one was left set. The tool applies advanced values only while the
+  mode is on. (Also note the workbook's advanced VCF Operations size list has
+  values with a leading space, e.g. " Small", which its own lookups don't find.)
 
 ## How the numbers are derived
 
@@ -103,19 +141,22 @@ the sheet's formulas row by row. Two parts are worth knowing:
   stretched clusters (shown as "N (workbook M)" when it does).
 
 **Verified against the workbook itself.** `web/scripts/sizer-golden/` drives Excel
-over a copy of the workbook for **127 input scenarios** — every profile and
+over a copy of the workbook for **157 input scenarios** — every profile and
 instance model, each optional component and size, workload domains, protection
-blueprints and all storage types — and records every row Excel computes.
+blueprints, all storage types and the advanced overrides — and records every row
+Excel computes.
 `web/scripts/verify-sizer.mjs` runs the engine on the same inputs and compares row
 by row (nodes / vCPU / RAM / disk) plus the host count and every capacity step.
-**All 127 match exactly**, and the check runs on every site build (`prebuild`).
+**All 157 match exactly**, and the check runs on every site build (`prebuild`).
 
-Two of those scenarios reproduce Broadcom's own reference fleets from
+Four of those scenarios reproduce Broadcom's own reference fleets from
 [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html)
 to the gigabyte:
 
 | Fleet (Ops + Cloud Proxy + VCF Automation) | Sizer / workbook | Broadcom TechDocs |
 | ------------------------------------------ | ---------------- | ----------------- |
+| Simple | 76 vCPU / 251 GB / 7,448 GB | 76 / 251 / 7,448 |
+| High Availability – Small | 106 vCPU / 335 GB / 8,422 GB | 106 / 335 / 8,422 |
 | High Availability – Medium | 184 vCPU / 656 GB / 11,445 GB | 184 / 656 / 11,445 |
 | High Availability – Large | 298 vCPU / 949 GB / 15,357 GB | 298 / 949 / 15,357 |
 

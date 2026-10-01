@@ -1,5 +1,29 @@
 # Changelog
 
+## v5.6.1 — 2026-10-01
+- **Sizer: Advanced Management Domain Sizing (#379)** — the workbook's R24–R32
+  overrides for the management vCenter size / storage, NSX Manager model / size,
+  VCF Operations model / size, Cloud Proxy size and VCF Automation size, following
+  its rows 24–27 and the host-count rule (the NSX Manager model sets the minimum).
+  30 advanced scenarios added to the workbook check: **157 / 157 match**.
+  One documented difference: the workbook reads some advanced cells even while
+  the mode is off; the tool applies them only while it is on.
+- **Deployment profiles explained** — under *Deployment model* / *Deployment
+  size* the sizer describes the chosen profile in plain words (what it deploys,
+  where it fits, Broadcom's reference footprint), updating as you change it, with
+  a link to the four-way comparison in `docs/04-sizing.md`. VCF Automation is
+  marked optional throughout, and HA-Small's smaller services-runtime workers
+  (10 vCPU / 16 GB) are called out. All four reference fleets from the Fleet
+  Sizing Models page appear in the comparison, and all match.
+- **Sizer form rewritten for people without much VCF knowledge.** Inputs are
+  ordered as a walk-through (1. fleet → 2. hosts → 3. management infrastructure
+  → 4. VCF management software → 5. optional services → 6. disaster recovery →
+  7. workload domains → 8. advanced overrides, marked for experts). Every field
+  has a plain label, one line on what it is (with former product names such as
+  Aria Operations for Logs), and a **"Not sure?"** safe default. The scale
+  guidance for the deployment size comes from the vCenter size limits in the 9.1
+  hardware requirements.
+
 ## v5.6.0 — 2026-10-01
 - **Sizer re-pinned to the VCF 9.1.1 Planning & Preparation Workbook
   (`v1.9.1.102`) and verified against it (#378).** The engine reproduced

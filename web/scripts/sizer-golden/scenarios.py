@@ -10,7 +10,8 @@ BASE = {
     'E20': 'First Instance', 'E21': 'High Availability', 'E22': 'Small',
     'E25': 'Exclude', 'E26': 'Exclude', 'E27': 'Exclude', 'E28': 'Exclude', 'E29': 'Exclude',
     'E31': 'Exclude', 'E32': 'Exclude', 'E33': 'Exclude', 'E34': 'Exclude', 'E35': 'Exclude', 'E36': 'Exclude',
-    'R24': 'Unselected',
+    'R24': 'Unselected', 'R25': 'Medium', 'R26': 'Default', 'R27': 'Mandatory - HA Cluster', 'R28': 'Medium',
+    'R29': 'Exclude', 'R30': 'Exclude', 'R31': 'Exclude', 'R32': 'Exclude',
     'L40': 'Excluded', 'O40': 'Excluded', 'P40': 'Medium', 'Q40': 'Excluded', 'S40': 'Excluded', 'W40': 'Excluded',
     'B82': 'Exclude', 'B83': 'Exclude',
 }
@@ -93,6 +94,26 @@ for m, z in PROFILES:
         E31='Include', E33='Include', E34='Include', E35='Medium', E36='Include', L40='NSX Edge Large', O40='High Availability',
         P40='Medium', S40='Large', W40='Include', B82='Management Only', B83='Include',
         C44='Included', D44='Medium', H44='Dedicated - HA Cluster', I44='Large', U44='Small')
+
+# 11. Advanced Management Domain Sizing (R24-R32)
+add('adv defaults', R24='Selected')
+for vc, st in (('Tiny', 'Default'), ('Small', 'Large'), ('Large', 'XLarge'), ('XLarge', 'Default')):
+    add(f'adv vcenter {vc} {st}', R24='Selected', R25=vc, R26=st)
+for mdl, sz in (('Mandatory - Single Node', 'Medium'), ('Mandatory - HA Cluster', 'Large'), ('Mandatory - HA Cluster', 'XLarge'), ('Mandatory - Single Node', 'XLarge')):
+    add(f'adv nsx {mdl} {sz}', R24='Selected', R27=mdl, R28=sz)
+for om, osz in (('HA Cluster', 'Medium'), ('HA Cluster', 'Extra Large'), ('Single Node', 'Extra Small'), ('Single Node', 'Large'), ('Exclude', 'Small')):
+    add(f'adv ops {om} {osz}', R24='Selected', R29=om, R30=osz)
+    add(f'adv ops {om} {osz} + E31', R24='Selected', R29=om, R30=osz, E31='Include')
+for c in ('Small', 'Standard'):
+    add(f'adv collector {c}', R24='Selected', R31=c)
+    add(f'adv collector {c} + ops', R24='Selected', R31=c, R29='HA Cluster', R30='Medium', E31='Include')
+for a in ('Small', 'Medium', 'Large'):
+    add(f'adv vcfa {a}', R24='Selected', R32=a)
+add('adv vcfa exclude but E34', R24='Selected', E34='Include')
+add('adv simple profile single nsx', R24='Selected', E21='Simple', E22='Small', R27='Mandatory - Single Node', R29='Single Node', R30='Small', R31='Small', R32='Small')
+add('adv full HA large', R24='Selected', E21='High Availability', E22='Large', R25='Large', R26='XLarge', R27='Mandatory - HA Cluster',
+    R28='Large', R29='HA Cluster', R30='Large', R31='Standard', R32='Large', E25='Large', E26=6, E27='Include', W40='Include', R13='vSAN-OSA')
+add('adv single nsx nfs (host floor)', R24='Selected', R27='Mandatory - Single Node', R13='NFS', R29='Single Node', R30='Medium')
 
 here = os.path.dirname(os.path.abspath(__file__))
 json.dump({'base': BASE, 'scenarios': S}, open(os.path.join(here, 'scenarios.json'), 'w'), indent=0)
