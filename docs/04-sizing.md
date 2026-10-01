@@ -37,14 +37,17 @@ browser — no data leaves the page.
 
 - Cluster type (standard / stretched multi-AZ), host count
 - Per-host cores, RAM, and usable vSAN capacity
-- CPU/RAM oversubscription, host + operations reserve %, storage growth %
+- CPU/RAM oversubscription, storage growth %, and the **vSAN rebuild + operations
+  reserve %** — vSAN only; NFS / FC skip it, as they skip the FTT and stretched ×2 steps
 
 **Outputs**
 
 - Fits / does-not-fit verdict with the tightest dimension called out
 - Per-dimension table: what the fleet needs vs. what the cluster offers, with headroom
 - Fleet requirement: total nodes / vCPU / RAM / disk, minimum hosts, per-host load at N-1
-- vSAN raw-capacity breakdown (VM capacity → swap → FTT redundancy → reserve → growth)
+- Capacity breakdown per storage type: **vSAN** raw (VM capacity → swap → FTT
+  redundancy → reserve → growth → ×2 if stretched); **NFS / FC** datastore
+  capacity (VM capacity → swap → growth), checked against the datastore size
 
 ## What it does not model (yet)
 

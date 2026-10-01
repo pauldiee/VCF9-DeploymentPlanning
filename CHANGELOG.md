@@ -1,5 +1,23 @@
 # Changelog
 
+## v5.5.3 — 2026-10-01
+- **Sizer: vSAN-only inputs and outputs are now explicit (#377).** Switching
+  principal storage to NFS / FC already changed the math, but the page kept
+  vSAN labels, so it looked unchanged. Now:
+  - the storage fit row reads **Datastore capacity (GB)** for NFS / FC;
+  - the breakdown is titled per storage type and only shows the steps that
+    apply (vSAN: FTT factor, reserve %, growth %, stretched ×2 when stretched;
+    NFS / FC: VM disk + swap + growth);
+  - the reserve input is renamed **vSAN rebuild + operations reserve (%)**,
+    tagged *vSAN only*, and disabled with a hint for NFS / FC;
+  - a hint appears for stretched + NFS / FC (the ×2 mirror is vSAN only;
+    array replication isn't modelled);
+  - *Storage / host (N-1)* shows *n/a (shared datastore)* for NFS / FC;
+  - the fit-table note and the copied summary match.
+
+  No calculation changed. `docs/04-sizing.md` describes the per-storage-type
+  breakdown.
+
 ## v5.5.2 — 2026-10-01
 - **New `prerequisites.md` section: VCF licensing (License Server and
   registration) (#376).** Verified against the 9.1 TechDocs licensing pages and

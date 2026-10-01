@@ -58,6 +58,7 @@ const opt = (values: readonly string[]) => values;
           <label>Cluster type
             <select id="clusterType">{opt(OPTIONS.clusterType).map((v) => <option>{v}</option>)}</select>
           </label>
+          <p class="sizer__hint" id="stretchHint" hidden>The stretched <strong>×2 mirror is vSAN only</strong>. With NFS / FC stretched (vSphere Metro Storage Cluster), replication between sites is done by the storage array and is not modelled here — enter the datastore capacity available to the management cluster.</p>
           <label>Number of hosts
             <input id="proposedHosts" type="number" min="1" step="1" />
           </label>
@@ -87,9 +88,10 @@ const opt = (values: readonly string[]) => values;
             <input id="ramOver" type="number" min="1" step="0.5" />
           </label>
           <p class="sizer__warn" id="oversubWarn" hidden></p>
-          <label>Host + operations reserve (%)
+          <label>vSAN rebuild + operations reserve (%) <span class="sizer__tag">vSAN only</span>
             <input id="reservePct" type="number" min="0" step="1" />
           </label>
+          <p class="sizer__hint" id="reserveHint" hidden>Not applied to NFS / FC — only the storage growth % is added on top of VM disk + swap.</p>
           <label>Storage growth (%)
             <input id="growthPct" type="number" min="0" step="1" />
           </label>
@@ -173,7 +175,7 @@ const opt = (values: readonly string[]) => values;
         </details>
 
         <details class="sizer__detail">
-          <summary>vSAN raw capacity breakdown</summary>
+          <summary id="breakdownTitle">vSAN raw capacity breakdown</summary>
           <dl class="sizer__stats" id="vsanTable"></dl>
         </details>
       </section>
@@ -301,6 +303,8 @@ const opt = (values: readonly string[]) => values;
     const vsan = t === 'vSAN-ESA' || t === 'vSAN-OSA';
     ($('vsanCapacity') as HTMLElement).hidden = !vsan;
     ($('externalCapacity') as HTMLElement).hidden = vsan;
+    ($('reservePct') as HTMLInputElement).disabled = !vsan;
+    ($('reserveHint') as HTMLElement).hidden = vsan;
     if (vsan) {
       $('capacityDisksText').textContent = t === 'vSAN-ESA' ? 'Storage devices per host' : 'Capacity disks per host';
       $('capacityHint').textContent = t === 'vSAN-ESA'
@@ -339,6 +343,10 @@ const opt = (values: readonly string[]) => values;
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
   const pct = (n: number) => (n === Infinity ? 'n/a' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
+  // vSAN-only steps (FTT, rebuild/ops reserve, stretched x2 mirror) must not be
+  // labelled as if they applied to NFS / FC principal storage.
+  const isVsanType = (t: string) => t === 'vSAN-ESA' || t === 'vSAN-OSA';
+  const storageLabel = (t: string) => (isVsanType(t) ? 'vSAN raw (GB)' : 'Datastore capacity (GB)');
 
   function recalc() {
     const model = ($('deploymentModel') as HTMLSelectElement).value;
@@ -377,7 +385,7 @@ const opt = (values: readonly string[]) => values;
     const rows: Array<[string, string, string, ReturnType<typeof compute>['fit']['cpu']]> = [
       [`CPU (vCPU, ${r.survivorBasis})`, `${gb(r.fit.cpu.required)}`, `${gb(r.fit.cpu.available)}`, r.fit.cpu],
       [`RAM (GB, ${r.survivorBasis})`, `${gb(r.fit.ram.required)}`, `${gb(r.fit.ram.available)}`, r.fit.ram],
-      ['vSAN raw (GB)', `${gb(r.fit.storage.required)}`, `${gb(r.fit.storage.available)}`, r.fit.storage],
+      [storageLabel(state.storageType), `${gb(r.fit.storage.required)}`, `${gb(r.fit.storage.available)}`, r.fit.storage],
       ['Host count', `${r.fit.hosts.required}`, `${r.fit.hosts.available}`, r.fit.hosts],
     ];
     $('fitTable').querySelector('tbody')!.innerHTML = rows
@@ -395,7 +403,7 @@ const opt = (values: readonly string[]) => values;
       ['Minimum hosts', `${r.requiredHosts}`],
       ['vCPU / host (N-1)', r.perHostN1 ? gb(r.perHostN1.cpu) : 'n/a'],
       ['RAM / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.ram)} GB` : 'n/a'],
-      ['Storage / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.storage)} GB` : 'n/a'],
+      ['Storage / host (N-1)', !isVsanType(state.storageType) ? 'n/a (shared datastore)' : r.perHostN1 ? `${gb(r.perHostN1.storage)} GB` : 'n/a'],
     ].map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
 
     // component table
@@ -438,16 +446,32 @@ const opt = (values: readonly string[]) => values;
       ? `= ${gb(r.perHostRaw)} GB raw per host → ${gb(r.storageAvailable)} GB across ${state.proposedHosts} hosts.`
       : '';
 
-    // vSAN breakdown
-    $('vsanTable').innerHTML = [
-      ['VM capacity (disk)', `${gb(r.vsan.vmCapacity)} GB`],
-      ['Swap reservation', `${gb(r.vsan.swap)} GB`],
-      ['Interim total', `${gb(r.vsan.interim)} GB`],
-      ['After FTT redundancy', `${gb(r.vsan.redundancy)} GB`],
-      ['After rebuild + ops reserve', `${gb(r.vsan.reserve)} GB`],
-      ['After growth', `${gb(r.vsan.growth)} GB`],
-      ['Raw capacity required', `${gb(r.vsan.raw)} GB`],
-    ].map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
+    // capacity breakdown — vSAN shows its FTT / reserve / mirror steps; NFS / FC
+    // only VM disk + swap + growth, so no step reads as if it had been applied.
+    const vsanStore = isVsanType(state.storageType);
+    const stretchedStore = state.clusterType !== 'Standard';
+    ($('stretchHint') as HTMLElement).hidden = vsanStore || !stretchedStore;
+    $('breakdownTitle').textContent = vsanStore ? 'vSAN raw capacity breakdown' : 'Datastore capacity breakdown (NFS / FC)';
+    const fttFactor = state.storageType === 'vSAN-ESA' ? '×1.5, ESA' : '×2, OSA';
+    const breakdown: Array<[string, string]> = vsanStore
+      ? [
+          ['VM capacity (disk)', `${gb(r.vsan.vmCapacity)} GB`],
+          ['Swap reservation', `${gb(r.vsan.swap)} GB`],
+          ['Interim total', `${gb(r.vsan.interim)} GB`],
+          [`After FTT redundancy (${fttFactor})`, `${gb(r.vsan.redundancy)} GB`],
+          [`After rebuild + ops reserve (+${state.reservePct}%)`, `${gb(r.vsan.reserve)} GB`],
+          [`After growth (+${state.growthPct}%)`, `${gb(r.vsan.growth)} GB`],
+          ...(stretchedStore ? [['After stretched mirror (×2)', `${gb(r.vsan.raw)} GB`] as [string, string]] : []),
+          ['Raw capacity required', `${gb(r.vsan.raw)} GB`],
+        ]
+      : [
+          ['VM capacity (disk)', `${gb(r.vsan.vmCapacity)} GB`],
+          ['Swap reservation', `${gb(r.vsan.swap)} GB`],
+          ['Interim total', `${gb(r.vsan.interim)} GB`],
+          [`After growth (+${state.growthPct}%)`, `${gb(r.vsan.growth)} GB`],
+          ['Datastore capacity required', `${gb(r.vsan.raw)} GB`],
+        ];
+    $('vsanTable').innerHTML = breakdown.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
   }
 
   // ---- export / import / share ----
@@ -548,7 +572,7 @@ const opt = (values: readonly string[]) => values;
       '',
       `**Profile:** ${s.deploymentModel} / ${s.deploymentSize}, ${s.instanceModel}, ${s.storageType}`,
       `**Cluster:** ${s.clusterType}, ${s.proposedHosts} hosts × ${s.coresPerHost} cores / ${gb(s.ramPerHost)} GB RAM / ${store}`,
-      `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, reserve ${s.reservePct}%, growth ${s.growthPct}%`,
+      `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, ${isVsanType(s.storageType) ? `vSAN reserve ${s.reservePct}%` : 'vSAN reserve n/a (NFS / FC)'}, growth ${s.growthPct}%`,
       `**Profile-fixed:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}`,
       ...(supLines.length ? ['', '## vSphere Supervisor / Edge', ...supLines] : []),
       '',
@@ -558,14 +582,14 @@ const opt = (values: readonly string[]) => values;
       '| --- | ---: | ---: | ---: | :-: |',
       dim(`CPU (vCPU, ${r.survivorBasis})`, r.fit.cpu),
       dim(`RAM (GB, ${r.survivorBasis})`, r.fit.ram),
-      dim('vSAN raw (GB)', r.fit.storage),
+      dim(storageLabel(s.storageType), r.fit.storage),
       dim('Host count', r.fit.hosts),
       '',
       '## Fleet requirement',
       `- Totals: ${gb(r.totals.nodes)} nodes, ${gb(r.totals.cpu)} vCPU, ${gb(r.totals.ram)} GB RAM, ${gb(r.totals.disk)} GB disk`,
       `- Minimum hosts: ${r.requiredHosts}`,
       ...(r.perHostN1 ? [`- Per host (N-1): ${gb(r.perHostN1.cpu)} vCPU, ${gb(r.perHostN1.ram)} GB RAM, ${gb(r.perHostN1.storage)} GB`] : []),
-      `- vSAN raw required: ${gb(r.vsan.raw)} GB`,
+      `- ${isVsanType(s.storageType) ? 'vSAN raw' : 'Datastore capacity'} required: ${gb(r.vsan.raw)} GB`,
       '',
       '## Components',
       ...r.components.map((c) => `- ${c.name}: ${c.nodes} node${c.nodes === 1 ? '' : 's'}, ${gb(c.cpu)} vCPU, ${gb(c.ram)} GB, ${gb(c.disk)} GB`),
@@ -678,6 +702,8 @@ const opt = (values: readonly string[]) => values;
   }
   .sizer__add:hover { background: var(--itq-orange); color: var(--itq-white); }
   .sizer__hint { font-size: 0.78rem; color: var(--text-muted); margin: 0.3rem 0 0.6rem; }
+  .sizer__tag { display: inline-block; font-size: 0.68rem; font-weight: 600; line-height: 1.4; padding: 0 0.4rem; margin-left: 0.25rem; border-radius: 999px; border: 1px solid currentColor; color: var(--text-muted); vertical-align: middle; }
+  input:disabled { opacity: 0.5; cursor: not-allowed; }
   .sizer__warn {
     font-size: 0.8rem;
     margin: 0.2rem 0 0.6rem;
