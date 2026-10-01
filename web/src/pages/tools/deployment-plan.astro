@@ -121,7 +121,11 @@ const epics = selectedEpics(sel);
             <h2>
               {e.id} — {e.title} <span class="planx__owner">Owner: {e.owner}</span>
             </h2>
-            {e.ref && <p class="planx__ref">Ref: {e.ref}</p>}
+            {e.guides && (
+              <p class="planx__ref">
+                Guides: {e.guides.map((g, i) => (<>{i > 0 && ' · '}<a href={g.url}>{g.title}</a></>))}
+              </p>
+            )}
             <ul>
               {e.stories.map((s) => (
                 <li>
@@ -133,6 +137,11 @@ const epics = selectedEpics(sel);
                     {s.acceptance && (
                       <li class="planx__accept">
                         <em>Acceptance:</em> {s.acceptance}
+                      </li>
+                    )}
+                    {s.guides && (
+                      <li class="planx__guide">
+                        <em>Guide:</em> {s.guides.map((g, i) => (<>{i > 0 && ' · '}<a href={g.url}>{g.title}</a></>))}
                       </li>
                     )}
                   </ul>
@@ -302,10 +311,15 @@ const epics = selectedEpics(sel);
             const accept = s.acceptance
               ? `<li class="planx__accept"><em>Acceptance:</em> ${linkify(s.acceptance)}</li>`
               : '';
-            return `<li><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></li>`;
+            const guide = s.guides
+              ? `<li class="planx__guide"><em>Guide:</em> ${s.guides.map((g) => `<a href="${esc(g.url)}">${esc(g.title)}</a>`).join(' · ')}</li>`
+              : '';
+            return `<li><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}${guide}</ul></li>`;
           })
           .join('');
-        const ref = e.ref ? `<p class="planx__ref">Ref: ${linkify(e.ref)}</p>` : '';
+        const ref = e.guides
+          ? `<p class="planx__ref">Guides: ${e.guides.map((g) => `<a href="${esc(g.url)}">${esc(g.title)}</a>`).join(' · ')}</p>`
+          : '';
         return `<div class="planx__epic"><h2>${esc(e.id)} — ${esc(e.title)} <span class="planx__owner">Owner: ${esc(e.owner)}</span></h2>${ref}<ul>${stories}</ul></div>`;
       })
       .join('');
@@ -542,5 +556,6 @@ const epics = selectedEpics(sel);
   .planx__epic > ul > li { margin-bottom: 0.35rem; }
   .planx__epic ul ul { margin: 0.15rem 0 0.4rem; }
   .planx__accept { color: var(--text-muted); font-size: 0.85rem; }
+  .planx__guide { font-size: 0.85rem; }
   .planx__source { font-size: 0.78rem; color: var(--text-muted); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
 </style>

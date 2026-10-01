@@ -1,5 +1,26 @@
 # Changelog
 
+## v5.6.3 — 2026-10-01
+- **Deployment plan links our own guides (#380).** Every story this site has an
+  install or configuration guide for now carries it: a **Guide** line in the
+  export tool, the tracker and the Markdown export, and the CSV's **Reference**
+  column (empty for stories until now). Links are absolute, with section anchors,
+  so they still work after a Jira / Azure DevOps / GitLab import, and they replace
+  the epics' bare-filename `Ref:` lines. 57 links from one rule table
+  (`GUIDE_RULES`), e.g. Avi → `14-avi-load-balancer`, License Hub → `15`, VCF
+  Automation → `17` and `19`, stretch → `22`, workload domain → `23`, Supervisor →
+  `10` and `20`, as-built → `21`, handover → `13`.
+- **New build check** `web/scripts/check-plan-guides.mjs`: every guide link the
+  generator can emit must reach a real doc and heading, so a renamed heading fails
+  the build instead of shipping a dead link into someone's backlog.
+- `06-deployment-plan.md` gets the same pointers in prose (stories 5.1, 5.2, 6.4,
+  8.2, 8.3, 8.5, 10.2, 10.3, the E9 Avi and Supervisor text, vDefend → `18`).
+- **License Hub wording tightened** (follow-up to #374) in `01`, `07` (both
+  places), `09`, `prerequisites.md` (URL table) and `06` story 8.2a: needed for
+  vDefend, or Avi on on-prem licensing; with Cloud Licensing the Avi Controllers
+  need the `portal.pulse.broadcom.com` flow themselves. `09`'s depot callout now
+  covers License Hub 2.0 (one ~11 GB OVA) as well as the 5.1.2 SSP Installer pair.
+
 ## v5.6.2 — 2026-10-01
 - **Avi licensing route (#374)** — the deployment plan no longer assumes every
   Avi fleet needs License Hub. A new *Avi licensing* choice: **On-prem License

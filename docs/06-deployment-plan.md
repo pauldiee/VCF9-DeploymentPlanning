@@ -14,6 +14,12 @@ those in your own tool.
 > the same plan as a checklist: tick stories as done, watch per-epic progress, and
 > save/load the progress file to hand over between colleagues (it follows the scope
 > you set in the export tool).
+>
+> **Every exported story links its guide.** Where this site has an install or
+> configuration guide for a story, the export adds a **Guide** line (Markdown) or
+> fills the **Reference** column (CSV) with an absolute link to it, so the link
+> still works inside Jira, Azure DevOps or GitLab. The build checks that each of
+> those links reaches a real page and heading (`web/scripts/check-plan-guides.mjs`).
 
 Build your **scope** from the blocks below: the **core epics apply to every
 deployment**, and the variants switch on **independently**. The management domain
@@ -92,8 +98,10 @@ plan (E1–E3) called for has actually been built. Runs in parallel with E1–E3
 
 ### E5 — Management domain bring-up  ·  Owner: Platform
 - **Story 5.1 — Install & configure the management hosts.** Image each host with the supported **ESXi ISO** (see the [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) repo to prep + commission hosts quickly); set the management VMkernel (IP / gateway / VLAN), DNS, NTP, and root password; confirm the ESXi build matches the BOM. Ref: [Preparing ESX Hosts for VCF](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html).
+  - *Guide:* [`11-esx-coredump.md`](11-esx-coredump.md)
   - *Acceptance:* every host reachable on the management network with the matched ESXi build; DNS + NTP correct.
 - **Story 5.2 — Stage the VCF Installer.** Deploy the Installer on a management-domain host using the **IP + FQDN planned for SDDC Manager** (it switches into SDDC Manager at bring-up — not a throwaway IP); verify it reaches the ESXi management network. Ref: [Deploy the VCF Installer Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/deploy-the-vmware-cloud-foundation-installer-appliance.html).
+  - *Guide:* [`09-binary-depot.md`](09-binary-depot.md)
   - Running the Installer **outside** the management domain is also supported — the wizard then deploys a **separate, new SDDC Manager appliance** and asks for its FQDN ("The VCF Installer appliance is not deployed on one of the hosts in the management domain. During the deployment process, a new SDDC Manager appliance will be deployed."). Plan the extra FQDN + IP if you take that route; on the host-resident route the SDDC Manager FQDN is not asked again.
   - On that host, put the Installer on a port group carrying the **VM Management VLAN**. A fresh ESXi host's default `VM Network` port group is **untagged (VLAN 0)**, so if VM Management is a tagged VLAN, set the VLAN ID on it (or use a tagged port group) first — otherwise the appliance has no management connectivity.
   - *Acceptance:* VCF Installer deployed on the VM-Management VLAN, resolves in DNS on the planned SDDC Manager FQDN, and reaches the ESXi management network.
@@ -114,6 +122,7 @@ plan (E1–E3) called for has actually been built. Runs in parallel with E1–E3
 - **Story 6.2 — Certificates (optional / partial here).** You *can* replace certificates for the components deployed **so far** now, but the **full** CA-signed replacement is usually done **once all components exist** — after the Day-2 fleet — so the whole fleet is certified in one pass (see E8 story 8.5).
 - **Story 6.3 — Identity & roles (optional, *not recommended* at this stage).** You *can* bind **vCenter SSO** directly to AD/LDAP now for early management access, but the **recommended** path is fleet-wide SSO via the **VCF Identity Broker** — already deployed at bring-up with the management services, configured Day-2 (see E8 8.5 / [`05-day2-deployments.md`](05-day2-deployments.md)). Prefer deferring identity to Day-2; only bind vCenter SSO here if you genuinely need AD admin access before the fleet is up, and map admin/operator/viewer groups if you do.
 - **Story 6.4 — Backup & lifecycle.** Configure SFTP backups — including **each vCenter's file-based backup, set manually in that vCenter's management interface (VAMI)**; VCF does not configure it for you (see [`08-backup-target.md`](08-backup-target.md)). Connect the depot for **fleet lifecycle** (SDDC Manager already has its own depot from bring-up — this is the fleet-wide LCM depot, not a re-do). Ref: [File-Based Backups for SDDC Manager, NSX Manager and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/backup-and-restore-of-cloud-foundation/file-based-backups-for-sddc-manager-and-vcenter-server.html).
+  - *Guide:* [`08-backup-target.md`](08-backup-target.md) · [`09-binary-depot.md`](09-binary-depot.md) · [`13-shutdown-startup.md`](13-shutdown-startup.md)
   - *Acceptance:* a test SFTP backup completes — for SDDC Manager **and** for every vCenter (VAMI schedule set); fleet-lifecycle depot connected. (North-south routing is verified in 6.1; certificates, identity & licensing are finalized Day-2 — see E8 8.5.)
 
 ---
@@ -167,18 +176,21 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
 > with the Avi Cloud Console instead (story `8.3b`, and its E9 counterpart) —
 > *"Avi Controllers that cannot run a License Hub can connect and register
 > directly to the Avi Cloud Console"* ([License Management for Avi Load
-> Balancer](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html)). Disconnected / air-gapped sites must use the hub (#374).
+> Balancer](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html)). Disconnected / air-gapped sites must use the hub (#374). vDefend
+> itself (the Security Services Platform) is deployed per
+> [`18-vdefend-ssp.md`](18-vdefend-ssp.md).
 
 - **Story 8.1 — Network placement.** Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment for the Day-2 components; build the network if non-shared. Ref: [Fleet-Level Components Networking Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/fleet-level-components-networking-detailed-design.html) · [custom-networking deployment guidance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploying-vcf-operations-and-vcf-automation-on-custom-networking.html).
   - *Acceptance:* chosen placement built (or the shared network confirmed); the segment/VLAN is reachable and the fleet FQDNs resolve.
 - **Story 8.2 — VCF Automation.** Choices (pick them in the [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/) and it writes the exact steps):
+  - *Guide:* [`05-day2-deployments.md` §D](05-day2-deployments.md#d-vcf-automation--deployment-method) · [`17-vcfa-tenant-config.md`](17-vcfa-tenant-config.md) · [`19-securing-vcf-automation.md`](19-securing-vcf-automation.md)
   - **Deploy it?** — VCF Automation is the one fleet component you can **defer** from bring-up to Day-N.
   - **Deployment model** — **single-node** (no load balancer) or an **HA cluster** (three nodes behind a cluster VIP served by VCF Automation's **built-in load balancer** — **no external load balancer required**; the built-in LB is automatically configured for both models, per the TechDocs design library's *VCF Automation Load Balancing Design*).
   - **Network placement** — **Shared Management** (nodes come from the mgmt `/29`, intake `B5`; simplest, no new network), or a non-shared placement (**Dedicated Management** / **NSX Overlay Segment** / **NSX VLAN Segment**) that **builds the network first** — see [`05-day2-deployments.md`](05-day2-deployments.md) §C. The **NSX Overlay Segment** placement needs an Edge cluster + Tier-0 — under **Distributed** connectivity (no centralized Edge) deploy one for the fleet segment first, or pick a VLAN-backed placement.
   - **Avi in front?** — optional; ticking it adds **Story 8.3** below.
   - Deploy via SDDC Manager API or via VCF Operations; set the services-runtime cluster CIDR.
   - *Acceptance:* VCF Automation deployed and healthy; the services-runtime cluster CIDR is set and non-overlapping.
-- **Story 8.2a — License Hub: deploy and load licences (BEFORE any Avi controller).** Added whenever **vDefend or Avi** is in scope — License Hub licenses **both**, and it is its own appliance, outside VCF fleet management entirely ([`05-day2-deployments.md`](05-day2-deployments.md) §B.3). It sits here, ahead of story 8.3, because the hub must **exist and hold licences before** a controller is built. The steps below are for **License Hub 2.0**, the current standalone OVA; a site still on **5.1.2** follows the SSP Installer flow in [`15-license-hub.md`](15-license-hub.md#license-hub-512-ssp-installer-flow) instead, and there is **no upgrade path** from 5.1.2 to 2.0.
+- **Story 8.2a — License Hub: deploy and load licences (BEFORE any Avi controller).** Added when **vDefend** is in scope, or Avi is in scope with **Avi licensing = On-prem License Hub** — License Hub licenses **both**, and it is its own appliance, outside VCF fleet management entirely ([`05-day2-deployments.md`](05-day2-deployments.md) §B.3). It sits here, ahead of story 8.3, because the hub must **exist and hold licences before** a controller is built. The steps below are for **License Hub 2.0**, the current standalone OVA; a site still on **5.1.2** follows the SSP Installer flow in [`15-license-hub.md`](15-license-hub.md#license-hub-512-ssp-installer-flow) instead, and there is **no upgrade path** from 5.1.2 to 2.0.
   - **Brownfield gate — do this first.** If the site already runs Avi on an older version, Avi **32.1.1 deprecates 25-character and YAML licences** and gives them a **strict 90-day grace period** from initial boot / upgrade completion that **overrides existing validity dates** (licences valid until 2029 still stop). Migrate the entitlement on the **Broadcom Support Portal before upgrading** — it is **one-way**. Intake `E16a`.
   - **You download the software yourself:** one file, the **License Hub 2.0 OVA (~11 GB)**, from the Broadcom Support Portal — listed under **VMware Avi Load Balancer → Primary Downloads**, not under vDefend, and **not depot-fed**, unlike Avi.
   - **Addresses and DNS first:** **three IPs and two FQDNs** — the appliance FQDN on its management IP, and a **Kafka FQDN** that must resolve to the **second** address of a two-address contiguous IP pool — plus a **non-routable internal cluster CIDR of at least 512 addresses** (the default `10.10.0.0/16` is fine unless the datacenter already uses it). FQDNs and IPs **cannot be changed after deployment** ([License Hub Appliance System Requirements](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/license-hub-appliance-system-requirements.html)).
@@ -189,6 +201,7 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
   - **Configure backup** in the License Hub service (*Backup and Restore*): the SFTP target, its SSH public host key and an encryption passphrase, then **run** one. It holds endpoints, licence assignments, usage reports and platform configuration — **not** the licences or the Avi Cloud Console registration — and a restore goes to a **new appliance of the same version** deployed with the same FQDN, Kafka FQDN, management IP and IP pool ([Back Up and Restore](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)).
   - *Acceptance:* License Hub appliance deployed and its instance shown as deployed under *License Hub Configuration*; the hub registered **and showing licences loaded** (not an empty list); backup configured and proven by a run that shows **Completed** in *Backup History*, not by saving the configuration; the backup passphrase and the four deploy values a restore needs are recorded.
 - **Story 8.3 — Avi Load Balancer in front of VCF Automation (optional).** Deploy the **Avi controller cluster in the management domain** via VCF Operations (lifecycle-managed; its IPs/FQDNs/passwords are captured up front in [`prerequisites.md` → Avi Load Balancer](prerequisites.md) and intake `E16`/`F11`), then configure the **virtual service** in front of VCF Automation. An external LB is an **optional post-deployment addition** — its pool points at the cluster VIP of Automation's **built-in load balancer**, which stays the ingress. The built-in LB is **L4-only**, so Avi in front is what adds **SSL termination** and keeps user/tenant access off the management network. Ref: [Deploy Avi Load Balancer from VCF Operations](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/deploy-avi-load-balancer-from-vcf-operations.html).
+  - *Guide:* [`14-avi-load-balancer.md`](14-avi-load-balancer.md)
   - **Licensing is its own story.** Avi is licensed either through **License Hub** — not the `License Server` from bring-up (story 5.4); the two **coexist** — or through **Cloud Licensing** straight to the Avi Cloud Console. On the hub route the hub is deployed in **story 8.2a above** and the controller is licensed in **story 8.3a below**; on Cloud Licensing it is **story 8.3b**: [`prerequisites.md` → License Hub](prerequisites.md), intake `E16a` / `E17`.
   - **The controller's own first-login wizard** follows the deploy and asks for things nothing on the VCF side collects: a **Passphrase** (a third secret, **restore-critical** — it protects the controller's configuration backups), the controller's **DNS resolvers + search domain**, an **SMTP** choice that defaults to **None**, and the **multi-tenancy model** (Service Engines provider-shared vs per-tenant) — an architecture decision best made *before* first login.
   - *Acceptance:* Avi controller cluster healthy; its first-login wizard completed with the passphrase captured alongside the other credentials; the virtual service fronts VCF Automation and its published FQDN resolves to the Avi VIP.
@@ -205,6 +218,7 @@ Day-2 configuration of bring-up components (fleet SSO, certificates, licensing).
 - **Story 8.4 — Optional fleet components.** Deploy the remaining fleet components as needed: **Log Management** and VCF Operations for Networks. Each is individually selectable in the [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/) — the generated story lists only the selected ones. (The **Identity Broker is not deployed here** — it arrives at bring-up with the management services; whether to *use* it for fleet SSO is the 8.5 choice, and if broker-based fleet SSO is out of scope, E6 6.3 becomes the identity path.)
   - *Acceptance:* each selected Day-2 component healthy; the fleet-management health (synthetic) check passes.
 - **Story 8.5 — Certificates, identity & licensing (full fleet).** Now that all components exist, do the full **CA-signed certificate** replacement across the whole fleet — select components in bulk and work through `Generate CSRs` → sign → `Replace With Configured CA Certificate`, but **in staggered batches**: each rotation triggers automated retrust across dependent components, and the UI requires you to acknowledge that you will let one batch finish before starting the next (see [`prerequisites.md` → Certificate Authority](prerequisites.md#certificate-authority)). Budget settling time between batches rather than a single sweeping action. Then complete **fleet SSO via the VCF Identity Broker** (**configuration, not deployment** — the broker has been running since bring-up; this is the recommended identity path, deferred from E6 6.3 — prep the AD/LDAP identity source and its gotchas first: [`prerequisites.md` → Identity source for the VCF Identity Broker](prerequisites.md#identity-source-for-the-vcf-identity-broker); the actual configuration — identity provider, per-product federation, role mapping — is [`12-sso-configuration.md`](12-sso-configuration.md)), and **apply licensing** across the fleet (via VCF Operations). Ref: [Configure a Certificate Authority](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html) · [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html).
+  - *Guide:* [`prerequisites.md` → Certificate authority](prerequisites.md#certificate-authority) · [`12-sso-configuration.md`](12-sso-configuration.md)
   - *Acceptance:* every fleet endpoint presents a CA-signed cert with no trust warnings; AD/LDAP SSO via the Identity Broker works; licensing applied.
 
 ### E9 — Workload domain  ·  Owner: Platform + Network (+ Storage if stretched)
@@ -265,7 +279,9 @@ Activation also needs **a load balancer**, chosen per WLD in the export tool:
   do by itself. **Cloud Licensing**: no hub; the controller gets a story to
   register directly with the Avi Cloud Console (as in 8.3b). Per the
   Avi-for-VCF 9.1 requirements, all of it **must exist before Supervisor
-  activation**.
+  activation**. Guides: [`14-avi-load-balancer.md`](14-avi-load-balancer.md)
+  (deploy, Service Engine infrastructure, licensing) and
+  [`10-supervisor-enablement.md`](10-supervisor-enablement.md) §4.
 
   > The Avi and licensing stories in this epic are **numbered by selection** —
   > they append after the fixed stories below, so their numbers shift with the
@@ -283,7 +299,7 @@ The *Enable vSphere Supervisor* story carries **creating the vSphere Zones** as
 its own task: they are built in vCenter (*vCenter → vSphere Zones → Add New
 vSphere Zone*), one cluster per zone, **before** activation — the wizard selects
 zones, it does not create them, and single- vs multi-zone cannot be reversed
-later. See [`10-supervisor-enablement.md`](10-supervisor-enablement.md) §1.3.
+later. See [`10-supervisor-enablement.md`](10-supervisor-enablement.md) §1.3, and for the image registry path [`20-supervisor-image-registry.md`](20-supervisor-image-registry.md).
 Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration.html) ·
 [Requirements for Deploying Avi Load Balancer (VCF 9.1)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/requirements-for-deploying-avi-load-balancer.html).
 
@@ -326,8 +342,10 @@ workload domains) — it validates and hands over the *complete* environment.
 - **Story 10.1 — Health check.** Run a post-deploy health check of the live environment.
   - *Acceptance:* post-deploy health check run; no critical findings (or all triaged).
 - **Story 10.2 — As-built.** Capture the as-built (FQDNs, IPs, VLANs, passwords in the secret store).
+  - *Guide:* [`21-config-artifacts.md`](21-config-artifacts.md)
   - *Acceptance:* as-built captured — FQDNs, IPs, VLANs recorded; passwords stored in the secret store.
 - **Story 10.3 — Handover.** Walk the operations team through the platform and hand over.
+  - *Guide:* [`13-shutdown-startup.md`](13-shutdown-startup.md)
   - *Acceptance:* health check clean; as-built delivered; operations sign-off received.
 
 ---
