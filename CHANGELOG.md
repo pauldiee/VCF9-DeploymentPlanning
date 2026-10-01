@@ -1,5 +1,41 @@
 # Changelog
 
+## v5.6.0 — 2026-10-01
+- **Sizer re-pinned to the VCF 9.1.1 Planning & Preparation Workbook
+  (`v1.9.1.102`) and verified against it (#378).** The engine reproduced
+  `v1.9.1.001`; a check against Broadcom's 9.1 docs found the newer workbook
+  agrees with TechDocs where the old one did not. Changes:
+  - **Tables generated from the workbook's named ranges**, not retyped. Notable
+    differences: vCenter disk now matches the 9.1 TechDocs storage table;
+    services-runtime workers are smaller (e.g. HA-Medium 12 vCPU / 24 GB);
+    VCF Operations is 1:1 with the profile (HA-Small 2× Small, HA-Medium
+    3× Medium, HA-Large 3× Large — it was one size up); SSP Medium
+    64 / 222 / 3,260; VCF Automation disk 600 / 900 / 1,200; Ops for Networks
+    XL / XXL with a single platform node.
+  - **New profile HA-Small**, and the workbook's new rows: management-domain
+    **Supervisor**, **SSP Installer** (one per five SSP deployments), and
+    per-workload-domain **Avi**, **SSP** and Global Manager size.
+  - **Services-runtime workers sized from demand** (Day-0 services + Log
+    Management / Real-time Metrics / Software Depot / Identity Broker, with the
+    workbook's 1.2× RAM / 1.09× CPU headroom), including the larger Day-N worker
+    size on a first instance with logs or metrics. Log Management, Real-time
+    Metrics and Software Depot no longer appear as separate rows; Real-time
+    Metrics now uses the workbook's figures instead of derived ones.
+  - **License Hub is an explicit choice** (as in the workbook), no longer added
+    automatically for every Avi fleet — closes the sizer part of #374.
+  - **VCF Operations: Include / Existing / Exclude**; **protection blueprints**
+    (Site Protection & DR scope, Ransomware Recovery) replace the fixed
+    protection reserve.
+  - **Verification:** `web/scripts/verify-sizer.mjs` compares the engine with the
+    workbook's own Excel-computed results for 127 scenarios, row by row — all
+    127 match, including Broadcom's Fleet Sizing Models totals for HA-Medium and
+    HA-Large to the gigabyte. It runs in `prebuild`; `web/scripts/sizer-golden/`
+    regenerates the golden data for a future revision.
+  - Plans saved, shared or exported by the previous version are migrated on load.
+  - `docs/04-sizing.md` rewritten for the new model and validation; README,
+    `CLAUDE.md` and `workbook-cell-mapping.md` note that the cell mapping stays on
+    the 9.1 workbook for now. The 9.1.1 workbook is committed in `reference/`.
+
 ## v5.5.3 — 2026-10-01
 - **Sizer: vSAN-only inputs and outputs are now explicit (#377).** Switching
   principal storage to NFS / FC already changed the math, but the page kept

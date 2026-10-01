@@ -44,7 +44,7 @@ const opt = (values: readonly string[]) => values;
           <label>Deployment size
             <select id="deploymentSize">{opt(OPTIONS.deploymentSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">Simple deploys at Small only; High Availability at Medium or Large.</p>
+          <p class="sizer__hint">Simple deploys at Small only; High Availability at Small, Medium or Large.</p>
           <label>Instance model
             <select id="instanceModel">{opt(OPTIONS.instanceModel).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -101,51 +101,79 @@ const opt = (values: readonly string[]) => values;
           <legend>Management components</legend>
           <p class="sizer__hint" id="derivedSizes"></p>
           <label>NSX Global Manager
-            <select id="nsxGmSize">
-              <option>Excluded</option>{opt(OPTIONS.nsxManagerSize).map((v) => <option>{v}</option>)}
-            </select>
+            <select id="nsxGmSize">{opt(OPTIONS.nsxGmSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <label>NSX Edges
+          <label>NSX Edges / Virtual Network Appliances
             <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <label class="sizer__check"><input id="supervisorPlanned" type="checkbox" /> vSphere Supervisor planned on the management domain</label>
-          <p class="sizer__hint">An Edge-backed Supervisor (VPC + Centralized Transit Gateway, or classic NSX) needs its Edge cluster at <strong>Large</strong> minimum. The VPC + Distributed Transit Gateway path uses a VNA cluster and no Edge; vDS networking uses no NSX. Per-domain Supervisors are set on each workload domain below.</p>
+          <label>vSphere Supervisor on the management domain
+            <select id="supervisorMode">{opt(OPTIONS.supervisorMode).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <label id="supervisorSizeLabel" hidden>Supervisor control plane size
+            <select id="supervisorSize">{opt(OPTIONS.supervisorSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Counts the Supervisor control plane VMs (1 or 3). An Edge-backed Supervisor (VPC + Centralized Transit Gateway, or classic NSX) also needs its Edge cluster at <strong>Large</strong> minimum; the VPC + Distributed Transit Gateway path uses a VNA cluster and no Edge.</p>
           <p class="sizer__warn" id="edgeWarn" hidden></p>
-          <label>AVI Load Balancer
+          <label>Avi Load Balancer
             <select id="aviSize">{opt(OPTIONS.aviSize).map((v) => <option>{v}</option>)}</select>
           </label>
           <label>Security Services Platform
-            <select id="sspSize">{opt(OPTIONS.sspSize).map((v) => <option>{v}</option>)}</select>
+            <select id="ssp">{opt(OPTIONS.ssp).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Sized by the management NSX Manager size; one SSP Installer is added per five SSP deployments (management + workload domains).</p>
+          <label class="sizer__check"><input id="licenseHub" type="checkbox" /> License Hub (vDefend / Avi licensing)</label>
+          <p class="sizer__hint">Needed for vDefend. For Avi only with on-prem licensing — an Avi Controller can use Cloud Licensing directly with the Avi Cloud Console instead.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>VCF fleet components</legend>
+          <label>VCF Operations
+            <select id="vcfOps">{opt(OPTIONS.vcfOps).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint"><strong>Include</strong> deploys it here (HA-Small 2 nodes, HA-Medium / Large 3, Simple 1) with its Cloud Proxy and, on a first instance, the License Server. <strong>Existing</strong> reuses an instance elsewhere: only the Cloud Proxy and License Server are counted.</p>
+          <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy without VCF Operations here</label>
+          <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
+          <label id="vcfAutomationSizeLabel" hidden>VCF Automation size
+            <select id="vcfAutomationSize">{opt(OPTIONS.vcfAutomationSize).map((v) => <option>{v}</option>)}</select>
+            <span class="sizer__hint">Automation's own size sets the node count: Small = 1 node, Medium / Large = 3. The workbook uses the profile size.</span>
           </label>
           <label>VCF Operations for Networks
             <select id="opsNetSize">{opt(OPTIONS.opsNetSize).map((v) => <option>{v}</option>)}</select>
           </label>
+          <p class="sizer__hint">Platform node on a first instance; the collector is counted on every instance.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>VCF management services</legend>
+          <p class="sizer__hint">These run on the VCF services runtime, so they do not add rows of their own: they raise the <strong>worker node count</strong> (and, with Log Management or Real-time Metrics on a first instance, the worker size).</p>
           <label>Log Management size
             <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint" id="logsHint" hidden></p>
           <label id="logsReplicasLabel" hidden>Log Management replicas
             <input id="logsReplicas" type="number" min="1" step="1" />
-            <span class="sizer__hint">Size must match the deployment profile; replicas min Small 1 / Medium 3 / Large 6, max 19.</span>
-          </label>
-          <label class="sizer__check"><input id="vcfOps" type="checkbox" /> VCF Operations</label>
-          <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy (Ops collector)</label>
-          <p class="sizer__hint">On a <strong>new</strong> deployment the Installer adds a unified cloud proxy automatically at bring-up, so it is there whether or not it is ticked — leave it on for greenfield. Untick it when sizing an <strong>upgrade or an existing fleet</strong> whose proxy is already accounted for. Day-N <em>additional</em> collectors come on top of this one.</p>
-          <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
-          <label id="vcfAutomationSizeLabel" hidden>VCF Automation size
-            <select id="vcfAutomationSize">{opt(OPTIONS.vcfAutomationSize).map((v) => <option>{v}</option>)}</select>
-            <span class="sizer__hint">Automation's own size, independent of the deployment profile — and it sets the node count: Small = 1 node (Simple), Medium / Large = 3 nodes (High Availability).</span>
+            <span class="sizer__hint">Min Small 1 / Medium 3 / Large 6, max 19.</span>
           </label>
           <label class="sizer__check"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
           <label class="sizer__check"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
+          <label class="sizer__check"><input id="vcfIdb" type="checkbox" /> Identity Broker (additional instance)</label>
+          <p class="sizer__hint" id="workerOut"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Protection blueprints</legend>
+          <label>Site Protection &amp; Disaster Recovery
+            <select id="spr">{opt(OPTIONS.spr).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">One VMware Live Recovery appliance for the management domain, plus one per workload domain marked for DR below.</p>
+          <label class="sizer__check"><input id="rwr" type="checkbox" /> On-premises Ransomware Recovery</label>
         </fieldset>
 
         <fieldset>
           <legend>Workload domains
             <button type="button" id="addWld" class="sizer__add">+ Add workload domain</button>
           </legend>
-          <p class="sizer__hint">Each workload domain's vCenter and (dedicated) NSX Managers run inside the
-            management domain, so they add to its footprint.</p>
+          <p class="sizer__hint">Each workload domain's vCenter, dedicated NSX Managers, Global Managers,
+            Avi controllers and SSP run inside the management domain, so they add to its footprint.</p>
           <div id="wldList"></div>
         </fieldset>
       </section>
@@ -184,7 +212,7 @@ const opt = (values: readonly string[]) => values;
     </div>
 
     <p class="sizer__source">
-      Figures transcribed from <code>reference/vcf-9.1-planning-and-preparation-workbook.xlsx</code>
+      Figures transcribed from <code>reference/vcf-9.1.1-planning-and-preparation-workbook.xlsx</code>
       ({WORKBOOK_REVISION}), sheet <em>Management Domain Sizing</em>. This is a planning aid;
       always confirm the final numbers against the official workbook for your revision.
     </p>
@@ -192,7 +220,7 @@ const opt = (values: readonly string[]) => values;
 </BaseLayout>
 
 <script>
-  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, logsSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, supervisorEdgeWarning, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
+  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, migrateState, deploymentSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, supervisorEdgeWarning, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const state: SizingState = defaultState();
@@ -202,8 +230,8 @@ const opt = (values: readonly string[]) => values;
 
   // ---- bind top-level inputs to state ----
   const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
-  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'aviSize', 'sspSize', 'opsNetSize', 'logsSize', 'vcfAutomationSize'] as const;
-  const chkIds = ['vcfOps', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'supervisorPlanned'] as const;
+  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'supervisorMode', 'supervisorSize', 'aviSize', 'ssp', 'vcfOps', 'opsNetSize', 'logsSize', 'vcfAutomationSize', 'spr'] as const;
+  const chkIds = ['licenseHub', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'vcfIdb', 'rwr'] as const;
 
   function hydrate() {
     for (const id of numIds) ($(id) as HTMLInputElement).value = String((state as any)[id]);
@@ -238,8 +266,12 @@ const opt = (values: readonly string[]) => values;
           ${field('NSX model', 'nsxModel', OPTIONS.nsxModel, w.nsxModel)}
           ${field('NSX Manager size', 'nsxSize', OPTIONS.nsxManagerSize, w.nsxSize)}
           ${field('Global Manager', 'gm', OPTIONS.gm, w.gm)}
+          ${field('Global Manager size', 'gmSize', OPTIONS.nsxManagerSize, w.gmSize)}
+          ${field('Avi Load Balancer', 'aviSize', OPTIONS.aviSize, w.aviSize)}
           ${field('NSX Edge form factor', 'nsxEdgeSize', OPTIONS.nsxEdgeSize, w.nsxEdgeSize)}
         </div>
+        <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="ssp" ${w.ssp ? 'checked' : ''} /> Security Services Platform in this domain</label>
+        <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="spr" ${w.spr ? 'checked' : ''} /> Covered by Site Protection &amp; DR</label>
         <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="supervisorPlanned" ${w.supervisorPlanned ? 'checked' : ''} /> vSphere Supervisor planned on this domain</label>
         <p class="sizer__hint wld__hint">Advisory: the Edge cluster runs on this domain's hosts, so it is <strong>not</strong> added to the management-domain totals above — the check only enforces the Large minimum an Edge-backed Supervisor needs.</p>
         <p class="sizer__warn wld__warn" data-i="${i}" hidden></p>`;
@@ -264,7 +296,7 @@ const opt = (values: readonly string[]) => values;
   }
 
   $('addWld').addEventListener('click', () => {
-    state.workloadDomains.push({ name: '', vcenterSize: 'Small', vcenterStorage: 'Default', nsxModel: 'Dedicated - HA Cluster', nsxSize: 'Medium', gm: 'None', supervisorPlanned: false, nsxEdgeSize: 'Excluded' });
+    state.workloadDomains.push({ name: '', vcenterSize: 'Small', vcenterStorage: 'Default', nsxModel: 'Dedicated - HA Cluster', nsxSize: 'Medium', gm: 'Excluded', gmSize: 'Medium', aviSize: 'Excluded', ssp: false, spr: false, supervisorPlanned: false, nsxEdgeSize: 'Excluded' });
     renderWlds();
     recalc();
   });
@@ -281,16 +313,12 @@ const opt = (values: readonly string[]) => values;
     });
   }
 
-  // ---- deployment size is constrained by the model (workbook cell O23):
-  //   Simple -> Small only; High Availability -> Medium or Large.
-  const sizeByModel: Record<string, string[]> = {
-    Simple: ['Small'],
-    'High Availability': ['Medium', 'Large'],
-  };
+  // ---- deployment size is constrained by the model (workbook E22 list):
+  //   Simple -> Small only; High Availability -> Small, Medium or Large.
   let lastModel = '';
   function syncSizeOptions() {
     const model = ($('deploymentModel') as HTMLSelectElement).value;
-    const allowed = sizeByModel[model] ?? [...OPTIONS.deploymentSize];
+    const allowed = deploymentSizeOptions(model);
     const sel = $('deploymentSize') as HTMLSelectElement;
     const current = allowed.includes(sel.value) ? sel.value : allowed[0];
     sel.innerHTML = selOptions(allowed, current);
@@ -315,22 +343,9 @@ const opt = (values: readonly string[]) => values;
     }
   }
 
-  // ---- Log Management is constrained by the deployment profile ----
-  // Size must match the profile, and it is first-instance only (workbook O25).
-  let lastLogsKey = '';
+  // ---- Log Management: any size, on any instance (workbook 9.1.1, Static
+  // Reference Tables row 393); the replica count is constrained by the size.
   let lastLogsSize = '';
-  function syncLogsSizeOptions() {
-    const firstInstance = ($('instanceModel') as HTMLSelectElement).value === 'First Instance';
-    const allowed = firstInstance ? logsSizeOptions(($('deploymentSize') as HTMLSelectElement).value) : ['Exclude'];
-    const sel = $('logsSize') as HTMLSelectElement;
-    const current = allowed.includes(sel.value) ? sel.value : allowed[allowed.length - 1];
-    sel.innerHTML = selOptions(allowed, current);
-    sel.disabled = !firstInstance;
-    state.logsSize = current;
-    const hint = $('logsHint') as HTMLElement;
-    hint.hidden = firstInstance;
-    if (!firstInstance) hint.textContent = 'Log Management can only be deployed on the first VCF instance.';
-  }
   function syncLogsReplicas() {
     const size = ($('logsSize') as HTMLSelectElement).value;
     const rep = $('logsReplicas') as HTMLInputElement;
@@ -361,12 +376,7 @@ const opt = (values: readonly string[]) => values;
       lastStorage = storage;
       syncStorageInputs();
     }
-    // Log Management size tracks the deployment size + instance model; replicas track the logs size.
-    const logsKey = ($('deploymentSize') as HTMLSelectElement).value + '|' + ($('instanceModel') as HTMLSelectElement).value;
-    if (logsKey !== lastLogsKey) {
-      lastLogsKey = logsKey;
-      syncLogsSizeOptions();
-    }
+    // Log Management replicas track the logs size.
     const logsSize = ($('logsSize') as HTMLSelectElement).value;
     if (logsSize !== lastLogsSize) {
       lastLogsSize = logsSize;
@@ -402,7 +412,7 @@ const opt = (values: readonly string[]) => values;
       ['Total vCPU', gb(r.totals.cpu)],
       ['Total RAM', `${gb(r.totals.ram)} GB`],
       ['Total VM disk', `${gb(r.totals.disk)} GB`],
-      ['Minimum hosts', `${r.requiredHosts}`],
+      ['Minimum hosts', r.requiredHosts > r.workbookHosts ? `${r.requiredHosts} (workbook ${r.workbookHosts})` : `${r.requiredHosts}`],
       ['vCPU / host (N-1)', r.perHostN1 ? gb(r.perHostN1.cpu) : 'n/a'],
       ['RAM / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.ram)} GB` : 'n/a'],
       ['Storage / host (N-1)', !isVsanType(state.storageType) ? 'n/a (shared datastore)' : r.perHostN1 ? `${gb(r.perHostN1.storage)} GB` : 'n/a'],
@@ -419,6 +429,13 @@ const opt = (values: readonly string[]) => values;
 
     // VCF Automation size only applies when Automation is included
     ($('vcfAutomationSizeLabel') as HTMLElement).hidden = !state.vcfAutomation;
+    // Supervisor size only applies when a Supervisor is included
+    ($('supervisorSizeLabel') as HTMLElement).hidden = state.supervisorMode === 'Excluded';
+    // Additional-instance-only services
+    ($('vcfSd') as HTMLInputElement).disabled = state.instanceModel !== 'Additional Instance';
+    ($('vcfIdb') as HTMLInputElement).disabled = state.instanceModel !== 'Additional Instance';
+    // Services-runtime worker readout
+    $('workerOut').innerHTML = `Services runtime: <strong>${r.workers.nodes} worker nodes</strong> × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB.`;
 
     // Oversubscription guardrail — the workbook caps the recommendation at 2:1
     const over = Math.max(state.cpuOver, state.ramOver);
@@ -432,7 +449,7 @@ const opt = (values: readonly string[]) => values;
     // vSphere Supervisor needs its Edge cluster at Large form factor minimum —
     // management domain, then each workload domain.
     const edgeWarnEl = $('edgeWarn') as HTMLElement;
-    const ew = supervisorEdgeWarning(state.supervisorPlanned, state.nsxEdgeSize);
+    const ew = supervisorEdgeWarning(state.supervisorMode !== 'Excluded', state.nsxEdgeSize);
     edgeWarnEl.hidden = !ew;
     if (ew) edgeWarnEl.innerHTML = `⚠ ${ew}`;
     renderWldWarnings();
@@ -486,17 +503,22 @@ const opt = (values: readonly string[]) => values;
     instanceModel: OPTIONS.instanceModel,
     storageType: OPTIONS.storageType,
     clusterType: OPTIONS.clusterType,
-    nsxGmSize: ['Excluded', ...OPTIONS.nsxManagerSize],
+    nsxGmSize: OPTIONS.nsxGmSize,
     nsxEdgeSize: OPTIONS.nsxEdgeSize,
+    supervisorMode: OPTIONS.supervisorMode,
+    supervisorSize: OPTIONS.supervisorSize,
     aviSize: OPTIONS.aviSize,
-    sspSize: OPTIONS.sspSize,
+    ssp: OPTIONS.ssp,
+    vcfOps: OPTIONS.vcfOps,
     opsNetSize: OPTIONS.opsNetSize,
     logsSize: OPTIONS.logsSize,
     vcfAutomationSize: OPTIONS.vcfAutomationSize,
+    spr: OPTIONS.spr,
   };
   function sanitize(obj: any): SizingState {
     const out = defaultState();
     if (!obj || typeof obj !== 'object') return out;
+    obj = migrateState(obj); // plans saved by the v1.9.1.001 version of the tool
     for (const k of Object.keys(out) as (keyof SizingState)[]) {
       if (k === 'workloadDomains') continue;
       const v = (obj as any)[k];
@@ -513,7 +535,11 @@ const opt = (values: readonly string[]) => values;
         vcenterStorage: inList(OPTIONS.vcenterStorage, w?.vcenterStorage, 'Default'),
         nsxModel: inList(OPTIONS.nsxModel, w?.nsxModel, 'Dedicated - HA Cluster'),
         nsxSize: inList(OPTIONS.nsxManagerSize, w?.nsxSize, 'Medium'),
-        gm: inList(OPTIONS.gm, w?.gm, 'None'),
+        gm: inList(OPTIONS.gm, w?.gm, 'Excluded'),
+        gmSize: inList(OPTIONS.nsxManagerSize, w?.gmSize, 'Medium'),
+        aviSize: inList(OPTIONS.aviSize, w?.aviSize, 'Excluded'),
+        ssp: typeof w?.ssp === 'boolean' ? w.ssp : false,
+        spr: typeof w?.spr === 'boolean' ? w.spr : false,
         supervisorPlanned: typeof w?.supervisorPlanned === 'boolean' ? w.supervisorPlanned : false,
         nsxEdgeSize: inList(OPTIONS.nsxEdgeSize, w?.nsxEdgeSize, 'Excluded'),
       }));
@@ -524,7 +550,7 @@ const opt = (values: readonly string[]) => values;
   function loadState(obj: any) {
     Object.assign(state, sanitize(obj));
     // reset dependent-dropdown guards so recalc re-runs every sync for the new state
-    lastModel = lastStorage = lastLogsKey = lastLogsSize = '';
+    lastModel = lastStorage = lastLogsSize = '';
     // expand the constrained dropdowns to their full option lists so hydrate's
     // values stick; recalc's syncs then re-constrain them for the loaded profile
     ($('deploymentSize') as HTMLSelectElement).innerHTML = selOptions([...OPTIONS.deploymentSize], state.deploymentSize);
@@ -560,9 +586,9 @@ const opt = (values: readonly string[]) => values;
       `| ${label} | ${gb(d.required)} | ${gb(d.available)} | ${pct(d.headroomPct)} | ${d.fits ? '✓' : '✗'} |`;
     // Supervisor / Edge advisory lines — management domain, then each WLD that plans one.
     const supLines: string[] = [];
-    const mgmtSup = supervisorEdgeWarning(s.supervisorPlanned, s.nsxEdgeSize);
+    const mgmtSup = supervisorEdgeWarning(s.supervisorMode !== 'Excluded', s.nsxEdgeSize);
     if (mgmtSup) supLines.push(`- ⚠ Management domain: ${mgmtSup}`);
-    else if (s.supervisorPlanned) supLines.push('- Management domain: Supervisor planned; NSX Edge selection meets the Large minimum.');
+    else if (s.supervisorMode !== 'Excluded') supLines.push(`- Management domain: Supervisor (${s.supervisorMode}, ${s.supervisorSize}) counted; NSX Edge selection meets the Large minimum.`);
     s.workloadDomains.forEach((w, i) => {
       const label = w.name?.trim() || `Workload Domain ${i + 1}`;
       const wmsg = supervisorEdgeWarning(w.supervisorPlanned, w.nsxEdgeSize);
@@ -589,7 +615,8 @@ const opt = (values: readonly string[]) => values;
       '',
       '## Fleet requirement',
       `- Totals: ${gb(r.totals.nodes)} nodes, ${gb(r.totals.cpu)} vCPU, ${gb(r.totals.ram)} GB RAM, ${gb(r.totals.disk)} GB disk`,
-      `- Minimum hosts: ${r.requiredHosts}`,
+      `- Minimum hosts: ${r.requiredHosts}${r.requiredHosts > r.workbookHosts ? ` (workbook ${r.workbookHosts})` : ''}`,
+      `- Services runtime: ${r.workers.nodes} workers × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB`,
       ...(r.perHostN1 ? [`- Per host (N-1): ${gb(r.perHostN1.cpu)} vCPU, ${gb(r.perHostN1.ram)} GB RAM, ${gb(r.perHostN1.storage)} GB`] : []),
       `- ${isVsanType(s.storageType) ? 'vSAN raw' : 'Datastore capacity'} required: ${gb(r.vsan.raw)} GB`,
       '',

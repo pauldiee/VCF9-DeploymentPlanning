@@ -1,174 +1,157 @@
 // VCF 9.1 Management Domain sizing engine.
 //
 // Reproduces the calculation in the Broadcom "Planning and Preparation
-// Workbook" (rev v1.9.1.001), sheet *Management Domain Sizing*, and adds a
-// fit-check the spreadsheet does not have: given a proposed cluster (host
-// count + per-host spec), does the fleet fit at N-1, and where's the headroom.
+// Workbook" for VCF 9.1.1 (rev v1.9.1.102), sheet *Management Domain Sizing*,
+// and adds a fit check the spreadsheet does not have: given a proposed cluster
+// (host count + per-host spec), does the fleet fit at N-1 (or N/2 stretched),
+// and where is the headroom.
 //
-// Appliance footprints below are lifted verbatim from the workbook's
-// `table_*` named ranges on the *Static Reference Tables* sheet. The output
-// formulas (host count, per-host N-1, vSAN raw capacity) are transcribed from
-// the *Management Domain Sizing* summary cells and verified against the
-// sheet's own computed values at defaults (4 hosts / 41 CPUs / 106 GB RAM /
-// 7872 GB VM capacity / 17564 GB vSAN raw).
+// The tables below are generated from the workbook's `table_*` named ranges
+// (Static Reference Tables), not retyped. The component rows and the host /
+// capacity summary follow the sheet's formulas row by row (rows 8-30, R8,
+// R15-R20, Static Reference Tables D388:D398 for the services-runtime workers),
+// and are verified against the workbook's own Excel-computed results for 127
+// input scenarios: web/scripts/verify-sizer.mjs + web/test/sizer-golden-*.json.
 //
-// Source of truth: reference/vcf-9.1-planning-and-preparation-workbook.xlsx.
+// Source of truth: reference/vcf-9.1.1-planning-and-preparation-workbook.xlsx.
 
-export const WORKBOOK_REVISION = 'v1.9.1.001';
+export const WORKBOOK_REVISION = 'v1.9.1.102';
 
 // ---------------------------------------------------------------------------
-// Appliance footprint tables (size -> vCPU / RAM GB / disk GB)
+// Workbook tables (generated from the named ranges — keys and values verbatim)
 // ---------------------------------------------------------------------------
 
-type SizeMap = Record<string, number>;
-
-const vcenterCpu: SizeMap = { Tiny: 2, Small: 4, Medium: 8, Large: 16, XLarge: 24 };
-const vcenterRam: SizeMap = { Tiny: 14, Small: 21, Medium: 30, Large: 39, XLarge: 58 };
-// keyed by "<size><storage>", storage one of Default / Large / XLarge
-const vcenterDisk: SizeMap = {
-  TinyDefault: 604, TinyLarge: 1494, TinyXLarge: 2874,
-  SmallDefault: 694, SmallLarge: 1519, SmallXLarge: 2899,
-  MediumDefault: 858, MediumLarge: 1658, MediumXLarge: 3038,
-  LargeDefault: 1158, LargeLarge: 1708, LargeXLarge: 3088,
-  XLargeDefault: 1783, XLargeLarge: 1833, XLargeXLarge: 3213,
+const T = {
+  vcenter_appliance_cpu: { "Tiny": 2, "Small": 4, "Medium": 8, "Large": 16, "XLarge": 24 },
+  vcenter_appliance_ram: { "Tiny": 14, "Small": 21, "Medium": 30, "Large": 39, "XLarge": 58 },
+  vcenter_disk_gb: { "TinyDefault": 619, "TinyLarge": 2059, "TinyXLarge": 4319, "Tinylstorage": 2059, "Tinyxlstorage": 4319, "SmallDefault": 734, "SmallLarge": 2084, "SmallXLarge": 4344, "Smalllstorage": 2084, "Smallxlstorage": 4344, "MediumDefault": 933, "MediumLarge": 2233, "MediumXLarge": 4493, "Mediumlstorage": 2233, "Mediumxlstorage": 4493, "LargeDefault": 1383, "LargeLarge": 2283, "Largelstorage": 2283, "Largexlstorage": 4553, "LargeXLarge": 4543, "XLargeDefault": 2308, "XLargeLarge": 2408, "XLargeXLarge": 4668, "XLargelstorage": 2408, "Xlargexlstorage": 4668 },
+  nsxt_manager_cpu: { "Extra_Small": 2, "Small": 4, "Medium": 6, "Large": 12, "XLarge": 24 },
+  nsxt_manager_ram: { "Extra_Small": 8, "Small": 16, "Medium": 24, "Large": 48, "XLarge": 96 },
+  nsxt_manager_disk_gb: { "Extra_Small": 300, "Small": 300, "Medium": 300, "Large": 300, "XLarge": 400 },
+  nsxt_edge_cpu: { "NSX Edge Small": 2, "NSX Edge Medium": 4, "NSX Edge Large": 8, "NSX Edge XLarge": 16, "VNA Small": 2, "VNA Medium": 4, "VNA Large": 8, "VNA XLarge": 16 },
+  nsxt_edge_ram: { "NSX Edge Small": 4, "NSX Edge Medium": 8, "NSX Edge Large": 32, "NSX Edge XLarge": 64, "VNA Small": 4, "VNA Medium": 8, "VNA Large": 32, "VNA XLarge": 64 },
+  nsxt_edge_disk_gb: { "NSX Edge Small": 200, "NSX Edge Medium": 200, "NSX Edge Large": 200, "NSX Edge XLarge": 200, "VNA Small": 200, "VNA Medium": 200, "VNA Large": 200, "VNA XLarge": 200 },
+  supervisor_cpu: { "Tiny": 2, "Small": 4, "Medium": 8, "Large": 16, "Xlarge": 32 },
+  supervisor_ram: { "Tiny": 8, "Small": 16, "Medium": 24, "Large": 32, "Xlarge": 64 },
+  supervisor_disk: { "Tiny": 48, "Small": 48, "Medium": 48, "Large": 48, "Xlarge": 48 },
+  avi_lb_cpu: { "Small": 6, "Large": 16, "X-Large": 16 },
+  avi_lb_ram: { "Small": 32, "Large": 48, "X-Large": 64 },
+  avi_lb_disk: { "Small": 512, "Large": 1400, "X-Large": 1750 },
+  ssp_cpu: { "Medium": 64, "Large": 96, "XLarge": 160 },
+  ssp_ram: { "Medium": 222, "Large": 350, "XLarge": 606 },
+  ssp_disk: { "Medium": 3260, "Large": 3600, "XLarge": 6120 },
+  ssp_workers: { "Medium": 2, "Large": 4, "XLarge": 8 },
+  ssp_controller: { "Medium": 3, "Large": 3, "XLarge": 3 },
+  ssp_sspi: { "Medium": 1, "Large": 1, "XLarge": 1 },
+  ssp_sspi_cpu: { "Medium": 4, "Large": 4, "XLarge": 4 },
+  ssp_sspi_ram: { "Medium": 6, "Large": 6, "XLarge": 6 },
+  ssp_sspi_disk: { "Medium": 400, "Large": 400, "XLarge": 400 },
+  vcfms_control_cpu: { "Small": 4, "Small HA": 4, "Medium": 4, "Large": 8 },
+  vcfms_control_ram: { "Small": 10, "Small HA": 10, "Medium": 10, "Large": 14 },
+  vcfms_control_disk: { "Small": 100, "Small HA": 100, "Medium": 100, "Large": 100 },
+  vcfms_control_nodes: { "Simple": 1, "High Availability": 3 },
+  vcfms_worker_cpu: { "First InstanceSimpleSmall": 12, "First InstanceHigh AvailabilitySmall": 10, "First InstanceHigh AvailabilityMedium": 12, "First InstanceHigh AvailabilityLarge": 16, "Additional InstanceSimpleSmall": 12, "Additional InstanceHigh AvailabilitySmall": 10, "Additional InstanceHigh AvailabilityMedium": 12, "Additional InstanceHigh AvailabilityLarge": 16 },
+  vcfms_worker_ram: { "First InstanceSimpleSmall": 24, "First InstanceHigh AvailabilitySmall": 16, "First InstanceHigh AvailabilityMedium": 24, "First InstanceHigh AvailabilityLarge": 32, "Additional InstanceSimpleSmall": 24, "Additional InstanceHigh AvailabilitySmall": 16, "Additional InstanceHigh AvailabilityMedium": 24, "Additional InstanceHigh AvailabilityLarge": 32 },
+  vcfms_worker_disk: { "First InstanceSimpleSmall": 2900, "First InstanceHigh AvailabilitySmall": 2800, "First InstanceHigh AvailabilityMedium": 3300, "First InstanceHigh AvailabilityLarge": 4002, "Additional InstanceSimpleSmall": 1000, "Additional InstanceHigh AvailabilitySmall": 1000, "Additional InstanceHigh AvailabilityMedium": 1202, "Additional InstanceHigh AvailabilityLarge": 1500 },
+  vcfops_appliance_cpu: { "Extra Small": 2, "Small": 4, "Medium": 8, "Large": 16, "Extra Large": 24 },
+  vcfops_appliance_ram: { "Extra Small": 8, "Small": 16, "Medium": 32, "Large": 48, "Extra Large": 128 },
+  vcfops_appliance_disk: { "Extra Small": 274, "Small": 274, "Medium": 274, "Large": 274, "Extra Large": 274 },
+  vcfo_p_cpu: { "Small": 4, "Standard": 8 },
+  vcfo_p_ram: { "Small": 16, "Standard": 48 },
+  vcfo_p_disk: { "Small": 264, "Standard": 264 },
+  vcfa_appliance_cpu: { "Small": 24, "Medium": 24, "Large": 32 },
+  vcfa_appliance_ram: { "Small": 96, "Medium": 96, "Large": 128 },
+  vcfa_appliance_disk: { "Small": 600, "Medium": 900, "Large": 1200 },
+  vcfopsnet_appliance_cpu: { "Small": 4, "Medium": 8, "Large": 12, "XL": 16, "XXL": 24 },
+  vcfopsnet_appliance_ram: { "Small": 16, "Medium": 32, "Large": 48, "XL": 64, "XXL": 128 },
+  vcfopsnet_appliance_disk: { "Small": 1024, "Medium": 1024, "Large": 2048, "XL": 2048, "XXL": 2048 },
+  vcfopsnet_collector_cpu: { "Small": 2, "Medium": 4, "Large": 8, "XL": 8, "XXL": 16 },
+  vcfopsnet_collector_ram: { "Small": 4, "Medium": 12, "Large": 16, "XL": 24, "XXL": 48 },
+  vcfopsnet_collector_disk: { "Small": 250, "Medium": 250, "Large": 250, "XL": 250, "XXL": 300 },
+  logman_worker_cpu: { "Small": 8, "Medium": 16, "Large": 32 },
+  logman_worker_ram: { "Small": 16, "Medium": 32, "Large": 64 },
+  vrli_appliance_disk: { "Small": 575, "Medium": 575, "Large": 575 },
+  vodap_worker_cpu: { "SimpleSmall": 16, "High AvailabilitySmall": 16, "High AvailabilityMedium": 31, "High AvailabilityLarge": 47 },
+  vodap_worker_ram: { "SimpleSmall": 20, "High AvailabilitySmall": 20, "High AvailabilityMedium": 41, "High AvailabilityLarge": 62 },
+  software_depot_cpu: { "SimpleSmall": 2, "High AvailabilitySmall": 2, "High AvailabilityMedium": 3, "High AvailabilityLarge": 4 },
+  software_depot_ram: { "SimpleSmall": 2, "High AvailabilitySmall": 2, "High AvailabilityMedium": 3, "High AvailabilityLarge": 6 },
+  software_depot_disk: { "SimpleSmall": 1500, "High AvailabilitySmall": 1500, "High AvailabilityMedium": 1500, "High AvailabilityLarge": 1500 },
+  idbroker_cpu: { "SimpleSmall": 1.5, "High AvailabilitySmall": 3, "High AvailabilityMedium": 5, "High AvailabilityLarge": 10 },
+  idbroker_ram: { "SimpleSmall": 2, "High AvailabilitySmall": 5, "High AvailabilityMedium": 5, "High AvailabilityLarge": 20 },
+  idbroker_disk: { "SimpleSmall": 20, "High AvailabilitySmall": 60, "High AvailabilityMedium": 60, "High AvailabilityLarge": 120 },
+  sddc_lcm_cpu: { "SimpleSmall": 2, "High AvailabilitySmall": 2.5, "High AvailabilityMedium": 2.5, "High AvailabilityLarge": 2.5 },
+  sddc_lcm_ram: { "SimpleSmall": 3, "High AvailabilitySmall": 3.5, "High AvailabilityMedium": 3.5, "High AvailabilityLarge": 3.5 },
+  salt_cpu: { "SimpleSmall": 0.7, "High AvailabilitySmall": 0.7, "High AvailabilityMedium": 1.5, "High AvailabilityLarge": 2.5 },
+  salt_ram: { "SimpleSmall": 1.5, "High AvailabilitySmall": 1.5, "High AvailabilityMedium": 2.5, "High AvailabilityLarge": 4.5 },
+  salt_raas_cpu: { "SimpleSmall": 1.15, "High AvailabilitySmall": 1.15, "High AvailabilityMedium": 4.5, "High AvailabilityLarge": 7 },
+  salt_raas_ram: { "SimpleSmall": 2.6, "High AvailabilitySmall": 2.6, "High AvailabilityMedium": 6, "High AvailabilityLarge": 9 },
+  telemetry_cpu: { "SimpleSmall": 0.5, "High AvailabilitySmall": 0.5, "High AvailabilityMedium": 1, "High AvailabilityLarge": 1 },
+  telemetry_ram: { "SimpleSmall": 2, "High AvailabilitySmall": 2, "High AvailabilityMedium": 3, "High AvailabilityLarge": 6 },
+  fleet_cpu: { "SimpleSmall": 2, "High AvailabilitySmall": 2.5, "High AvailabilityMedium": 2.5, "High AvailabilityLarge": 2.5 },
+  fleet_ram: { "SimpleSmall": 3, "High AvailabilitySmall": 3.5, "High AvailabilityMedium": 3.5, "High AvailabilityLarge": 3.5 },
+  srm_cpu: { "Light": 2, "Standard": 8 },
+  srm_ram: { "Light": 8, "Standard": 24 },
+  srm_disk: { "Light": 20, "Standard": 800 },
+  sddc_manager_cpu: 4,
+  sddc_manager_ram: 16,
+  sddc_manager_disk: 914,
+  ssp_lic_cpu: 6,
+  ssp_lic_ram: 12,
+  ssp_lic_disk: 256,
 };
 
-const nsxtManagerCpu: SizeMap = { Extra_Small: 2, Small: 4, Medium: 6, Large: 12, XLarge: 24 };
-const nsxtManagerRam: SizeMap = { Extra_Small: 8, Small: 16, Medium: 24, Large: 48, XLarge: 96 };
-const nsxtManagerDisk: SizeMap = { Extra_Small: 300, Small: 300, Medium: 300, Large: 300, XLarge: 400 };
-
-// NSX Edge and Virtual Network Appliance (VNA) share identical per-node
-// footprints in the workbook — the single edge-size input selects either family.
-const nsxtEdgeCpu: SizeMap = { 'NSX Edge Small': 2, 'NSX Edge Medium': 4, 'NSX Edge Large': 8, 'NSX Edge XLarge': 16, 'VNA Small': 2, 'VNA Medium': 4, 'VNA Large': 8, 'VNA XLarge': 16 };
-const nsxtEdgeRam: SizeMap = { 'NSX Edge Small': 4, 'NSX Edge Medium': 8, 'NSX Edge Large': 32, 'NSX Edge XLarge': 64, 'VNA Small': 4, 'VNA Medium': 8, 'VNA Large': 32, 'VNA XLarge': 64 };
-const nsxtEdgeDisk: SizeMap = { 'NSX Edge Small': 200, 'NSX Edge Medium': 200, 'NSX Edge Large': 200, 'NSX Edge XLarge': 200, 'VNA Small': 200, 'VNA Medium': 200, 'VNA Large': 200, 'VNA XLarge': 200 };
-
-const aviCpu: SizeMap = { Small: 6, Large: 16, 'X-Large': 16 };
-const aviRam: SizeMap = { Small: 32, Large: 48, 'X-Large': 64 };
-const aviDisk: SizeMap = { Small: 512, Large: 1400, 'X-Large': 1750 };
-
-const sspCpu: SizeMap = { Medium: 112, Large: 160, 'X-Large': 192 };
-const sspRam: SizeMap = { Medium: 414, Large: 606, 'X-Large': 734 };
-const sspDisk: SizeMap = { Medium: 4096, Large: 5120, 'X-Large': 6656 };
-
-// License Hub 2.0 — one standalone appliance (#364). It licenses vDefend AND
-// Avi, so it is required whenever EITHER is in scope, and one instance covers
-// both (120 endpoints across NSX Manager / SSP / Avi Controller). Figures are
-// TechDocs' "License Hub Appliance System Requirements" for 2.0: 6 vCPU, 12 GB,
-// 256 GB. NOT the workbook's: its row still models the older 5.1.2 instance the
-// SSP Installer deploys (installer + controller + worker: 10 vCPU / 30 GB /
-// 710 GB in the workbook, 810 GB in TechDocs — #176), which has no upgrade
-// path to 2.0. A site staying on 5.1.2 adds the difference by hand (04-sizing.md).
-const LICENSE_HUB = { nodes: 1, cpu: 6, ram: 12, disk: 256 };
-
-const vcfaCpu: SizeMap = { Small: 24, Medium: 24, Large: 32 };
-const vcfaRam: SizeMap = { Small: 96, Medium: 96, Large: 128 };
-const vcfaDisk: SizeMap = { Small: 717, Medium: 334, Large: 430 };
-
-// Real-time Metrics. NOT from the workbook: its Management Domain Sizing row
-// multiplies by a node-count cell (J29) that does not exist in the sheet, so the
-// formula evaluates to 0 vCPU / 0 RAM at every size — an incomplete row, not a
-// claim that RTM is free. We previously invented a node count (2, or 3 on Large)
-// and multiplied it by the VCFMS worker figures, which produced 48/96 on Medium.
-//
-// These are the product's own numbers instead: the Add Real-Time Metrics wizard
-// reports 32 vCPU / 43 GB for a Medium instance (field-observed 2026-07-22, #199)
-// — the VCFMS scale-up delta, since RTM deploys no appliances of its own and
-// grows the services runtime instead. Only Medium has been observed. Small and
-// Large are DERIVED from the VCFMS worker ratio (Small worker 12/24 is half of
-// Medium's 24/48; Large worker 24/48 equals Medium's), and are flagged as derived
-// in docs/04-sizing.md. Replace them with observed values when seen (#200).
-const rtmCpu: SizeMap = { Small: 16, Medium: 32, Large: 32 };
-const rtmRam: SizeMap = { Small: 22, Medium: 43, Large: 43 };
-// Disk is contested: the workbook hard-codes 205, the wizard reports 15. We
-// report the workbook's 205 (the only RTM figure that genuinely traces to the
-// source) and document the conflict rather than silently picking a side (#200).
-const RTM_DISK = 205;
-
-const vcfopsCpu: SizeMap = { 'Extra Small': 2, Small: 4, Medium: 8, Large: 16, 'Extra Large': 24 };
-const vcfopsRam: SizeMap = { 'Extra Small': 8, Small: 16, Medium: 32, Large: 48, 'Extra Large': 128 };
-const vcfopsDisk: SizeMap = { 'Extra Small': 274, Small: 274, Medium: 274, Large: 274, 'Extra Large': 274 };
-
-const cloudProxyCpu: SizeMap = { Small: 4, Medium: 8, Large: 8 };
-const cloudProxyRam: SizeMap = { Small: 16, Medium: 48, Large: 48 };
-const cloudProxyDisk: SizeMap = { Small: 264, Medium: 264, Large: 264 };
-
-const vcfmsControlCpu: SizeMap = { Small: 4, Medium: 4, Large: 8 };
-const vcfmsControlRam: SizeMap = { Small: 10, Medium: 10, Large: 14 };
-const vcfmsControlDisk: SizeMap = { Small: 100, Medium: 100, Large: 100 };
-const vcfmsWorkerNodes: SizeMap = { Small: 3, Medium: 3, Large: 4 };
-const vcfmsWorkerCpu: SizeMap = { Small: 12, Medium: 24, Large: 24 };
-const vcfmsWorkerRam: SizeMap = { Small: 24, Medium: 48, Large: 48 };
-const vcfmsWorkerDisk: SizeMap = { Small: 100, Medium: 100, Large: 100 };
-// First-instance VCFMS worker data-disk uplift, per deployment size
-const vcfmsWorkerDataDiskFirst: SizeMap = { Small: 2600, Medium: 3000, Large: 3702 };
-// Log Management (formerly vRealize Log Insight) per-appliance disk — 575 GB at every size
-const VRLI_DISK = 575;
-
-const opsNetCpu: SizeMap = { Small: 4, Medium: 8, Large: 12 };
-const opsNetRam: SizeMap = { Small: 16, Medium: 32, Large: 48 };
-const opsNetDisk: SizeMap = { Small: 1024, Medium: 1024, Large: 1024 };
-const opsNetCollectorCpu: SizeMap = { Small: 2, Medium: 4, Large: 8 };
-const opsNetCollectorRam: SizeMap = { Small: 4, Medium: 12, Large: 16 };
-const opsNetCollectorDisk: SizeMap = { Small: 250, Medium: 250, Large: 250 };
-
-// Fixed footprints
-const SDDC_MANAGER = { nodes: 1, cpu: 4, ram: 16, disk: 914 };
-const PROTECTION_BLUEPRINT = { nodes: 1, cpu: 8, ram: 24, disk: 800 };
-
 // ---------------------------------------------------------------------------
-// Option lists (for dropdowns) and defaults
+// Option lists (for dropdowns)
 // ---------------------------------------------------------------------------
 
 export const OPTIONS = {
   deploymentModel: ['Simple', 'High Availability'] as const,
+  // Simple deploys at Small only; High Availability at Small, Medium or Large
+  // (workbook lists sizing_vcf_deployment_model_small / sizing_vcf_deployment_model).
   deploymentSize: ['Small', 'Medium', 'Large'] as const,
   instanceModel: ['First Instance', 'Additional Instance'] as const,
   storageType: ['vSAN-ESA', 'vSAN-OSA', 'NFS', 'FC'] as const,
   vcenterSize: ['Tiny', 'Small', 'Medium', 'Large', 'XLarge'] as const,
   vcenterStorage: ['Default', 'Large', 'XLarge'] as const,
-  nsxManagerSize: ['Extra_Small', 'Small', 'Medium', 'Large', 'XLarge'] as const,
+  nsxManagerSize: ['Small', 'Medium', 'Large', 'XLarge'] as const,
+  nsxGmSize: ['Excluded', 'Small', 'Medium', 'Large', 'XLarge'] as const,
   nsxEdgeSize: ['Excluded', 'NSX Edge Small', 'NSX Edge Medium', 'NSX Edge Large', 'NSX Edge XLarge', 'VNA Small', 'VNA Medium', 'VNA Large', 'VNA XLarge'] as const,
+  supervisorMode: ['Excluded', 'Single Node', 'High Availability'] as const,
+  supervisorSize: ['Tiny', 'Small', 'Medium', 'Large', 'Xlarge'] as const,
   aviSize: ['Excluded', 'Small', 'Large', 'X-Large'] as const,
-  sspSize: ['Excluded', 'Medium', 'Large', 'X-Large'] as const,
-  opsNetSize: ['Excluded', 'Small', 'Medium', 'Large'] as const,
+  ssp: ['Excluded', 'Include'] as const,
+  vcfOps: ['Include', 'Existing', 'Exclude'] as const,
+  opsNetSize: ['Excluded', 'Small', 'Medium', 'Large', 'XL', 'XXL'] as const,
   logsSize: ['Exclude', 'Small', 'Medium', 'Large'] as const,
   vcfAutomationSize: ['Small', 'Medium', 'Large'] as const,
   nsxModel: ['Shared', 'Dedicated - Single Node', 'Dedicated - HA Cluster'] as const,
-  gm: ['None', 'Active GM', 'Standby GM'] as const,
+  gm: ['Excluded', 'Active GM', 'Standby GM', 'Connect Instance'] as const,
+  spr: ['Exclude', 'Management Only', 'Workload Only', 'Management & Workload'] as const,
   clusterType: ['Standard', 'Stretched (multi-AZ)'] as const,
 };
 
-// Log Management (cells E25/E26) is constrained by the deployment profile:
-// size must not exceed the deployment size, and replica count has a per-size
-// minimum (Small 1 / Medium 3 / Large 6), capped at 19.
+export function deploymentSizeOptions(model: string): string[] {
+  return model === 'Simple' ? ['Small'] : ['Small', 'Medium', 'Large'];
+}
+
+// Log Management replicas (sizing_log_replicas_*): Small 1-19, Medium 3-19, Large 6-19.
 export const LOGS_REPLICA_MAX = 19;
-// Log Management size must MATCH the deployment profile size — the workbook warns
-// "The Log Management size should be the same size as the selected VCF Profile
-// size" (cell O24). So the only choices are Exclude or the profile size itself.
-export function logsSizeOptions(deploymentSize: string): string[] {
-  return ['Exclude', deploymentSize];
+export function logsSizeOptions(): string[] {
+  return ['Exclude', 'Small', 'Medium', 'Large'];
 }
 export function logsReplicaMin(logsSize: string): number {
   return logsSize === 'Large' ? 6 : logsSize === 'Medium' ? 3 : 1;
 }
 
-// VCF Automation's SIZE selects its deployment model — they are not independent
-// axes. TechDocs "VCF Automation Models": Simple is "Single node. Applies to
-// small appliance size"; High Availability is "Three node cluster. Applies to
-// medium or large node sizes." So Small = 1 node, Medium/Large = 3 (#193, #196).
-// This is Automation's own size, NOT the fleet deployment size or model.
+// VCF Automation's own size decides its node count: Small = 1 node, Medium /
+// Large = 3 (TechDocs "VCF Automation Models"; workbook row 27 does the same
+// when its size follows the profile). Kept as its own input (#193, #196).
 export function vcfAutomationNodes(vcfAutomationSize: string): number {
   return vcfAutomationSize === 'Small' ? 1 : 3;
 }
 
-// When a vSphere Supervisor is backed by an NSX Edge cluster, that cluster must
-// be at the Large form factor minimum (10-supervisor-enablement.md section 3.1).
-// This fires ONLY for an under-sized NSX Edge selection: the no-Edge Supervisor
-// paths are legitimate and must not warn -- VPC networking with a Distributed
-// Transit Gateway uses a VNA cluster and no Edge cluster, and vDS networking
-// uses no NSX at all. Advisory only: no change to the footprint math or the
-// user's selection. Returns the warning text, or null.
+// A Supervisor backed by an NSX Edge cluster needs it at Large minimum
+// (10-supervisor-enablement.md section 3.1). Advisory only.
 export function supervisorEdgeWarning(supervisorPlanned: boolean, nsxEdgeSize: string): string | null {
   if (!supervisorPlanned) return null;
   if (nsxEdgeSize === 'NSX Edge Small' || nsxEdgeSize === 'NSX Edge Medium')
@@ -176,16 +159,23 @@ export function supervisorEdgeWarning(supervisorPlanned: boolean, nsxEdgeSize: s
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
 export interface WorkloadDomain {
   name: string;
   vcenterSize: string;
   vcenterStorage: string;
   nsxModel: string;
   nsxSize: string;
-  gm: string;
-  // Advisory only. A workload domain's Edge cluster runs on WLD hosts, not in
-  // the management domain, so these do NOT feed the footprint totals - they
-  // drive the same Supervisor Large-minimum warning as the mgmt-domain fields.
+  gm: string; // Excluded / Active GM / Standby GM / Connect Instance
+  gmSize: string;
+  aviSize: string; // Excluded or an Avi controller size (row 20)
+  ssp: boolean; // Security Services Platform deployed in this WLD (row 21)
+  spr: boolean; // Site Protection & DR covers this WLD (row 30, needs spr Workload / M&W)
+  // Advisory only: the WLD Edge cluster runs on WLD hosts, not in the
+  // management domain. Drives the Supervisor Large-minimum warning.
   supervisorPlanned: boolean;
   nsxEdgeSize: string;
 }
@@ -196,42 +186,43 @@ export interface SizingState {
   deploymentSize: string;
   instanceModel: string;
   storageType: string;
-  // proposed host spec (doubles as the sheet's "host parameters")
+  // host spec
   coresPerHost: number;
   ramPerHost: number;
-  // vSAN capacity is derived from the physical drives per host: for ESA every
-  // device counts; for OSA only the capacity-tier disks (cache is excluded).
-  capacityDisksPerHost: number;
-  capacityDiskSizeGb: number; // raw GB per capacity device
-  externalStorageGb: number; // total datastore capacity for NFS / FC
+  capacityDisksPerHost: number; // ESA: every device; OSA: capacity tier only
+  capacityDiskSizeGb: number;
+  externalStorageGb: number; // NFS / FC datastore capacity
   cpuOver: number;
   ramOver: number;
-  reservePct: number;
+  reservePct: number; // vSAN rebuild + operations reserve (vSAN only)
   growthPct: number;
   // proposed cluster
   clusterType: string;
   proposedHosts: number;
-  // management components (vCenter + NSX Local Manager sizes are derived from
-  // the deployment profile — see deriveMgmtSizes — not chosen here)
-  nsxGmSize: string; // 'Excluded' or a manager size
+  // management domain components (mgmt vCenter + NSX Local Manager sizes are
+  // derived from the profile — see deriveMgmtSizes)
+  nsxGmSize: string;
   nsxEdgeSize: string;
-  // Planning flag only (not a component): when set, the tool warns if the Edge
-  // selection is below the Large form factor a vSphere Supervisor requires.
-  supervisorPlanned: boolean;
+  supervisorMode: string; // Excluded / Single Node / High Availability (row 13)
+  supervisorSize: string;
   aviSize: string;
-  sspSize: string;
-  vcfOps: boolean;
-  vcfOpsCollector: boolean;
+  ssp: string; // Excluded / Include (row 15, sized by the mgmt NSX Manager size)
+  licenseHub: boolean; // vDefend / Avi License Hub (row 17)
+  // fleet components
+  vcfOps: string; // Include / Existing / Exclude (Existing = proxy + License Server only)
+  vcfOpsCollector: boolean; // a Cloud Proxy even without VCF Operations here
   vcfAutomation: boolean;
-  // Automation's OWN size — independent of deploymentSize, and it also decides
-  // the node count (see vcfAutomationNodes).
   vcfAutomationSize: string;
   opsNetSize: string;
-  logsSize: string; // Log Management: 'Exclude' or Small/Medium/Large
-  logsReplicas: number; // Log Management replica count
-  vcfRtm: boolean; // Real-time Metrics
-  vcfSd: boolean; // Software Depot (adds disk only on an additional instance)
-  // workload domains
+  // VCF management services (Day-N, all hosted on the services-runtime workers)
+  logsSize: string;
+  logsReplicas: number;
+  vcfRtm: boolean;
+  vcfSd: boolean; // Software Depot — additional instance only
+  vcfIdb: boolean; // Identity Broker — additional instance only
+  // protection blueprints (rows 82-91)
+  spr: string; // Site Protection & DR scope
+  rwr: boolean; // On-premises Ransomware Recovery
   workloadDomains: WorkloadDomain[];
 }
 
@@ -254,16 +245,15 @@ export function defaultState(): SizingState {
     proposedHosts: 4,
     nsxGmSize: 'Excluded',
     nsxEdgeSize: 'Excluded',
-    supervisorPlanned: false,
+    supervisorMode: 'Excluded',
+    supervisorSize: 'Medium',
     aviSize: 'Excluded',
-    sspSize: 'Excluded',
-    vcfOps: true, // normally deployed in a greenfield fleet; exclude only if reusing an instance
-    // The VCF Installer deploys a unified cloud proxy automatically at bring-up,
-    // alongside the License Server — so on a NEW first instance it is present
-    // whether or not anyone ticks it, hence the default. It stays a checkbox
-    // deliberately: an upgrade / existing-fleet sizing may already account for
-    // the proxy, and Day-N *additional* collectors are extra on top of it (#198).
-    vcfOpsCollector: true,
+    ssp: 'Excluded',
+    licenseHub: false,
+    // A greenfield first instance normally deploys VCF Operations, which brings
+    // the Cloud Proxy and License Server with it (rows 24-26).
+    vcfOps: 'Include',
+    vcfOpsCollector: false,
     vcfAutomation: false,
     vcfAutomationSize: 'Medium',
     opsNetSize: 'Excluded',
@@ -271,280 +261,279 @@ export function defaultState(): SizingState {
     logsReplicas: 3,
     vcfRtm: false,
     vcfSd: false,
+    vcfIdb: false,
+    spr: 'Exclude',
+    rwr: false,
     workloadDomains: [],
   };
 }
 
+// Brings a state saved by an older version of the tool (workbook v1.9.1.001
+// field shapes) up to this one, so stored / shared / imported plans keep working.
+export function migrateState(raw: Record<string, unknown>): Partial<SizingState> {
+  const s: Record<string, unknown> = { ...raw };
+  if (typeof s.vcfOps === 'boolean') s.vcfOps = s.vcfOps ? 'Include' : 'Exclude';
+  if (typeof s.sspSize === 'string' && s.ssp === undefined) s.ssp = s.sspSize === 'Excluded' ? 'Excluded' : 'Include';
+  if (typeof s.supervisorPlanned === 'boolean' && s.supervisorMode === undefined)
+    s.supervisorMode = s.supervisorPlanned ? 'High Availability' : 'Excluded';
+  if (s.licenseHub === undefined && (s.sspSize !== undefined || s.aviSize !== undefined))
+    s.licenseHub = (typeof s.sspSize === 'string' && s.sspSize !== 'Excluded');
+  if (Array.isArray(s.workloadDomains)) {
+    s.workloadDomains = (s.workloadDomains as Array<Record<string, unknown>>).map((w) => ({
+      aviSize: 'Excluded', ssp: false, spr: false,
+      ...w,
+      gm: w.gm === 'None' ? 'Excluded' : w.gm,
+      gmSize: w.gmSize ?? w.nsxSize,
+    }));
+  }
+  delete s.sspSize;
+  delete s.supervisorPlanned;
+  return s as Partial<SizingState>;
+}
+
 // ---------------------------------------------------------------------------
-// Component derivation
+// Component derivation — one entry per workbook row (rows 8-30)
 // ---------------------------------------------------------------------------
 
 export interface Component {
+  row: number; // workbook row on 'Management Domain Sizing'
   name: string;
   nodes: number;
-  cpu: number; // total across nodes
-  ram: number; // total GB
-  disk: number; // total GB
+  cpu: number;
+  ram: number;
+  disk: number;
 }
 
 const isVsan = (t: string) => t === 'vSAN-ESA' || t === 'vSAN-OSA';
+// Excel ROUNDUP semantics: round up, but ignore binary floating-point noise
+// (13060 * 1.1 is 14366.000000000002 in JS, exactly 14366 in Excel).
+const ceil = (x: number) => Math.ceil(Math.round(x * 1e9) / 1e9);
+const lk = (tbl: Record<string, number>, key: string): number => tbl[key] ?? 0;
 
-// Management vCenter and NSX Local Manager sizes are fixed by the deployment
-// profile in the workbook (cells D39 / F39 / I39), not chosen by the user.
 export interface DerivedSizes {
   vcenterSize: string;
   vcenterStorage: string;
   nsxManagerSize: string;
 }
+// Management vCenter + NSX Local Manager sizes are fixed by the profile
+// (workbook D40 / F40 / I40).
 export function deriveMgmtSizes(model: string, size: string): DerivedSizes {
-  // vCenter appliance (D39): Simple -> Small; HA -> matches deployment size
-  const vcenterSize = model === 'Simple' ? 'Small' : size;
-  // vCenter storage (F39): Large, except HA + Large -> XLarge
-  const vcenterStorage = model === 'High Availability' && size === 'Large' ? 'XLarge' : 'Large';
-  // NSX Local Manager (I39): Medium, except HA + Large -> Large
-  const nsxManagerSize = model === 'High Availability' && size === 'Large' ? 'Large' : 'Medium';
+  const ha = model === 'High Availability';
+  const vcenterSize = ha ? size : 'Small';
+  const vcenterStorage = ha && size === 'Large' ? 'XLarge' : 'Large';
+  const nsxManagerSize = ha && size === 'Large' ? 'Large' : 'Medium';
   return { vcenterSize, vcenterStorage, nsxManagerSize };
 }
 
-// VCF Operations bumps the appliance size one tier when HA is chosen.
-function vcfOpsSize(model: string, size: string): string | null {
-  if (model === 'High Availability') {
-    if (size === 'Small') return 'Medium';
-    if (size === 'Medium') return 'Large';
-    if (size === 'Large') return 'Extra Large';
-  } else if (size === 'Small') {
-    return 'Small';
-  }
-  return null; // Simple + Medium/Large: not sized by the sheet
+// VCF services runtime worker count and size (rows 23 + Static Reference
+// Tables D388:D398). Workers are sized from the Day-0 services plus the Day-N
+// services hosted on the runtime (Log Management, Real-time Metrics, and on an
+// additional instance Software Depot / Identity Broker), with 1.2x RAM and
+// 1.09x CPU headroom, then the workbook's per-profile +1 node adjustments.
+// The first-instance rows of table_vcfms_worker_cpu / _ram are formulas, not
+// constants: =IF(AND(logs="Exclude", rtm="Exclude"), <base>, <Day-N size>).
+// T holds the base values (no Log Management / Real-time Metrics); these are
+// the Day-N sizes the workbook switches to when either is included.
+const VCFMS_WORKER_DAYN_CPU: Record<string, number> = {
+  'First InstanceSimpleSmall': 16, 'First InstanceHigh AvailabilitySmall': 16,
+  'First InstanceHigh AvailabilityMedium': 24, 'First InstanceHigh AvailabilityLarge': 24,
+};
+const VCFMS_WORKER_DAYN_RAM: Record<string, number> = {
+  'First InstanceSimpleSmall': 32, 'First InstanceHigh AvailabilitySmall': 32,
+  'First InstanceHigh AvailabilityMedium': 48, 'First InstanceHigh AvailabilityLarge': 48,
+};
+
+export interface WorkerSizing { nodes: number; cpu: number; ram: number; disk: number; perNodeCpu: number; perNodeRam: number }
+export function vcfmsWorkers(s: SizingState): WorkerSizing {
+  const key = s.instanceModel + s.deploymentModel + s.deploymentSize;
+  const prof = s.deploymentModel + s.deploymentSize;
+  const addl = s.instanceModel === 'Additional Instance';
+  const logs = s.logsSize !== 'Exclude';
+  const dayN = logs || s.vcfRtm;
+  const wCpu = (dayN ? VCFMS_WORKER_DAYN_CPU[key] : undefined) ?? lk(T.vcfms_worker_cpu, key);
+  const wRam = (dayN ? VCFMS_WORKER_DAYN_RAM[key] : undefined) ?? lk(T.vcfms_worker_ram, key);
+  const reps = logs ? Math.min(LOGS_REPLICA_MAX, Math.max(logsReplicaMin(s.logsSize), s.logsReplicas)) : 0;
+  const sd = addl && s.vcfSd;
+  const idb = addl && s.vcfIdb;
+  // Day-N (rows 393-396)
+  const dnCpu = (logs ? reps * lk(T.logman_worker_cpu, s.logsSize) : 0) + (s.vcfRtm ? lk(T.vodap_worker_cpu, prof) : 0)
+    + (sd ? lk(T.software_depot_cpu, prof) : 0) + (idb ? lk(T.idbroker_cpu, prof) : 0);
+  const dnRam = (logs ? reps * lk(T.logman_worker_ram, s.logsSize) : 0) + (s.vcfRtm ? lk(T.vodap_worker_ram, prof) : 0)
+    + (sd ? lk(T.software_depot_ram, prof) : 0) + (idb ? lk(T.idbroker_ram, prof) : 0);
+  const dnDisk = (logs ? reps * lk(T.vrli_appliance_disk, s.logsSize) : 0) + (s.vcfRtm ? 205 : 0)
+    + (sd ? lk(T.software_depot_disk, prof) : 0) + (idb ? lk(T.idbroker_disk, prof) : 0);
+  // Day-0 (row 398)
+  const d0Cpu = addl
+    ? lk(T.sddc_lcm_cpu, prof) + lk(T.salt_cpu, prof) + lk(T.telemetry_cpu, prof)
+    : lk(T.idbroker_cpu, prof) + lk(T.software_depot_cpu, prof) + lk(T.sddc_lcm_cpu, prof) + lk(T.salt_cpu, prof)
+      + lk(T.salt_raas_cpu, prof) + lk(T.telemetry_cpu, prof) + lk(T.fleet_cpu, prof);
+  const d0Ram = addl
+    ? lk(T.sddc_lcm_ram, prof) + lk(T.salt_ram, prof) + lk(T.telemetry_ram, prof)
+    : lk(T.idbroker_ram, prof) + lk(T.software_depot_ram, prof) + lk(T.sddc_lcm_ram, prof) + lk(T.salt_ram, prof)
+      + lk(T.salt_raas_ram, prof) + lk(T.telemetry_ram, prof) + lk(T.fleet_ram, prof);
+  const up = ceil;
+  const ramNeed = up((dnRam + d0Ram) * 1.2); // D390
+  const cpuNeed = up((dnCpu + d0Cpu) * 1.09); // D391
+  const byRam = (wRam ? up(ramNeed / wRam) : 0)
+    + (key === 'Additional InstanceSimpleSmall' || key === 'First InstanceHigh AvailabilityMedium' ? 0 : 1); // D388
+  const byCpu = (wCpu ? up(cpuNeed / wCpu) : 0)
+    + (key === 'Additional InstanceSimpleSmall' ? 0
+      : !logs && !s.vcfRtm && key === 'Additional InstanceHigh AvailabilityMedium' ? 0
+      : (logs || s.vcfRtm) && key === 'First InstanceHigh AvailabilityMedium' ? 0 : 1); // D389
+  const nodes = Math.max(byRam, byCpu); // J23
+  return { nodes, cpu: nodes * wCpu, ram: nodes * wRam, disk: lk(T.vcfms_worker_disk, key) + dnDisk, perNodeCpu: wCpu, perNodeRam: wRam };
 }
+
+const SSP_SIZE = (nsxSize: string) => (nsxSize === 'XLarge' ? 'XLarge' : nsxSize);
 
 export function components(s: SizingState): Component[] {
   const list: Component[] = [];
+  const add = (row: number, name: string, nodes: number, cpu: number, ram: number, disk: number) => {
+    if (nodes || cpu || ram || disk) list.push({ row, name, nodes, cpu, ram, disk });
+  };
   const ha = s.deploymentModel === 'High Availability';
   const size = s.deploymentSize;
+  const first = s.instanceModel === 'First Instance';
   const d = deriveMgmtSizes(s.deploymentModel, size);
+  const wlds = s.workloadDomains;
 
-  // SDDC Manager — fixed
-  list.push({ name: 'SDDC Manager', ...SDDC_MANAGER });
-
-  // Management vCenter (size + storage derived from deployment profile)
-  list.push({
-    name: 'Management vCenter',
-    nodes: 1,
-    cpu: vcenterCpu[d.vcenterSize],
-    ram: vcenterRam[d.vcenterSize],
-    disk: vcenterDisk[d.vcenterSize + d.vcenterStorage],
-  });
-
-  // Management NSX Managers (+ optional Global Manager; local size derived)
+  // 8 SDDC Manager
+  add(8, 'SDDC Manager', 1, T.sddc_manager_cpu, T.sddc_manager_ram, T.sddc_manager_disk);
+  // 9 Management vCenter
+  add(9, 'Management vCenter', 1, lk(T.vcenter_appliance_cpu, d.vcenterSize), lk(T.vcenter_appliance_ram, d.vcenterSize),
+    lk(T.vcenter_disk_gb, d.vcenterSize + d.vcenterStorage));
+  // 10 Management NSX Managers (+ Global Manager)
   {
-    const localNodes = ha ? 3 : 1;
+    const lmNodes = ha ? 3 : 1;
     const gm = s.nsxGmSize !== 'Excluded';
-    const nodes = localNodes + (gm ? 3 : 0);
-    const cpu = nsxtManagerCpu[d.nsxManagerSize] * localNodes + (gm ? nsxtManagerCpu[s.nsxGmSize] * 3 : 0);
-    const ram = nsxtManagerRam[d.nsxManagerSize] * localNodes + (gm ? nsxtManagerRam[s.nsxGmSize] * 3 : 0);
-    const disk = nsxtManagerDisk[d.nsxManagerSize] * localNodes + (gm ? nsxtManagerDisk[s.nsxGmSize] * 3 : 0);
-    list.push({ name: 'Management NSX Managers (Local / Global)', nodes, cpu, ram, disk });
+    add(10, 'Management NSX Managers (Local / Global)', lmNodes + (gm ? 3 : 0),
+      lk(T.nsxt_manager_cpu, d.nsxManagerSize) * lmNodes + (gm ? lk(T.nsxt_manager_cpu, s.nsxGmSize) * 3 : 0),
+      lk(T.nsxt_manager_ram, d.nsxManagerSize) * lmNodes + (gm ? lk(T.nsxt_manager_ram, s.nsxGmSize) * 3 : 0),
+      lk(T.nsxt_manager_disk_gb, d.nsxManagerSize) * lmNodes + (gm ? lk(T.nsxt_manager_disk_gb, s.nsxGmSize) * 3 : 0));
   }
-
-  // Management NSX Edges (2-node)
+  // 11 / 12 Management NSX Edges or Virtual Network Appliances (2 nodes)
   if (s.nsxEdgeSize !== 'Excluded') {
-    list.push({
-      name: 'Management NSX Edges',
-      nodes: 2,
-      cpu: nsxtEdgeCpu[s.nsxEdgeSize] * 2,
-      ram: nsxtEdgeRam[s.nsxEdgeSize] * 2,
-      disk: nsxtEdgeDisk[s.nsxEdgeSize] * 2,
-    });
+    const vna = s.nsxEdgeSize.startsWith('VNA');
+    add(vna ? 12 : 11, vna ? 'Management Virtual Network Appliances' : 'Management NSX Edges', 2,
+      lk(T.nsxt_edge_cpu, s.nsxEdgeSize) * 2, lk(T.nsxt_edge_ram, s.nsxEdgeSize) * 2, lk(T.nsxt_edge_disk_gb, s.nsxEdgeSize) * 2);
   }
-
-  // Management AVI Load Balancer (3-node)
+  // 13 Management Supervisor
+  if (s.supervisorMode !== 'Excluded') {
+    const n = s.supervisorMode === 'High Availability' ? 3 : 1;
+    add(13, 'Management Supervisor', n, lk(T.supervisor_cpu, s.supervisorSize) * n, lk(T.supervisor_ram, s.supervisorSize) * n,
+      lk(T.supervisor_disk, s.supervisorSize) * n);
+  }
+  // 14 Management Avi Load Balancer (3 controllers)
   if (s.aviSize !== 'Excluded') {
-    list.push({
-      name: 'Management AVI Load Balancer',
-      nodes: 3,
-      cpu: aviCpu[s.aviSize] * 3,
-      ram: aviRam[s.aviSize] * 3,
-      disk: aviDisk[s.aviSize] * 3,
-    });
+    add(14, 'Management Avi Load Balancer', 3, lk(T.avi_lb_cpu, s.aviSize) * 3, lk(T.avi_lb_ram, s.aviSize) * 3, lk(T.avi_lb_disk, s.aviSize) * 3);
   }
-
-  // Management Security Services Platform
-  if (s.sspSize !== 'Excluded') {
-    const workerNodes = s.sspSize === 'Medium' ? 9 : s.sspSize === 'Large' ? 12 : 14;
-    list.push({
-      name: 'Security Services Platform',
-      nodes: workerNodes,
-      cpu: sspCpu[s.sspSize],
-      ram: sspRam[s.sspSize],
-      disk: sspDisk[s.sspSize],
-    });
+  // 15 Management Security Services Platform — sized by the mgmt NSX Manager size
+  const mgmtSsp = s.ssp === 'Include';
+  if (mgmtSsp) {
+    const z = SSP_SIZE(d.nsxManagerSize);
+    add(15, 'Management Security Services Platform', lk(T.ssp_workers, z) + lk(T.ssp_controller, z) + lk(T.ssp_sspi, z),
+      lk(T.ssp_cpu, z), lk(T.ssp_ram, z), lk(T.ssp_disk, z));
   }
-
-  // License Hub — needed when vDefend/SSP OR Avi is in scope, and added once
-  // when both are. It used to be folded into the SSP row above and gated on SSP
-  // alone, which silently under-sized an Avi-only fleet by its whole footprint.
-  if (s.sspSize !== 'Excluded' || s.aviSize !== 'Excluded') {
-    list.push({ name: 'License Hub (vDefend / AVI licensing)', ...LICENSE_HUB });
-  }
-
-  // VCF services runtime (VCFMS) — control nodes
+  // 16 SSP Installer — one per five SSP deployments (mgmt first, then WLDs)
   {
-    const nodes = ha ? 3 : 1;
-    list.push({
-      name: 'VCF services runtime (control nodes)',
-      nodes,
-      cpu: vcfmsControlCpu[size] * nodes,
-      ram: vcfmsControlRam[size] * nodes,
-      disk: vcfmsControlDisk[size] * nodes,
-    });
-  }
-
-  // VCF services runtime — worker nodes (with first-instance data-disk uplift)
-  {
-    const nodes = s.deploymentModel === 'Simple' ? 3 : vcfmsWorkerNodes[size];
-    const uplift = s.instanceModel === 'First Instance' ? vcfmsWorkerDataDiskFirst[size] : 0;
-    list.push({
-      name: 'VCF services runtime (worker nodes)',
-      nodes,
-      cpu: vcfmsWorkerCpu[size] * nodes,
-      ram: vcfmsWorkerRam[size] * nodes,
-      disk: vcfmsWorkerDisk[size] * nodes + uplift,
-    });
-  }
-
-  // VCF Operations
-  if (s.vcfOps) {
-    const opsSize = vcfOpsSize(s.deploymentModel, size);
-    if (opsSize) {
-      const nodes = ha ? 3 : 1;
-      list.push({
-        name: 'VCF Operations',
-        nodes,
-        cpu: vcfopsCpu[opsSize] * nodes,
-        ram: vcfopsRam[opsSize] * nodes,
-        disk: vcfopsDisk[opsSize] * nodes,
-      });
+    const seq: Array<[boolean, string]> = [[mgmtSsp, d.nsxManagerSize], ...wlds.map((w) => [w.ssp, w.nsxSize] as [boolean, string])];
+    let cnt = 0;
+    let n = 0, cpu = 0, ram = 0, disk = 0;
+    for (const [inc, sz] of seq) {
+      if (!inc) continue;
+      cnt += 1;
+      if (cnt % 5 === 1) {
+        const z = SSP_SIZE(sz);
+        n += lk(T.ssp_sspi, z); cpu += lk(T.ssp_sspi_cpu, z); ram += lk(T.ssp_sspi_ram, z); disk += lk(T.ssp_sspi_disk, z);
+      }
     }
+    add(16, 'Security Services Platform Installer', n, cpu, ram, disk);
   }
-
-  // Cloud Proxy (VCF Operations collector)
-  if (s.vcfOpsCollector) {
-    list.push({
-      name: 'Cloud Proxy (Ops collector)',
-      nodes: 1,
-      cpu: cloudProxyCpu[size],
-      ram: cloudProxyRam[size],
-      disk: cloudProxyDisk[size],
-    });
+  // 17 License Hub (vDefend / Avi)
+  if (s.licenseHub) add(17, 'License Hub (vDefend / Avi licensing)', 1, T.ssp_lic_cpu, T.ssp_lic_ram, T.ssp_lic_disk);
+  // 18-21 Workload domain components hosted in the management domain
+  {
+    let vn = 0, vc = 0, vr = 0, vd = 0;
+    let nn = 0, nc = 0, nr = 0, nd = 0;
+    let an = 0, ac = 0, ar = 0, ad = 0;
+    let sn = 0, sc = 0, sr = 0, sd = 0;
+    for (const w of wlds) {
+      vn += 1; vc += lk(T.vcenter_appliance_cpu, w.vcenterSize); vr += lk(T.vcenter_appliance_ram, w.vcenterSize);
+      vd += lk(T.vcenter_disk_gb, w.vcenterSize + w.vcenterStorage);
+      if (w.nsxModel !== 'Shared') {
+        const k = w.nsxModel === 'Dedicated - HA Cluster' ? 3 : 1;
+        nn += k; nc += lk(T.nsxt_manager_cpu, w.nsxSize) * k; nr += lk(T.nsxt_manager_ram, w.nsxSize) * k; nd += lk(T.nsxt_manager_disk_gb, w.nsxSize) * k;
+      }
+      if (w.gm === 'Active GM' || w.gm === 'Standby GM') {
+        nn += 3; nc += lk(T.nsxt_manager_cpu, w.gmSize) * 3; nr += lk(T.nsxt_manager_ram, w.gmSize) * 3; nd += lk(T.nsxt_manager_disk_gb, w.gmSize) * 3;
+      }
+      if (w.aviSize !== 'Excluded') {
+        an += 3; ac += lk(T.avi_lb_cpu, w.aviSize) * 3; ar += lk(T.avi_lb_ram, w.aviSize) * 3; ad += lk(T.avi_lb_disk, w.aviSize) * 3;
+      }
+      if (w.ssp) {
+        const z = SSP_SIZE(w.nsxSize);
+        sn += lk(T.ssp_workers, z) + lk(T.ssp_controller, z); sc += lk(T.ssp_cpu, z); sr += lk(T.ssp_ram, z); sd += lk(T.ssp_disk, z);
+      }
+    }
+    add(18, 'Workload Domain vCenters', vn, vc, vr, vd);
+    add(19, 'Workload Domain NSX Managers (Local / Global)', nn, nc, nr, nd);
+    add(20, 'Workload Domain Avi Load Balancers', an, ac, ar, ad);
+    add(21, 'Workload Domain Security Services Platform', sn, sc, sr, sd);
   }
-
-  // License Server — present on the first instance when VCF Operations is deployed
-  if (s.instanceModel === 'First Instance' && s.vcfOps) {
-    list.push({ name: 'License Server', nodes: 1, cpu: 2, ram: 4, disk: 12 });
+  // 22 VCF services runtime — control nodes
+  {
+    const n = lk(T.vcfms_control_nodes, s.deploymentModel);
+    add(22, 'VCF services runtime (control nodes)', n, lk(T.vcfms_control_cpu, size) * n, lk(T.vcfms_control_ram, size) * n,
+      lk(T.vcfms_control_disk, size) * n);
   }
-
-  // VCF Automation. Sized on its OWN size, not the fleet deployment size or
-  // model — and that size decides the node count (#193, #196).
+  // 23 VCF services runtime — worker nodes (hosts Log Management, Real-time
+  // Metrics and, on an additional instance, Software Depot / Identity Broker)
+  {
+    const w = vcfmsWorkers(s);
+    add(23, 'VCF services runtime (worker nodes)', w.nodes, w.cpu, w.ram, w.disk);
+  }
+  // 24 VCF Operations (HA-Small = 2 x Small, HA-Medium = 3 x Medium,
+  // HA-Large = 3 x Large, Simple = 1 x Small; HA-Small uses the Medium disk)
+  if (s.vcfOps === 'Include') {
+    const n = ha ? (size === 'Small' ? 2 : 3) : 1;
+    const z = ha ? size : 'Small';
+    const dz = ha && size === 'Small' ? 'Medium' : z;
+    add(24, 'VCF Operations', n, lk(T.vcfops_appliance_cpu, z) * n, lk(T.vcfops_appliance_ram, z) * n, lk(T.vcfops_appliance_disk, dz) * n);
+  }
+  // 25 Cloud Proxy — with VCF Operations (Include or Existing), or on its own
+  if (s.vcfOps !== 'Exclude' || s.vcfOpsCollector) {
+    const z = !ha || size === 'Small' ? 'Small' : 'Standard';
+    add(25, 'Cloud Proxy', 1, lk(T.vcfo_p_cpu, z), lk(T.vcfo_p_ram, z), lk(T.vcfo_p_disk, z));
+  }
+  // 26 License Server — first instance, with VCF Operations (Include or Existing)
+  if (first && s.vcfOps !== 'Exclude') add(26, 'License Server', 1, 2, 4, 12);
+  // 27 VCF Automation — on its own size, which decides the node count
   if (s.vcfAutomation) {
-    const vcfaSize = s.vcfAutomationSize;
-    const nodes = vcfAutomationNodes(vcfaSize);
-    list.push({
-      name: 'VCF Automation',
-      nodes,
-      cpu: vcfaCpu[vcfaSize] * nodes,
-      ram: vcfaRam[vcfaSize] * nodes,
-      disk: vcfaDisk[vcfaSize] * nodes,
-    });
+    const z = s.vcfAutomationSize;
+    const n = vcfAutomationNodes(z);
+    add(27, 'VCF Automation', n, lk(T.vcfa_appliance_cpu, z) * n, lk(T.vcfa_appliance_ram, z) * n, lk(T.vcfa_appliance_disk, z) * n);
   }
-
-  // Log Management. First instance only (workbook O25:
-  // "Log management can only be installed on the first instance"). Size must
-  // match the deployment profile; replicas clamp to the per-size minimum..19.
-  // Large uses 2 worker nodes per replica, else 1.
-  if (s.instanceModel === 'First Instance' && s.logsSize !== 'Exclude' && logsSizeOptions(size).includes(s.logsSize)) {
-    const replicas = Math.min(LOGS_REPLICA_MAX, Math.max(logsReplicaMin(s.logsSize), s.logsReplicas));
-    const nodes = (s.logsSize === 'Large' ? 2 : 1) * replicas;
-    list.push({
-      name: 'Log Management',
-      nodes,
-      cpu: vcfmsWorkerCpu[s.logsSize] * nodes,
-      ram: vcfmsWorkerRam[s.logsSize] * nodes,
-      disk: VRLI_DISK * replicas,
-    });
-  }
-
-  // Real-time Metrics. Deploys NO appliances of its own — it scales up the VCFMS
-  // runtime instead, so the figures are the scale-up delta and the node count is
-  // 0 by design, not an omission (#199, #200).
-  if (s.vcfRtm) {
-    list.push({
-      name: 'Real-time Metrics (VCFMS scale-up)',
-      nodes: 0,
-      cpu: rtmCpu[size],
-      ram: rtmRam[size],
-      disk: RTM_DISK,
-    });
-  }
-
-  // Software Depot — on an additional instance it adds 1500 GB of storage
-  // (on the first instance it is served from the existing VCFMS cluster)
-  if (s.instanceModel === 'Additional Instance' && s.vcfSd) {
-    list.push({ name: 'Software Depot', nodes: 0, cpu: 0, ram: 0, disk: 1500 });
-  }
-
-  // VCF Operations for Networks (+ collector)
+  // 28 / 29 VCF Operations for Networks platform (first instance) + collector
   if (s.opsNetSize !== 'Excluded') {
-    const nodes = s.opsNetSize === 'Large' ? 3 : 1;
-    list.push({
-      name: 'VCF Operations for Networks',
-      nodes,
-      cpu: opsNetCpu[s.opsNetSize] * nodes,
-      ram: opsNetRam[s.opsNetSize] * nodes,
-      disk: opsNetDisk[s.opsNetSize] * nodes,
-    });
-    list.push({
-      name: 'VCF Operations for Networks (collector)',
-      nodes: 1,
-      cpu: opsNetCollectorCpu[s.opsNetSize],
-      ram: opsNetCollectorRam[s.opsNetSize],
-      disk: opsNetCollectorDisk[s.opsNetSize],
-    });
+    const n = first ? 1 : 0;
+    add(28, 'VCF Operations for Networks', n, lk(T.vcfopsnet_appliance_cpu, s.opsNetSize) * n,
+      lk(T.vcfopsnet_appliance_ram, s.opsNetSize) * n, lk(T.vcfopsnet_appliance_disk, s.opsNetSize) * n);
+    add(29, 'VCF Operations for Networks (collector)', 1, lk(T.vcfopsnet_collector_cpu, s.opsNetSize),
+      lk(T.vcfopsnet_collector_ram, s.opsNetSize), lk(T.vcfopsnet_collector_disk, s.opsNetSize));
   }
-
-  // Workload domain components (each runs inside the management domain)
-  s.workloadDomains.forEach((w, i) => {
-    const label = w.name?.trim() || `Workload Domain ${i + 1}`;
-    // WLD vCenter
-    list.push({
-      name: `${label} vCenter`,
-      nodes: 1,
-      cpu: vcenterCpu[w.vcenterSize],
-      ram: vcenterRam[w.vcenterSize],
-      disk: vcenterDisk[w.vcenterSize + w.vcenterStorage],
-    });
-    // WLD NSX Managers. Local-manager nodes only when the model is dedicated
-    // (Shared reuses an existing instance, adding nothing). Global-manager
-    // nodes (Active/Standby) are counted independently of the local model, per
-    // the sheet. GM is sized the same as the LM here (simplification: the
-    // workbook has a separate GM size cell).
-    const localNodes = w.nsxModel === 'Shared' ? 0 : w.nsxModel === 'Dedicated - HA Cluster' ? 3 : 1;
-    const gmNodes = w.gm === 'Active GM' || w.gm === 'Standby GM' ? 3 : 0;
-    const nodes = localNodes + gmNodes;
-    if (nodes > 0) {
-      list.push({
-        name: `${label} NSX Managers`,
-        nodes,
-        cpu: nsxtManagerCpu[w.nsxSize] * nodes,
-        ram: nsxtManagerRam[w.nsxSize] * nodes,
-        disk: nsxtManagerDisk[w.nsxSize] * nodes,
-      });
-    }
-  });
-
-  // Protection blueprint / fleet reserve — fixed
-  list.push({ name: 'Protection blueprint reserve', ...PROTECTION_BLUEPRINT });
-
+  // 30 Protection blueprints (rows 88-91): Live Recovery appliance(s), Standard size
+  {
+    const mo = s.spr === 'Management Only', wo = s.spr === 'Workload Only', mw = s.spr === 'Management & Workload';
+    const mgmtN = mo || mw ? 1 : 0;
+    const wldN = mo ? 0 : wlds.filter((w) => w.spr).length;
+    const wldPer = wo || mw;
+    const rwrN = s.rwr ? 1 : 0;
+    const per = (t: Record<string, number>) => lk(t, 'Standard');
+    add(30, 'Protection blueprints (Live Recovery)', mgmtN + wldN + rwrN,
+      mgmtN * per(T.srm_cpu) + (wldPer ? wldN * per(T.srm_cpu) : 0) + rwrN * 8,
+      mgmtN * per(T.srm_ram) + (wldPer ? wldN * per(T.srm_ram) : 0) + rwrN * 24,
+      mgmtN * per(T.srm_disk) + (wldPer ? wldN * per(T.srm_disk) : 0) + rwrN * 800);
+  }
   return list;
 }
 
@@ -553,27 +542,45 @@ export function components(s: SizingState): Component[] {
 // ---------------------------------------------------------------------------
 
 export interface Dimension {
-  required: number; // resource the fleet needs
-  available: number; // resource the proposed cluster offers (at N-1 for cpu/ram)
+  required: number;
+  available: number;
   fits: boolean;
-  headroomPct: number; // (available/required - 1) * 100
+  headroomPct: number;
 }
 
 export interface SizingResult {
   components: Component[];
   totals: { nodes: number; cpu: number; ram: number; disk: number };
   vsan: { vmCapacity: number; swap: number; interim: number; redundancy: number; reserve: number; growth: number; raw: number };
-  requiredHosts: number;
-  derived: DerivedSizes; // mgmt vCenter + NSX Local Manager sizes fixed by the profile
-  perHostRaw: number; // raw GB each host contributes to vSAN (0 for NFS/FC)
-  storageAvailable: number; // total capacity the proposed cluster offers
-  survivorHosts: number; // hosts left after the tolerated failure (N-1, or N/2 for stretched)
-  survivorBasis: string; // human label for that basis
+  workbookHosts: number; // the workbook's own minimum host count (cell R8)
+  requiredHosts: number; // workbook R8, raised for vSAN capacity and stretched clusters
+  derived: DerivedSizes;
+  workers: WorkerSizing;
+  perHostRaw: number;
+  storageAvailable: number;
+  survivorHosts: number;
+  survivorBasis: string;
   perHostN1: { cpu: number; ram: number; storage: number } | null;
   fit: { cpu: Dimension; ram: Dimension; storage: Dimension; hosts: Dimension; overall: boolean; binding: string };
 }
 
-const ceil = Math.ceil;
+// Minimum host count exactly as the workbook computes it (cell R8). Note the
+// workbook's RAM term ignores RAM oversubscription for High Availability, and
+// for Simple divides only the protection row by it — reproduced as-is so the
+// result matches the sheet; the fit check below applies oversubscription fully.
+export function workbookHostCount(s: SizingState, comps: Component[]): number {
+  const sum = (k: 'cpu' | 'ram', rows?: (r: number) => boolean) =>
+    comps.filter((c) => (rows ? rows(c.row) : true)).reduce((a, c) => a + c[k], 0);
+  const cpuAll = sum('cpu');
+  const ramNoProt = sum('ram', (r) => r !== 30);
+  const ramProt = sum('ram', (r) => r === 30);
+  const cpuHosts = ceil(cpuAll / s.cpuOver / s.coresPerHost);
+  if (s.deploymentModel === 'High Availability') {
+    return Math.max(4, cpuHosts, ceil((ramNoProt + ramProt) / s.ramPerHost) + 1);
+  }
+  const ramHosts = ceil((ramNoProt + ramProt / s.ramOver) / s.ramPerHost) + 1;
+  return Math.max(isVsan(s.storageType) ? 3 : 2, cpuHosts, ramHosts);
+}
 
 export function compute(s: SizingState): SizingResult {
   const comps = components(s);
@@ -582,84 +589,54 @@ export function compute(s: SizingState): SizingResult {
     { nodes: 0, cpu: 0, ram: 0, disk: 0 },
   );
 
-  // vSAN raw capacity (matches sheet cells R15..R20)
+  // Capacity (cells R15..R20). vSAN: FTT redundancy -> rebuild/ops reserve ->
+  // growth; NFS / FC: VM disk + swap -> growth only.
   const stretched = s.clusterType !== 'Standard';
   const vmCapacity = totals.disk;
-  const swap = totals.ram; // swap reservation == total RAM
+  const swap = totals.ram;
   const interim = vmCapacity + swap;
-  let redundancy = interim;
-  let reserve = interim;
-  let growth: number;
-  if (isVsan(s.storageType)) {
-    redundancy = ceil(interim * (s.storageType === 'vSAN-ESA' ? 1.5 : 2));
-    reserve = ceil(redundancy * (1 + s.reservePct / 100));
-    growth = ceil(reserve * (1 + s.growthPct / 100));
-  } else {
-    growth = ceil(interim * (1 + s.growthPct / 100));
-  }
-  // Stretched vSAN mirrors the full dataset into each AZ.
+  const redundancy = ceil(interim * (s.storageType === 'vSAN-ESA' ? 1.5 : 2));
+  const reserve = ceil(redundancy * (1 + s.reservePct / 100));
+  const growth = isVsan(s.storageType) ? ceil(reserve * (1 + s.growthPct / 100)) : ceil(interim * (1 + s.growthPct / 100));
+  // Stretched vSAN mirrors the full dataset into each AZ (sizer addition).
   const raw = stretched && isVsan(s.storageType) ? growth * 2 : growth;
 
   const n = s.proposedHosts;
-
-  // vSAN raw contributed per host = capacity devices x device size (ESA counts
-  // every device; OSA counts capacity-tier disks only — the caller supplies the
-  // right count). NFS / FC use the external datastore figure instead.
   const perHostRaw = s.capacityDisksPerHost * s.capacityDiskSizeGb;
   const storageAvailable = isVsan(s.storageType) ? perHostRaw * n : s.externalStorageGb;
 
-  // Required host count (sheet cell R8)
-  const floor = s.deploymentModel === 'High Availability' ? 4 : isVsan(s.storageType) ? 3 : 2;
-  const hostsForCpu = ceil(totals.cpu / s.cpuOver / s.coresPerHost);
-  const hostsForRam = ceil(totals.ram / s.ramOver / s.ramPerHost) + 1;
-  let requiredHosts = Math.max(floor, hostsForCpu, hostsForRam);
-  // Storage-driven hosts, if per-host vSAN capacity is given
+  const workbookHosts = workbookHostCount(s, comps);
+  let requiredHosts = workbookHosts;
   const hostsForStorage = isVsan(s.storageType) && perHostRaw > 0 ? ceil(raw / perHostRaw) : 0;
   requiredHosts = Math.max(requiredHosts, hostsForStorage);
-  if (stretched) requiredHosts = Math.max(8, requiredHosts + (requiredHosts % 2)); // even, min 8
+  if (stretched) requiredHosts = Math.max(8, requiredHosts + (requiredHosts % 2));
   const perHostN1 = n > 1
-    ? {
-        cpu: ceil(totals.cpu / (n - 1) / s.cpuOver),
-        ram: ceil(totals.ram / (n - 1) / s.ramOver),
-        storage: ceil(raw / (n - 1)),
-      }
+    ? { cpu: ceil(totals.cpu / (n - 1) / s.cpuOver), ram: ceil(totals.ram / (n - 1) / s.ramOver), storage: ceil(raw / (n - 1)) }
     : null;
 
-  // Fit check — CPU/RAM must survive the tolerated failure: one host (N-1) for a
-  // standard cluster, or a whole AZ for a stretched cluster, where the surviving
-  // site (N/2 hosts) has to run the entire fleet. Storage rebuild is in the
-  // reserve %, and stretched already mirrors the full dataset per site (raw is
-  // doubled above), so storage uses full N.
+  // Fit check (sizer addition): CPU/RAM must survive one host (N-1), or a
+  // whole AZ (N/2) when stretched; storage uses full N.
   const survivorHosts = stretched ? Math.floor(n / 2) : Math.max(0, n - 1);
   const survivorBasis = stretched ? 'one AZ down, N/2' : 'N-1';
   const dim = (required: number, available: number): Dimension => ({
-    required,
-    available,
-    fits: available >= required && required >= 0,
+    required, available, fits: available >= required && required >= 0,
     headroomPct: required > 0 ? (available / required - 1) * 100 : Infinity,
   });
   const cpu = dim(totals.cpu, survivorHosts * s.coresPerHost * s.cpuOver);
   const ram = dim(totals.ram, survivorHosts * s.ramPerHost * s.ramOver);
   const storage = dim(raw, storageAvailable);
   const hosts = dim(requiredHosts, n);
-
-  const named: Array<[string, Dimension]> = [
-    ['CPU', cpu], ['RAM', ram], ['storage', storage], ['host count', hosts],
-  ];
-  const overall = named.every(([, d]) => d.fits);
+  const named: Array<[string, Dimension]> = [['CPU', cpu], ['RAM', ram], ['storage', storage], ['host count', hosts]];
+  const overall = named.every(([, x]) => x.fits);
   const binding = named.reduce((min, cur) => (cur[1].headroomPct < min[1].headroomPct ? cur : min))[0];
 
   return {
-    components: comps,
-    totals,
+    components: comps, totals,
     vsan: { vmCapacity, swap, interim, redundancy, reserve, growth, raw },
-    requiredHosts,
+    workbookHosts, requiredHosts,
     derived: deriveMgmtSizes(s.deploymentModel, s.deploymentSize),
-    perHostRaw,
-    storageAvailable,
-    survivorHosts,
-    survivorBasis,
-    perHostN1,
+    workers: vcfmsWorkers(s),
+    perHostRaw, storageAvailable, survivorHosts, survivorBasis, perHostN1,
     fit: { cpu, ram, storage, hosts, overall, binding },
   };
 }

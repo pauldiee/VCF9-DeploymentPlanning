@@ -119,7 +119,8 @@ language toggle in the header. English remains the canonical text.
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
-| `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's mapping targets |
+| `reference/vcf-9.1-planning-and-preparation-workbook.xlsx` | Pinned copy of the Broadcom workbook (v1.9.1.001) — the revision this repo's cell mapping targets |
+| `reference/vcf-9.1.1-planning-and-preparation-workbook.xlsx` | Broadcom workbook for VCF 9.1.1 (v1.9.1.102) — the revision the sizing tool reproduces |
 | `web/public/templates/`             | Blank fillable **CSV planning templates** (IP/DNS, VLAN, NTP/AD/CA, BGP, firewall request, vSphere Supervisor prep 9.0/9.1) — downloadable from the site; feed the workbook / Coscia planner |
 | `samples/`                          | Worked examples (Rainpole-style) — e.g. a filled Step 1 network/DNS plan |
 | `research/`                          | Scratch research notes (not published on the site) — e.g. IPv6 support on the VPC model + VCF Automation |
@@ -143,7 +144,9 @@ language toggle in the header. English remains the canonical text.
 | ----------------------------------- | ------------------------------------------------------ |
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 | `web/scripts/scrape-versions.mjs`   | Node scraper behind the Version Overview — walks the Broadcom TechDocs patch tree per maintenance version (with a Bill-of-Materials fallback for lines with no patch tree yet) + the add-on release-notes trees, emits `web/src/data/vcf-versions.json`; run daily by `.github/workflows/scrape-versions.yml` |
-| `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the pinned workbook |
+| `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the 9.1.1 workbook (v1.9.1.102) |
+| `web/scripts/verify-sizer.mjs`, `web/test/sizer-golden-*.json` | Checks the sizing engine against the workbook's own Excel-computed results (127 scenarios; runs on every build) |
+| `web/scripts/sizer-golden/`         | Regenerates those golden results by driving Excel over a copy of the workbook (`scenarios.py` + `Get-SizerGolden.ps1`) |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters + progress tracking |
 | `web/src/lib/test-plan.ts`          | Test-plan engine — scope-driven verification cases in phases TP-0…TP-6, each mapped to the epic/story it proves; result tracking + exporters (customer **report** with a verdict and an exit-criteria self-audit, working **CSV**, full **runbook**) |
 | `web/src/lib/test-plan-xlsx.ts`     | Builds the test plan as an `.xlsx` laid out like a field verification workbook (Title/Summary/Version + one sheet per phase, live COUNTIF stats, Status dropdown, conditional formatting) |

@@ -63,7 +63,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/workbook-cell-mapping.md`  | Intake-ID → workbook sheet + field label (+ named-range map)  |
 | `samples/`                       | Rainpole-style worked examples (e.g. a filled Step 1 plan)    |
 | `web/public/templates/`          | Blank fillable CSV planning templates (IP/DNS, VLAN, NTP/AD/CA, BGP) — served for download; **filled copies are customer data, kept outside this repo** |
-| `reference/`                     | Pinned Broadcom P&P workbook (v1.9.1.001) — the mapping target |
+| `reference/`                     | Pinned Broadcom P&P workbooks: 9.1 (v1.9.1.001) — the cell-mapping target; 9.1.1 (v1.9.1.102) — the sizing tool's target |
 | `web/`                           | ITQ-branded Astro site (GitHub + GitLab Pages) + interactive sizing, deployment-plan export & deployment-tracker tools |
 | `tools/`                         | Helper scripts. `Get-/Set-VCFBackupConfig.ps1` (backup config via Fleet LCM API, #145); `Get-/Set-VCFProxyConfig.ps1` (services-runtime `peerProxy`); `Get-VCFCredentials.ps1`; `Set-ESXCoredump.ps1`; `Get-VCFDeploymentArtifacts.ps1` (read-only capture of re-submittable spec JSON — bring-up / Fleet LCM VSPs / domains / clusters / NSX / Supervisor / vCenter config profiles — sanitised on write, `-Tokenize`; #295) |
 
