@@ -49,27 +49,172 @@ const opt = (values: readonly string[]) => values;
     <div class="sizer__grid">
       <!-- ================= INPUTS ================= -->
       <section class="sizer__inputs">
+        <p class="sizer__intro">Work top to bottom. Every field says what it is; where a field says <strong>Not sure?</strong>, that value is a safe starting point you can refine later with the VCF architect.</p>
+
         <fieldset>
-          <legend>Deployment profile</legend>
+          <legend>1. Your VCF fleet</legend>
           <label>Deployment model
             <select id="deploymentModel">{opt(OPTIONS.deploymentModel).map((v) => <option>{v}</option>)}</select>
           </label>
+          <p class="sizer__hint"><strong>Simple</strong> runs one copy of each management appliance — fine for labs and small sites, but a failure takes it offline. <strong>High Availability</strong> runs clustered copies that survive a failure. See <em>Deployment profiles at a glance</em> above. <strong>Not sure?</strong> High Availability.</p>
           <label>Deployment size
             <select id="deploymentSize">{opt(OPTIONS.deploymentSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">Simple deploys at Small only; High Availability at Small, Medium or Large.</p>
+          <p class="sizer__hint">How large the environment is that VCF will manage. As a guide, the management vCenter at each size handles: <strong>Small</strong> up to 100 hosts / 1,000 VMs, <strong>Medium</strong> up to 400 hosts / 4,000 VMs, <strong>Large</strong> up to 1,000 hosts / 10,000 VMs. Simple is always Small. <strong>Not sure?</strong> Medium.</p>
           <label>Instance model
             <select id="instanceModel">{opt(OPTIONS.instanceModel).map((v) => <option>{v}</option>)}</select>
           </label>
-          <label>Principal storage
+          <p class="sizer__hint"><strong>First Instance</strong>: the first (or only) VCF instance — it also hosts the fleet-wide services. <strong>Additional Instance</strong>: a second site or region joining an existing VCF fleet. <strong>Not sure?</strong> First Instance.</p>
+          <label>Storage for the management cluster
             <select id="storageType">{opt(OPTIONS.storageType).map((v) => <option>{v}</option>)}</select>
           </label>
+          <p class="sizer__hint"><strong>vSAN-ESA</strong>: storage built from the hosts' own NVMe disks (current generation). <strong>vSAN-OSA</strong>: the older vSAN with separate cache and capacity disks. <strong>NFS / FC</strong>: an external storage array. <strong>Not sure?</strong> vSAN-ESA.</p>
         </fieldset>
 
         <fieldset>
-          <legend>Advanced management domain sizing</legend>
+          <legend>2. Your hosts</legend>
+          <p class="sizer__hint">The management cluster you intend to build — the tool checks whether everything above and below fits on it, even with one host down.</p>
+          <label>Cluster type
+            <select id="clusterType">{opt(OPTIONS.clusterType).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint"><strong>Standard</strong>: one site. <strong>Stretched</strong>: the cluster spans two sites so it survives losing a whole site (at least 8 hosts, half per site). <strong>Not sure?</strong> Standard.</p>
+          <p class="sizer__hint" id="stretchHint" hidden>The stretched <strong>×2 mirror is vSAN only</strong>. With NFS / FC stretched (vSphere Metro Storage Cluster), replication between sites is done by the storage array and is not modelled here — enter the datastore capacity available to the management cluster.</p>
+          <label>Number of hosts
+            <input id="proposedHosts" type="number" min="1" step="1" />
+          </label>
+          <label>CPU cores per host
+            <input id="coresPerHost" type="number" min="1" step="1" />
+          </label>
+          <p class="sizer__hint">Physical cores of all CPUs in one host together — not threads / hyperthreading.</p>
+          <label>RAM per host (GB)
+            <input id="ramPerHost" type="number" min="1" step="1" />
+          </label>
+          <div id="vsanCapacity">
+            <label><span id="capacityDisksText">Capacity disks per host</span>
+              <input id="capacityDisksPerHost" type="number" min="0" step="1" />
+            </label>
+            <label>Size of each disk (GB)
+              <input id="capacityDiskSizeGb" type="number" min="0" step="10" />
+            </label>
+            <p class="sizer__hint" id="capacityHint"></p>
+            <p class="sizer__hint" id="perHostRawOut"></p>
+          </div>
+          <label id="externalCapacity" hidden>Usable datastore capacity for the management cluster (GB)
+            <input id="externalStorageGb" type="number" min="0" step="100" />
+          </label>
+          <label>CPU oversubscription (X:1)
+            <input id="cpuOver" type="number" min="1" step="0.5" />
+          </label>
+          <p class="sizer__hint">How many virtual CPUs may share one physical core. <strong>Not sure?</strong> 1 (no overcommit — the workbook default; do not go above 2 for management).</p>
+          <label>RAM oversubscription (X:1)
+            <input id="ramOver" type="number" min="1" step="0.5" />
+          </label>
+          <p class="sizer__hint">How far memory may be overcommitted. <strong>Not sure?</strong> 1.</p>
+          <p class="sizer__warn" id="oversubWarn" hidden></p>
+          <label>vSAN rebuild + operations reserve (%) <span class="sizer__tag">vSAN only</span>
+            <input id="reservePct" type="number" min="0" step="1" />
+          </label>
+          <p class="sizer__hint">Free vSAN space kept for rebuilding after a host failure and for day-to-day operations. <strong>Not sure?</strong> 30.</p>
+          <p class="sizer__hint" id="reserveHint" hidden>Not applied to NFS / FC — only the storage growth % is added on top of VM disk + swap.</p>
+          <label>Storage growth (%)
+            <input id="growthPct" type="number" min="0" step="1" />
+          </label>
+          <p class="sizer__hint">Extra storage headroom for future growth. <strong>Not sure?</strong> 10.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Management infrastructure</legend>
+          <p class="sizer__hint" id="derivedSizes"></p>
+          <p class="sizer__hint">Optional infrastructure that runs in the management cluster. Leave anything you have not heard about in the design on <strong>Excluded</strong>.</p>
+          <label>NSX Edges or Virtual Network Appliances
+            <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Route traffic between VCF's virtual networks (NSX) and the physical network. <strong>NSX Edge</strong> is the classic option, <strong>VNA</strong> the newer VPC option. <strong>Not sure?</strong> Excluded, unless the network design puts NSX routing on the management cluster.</p>
+          <label>NSX Global Manager
+            <select id="nsxGmSize">{opt(OPTIONS.nsxGmSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Only for <em>NSX Federation</em> — one network and security policy spanning several sites. <strong>Not sure?</strong> Excluded.</p>
+          <label>vSphere Supervisor (Kubernetes) on the management cluster
+            <select id="supervisorMode">{opt(OPTIONS.supervisorMode).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <label id="supervisorSizeLabel" hidden>Supervisor size
+            <select id="supervisorSize">{opt(OPTIONS.supervisorSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">The Supervisor runs Kubernetes on vSphere. Only when Kubernetes runs <em>in the management domain</em>; counts its 1 or 3 control-plane VMs. An Edge-backed Supervisor also needs the NSX Edges at <strong>Large</strong> or bigger. <strong>Not sure?</strong> Excluded.</p>
+          <p class="sizer__warn" id="edgeWarn" hidden></p>
+          <label>Avi Load Balancer
+            <select id="aviSize">{opt(OPTIONS.aviSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">VMware's load balancer (formerly NSX Advanced Load Balancer), e.g. for Kubernetes or VCF Automation. Counts its 3 controllers; the service engines run in the workload domains. <strong>Not sure?</strong> Excluded.</p>
+          <label>Security Services Platform (vDefend)
+            <select id="ssp">{opt(OPTIONS.ssp).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">The platform behind vDefend advanced security (intrusion detection, malware prevention). Only with a vDefend licence. <strong>Not sure?</strong> Excluded.</p>
+          <label class="sizer__check"><input id="licenseHub" type="checkbox" /> License Hub (vDefend / Avi licensing)</label>
+          <p class="sizer__hint">A small licensing appliance. Needed for vDefend; for Avi only when it is licensed on-premises (Avi can also license directly from the cloud). <strong>Not sure?</strong> Tick it only if vDefend is bought.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>4. VCF management software</legend>
+          <label>VCF Operations
+            <select id="vcfOps">{opt(OPTIONS.vcfOps).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">The central management and monitoring console of VCF — every VCF fleet has one. <strong>Include</strong>: deploy it here (it brings a Cloud Proxy and, on a first instance, the License Server). <strong>Existing</strong>: it already runs elsewhere, e.g. when adding to an existing fleet — only its Cloud Proxy and the License Server are counted. <strong>Not sure?</strong> Include.</p>
+          <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy without VCF Operations here</label>
+          <p class="sizer__hint">A Cloud Proxy collects data for VCF Operations. It is added automatically with VCF Operations; tick this only when VCF Operations is <em>Excluded</em> but a proxy should still run here.</p>
+          <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
+          <p class="sizer__hint">Self-service portal for provisioning VMs and Kubernetes (formerly Aria Automation) — the private-cloud layer. <strong>Not sure?</strong> Leave off unless self-service is in scope.</p>
+          <label id="vcfAutomationSizeLabel" hidden>VCF Automation size
+            <select id="vcfAutomationSize">{opt(OPTIONS.vcfAutomationSize).map((v) => <option>{v}</option>)}</select>
+            <span class="sizer__hint">Small = 1 node, Medium / Large = 3 nodes. <strong>Not sure?</strong> The same as the deployment size above.</span>
+          </label>
+          <label>VCF Operations for Networks
+            <select id="opsNetSize">{opt(OPTIONS.opsNetSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Network monitoring and traffic-flow analysis (formerly Aria Operations for Networks / vRNI). <strong>Not sure?</strong> Excluded.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>5. Optional services</legend>
+          <p class="sizer__hint">These run inside VCF's own management platform (the <em>services runtime</em>), so they do not add separate appliances — they add capacity to it. The result below shows how many runtime nodes that comes to.</p>
+          <label>Log Management size
+            <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Central log collection and search (formerly Aria Operations for Logs). <strong>Not sure?</strong> Exclude, or Small for a small fleet.</p>
+          <label id="logsReplicasLabel" hidden>Log Management replicas
+            <input id="logsReplicas" type="number" min="1" step="1" />
+            <span class="sizer__hint">Copies for capacity and availability — at least Small 1 / Medium 3 / Large 6, at most 19. <strong>Not sure?</strong> The minimum.</span>
+          </label>
+          <label class="sizer__check"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
+          <p class="sizer__hint">High-frequency (real-time) performance data in VCF Operations. <strong>Not sure?</strong> Leave off.</p>
+          <label class="sizer__check"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
+          <label class="sizer__check"><input id="vcfIdb" type="checkbox" /> Identity Broker (additional instance)</label>
+          <p class="sizer__hint">Only on an <strong>additional instance</strong>: a local copy of the VCF software repository, and a local sign-in (single sign-on) service. The first instance already has both.</p>
+          <p class="sizer__hint" id="workerOut"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>6. Disaster recovery</legend>
+          <label>Site Protection &amp; Disaster Recovery
+            <select id="spr">{opt(OPTIONS.spr).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Replication and failover to a second site with VMware Live Recovery (formerly Site Recovery Manager / vSphere Replication). Choose what is protected; mark protected workload domains below. <strong>Not sure?</strong> Exclude.</p>
+          <label class="sizer__check"><input id="rwr" type="checkbox" /> On-premises Ransomware Recovery</label>
+          <p class="sizer__hint">An isolated recovery environment for ransomware incidents. Only when that add-on is planned.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>7. Workload domains
+            <button type="button" id="addWld" class="sizer__add">+ Add workload domain</button>
+          </legend>
+          <p class="sizer__hint">A <strong>workload domain</strong> is a separate vCenter + NSX environment where the customer's own workloads run. Its management VMs (vCenter, NSX Managers, and any Avi / vDefend controllers) live in <em>this</em> management cluster, so add one row per planned workload domain. <strong>NSX model</strong>: <em>Shared</em> reuses an existing NSX, <em>Dedicated</em> gets its own (HA Cluster = 3 managers).</p>
+          <div id="wldList"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>8. Advanced: override sizes <span class="sizer__tag">experts</span></legend>
           <label class="sizer__check"><input id="advanced" type="checkbox" /> Override the profile-derived sizes</label>
-          <p class="sizer__hint">The workbook's <em>Advanced Management Domain Sizing</em>: pick the management vCenter, NSX Manager, VCF Operations, Cloud Proxy and VCF Automation sizes yourself instead of taking them from the profile.</p>
+          <p class="sizer__hint">Leave this off unless a design document specifies sizes that differ from the profile. It is the workbook's <em>Advanced Management Domain Sizing</em>.</p>
           <div id="advancedFields" hidden>
             <label>Management vCenter size
               <select id="advVcenterSize">{opt(OPTIONS.vcenterSize).map((v) => <option>{v}</option>)}</select>
@@ -97,130 +242,6 @@ const opt = (values: readonly string[]) => values;
             </label>
             <p class="sizer__hint">While this is on, VCF Operations, its Cloud Proxy and VCF Automation follow these choices (Exclude removes them); the NSX Manager model also sets the host minimum (4 for an HA cluster).</p>
           </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Proposed cluster &amp; host spec</legend>
-          <label>Cluster type
-            <select id="clusterType">{opt(OPTIONS.clusterType).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <p class="sizer__hint" id="stretchHint" hidden>The stretched <strong>×2 mirror is vSAN only</strong>. With NFS / FC stretched (vSphere Metro Storage Cluster), replication between sites is done by the storage array and is not modelled here — enter the datastore capacity available to the management cluster.</p>
-          <label>Number of hosts
-            <input id="proposedHosts" type="number" min="1" step="1" />
-          </label>
-          <label>Cores per host
-            <input id="coresPerHost" type="number" min="1" step="1" />
-          </label>
-          <label>RAM per host (GB)
-            <input id="ramPerHost" type="number" min="1" step="1" />
-          </label>
-          <div id="vsanCapacity">
-            <label><span id="capacityDisksText">Capacity disks per host</span>
-              <input id="capacityDisksPerHost" type="number" min="0" step="1" />
-            </label>
-            <label>Capacity disk size (GB)
-              <input id="capacityDiskSizeGb" type="number" min="0" step="10" />
-            </label>
-            <p class="sizer__hint" id="capacityHint"></p>
-            <p class="sizer__hint" id="perHostRawOut"></p>
-          </div>
-          <label id="externalCapacity" hidden>Available datastore capacity (GB)
-            <input id="externalStorageGb" type="number" min="0" step="100" />
-          </label>
-          <label>CPU oversubscription (X:1)
-            <input id="cpuOver" type="number" min="1" step="0.5" />
-          </label>
-          <label>RAM oversubscription (X:1)
-            <input id="ramOver" type="number" min="1" step="0.5" />
-          </label>
-          <p class="sizer__warn" id="oversubWarn" hidden></p>
-          <label>vSAN rebuild + operations reserve (%) <span class="sizer__tag">vSAN only</span>
-            <input id="reservePct" type="number" min="0" step="1" />
-          </label>
-          <p class="sizer__hint" id="reserveHint" hidden>Not applied to NFS / FC — only the storage growth % is added on top of VM disk + swap.</p>
-          <label>Storage growth (%)
-            <input id="growthPct" type="number" min="0" step="1" />
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Management components</legend>
-          <p class="sizer__hint" id="derivedSizes"></p>
-          <label>NSX Global Manager
-            <select id="nsxGmSize">{opt(OPTIONS.nsxGmSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label>NSX Edges / Virtual Network Appliances
-            <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label>vSphere Supervisor on the management domain
-            <select id="supervisorMode">{opt(OPTIONS.supervisorMode).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label id="supervisorSizeLabel" hidden>Supervisor control plane size
-            <select id="supervisorSize">{opt(OPTIONS.supervisorSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <p class="sizer__hint">Counts the Supervisor control plane VMs (1 or 3). An Edge-backed Supervisor (VPC + Centralized Transit Gateway, or classic NSX) also needs its Edge cluster at <strong>Large</strong> minimum; the VPC + Distributed Transit Gateway path uses a VNA cluster and no Edge.</p>
-          <p class="sizer__warn" id="edgeWarn" hidden></p>
-          <label>Avi Load Balancer
-            <select id="aviSize">{opt(OPTIONS.aviSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label>Security Services Platform
-            <select id="ssp">{opt(OPTIONS.ssp).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <p class="sizer__hint">Sized by the management NSX Manager size; one SSP Installer is added per five SSP deployments (management + workload domains).</p>
-          <label class="sizer__check"><input id="licenseHub" type="checkbox" /> License Hub (vDefend / Avi licensing)</label>
-          <p class="sizer__hint">Needed for vDefend. For Avi only with on-prem licensing — an Avi Controller can use Cloud Licensing directly with the Avi Cloud Console instead.</p>
-        </fieldset>
-
-        <fieldset>
-          <legend>VCF fleet components</legend>
-          <label>VCF Operations
-            <select id="vcfOps">{opt(OPTIONS.vcfOps).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <p class="sizer__hint"><strong>Include</strong> deploys it here (HA-Small 2 nodes, HA-Medium / Large 3, Simple 1) with its Cloud Proxy and, on a first instance, the License Server. <strong>Existing</strong> reuses an instance elsewhere: only the Cloud Proxy and License Server are counted.</p>
-          <label class="sizer__check"><input id="vcfOpsCollector" type="checkbox" /> Cloud Proxy without VCF Operations here</label>
-          <label class="sizer__check"><input id="vcfAutomation" type="checkbox" /> VCF Automation</label>
-          <label id="vcfAutomationSizeLabel" hidden>VCF Automation size
-            <select id="vcfAutomationSize">{opt(OPTIONS.vcfAutomationSize).map((v) => <option>{v}</option>)}</select>
-            <span class="sizer__hint">Automation's own size sets the node count: Small = 1 node, Medium / Large = 3. The workbook uses the profile size.</span>
-          </label>
-          <label>VCF Operations for Networks
-            <select id="opsNetSize">{opt(OPTIONS.opsNetSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <p class="sizer__hint">Platform node on a first instance; the collector is counted on every instance.</p>
-        </fieldset>
-
-        <fieldset>
-          <legend>VCF management services</legend>
-          <p class="sizer__hint">These run on the VCF services runtime, so they do not add rows of their own: they raise the <strong>worker node count</strong> (and, with Log Management or Real-time Metrics on a first instance, the worker size).</p>
-          <label>Log Management size
-            <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <label id="logsReplicasLabel" hidden>Log Management replicas
-            <input id="logsReplicas" type="number" min="1" step="1" />
-            <span class="sizer__hint">Min Small 1 / Medium 3 / Large 6, max 19.</span>
-          </label>
-          <label class="sizer__check"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
-          <label class="sizer__check"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
-          <label class="sizer__check"><input id="vcfIdb" type="checkbox" /> Identity Broker (additional instance)</label>
-          <p class="sizer__hint" id="workerOut"></p>
-        </fieldset>
-
-        <fieldset>
-          <legend>Protection blueprints</legend>
-          <label>Site Protection &amp; Disaster Recovery
-            <select id="spr">{opt(OPTIONS.spr).map((v) => <option>{v}</option>)}</select>
-          </label>
-          <p class="sizer__hint">One VMware Live Recovery appliance for the management domain, plus one per workload domain marked for DR below.</p>
-          <label class="sizer__check"><input id="rwr" type="checkbox" /> On-premises Ransomware Recovery</label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Workload domains
-            <button type="button" id="addWld" class="sizer__add">+ Add workload domain</button>
-          </legend>
-          <p class="sizer__hint">Each workload domain's vCenter, dedicated NSX Managers, Global Managers,
-            Avi controllers and SSP run inside the management domain, so they add to its footprint.</p>
-          <div id="wldList"></div>
         </fieldset>
       </section>
 
@@ -316,6 +337,7 @@ const opt = (values: readonly string[]) => values;
           ${field('Avi Load Balancer', 'aviSize', OPTIONS.aviSize, w.aviSize)}
           ${field('NSX Edge form factor', 'nsxEdgeSize', OPTIONS.nsxEdgeSize, w.nsxEdgeSize)}
         </div>
+        <p class="sizer__hint wld__hint"><strong>vCenter size</strong> follows the workload domain's scale (Small up to 100 hosts, Medium 400, Large 1,000). <strong>Global Manager</strong> only for NSX Federation; <strong>Avi</strong> only if that domain gets the Avi load balancer. <strong>Not sure?</strong> Leave the extras on Excluded.</p>
         <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="ssp" ${w.ssp ? 'checked' : ''} /> Security Services Platform in this domain</label>
         <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="spr" ${w.spr ? 'checked' : ''} /> Covered by Site Protection &amp; DR</label>
         <label class="sizer__check wld__check"><input type="checkbox" data-i="${i}" data-k="supervisorPlanned" ${w.supervisorPlanned ? 'checked' : ''} /> vSphere Supervisor planned on this domain</label>
@@ -732,6 +754,7 @@ const opt = (values: readonly string[]) => values;
   .sizer { max-width: 1100px; }
   .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
   .sizer__lede { color: var(--text-muted); max-width: 70ch; }
+  .sizer__intro { font-size: 0.85rem; margin: 0 0 0.8rem; padding: 0.6rem 0.8rem; border-left: 3px solid var(--itq-orange); background: var(--surface-card); }
   .sizer__profiles { margin-top: 1rem; }
   .sizer__profiles summary { cursor: pointer; font-weight: 600; margin-bottom: 0.4rem; }
   .sizer__profiles .sizer__table td:first-child { white-space: nowrap; }

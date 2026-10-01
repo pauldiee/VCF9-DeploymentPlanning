@@ -12,6 +12,14 @@
   `docs/04-sizing.md` — Simple, HA-Small, HA-Medium, HA-Large: what each deploys,
   where it fits, and Broadcom's reference footprint. All four reference fleets
   from the Fleet Sizing Models page now appear in the comparison, and all match.
+- **Sizer form rewritten for people without much VCF knowledge.** Inputs are
+  ordered as a walk-through (1. fleet → 2. hosts → 3. management infrastructure
+  → 4. VCF management software → 5. optional services → 6. disaster recovery →
+  7. workload domains → 8. advanced overrides, marked for experts). Every field
+  has a plain label, one line on what it is (with former product names such as
+  Aria Operations for Logs), and a **"Not sure?"** safe default. The scale
+  guidance for the deployment size comes from the vCenter size limits in the 9.1
+  hardware requirements.
 
 ## v5.6.0 — 2026-10-01
 - **Sizer re-pinned to the VCF 9.1.1 Planning & Preparation Workbook
