@@ -591,7 +591,7 @@ a named owner and calendar slot (disconnected), the Broadcom account that can
 sign in to the VCF Business Services console, and the license entitlement for
 the host core count.
 
-## License Hub (only if vDefend or Avi is in scope)
+## License Hub (only for vDefend, or Avi on on-prem licensing)
 
 *When needed: **Day-N (if in scope)**.* Nothing here blocks bring-up.
 

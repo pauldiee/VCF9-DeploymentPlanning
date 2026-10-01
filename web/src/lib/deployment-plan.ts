@@ -53,6 +53,13 @@ export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type SupervisorLb = 'builtin' | 'flb' | 'avi';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
+/**
+ * How the Avi controllers are licensed (#374): through an on-prem License Hub,
+ * or Cloud Licensing straight to the Avi Cloud Console. TechDocs: "Avi
+ * Controllers that cannot run a License Hub can connect and register directly
+ * to the Avi Cloud Console"; disconnected (air-gapped) sites use the hub.
+ */
+export type AviLicensing = 'hub' | 'cloud';
 
 export interface AutomationChoice {
   deploy: boolean;
@@ -85,6 +92,8 @@ export interface Selection {
    * Hub for a Supervisor Avi LB with no Day-2 fleet work at all. (#213)
    */
   vdefend: boolean;
+  /** Avi licensing route; only matters when Avi is in scope. (#374) */
+  aviLicensing: AviLicensing;
   wlds: Wld[];
 }
 
@@ -99,14 +108,25 @@ export function aviInScope(sel: Selection): boolean {
   );
 }
 
+/** Avi is in scope AND licensed through License Hub (not Cloud Licensing). (#374) */
+export function aviOnHub(sel: Selection): boolean {
+  return aviInScope(sel) && sel.aviLicensing === 'hub';
+}
+
+/** Avi is in scope AND uses Cloud Licensing straight to the Avi Cloud Console. (#374) */
+export function aviOnCloudLicensing(sel: Selection): boolean {
+  return aviInScope(sel) && sel.aviLicensing === 'cloud';
+}
+
 /**
- * License Hub is required whenever vDefend OR Avi is in scope — it licenses
- * both (prerequisites.md, License Hub). The sizer already budgets its footprint
- * on the same condition (#176); this keeps the plan agreeing with the sizer
- * instead of costing a component it never tells anyone to build. (#213)
+ * License Hub is required for vDefend, and for Avi only when the controllers
+ * are licensed on-prem through the hub — Avi can instead use Cloud Licensing
+ * directly with the Avi Cloud Console (prerequisites.md, License Hub; #374).
+ * The sizer leaves License Hub as an explicit choice with the same rule; this
+ * keeps the plan from costing a component it never tells anyone to build. (#213)
  */
 export function licenseHubNeeded(sel: Selection): boolean {
-  return sel.vdefend || aviInScope(sel);
+  return sel.vdefend || aviOnHub(sel);
 }
 
 /** True when the principal storage is vSAN (ESA or OSA). */
@@ -152,6 +172,7 @@ export function defaultSelection(): Selection {
     automation: { deploy: true, model: 'small', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
+    aviLicensing: 'hub',
     wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
   };
 }
@@ -172,6 +193,11 @@ export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
  * the Avi-for-VCF 9.1 requirements, must be fully deployed before Supervisor
  * activation — so choosing it generates its own story.
  */
+export const AVI_LICENSING: { value: AviLicensing; label: string }[] = [
+  { value: 'hub', label: 'On-prem License Hub (required when disconnected / air-gapped)' },
+  { value: 'cloud', label: 'Cloud Licensing (controllers register directly with the Avi Cloud Console)' },
+];
+
 export const SUPERVISOR_LBS: { value: SupervisorLb; label: string }[] = [
   { value: 'builtin', label: 'Built-in NSX/VPC LB' },
   { value: 'flb', label: 'Foundation Load Balancer' },
@@ -557,7 +583,11 @@ function day2Epic(sel: Selection): Epic {
   if (licenseHubNeeded(sel)) stories.push(licenseHubDeployStory('8.2a', sel));
   if (aviStory) {
     stories.push(aviStory);
-    stories.push(licenseHubEndpointStory('8.3a', 'the Avi controller for VCF Automation'));
+    stories.push(
+      sel.aviLicensing === 'cloud'
+        ? aviCloudLicensingStory('8.3b', 'the Avi controller for VCF Automation')
+        : licenseHubEndpointStory('8.3a', 'the Avi controller for VCF Automation'),
+    );
   }
   if (compNames.length) {
     stories.push({
@@ -599,12 +629,13 @@ function day2Epic(sel: Selection): Epic {
  * fully-deployed, unlicensed fleet (prerequisites.md, License Hub).
  */
 function licenseHubDeployStory(id: string, sel: Selection): Story {
+  const hubAvi = aviOnHub(sel);
   const why = sel.vdefend
-    ? aviInScope(sel) ? 'vDefend and Avi are both in scope' : 'vDefend is in scope'
-    : 'Avi is in scope';
+    ? hubAvi ? 'vDefend is in scope and Avi is licensed on-prem' : 'vDefend is in scope'
+    : 'Avi is licensed on-prem through the hub (not Cloud Licensing)';
   return {
     id,
-    title: 'License Hub — deploy and load licences (BEFORE any Avi controller)',
+    title: hubAvi ? 'License Hub — deploy and load licences (BEFORE any Avi controller)' : 'License Hub — deploy and load licences',
     tasks: [
       `Required because ${why}: License Hub licenses vDefend AND Avi, and it is its own appliance — outside VCF fleet management entirely (05-day2-deployments.md B.3). These steps are for License Hub 2.0, the current standalone OVA. A site still on 5.1.2 follows the SSP Installer flow in 15-license-hub.md instead; there is no upgrade path from 5.1.2 to 2.0.`,
       'BROWNFIELD GATE — do this first if the site already runs Avi on an older version: Avi 32.1.1 deprecates 25-character and YAML licences and gives them a strict 90-day grace period from initial boot / upgrade completion, and that limit OVERRIDES existing validity dates (licences valid until 2029 still stop). Upgrade the entitlement on the Broadcom Support Portal BEFORE upgrading Avi — it is one-way, an upgraded licence cannot be downgraded. Intake E16a.',
@@ -637,6 +668,28 @@ function licenseHubEndpointStory(id: string, what: string): Story {
   };
 }
 
+const AVI_LICENSING_URL = 'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html';
+
+/**
+ * Avi on Cloud Licensing (#374): no License Hub, the controller registers
+ * directly with the Avi Cloud Console. Same false-pass as the hub route: a
+ * registered controller is not a licensed one until LICENSE USAGE shows it.
+ */
+function aviCloudLicensingStory(id: string, what: string): Story {
+  return {
+    id,
+    title: `Avi Cloud Licensing — register ${what} with the Avi Cloud Console`,
+    tasks: [
+      `No License Hub on this route: ${what} registers directly with the Avi Cloud Console (portal.pulse.broadcom.com, outbound 443 from the controller, directly or through the controller's proxy setting — NOT on Broadcom's Public URLs list, so check the allowlist). A site that cannot reach it (disconnected / air-gapped) needs License Hub instead. TechDocs: ${AVI_LICENSING_URL}`,
+      'BROWNFIELD GATE — if the site already runs Avi on an older version: Avi 32.1.1 gives 25-character and YAML licences a strict 90-day grace period that overrides existing validity dates. Upgrade the entitlement on the Broadcom Support Portal BEFORE upgrading Avi (one-way). Intake E16a.',
+      'On the controller: Administration -> Licensing -> Cloud Licensing, and register it with the Avi Cloud Console using the Broadcom customer account — name who holds it.',
+      'Usage is reported to the Avi Cloud Console automatically while connected; licence files come in 180-day increments unlocked by that usage data, so the outbound path must stay open, not just work on day one.',
+      'Verify LICENSE USAGE on the controller, not the registration status: a non-zero used and available count is the test.',
+    ],
+    acceptance: `${what} registered with the Avi Cloud Console on Cloud Licensing, with a NON-ZERO used and available count under LICENSE USAGE; the outbound path to portal.pulse.broadcom.com is in the firewall/proxy allowlist.`,
+  };
+}
+
 const E10_HANDOVER: Epic = {
   id: 'E10',
   title: 'Validation & handover',
@@ -654,7 +707,7 @@ function wldEpicId(index: number): string {
   return index === 0 ? 'E9' : `E9-${index + 1}`;
 }
 
-function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
+function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicensing: AviLicensing): Epic {
   const name = (w.name || `wld${index + 1}`).trim();
   const id = wldEpicId(index);
   const connectivity = w.connectivity;
@@ -755,7 +808,11 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
       });
       // The controller exists now, so it can be onboarded and licensed. The hub
       // itself was deployed earlier in E8 (#213).
-      stories.push(licenseHubEndpointStory(`9.${stories.length + 1}`, "this workload domain's Avi controller"));
+      stories.push(
+        aviLicensing === 'cloud'
+          ? aviCloudLicensingStory(`9.${stories.length + 1}`, "this workload domain's Avi controller")
+          : licenseHubEndpointStory(`9.${stories.length + 1}`, "this workload domain's Avi controller"),
+      );
     }
     const lbPrereq =
       w.supervisorLb === 'avi'
@@ -795,7 +852,7 @@ export function selectedEpics(sel: Selection): Epic[] {
   // — otherwise a Supervisor-Avi-only fleet would have nowhere for the licensing
   // stories to live and they would silently vanish. (#213)
   if (sel.day2 || licenseHubNeeded(sel)) out.push(day2Epic(sel));
-  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize)));
+  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize, sel.aviLicensing)));
   out.push(E10_HANDOVER);
   return out;
 }
@@ -883,6 +940,7 @@ export function coerceSelection(data: unknown): Selection | null {
       identityBroker: bool(comps.identityBroker, base.day2Components.identityBroker),
     },
     vdefend: bool(d.vdefend, base.vdefend),
+    aviLicensing: oneOf<AviLicensing>(d.aviLicensing, AVI_LICENSING.map((l) => l.value), base.aviLicensing),
     wlds,
   });
 }

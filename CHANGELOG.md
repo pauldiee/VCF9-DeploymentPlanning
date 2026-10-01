@@ -1,5 +1,22 @@
 # Changelog
 
+## v5.6.2 — 2026-10-01
+- **Avi licensing route (#374)** — the deployment plan no longer assumes every
+  Avi fleet needs License Hub. A new *Avi licensing* choice: **On-prem License
+  Hub** (default; required for disconnected / air-gapped sites) or **Cloud
+  Licensing**, where each controller registers directly with the Avi Cloud
+  Console (TechDocs: *"Avi Controllers that cannot run a License Hub can connect
+  and register directly to the Avi Cloud Console"*). License Hub is now gated on
+  `vDefend || (Avi && hub)`, matching the sizer. Cloud Licensing gets its own
+  story (E8 `8.3b`, and per workload domain in E9) and test case **TP-427**;
+  TP-413 applies to the hub route only. Saved plans load as License Hub, so they
+  don't change.
+- Docs aligned: `06-deployment-plan.md` (story 8.3b, E8/E9 licensing prose),
+  `05-day2-deployments.md` (D6, B.3), `prerequisites.md` (License Hub heading,
+  with its links in `09` and `15` updated), `15-license-hub.md` (gate wording).
+  The plan's vDefend hint now describes License Hub 2.0 (one ~11 GB OVA), not
+  the 5.1.2 SSP Installer download.
+
 ## v5.6.1 — 2026-10-01
 - **Sizer: Advanced Management Domain Sizing (#379)** — the workbook's R24–R32
   overrides for the management vCenter size / storage, NSX Manager model / size,

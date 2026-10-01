@@ -40,7 +40,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
 |D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment / **NSX VPC subnet**? | Five options — see C. NSX Overlay needs an Edge cluster + transit gateway; **NSX VPC is not on the sheet and is API-only**. At Day-N *every* non-shared placement is API-only |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
-|D6 | **Is vDefend or Avi in scope?**                                     | If so there are **two more Day-N appliance sets**, and **neither comes from the Day-N sheet** — the **Avi Load Balancer** (via VCF Operations) and **License Hub** (its own standalone OVA in 2.0, or via the SSP Installer on 5.1.2 — outside VCF entirely either way). See **B.3**; full detail in [`prerequisites.md`](prerequisites.md). Easy to miss precisely because the fleet tooling never mentions them |
+|D6 | **Is vDefend or Avi in scope?**                                     | If so there can be **two more Day-N appliance sets**, and **neither comes from the Day-N sheet** — the **Avi Load Balancer** (via VCF Operations) and **License Hub** (its own standalone OVA in 2.0, or via the SSP Installer on 5.1.2 — outside VCF entirely either way). License Hub is needed for vDefend, and for Avi only on on-prem licensing — Avi can use **Cloud Licensing** straight to the Avi Cloud Console instead (disconnected sites need the hub). See **B.3**; full detail in [`prerequisites.md`](prerequisites.md). Easy to miss precisely because the fleet tooling never mentions them |
 
 Size the footprint of whatever you choose here on the
 [sizing tool](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)
@@ -238,7 +238,7 @@ the Day-N planner's summary.
 
 | | **Avi Load Balancer** | **License Hub 2.0** |
 | --- | --- | --- |
-| **When** | Only if Avi is the chosen LB (Supervisor, tenant LB, optionally fronting Automation) | Only if **vDefend or Avi** is in scope — Avi in scope means **both** columns apply |
+| **When** | Only if Avi is the chosen LB (Supervisor, tenant LB, optionally fronting Automation) | Only if **vDefend** is in scope, or **Avi on on-prem licensing** — Avi on **Cloud Licensing** registers each controller directly with the Avi Cloud Console and needs no hub; disconnected / air-gapped sites must use the hub |
 | **Deployed from** | **VCF Operations → Build → Lifecycle → VCF Instances → *domain* → Manage Components** (an *Optional Component*, included in entitlement) | A **standalone OVA**, deployed with the vSphere Client — **outside VCF entirely** |
 | **Software** | **Depot-fed** — *"Software bundle is downloaded and ready"*; can't deploy until the depot has synced it | **Manual download**, one file, **~11 GB**, from the Broadcom Support Portal under **VMware Avi Load Balancer → Primary Downloads**. **Not in the depot** |
 | **Footprint** | 3 controller nodes in the **management domain**, **per NSX instance** — plus Service Engines **per cluster** in the WLD (min 2) | 1 VM: **6 vCPU / 12 GB / 256 GB**, on a DRS-enabled cluster with shared storage |

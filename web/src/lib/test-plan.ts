@@ -26,6 +26,8 @@
 
 import {
   aviInScope,
+  aviOnHub,
+  aviOnCloudLicensing,
   includedEpicList,
   isVsanStorage,
   licenseHubNeeded,
@@ -1314,7 +1316,7 @@ const TP4: Entry[] = [
     epic: 'E8',
     story: '8.3a',
     critical: true,
-    when: aviInScope,
+    when: aviOnHub,
     steps: [
       'License Hub → **Endpoint Management → Onboard an Endpoint** — supply the type, endpoint name, connection type, the controller cluster IP/VIP/FQDN, and that endpoint\'s admin credential AND its certificate. The hub logs in to the controller, so both are needed.',
       'License Hub → **Licenses** → assign licences to that endpoint.',
@@ -1325,6 +1327,23 @@ const TP4: Entry[] = [
     expected:
       'The controller is listed as an endpoint with licences assigned, is switched to the on-premises hub, and licence usage shows a NON-ZERO used and available count.',
     note: 'This is a documented false-pass: a connected status with a fresh refresh timestamp still reads zero used and zero available if no licence file was ever loaded. Verify the usage numbers, not the connectivity indicator.',
+  },
+  {
+    id: 'TP-427',
+    component: 'Avi Load Balancer',
+    title: 'Controller is on Cloud Licensing with a non-zero licence count',
+    epic: 'E8',
+    story: '8.3b',
+    critical: true,
+    when: aviOnCloudLicensing,
+    steps: [
+      'On the controller: **Administration → Licensing** — confirm it is on **Cloud Licensing** and registered with the Avi Cloud Console.',
+      'Confirm the outbound path: the controller (or its proxy) reaches `portal.pulse.broadcom.com` on 443, and that FQDN is in the firewall / proxy allowlist. It is NOT on the Broadcom Public URLs list, so an allowlist built from that page misses it.',
+      'Now open **LICENSE USAGE** on the controller and read the actual numbers.',
+    ],
+    expected:
+      'The controller is registered on Cloud Licensing, the outbound path to the Avi Cloud Console is allowlisted, and licence usage shows a NON-ZERO used and available count.',
+    note: 'Cloud Licensing needs no License Hub, but it does need the outbound path to stay open: licences come in 180-day increments unlocked by the usage data the controller reports. A registered controller with zero used / zero available is not licensed.',
   },
   {
     id: 'TP-414',

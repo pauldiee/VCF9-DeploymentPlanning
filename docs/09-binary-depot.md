@@ -15,7 +15,7 @@ backs up to.
 > package is then *uploaded to* the SSP Installer. Neither passes through the
 > Fleet Depot Service or the offline depot built here, which is VCF-component
 > scoped. Plan that transfer separately, especially for an air-gapped site. See
-> [`prerequisites.md` → License Hub](prerequisites.md#license-hub-only-if-vdefend-or-avi-is-in-scope).
+> [`prerequisites.md` → License Hub](prerequisites.md#license-hub-only-for-vdefend-or-avi-on-on-prem-licensing).
 
 ## Contents
 
