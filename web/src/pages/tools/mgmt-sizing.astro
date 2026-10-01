@@ -161,7 +161,9 @@ const opt = (values: readonly string[]) => values;
         </table>
         <p class="sizer__hint">CPU and RAM are checked against the tolerated failure: <strong>N-1</strong> (one host)
           for a standard cluster, or <strong>N/2</strong> (the surviving AZ must run everything) for a stretched
-          cluster. Storage rebuild is covered by the reserve %, and stretched mirrors a full copy per AZ.</p>
+          cluster. For <strong>vSAN</strong>, storage rebuild is covered by the reserve %, and stretched mirrors a
+          full copy per AZ. For <strong>NFS / FC</strong>, storage is checked against the datastore capacity you enter;
+          resilience and replication are the array's job.</p>
 
         <h2>Fleet requirement</h2>
         <dl class="sizer__stats" id="stats"></dl>
