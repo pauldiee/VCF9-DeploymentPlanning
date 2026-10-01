@@ -8,8 +8,9 @@
   30 advanced scenarios added to the workbook check: **157 / 157 match**.
   One documented difference: the workbook reads some advanced cells even while
   the mode is off; the tool applies them only while it is on.
-- **Deployment profiles explained** at the top of the sizer and in
-  `docs/04-sizing.md` — Simple, HA-Small, HA-Medium, HA-Large: what each deploys,
+- **Deployment profiles explained** — on the sizer behind an **ⓘ** button next
+  to *Deployment model* / *Deployment size* (opens a compact comparison, hidden by
+  default), and in `docs/04-sizing.md` — Simple, HA-Small, HA-Medium, HA-Large: what each deploys,
   where it fits, and Broadcom's reference footprint. All four reference fleets
   from the Fleet Sizing Models page now appear in the comparison, and all match.
 - **Sizer form rewritten for people without much VCF knowledge.** Inputs are
