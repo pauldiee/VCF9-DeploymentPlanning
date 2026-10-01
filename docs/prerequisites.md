@@ -47,7 +47,9 @@ Installer starts:
 
 Everything else in this document (workload-domain hardware, SMTP, the
 Certificate Authority, the SFTP backup target, Avi, vSphere Supervisor, fleet
-SSO) is **Day-N**: plan it now, but it will not hold up bring-up.
+SSO) is **Day-N**: plan it now, but it will not hold up bring-up. One Day-N
+item has a hard clock: **[VCF licensing](#vcf-licensing-license-server-and-registration)**
+must be done inside the **90-day evaluation** after bring-up.
 
 ## Fillable planning templates (download)
 
@@ -525,6 +527,70 @@ Prepare up front:
 > full licensing chain, and known gotchas, see
 > [`14-avi-load-balancer.md`](14-avi-load-balancer.md).
 
+## VCF licensing (License Server and registration)
+
+*When needed: **Day-N** — but with a hard deadline: within the **90-day
+evaluation period** after bring-up.* Nothing here blocks the Installer, but
+missing the deadline is worse than missing a bring-up item.
+
+The **License Server** is deployed at bring-up (deployment plan story 5.4).
+To license the fleet, VCF Operations and the License Server are
+**registered** with the **VCF Business Services console** (`vcf.broadcom.com`),
+licenses are assigned from VCF Operations, and **license usage is reported
+back** on a schedule. What the registration and usage files actually contain,
+field by field, is in the upgrade guide's
+[Licensing: what is sent to Broadcom](https://docs.hollebollevsan.nl/docs/25-licensing-what-is-sent-to-broadcom/).
+
+**Decide up front: connected or disconnected mode.**
+
+| | Connected (Broadcom's recommendation) | Disconnected |
+| --- | --- | --- |
+| Registration | Activation code | Upload a registration file **and** (9.1) a confirmation file, valid for 3 hours |
+| Usage reporting | Automatic, **daily** | Generate → upload → download license → import, **at least every 180 days** |
+| Network | VCF Operations reaches Broadcom over the internet (or proxy) | Nothing from the data centre; an administrator's browser reaches `vcf.broadcom.com` |
+| Operations | None | A recurring calendar task with a named owner |
+
+Either mode can be switched later, but after **more than 180 days**
+disconnected, switching to connected *"might fail, and you must generate a new
+activation code"* ([Switch from Disconnected to Connected Mode](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/switch-from-disconnected-to-connected-mode.html)).
+
+> **The evaluation clock starts at bring-up — license the fleet inside it.**
+> Each ESX host (from first boot), vCenter and VCF Operations instance runs up
+> to **90 days** in evaluation. Per Broadcom: *"If you fail to license your VCF
+> fleet before the evaluation period expires, you must reinstall the software
+> because you cannot license a fleet with an expired evaluation period."*
+> **[documented]** ([Licensing Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/licensing-overview/licensing-model.html)).
+> Hosts added later without free license capacity also run on their own
+> evaluation clock, counted from install.
+
+**The 180-day rule and what happens if it slips** **[documented]**
+([Licensing Overview](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/licensing-overview.html), KB 391605):
+
+- No usage report and license update for **180 days** → the license
+  **expires** (notifications appear beforehand).
+- Then **90 days** to update it. Workloads keep running.
+- After that: ESX hosts disconnect from vCenter, and **nothing powered off can
+  be powered on again** — running VMs carry on, but HA restarts, maintenance
+  shutdowns and patch reboots stay down. Recovery is an updated license file.
+
+**Keep the License Server up and watched.** If it or VCF Operations is down,
+running workloads are not affected, but licenses can't be assigned and **usage
+reports can't be generated** — a long outage still runs into the 180 days.
+Put the License Server on a cluster with vSphere HA, and alert on the vSphere
+Client banner *"One or more vCenter instances are not connected to a license
+server"* (KB 443240; the KB says it *"should remain powered on at all times"*).
+
+**Optional: keep the FQDN out of registration.** By default the registration
+uses the VCF Operations FQDN and License Server hostname as display names.
+Broadcom documents a setting to switch that off, run **before** registering —
+see the upgrade guide's [registration file
+section](https://docs.hollebollevsan.nl/docs/25-licensing-what-is-sent-to-broadcom/#registration-file) (untested there).
+
+Prepare up front: the mode decision, internet / proxy path (connected) or
+a named owner and calendar slot (disconnected), the Broadcom account that can
+sign in to the VCF Business Services console, and the license entitlement for
+the host core count.
+
 ## License Hub (only if vDefend or Avi is in scope)
 
 *When needed: **Day-N (if in scope)**.* Nothing here blocks bring-up.
@@ -532,14 +598,18 @@ Prepare up front:
 **License Hub** provides *"centralized license management and reporting for
 VMware vDefend and VMware Avi subscription license files"* — it replaces the
 traditional 25-character license keys with **digitally signed subscription
-license files**. Needed **only when vDefend or Avi is in scope**; plain VCF
-without either does not need it.
+license files**. Relevant **only when vDefend or Avi is in scope**; plain VCF
+without either does not need it. **For Avi it is optional:** the Avi
+Controller can use **Cloud Licensing** (register directly with the Avi Cloud
+Console) instead — *"Avi Controllers that cannot run a License Hub can connect
+and register directly to the Avi Cloud Console"* **[documented]**. The hub is
+the route for **disconnected** sites, or by choice for on-prem control (#374).
 
 > **License Hub is not the License Server — and both exist.** The **License
 > Server** is deployed **automatically at bring-up**, is tied to VCF Operations,
 > and licenses the VCF fleet (deployment plan story 5.4). **License Hub** is a
 > separate appliance, deployed **Day-N**, licensing **vDefend + Avi**. They
-> **coexist** — a fleet running Avi has both. Two similar names, two unrelated
+> **coexist** — a fleet with vDefend, or with Avi on on-prem licensing, has both. Two similar names, two unrelated
 > appliances: don't plan one and assume it covers the other.
 
 Prepare up front:

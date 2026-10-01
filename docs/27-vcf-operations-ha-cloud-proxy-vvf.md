@@ -131,6 +131,12 @@ type via
 Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations.html)
 before adding other components.
 
+> **The evaluation lasts 90 days — don't let it run out.** After that,
+> management operations are blocked, hosts disconnect and powered-off VMs
+> can't start until a license is assigned. Connected vs. disconnected mode,
+> the 180-day usage reporting that follows, and what happens if it slips:
+> [VCF licensing](prerequisites.md#vcf-licensing-license-server-and-registration).
+
 ## Step 3 — Enable HA after the fact
 
 Skip this if you already activated HA inline in Step 2. This is the

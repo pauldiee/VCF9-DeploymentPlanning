@@ -1,5 +1,27 @@
 # Changelog
 
+## v5.5.2 — 2026-10-01
+- **New `prerequisites.md` section: VCF licensing (License Server and
+  registration) (#376).** Verified against the 9.1 TechDocs licensing pages and
+  KB 391605 / 443240. Contents:
+  - connected vs. disconnected mode, and the network access each needs;
+  - the **90-day evaluation**, including Broadcom's *"you must reinstall"* if
+    the fleet's evaluation expires unlicensed;
+  - the 180-day usage reporting, the 90-day grace, and what stops (nothing
+    powered off can start again);
+  - License Server availability;
+  - the documented setting to keep the FQDN out of registration.
+
+  It links to the upgrade guide's new *Licensing: what is sent to Broadcom*
+  for the field-by-field file contents. The bring-up gate summary now flags
+  licensing as the one Day-N item with a hard clock.
+- **License Hub wording (#374, docs part):** `prerequisites.md` and intake
+  `E17` no longer say every Avi fleet needs License Hub. The Avi Controller
+  can use Cloud Licensing directly, and the hub is for disconnected sites. The
+  sizer code change stays open in #374.
+- **`docs/27`:** the evaluation-mode note is now a real warning, linking to
+  the new section.
+
 ## v5.5.1 — 2026-10-01
 - **`docs/04-sizing`: VCF Operations figures now cross-checked (#375).** The
   vCPU / RAM per node size match VMware Configuration Maximums, VCF Operations
