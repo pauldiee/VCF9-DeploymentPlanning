@@ -591,7 +591,7 @@ a named owner and calendar slot (disconnected), the Broadcom account that can
 sign in to the VCF Business Services console, and the license entitlement for
 the host core count.
 
-## License Hub (only if vDefend or Avi is in scope)
+## License Hub (only for vDefend, or Avi on on-prem licensing)
 
 *When needed: **Day-N (if in scope)**.* Nothing here blocks bring-up.
 
@@ -1120,7 +1120,7 @@ through a proxy (intake `G5`), have these allowlisted on it. Source:
 | `vcf.broadcom.com`              | Licensing                                      | VCF Operations                                                     |
 | `auth.esp.vmware.com`           | Update Manager Download Service (UMDS)         | SDDC Manager, VCF Download Tool                                    |
 | `api.prod.nsxti.vmware.com`     | IDS/IPS advanced threat prevention (VMware vDefend) — **only if vDefend IDS/IPS is enabled; not part of the VCF SKU** | NSX Manager |
-| `portal.pulse.broadcom.com`     | **Avi Cloud Console** — License Hub registration, license assignment and usage reporting. **Only if vDefend or Avi is in scope, and only in connected mode.** Not on the Broadcom Public URLs list | License Hub (**connected** mode); an admin browser in **disconnected** mode |
+| `portal.pulse.broadcom.com`     | **Avi Cloud Console** — License Hub registration, license assignment and usage reporting. **Only if vDefend is in scope or Avi uses on-prem licensing, and only in connected mode** — with Avi on Cloud Licensing the **Avi Controllers** need this flow themselves instead. Not on the Broadcom Public URLs list | License Hub (**connected** mode); an admin browser in **disconnected** mode; each **Avi Controller** on Cloud Licensing |
 
 > **Proxying these? The proxy must be reachable from the whole
 > services-runtime node block, not just the depot/Ops IPs.** Allowlisting these

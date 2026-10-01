@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { docHref, withBase } from '../../lib/path';
-import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, AUTOMATION_MODELS, NSX_CONNECTIVITY, SUPERVISOR_SIZES, STORAGE_TYPES } from '../../lib/deployment-plan';
+import { defaultSelection, selectedEpics, typeLabel, includedEpicList, AUTOMATION_PLACEMENTS, AUTOMATION_MODELS, NSX_CONNECTIVITY, SUPERVISOR_SIZES, STORAGE_TYPES, AVI_LICENSING } from '../../lib/deployment-plan';
 
 const sel = defaultSelection();
 const epics = selectedEpics(sel);
@@ -71,9 +71,15 @@ const epics = selectedEpics(sel);
       </fieldset>
 
       <fieldset>
-        <legend>Security add-on</legend>
-        <p class="planx__hint">Tick <em>vDefend</em> if the security add-on is in scope. It matters here because <strong>License Hub</strong> licenses <em>both</em> vDefend and Avi — so ticking either this or an Avi option anywhere adds the licensing stories. Those sit <strong>outside VCF fleet management</strong>: the software is a manual ~9.5&nbsp;GB two-file download (not depot-fed), deployed from the SSP Installer, and the hub must exist and hold licences <strong>before</strong> any Avi controller is built. This box is deliberately <em>not</em> under Day-2 fleet — a Supervisor Avi load balancer needs License Hub even with no Day-2 work selected.</p>
+        <legend>Security add-on &amp; licensing</legend>
+        <p class="planx__hint">Tick <em>vDefend</em> if the security add-on is in scope. It matters here because <strong>License Hub</strong> licenses vDefend, and Avi when Avi is licensed on-prem. License Hub sits <strong>outside VCF fleet management</strong>: one manual ~11&nbsp;GB OVA download (License Hub 2.0, not depot-fed), and the hub must exist and hold licences <strong>before</strong> an Avi controller that uses it is built. This box is deliberately <em>not</em> under Day-2 fleet — a Supervisor Avi load balancer on hub licensing needs License Hub even with no Day-2 work selected.</p>
         <label class="planx__check"><input type="checkbox" id="optVdefend" /> vDefend in scope <span class="planx__tag">E8</span></label>
+        <label class="planx__sublabel">Avi licensing (only used when Avi is in scope)
+          <select id="selAviLicensing">
+            {AVI_LICENSING.map((l) => <option value={l.value}>{l.label}</option>)}
+          </select>
+        </label>
+        <p class="planx__hint"><strong>Cloud Licensing</strong> needs no License Hub: each Avi controller registers straight with the Avi Cloud Console (outbound 443 to <code>portal.pulse.broadcom.com</code>). Disconnected / air-gapped sites must use the <strong>License Hub</strong>. <strong>Not sure?</strong> License Hub (works in both cases).</p>
       </fieldset>
 
       <fieldset>
@@ -115,7 +121,11 @@ const epics = selectedEpics(sel);
             <h2>
               {e.id} — {e.title} <span class="planx__owner">Owner: {e.owner}</span>
             </h2>
-            {e.ref && <p class="planx__ref">Ref: {e.ref}</p>}
+            {e.guides && (
+              <p class="planx__ref">
+                Guides: {e.guides.map((g, i) => (<>{i > 0 && ' · '}<a href={g.url}>{g.title}</a></>))}
+              </p>
+            )}
             <ul>
               {e.stories.map((s) => (
                 <li>
@@ -127,6 +137,11 @@ const epics = selectedEpics(sel);
                     {s.acceptance && (
                       <li class="planx__accept">
                         <em>Acceptance:</em> {s.acceptance}
+                      </li>
+                    )}
+                    {s.guides && (
+                      <li class="planx__guide">
+                        <em>Guide:</em> {s.guides.map((g, i) => (<>{i > 0 && ' · '}<a href={g.url}>{g.title}</a></>))}
                       </li>
                     )}
                   </ul>
@@ -165,6 +180,7 @@ const epics = selectedEpics(sel);
     type NsxConnectivity,
     type SupervisorSize,
     type SupervisorLb,
+    type AviLicensing,
     type StorageType,
   } from '../../lib/deployment-plan';
 
@@ -192,6 +208,7 @@ const epics = selectedEpics(sel);
         identityBroker: (<HTMLInputElement>$('optD2Broker')).checked,
       },
       vdefend: (<HTMLInputElement>$('optVdefend')).checked,
+      aviLicensing: (<HTMLSelectElement>$('selAviLicensing')).value as AviLicensing,
       wlds: wlds.map((w) => ({ ...w })),
     };
   }
@@ -294,10 +311,15 @@ const epics = selectedEpics(sel);
             const accept = s.acceptance
               ? `<li class="planx__accept"><em>Acceptance:</em> ${linkify(s.acceptance)}</li>`
               : '';
-            return `<li><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></li>`;
+            const guide = s.guides
+              ? `<li class="planx__guide"><em>Guide:</em> ${s.guides.map((g) => `<a href="${esc(g.url)}">${esc(g.title)}</a>`).join(' · ')}</li>`
+              : '';
+            return `<li><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}${guide}</ul></li>`;
           })
           .join('');
-        const ref = e.ref ? `<p class="planx__ref">Ref: ${linkify(e.ref)}</p>` : '';
+        const ref = e.guides
+          ? `<p class="planx__ref">Guides: ${e.guides.map((g) => `<a href="${esc(g.url)}">${esc(g.title)}</a>`).join(' · ')}</p>`
+          : '';
         return `<div class="planx__epic"><h2>${esc(e.id)} — ${esc(e.title)} <span class="planx__owner">Owner: ${esc(e.owner)}</span></h2>${ref}<ul>${stories}</ul></div>`;
       })
       .join('');
@@ -385,7 +407,7 @@ const epics = selectedEpics(sel);
     render();
   });
   $('optDay2').addEventListener('change', () => { syncAuto(); render(); });
-  for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi', 'optD2Logs', 'optD2Networks', 'optD2Broker', 'optVdefend']) {
+  for (const id of ['optAutoDeploy', 'selAutoModel', 'selAutoPlacement', 'optAutoAvi', 'optD2Logs', 'optD2Networks', 'optD2Broker', 'optVdefend', 'selAviLicensing']) {
     $(id).addEventListener('change', () => { syncAuto(); render(); });
   }
 
@@ -415,6 +437,7 @@ const epics = selectedEpics(sel);
     (<HTMLInputElement>$('optD2Networks')).checked = sel.day2Components.networks;
     (<HTMLInputElement>$('optD2Broker')).checked = sel.day2Components.identityBroker;
     (<HTMLInputElement>$('optVdefend')).checked = sel.vdefend;
+    (<HTMLSelectElement>$('selAviLicensing')).value = sel.aviLicensing;
     wlds = sel.wlds.map((w) => ({ ...w }));
     wldSeq = wlds.length;
   }
@@ -533,5 +556,6 @@ const epics = selectedEpics(sel);
   .planx__epic > ul > li { margin-bottom: 0.35rem; }
   .planx__epic ul ul { margin: 0.15rem 0 0.4rem; }
   .planx__accept { color: var(--text-muted); font-size: 0.85rem; }
+  .planx__guide { font-size: 0.85rem; }
   .planx__source { font-size: 0.78rem; color: var(--text-muted); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
 </style>

@@ -126,6 +126,11 @@ Before committing any doc change:
    standalone), so a drifting build fails rather than shipping quietly. The
    tracker needs no sync — it imports the same generator. Note the drift runs
    **both ways**: the doc has been the correct one before now (#215).
+   **Guide links:** stories link this site's own guides through the
+   `GUIDE_RULES` table in `deployment-plan.ts` (absolute URLs, so they survive a
+   Jira / Azure DevOps / GitLab import). A new guide that covers a story gets a
+   rule there; a renamed heading that breaks one of those anchors fails the build
+   via `web/scripts/check-plan-guides.mjs` (`npm run check:plan-guides`) (#380).
 6. **`docs/nl/` (Dutch pilot, #290)** — if you edited a `docs/X.md` that has a
    `docs/nl/X.md`, update the Dutch file in the same commit and re-stamp it
    (`node scripts/check-nl-sync.mjs --stamp X` from `web/`). If the Dutch text

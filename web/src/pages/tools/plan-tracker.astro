@@ -80,6 +80,11 @@ const exportHref = withBase('tools/deployment-plan/');
                           <em>Acceptance:</em> {s.acceptance}
                         </li>
                       )}
+                      {s.guides && (
+                        <li class="plant__guide">
+                          <em>Guide:</em> {s.guides.map((g, i) => (<>{i > 0 && ' · '}<a href={g.url}>{g.title}</a></>))}
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </li>
@@ -195,8 +200,11 @@ const exportHref = withBase('tools/deployment-plan/');
             const accept = s.acceptance
               ? `<li class="plant__accept"><em>Acceptance:</em> ${linkify(s.acceptance)}</li>`
               : '';
+            const guide = s.guides
+              ? `<li class="plant__guide"><em>Guide:</em> ${s.guides.map((g) => `<a href="${esc(g.url)}">${esc(g.title)}</a>`).join(' · ')}</li>`
+              : '';
             const check = `<label class="plant__storycheck" title="${doneAt ? `Done on ${esc(doneAt)}` : 'Mark story done'}"><input type="checkbox" class="plant__done" data-key="${esc(key)}"${doneAt ? ' checked' : ''} aria-label="Mark story ${esc(s.id)} done" /></label>`;
-            return `<li class="plant__story${doneAt ? ' plant__story--done' : ''}">${check}<div class="plant__storybody"><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}</ul></div></li>`;
+            return `<li class="plant__story${doneAt ? ' plant__story--done' : ''}">${check}<div class="plant__storybody"><strong>Story ${esc(s.id)} — ${esc(s.title)}.</strong><ul>${tasks}${accept}${guide}</ul></div></li>`;
           })
           .join('');
         const epicProg = `<span class="plant__epicprog">${pe.done}/${pe.total} done</span>`;
@@ -363,6 +371,7 @@ const exportHref = withBase('tools/deployment-plan/');
   .plant__epic > ul > li { margin-bottom: 0.35rem; }
   .plant__epic ul ul { margin: 0.15rem 0 0.4rem; }
   .plant__accept { color: var(--text-muted); font-size: 0.85rem; }
+  .plant__guide { font-size: 0.85rem; }
 
   .plant__story { display: flex; align-items: flex-start; gap: 0.55rem; }
   .plant__storycheck { flex: none; padding-top: 0.2rem; cursor: pointer; }

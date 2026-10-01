@@ -8,14 +8,17 @@ it and the proxy the fleet may need to reach it. The
 [SFTP Backup Target](08-backup-target.md) — the target every management component
 backs up to.
 
-> **What the depot does *not* cover: SSP / License Hub.** If **vDefend or Avi** is
-> in scope, the **Security Services Platform Installer** (`.ova`) and the
-> **License Hub** package (`.tar`) are downloaded **by hand from the Broadcom
-> Support Portal** — roughly **9.5 GB** between them — and the License Hub
-> package is then *uploaded to* the SSP Installer. Neither passes through the
-> Fleet Depot Service or the offline depot built here, which is VCF-component
-> scoped. Plan that transfer separately, especially for an air-gapped site. See
-> [`prerequisites.md` → License Hub](prerequisites.md#license-hub-only-if-vdefend-or-avi-is-in-scope).
+> **What the depot does *not* cover: License Hub (and vDefend SSP).** If **vDefend**
+> is in scope, or **Avi uses on-prem licensing**, License Hub is downloaded **by
+> hand from the Broadcom Support Portal**: on **2.0** (current) one standalone OVA
+> of **~11 GB**, listed under *VMware Avi Load Balancer → Primary Downloads*; on
+> **5.1.2** the **Security Services Platform Installer** (`.ova`) plus the License
+> Hub package (`.tar`), roughly **9.5 GB** between them, with the package
+> *uploaded to* the SSP Installer. None of it passes through the Fleet Depot
+> Service or the offline depot built here, which is VCF-component scoped. Plan
+> that transfer separately, especially for an air-gapped site (which, for Avi,
+> is exactly the case that needs the hub). See
+> [`prerequisites.md` → License Hub](prerequisites.md#license-hub-only-for-vdefend-or-avi-on-on-prem-licensing).
 
 ## Contents
 

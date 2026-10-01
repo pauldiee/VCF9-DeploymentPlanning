@@ -53,7 +53,7 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 | VCF Operations | `vcf.broadcom.com`, `eapi.broadcom.com` | 443 | TCP | Licensing |
 | SDDC Manager, VCF Download Tool | `auth.esp.vmware.com` | 443 | TCP | Update Manager Download Service (UMDS) |
 | Cloud Proxy | `eapi.broadcom.com` | 443 | TCP | Cloud Proxy connectivity |
-| **License Hub** (connected mode only) | `portal.pulse.broadcom.com` | 443 | TCP | **Avi Cloud Console** — registration, license assignment, usage reporting. Only if **vDefend or Avi** is in scope. **Not on Broadcom's Public URLs list** — it will not appear in a proxy allowlist built from that page alone |
+| **License Hub** (connected mode only) | `portal.pulse.broadcom.com` | 443 | TCP | **Avi Cloud Console** — registration, license assignment, usage reporting. Only if **vDefend** is in scope or **Avi uses on-prem licensing**. With Avi on **Cloud Licensing** there is no hub, but each **Avi Controller** then needs this same flow itself (directly or via its proxy). **Not on Broadcom's Public URLs list** — it will not appear in a proxy allowlist built from that page alone |
 
 > **If the egress proxy does SSL inspection (TLS termination/re-signing),
 > exclude `eapi.broadcom.com` and `vcf.broadcom.com` from inspection** — VCF
@@ -131,9 +131,9 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 > - **Cloud Proxy** needs **443, 4505, 4506** for Telegraf-based app monitoring.
 > - **License Server** requires an FQDN/IP **outside** the VCF services-runtime
 >   range (IPv4 only) — a routing/reachability point, not just a port.
-> - **License Hub needs a DFW *exclusion*, not a rule** (only if vDefend or Avi
->   is in scope — the separate SSP-deployed appliance, not the License Server
->   above). TechDocs, verbatim: *"If the License Hub VMs are running in an NSX
+> - **License Hub needs a DFW *exclusion*, not a rule** (only if vDefend is in
+>   scope or Avi uses on-prem licensing — the separate License Hub appliance,
+>   not the License Server above). TechDocs, verbatim: *"If the License Hub VMs are running in an NSX
 >   overlay network, NSX VLAN segments, and security-enabled port groups, add
 >   the License Hub VMs to a **firewall exclusion list**."* No reason is given.
 >   This is the one entry on this page that is **not** a port to open — it is a

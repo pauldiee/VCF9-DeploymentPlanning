@@ -2,7 +2,7 @@
 
 Deploying **License Hub**, the centralized license manager for VMware vDefend
 and Avi subscription license files. The
-[prerequisites gate](prerequisites.md#license-hub-only-if-vdefend-or-avi-is-in-scope)
+[prerequisites gate](prerequisites.md#license-hub-only-for-vdefend-or-avi-on-on-prem-licensing)
 states *what* must exist before you start; this page covers *how to deploy
 it* — for both the current **License Hub 2.0** standalone-OVA flow and the
 older **5.1.2** SSP Installer flow — plus the post-deploy registration and
@@ -22,8 +22,10 @@ The linear path through this page. Steps 1–2 decide the route; steps 3–5 are
 deploy and the shared licensing chain.
 
 1. **Confirm it's needed and which one**
-   ([prerequisites gate](prerequisites.md#license-hub-only-if-vdefend-or-avi-is-in-scope))
-   — gate on **vDefend *or* Avi** being in scope. License Hub ≠ the bring-up
+   ([prerequisites gate](prerequisites.md#license-hub-only-for-vdefend-or-avi-on-on-prem-licensing))
+   — needed for **vDefend**, and for **Avi on on-prem licensing**; Avi can
+   instead use **Cloud Licensing** straight to the Avi Cloud Console, while a
+   disconnected / air-gapped site needs the hub. License Hub ≠ the bring-up
    License Server (callout above).
 2. **Pick the flow** — **License Hub 2.0** (single standalone OVA, current) or
    **License Hub 5.1.2** (3-VM instance from the SSP Installer, older). There is

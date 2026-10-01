@@ -67,6 +67,12 @@ function selections() {
   licensingOnly.vdefend = true;
   out.push(['licensing only (Day-2 off)', licensingOnly]);
 
+  const aviCloud = base();
+  aviCloud.day2 = true;
+  aviCloud.automation = { deploy: true, model: 'medium', placement: 'overlay', aviLb: true };
+  aviCloud.aviLicensing = 'cloud';
+  out.push(['Avi on Cloud Licensing', aviCloud]);
+
   return out;
 }
 

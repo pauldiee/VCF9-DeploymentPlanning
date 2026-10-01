@@ -15,18 +15,27 @@
 // every host-prep story.
 export const HOST_PREP_REPO = 'https://github.com/pauldiee/VCFHostPreparation';
 
+/** A link to one of this site's own install / configuration guides (#380). */
+export interface GuideLink {
+  title: string;
+  url: string;
+}
+
 export interface Story {
   id: string; // e.g. "1.1"
   title: string;
   tasks: string[];
   acceptance?: string;
+  /** This site's guides for doing the story; attached by attachGuides(). */
+  guides?: GuideLink[];
 }
 
 export interface Epic {
   id: string; // e.g. "E1"
   title: string;
   owner: string;
-  ref?: string;
+  /** This site's guides for the epic as a whole; attached by attachGuides(). */
+  guides?: GuideLink[];
   stories: Story[];
 }
 
@@ -53,6 +62,13 @@ export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type SupervisorLb = 'builtin' | 'flb' | 'avi';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
+/**
+ * How the Avi controllers are licensed (#374): through an on-prem License Hub,
+ * or Cloud Licensing straight to the Avi Cloud Console. TechDocs: "Avi
+ * Controllers that cannot run a License Hub can connect and register directly
+ * to the Avi Cloud Console"; disconnected (air-gapped) sites use the hub.
+ */
+export type AviLicensing = 'hub' | 'cloud';
 
 export interface AutomationChoice {
   deploy: boolean;
@@ -85,6 +101,8 @@ export interface Selection {
    * Hub for a Supervisor Avi LB with no Day-2 fleet work at all. (#213)
    */
   vdefend: boolean;
+  /** Avi licensing route; only matters when Avi is in scope. (#374) */
+  aviLicensing: AviLicensing;
   wlds: Wld[];
 }
 
@@ -99,14 +117,25 @@ export function aviInScope(sel: Selection): boolean {
   );
 }
 
+/** Avi is in scope AND licensed through License Hub (not Cloud Licensing). (#374) */
+export function aviOnHub(sel: Selection): boolean {
+  return aviInScope(sel) && sel.aviLicensing === 'hub';
+}
+
+/** Avi is in scope AND uses Cloud Licensing straight to the Avi Cloud Console. (#374) */
+export function aviOnCloudLicensing(sel: Selection): boolean {
+  return aviInScope(sel) && sel.aviLicensing === 'cloud';
+}
+
 /**
- * License Hub is required whenever vDefend OR Avi is in scope — it licenses
- * both (prerequisites.md, License Hub). The sizer already budgets its footprint
- * on the same condition (#176); this keeps the plan agreeing with the sizer
- * instead of costing a component it never tells anyone to build. (#213)
+ * License Hub is required for vDefend, and for Avi only when the controllers
+ * are licensed on-prem through the hub — Avi can instead use Cloud Licensing
+ * directly with the Avi Cloud Console (prerequisites.md, License Hub; #374).
+ * The sizer leaves License Hub as an explicit choice with the same rule; this
+ * keeps the plan from costing a component it never tells anyone to build. (#213)
  */
 export function licenseHubNeeded(sel: Selection): boolean {
-  return sel.vdefend || aviInScope(sel);
+  return sel.vdefend || aviOnHub(sel);
 }
 
 /** True when the principal storage is vSAN (ESA or OSA). */
@@ -152,6 +181,7 @@ export function defaultSelection(): Selection {
     automation: { deploy: true, model: 'small', placement: 'shared', aviLb: false },
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
+    aviLicensing: 'hub',
     wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
   };
 }
@@ -172,6 +202,11 @@ export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
  * the Avi-for-VCF 9.1 requirements, must be fully deployed before Supervisor
  * activation — so choosing it generates its own story.
  */
+export const AVI_LICENSING: { value: AviLicensing; label: string }[] = [
+  { value: 'hub', label: 'On-prem License Hub (required when disconnected / air-gapped)' },
+  { value: 'cloud', label: 'Cloud Licensing (controllers register directly with the Avi Cloud Console)' },
+];
+
 export const SUPERVISOR_LBS: { value: SupervisorLb; label: string }[] = [
   { value: 'builtin', label: 'Built-in NSX/VPC LB' },
   { value: 'flb', label: 'Foundation Load Balancer' },
@@ -252,7 +287,6 @@ function coreEpics(sel: Selection): Epic[] {
     id: 'E1',
     title: 'Network, DNS & routing plan',
     owner: 'Network + AD/DNS/NTP',
-    ref: '01-network-dns-plan.md',
     stories: [
       { id: '1.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
       distributed
@@ -266,7 +300,6 @@ function coreEpics(sel: Selection): Epic[] {
     id: 'E2',
     title: 'Intake & sizing',
     owner: 'Architect + all role teams',
-    ref: '02-intake.md, 04-sizing.md',
     stories: [
       { id: '2.1', title: 'Role-based intake complete', tasks: ['Sections A–F answered by their owners.'], acceptance: 'Every intake question answered or explicitly marked N/A by its owner.' },
       { id: '2.2', title: 'Sizing & host fit', tasks: ['Run the sizing calculator; confirm the fleet fits the proposed hosts at N-1.'], acceptance: 'Sizing fit-check passes at N-1 (or hosts adjusted); sizing signed off by the architect.' },
@@ -276,7 +309,6 @@ function coreEpics(sel: Selection): Epic[] {
     id: 'E3',
     title: 'Workbook & deployment-JSON prep',
     owner: 'Architect + Platform',
-    ref: 'workbook-cell-mapping.md',
     stories: [
       { id: '3.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: "Workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner)." },
       { id: '3.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'Deployment JSON generated, schema-valid, and reviewed against the plan.' },
@@ -286,7 +318,6 @@ function coreEpics(sel: Selection): Epic[] {
     id: 'E4',
     title: 'Prerequisites & readiness gate',
     owner: 'Architect + infrastructure teams',
-    ref: 'prerequisites.md',
     stories: [
       {
         id: '4.1',
@@ -421,7 +452,6 @@ const E7_MGMT_STRETCH: Epic = {
   id: 'E7',
   title: 'Stretch the management domain',
   owner: 'Network + Architect + Storage',
-  ref: '03-multi-az-prep.md',
   stories: [
     {
       id: '7.1',
@@ -473,7 +503,6 @@ function day2Epic(sel: Selection): Epic {
       id: 'E8',
       title: 'Licensing prerequisites (vDefend / Avi)',
       owner: 'Platform',
-      ref: '05-day2-deployments.md',
       stories: [licenseHubDeployStory('8.1', sel)],
     };
   }
@@ -557,7 +586,11 @@ function day2Epic(sel: Selection): Epic {
   if (licenseHubNeeded(sel)) stories.push(licenseHubDeployStory('8.2a', sel));
   if (aviStory) {
     stories.push(aviStory);
-    stories.push(licenseHubEndpointStory('8.3a', 'the Avi controller for VCF Automation'));
+    stories.push(
+      sel.aviLicensing === 'cloud'
+        ? aviCloudLicensingStory('8.3b', 'the Avi controller for VCF Automation')
+        : licenseHubEndpointStory('8.3a', 'the Avi controller for VCF Automation'),
+    );
   }
   if (compNames.length) {
     stories.push({
@@ -584,7 +617,6 @@ function day2Epic(sel: Selection): Epic {
     id: 'E8',
     title: 'Day-2 fleet deployment',
     owner: 'Platform',
-    ref: '05-day2-deployments.md',
     stories,
   };
 }
@@ -599,12 +631,13 @@ function day2Epic(sel: Selection): Epic {
  * fully-deployed, unlicensed fleet (prerequisites.md, License Hub).
  */
 function licenseHubDeployStory(id: string, sel: Selection): Story {
+  const hubAvi = aviOnHub(sel);
   const why = sel.vdefend
-    ? aviInScope(sel) ? 'vDefend and Avi are both in scope' : 'vDefend is in scope'
-    : 'Avi is in scope';
+    ? hubAvi ? 'vDefend is in scope and Avi is licensed on-prem' : 'vDefend is in scope'
+    : 'Avi is licensed on-prem through the hub (not Cloud Licensing)';
   return {
     id,
-    title: 'License Hub — deploy and load licences (BEFORE any Avi controller)',
+    title: hubAvi ? 'License Hub — deploy and load licences (BEFORE any Avi controller)' : 'License Hub — deploy and load licences',
     tasks: [
       `Required because ${why}: License Hub licenses vDefend AND Avi, and it is its own appliance — outside VCF fleet management entirely (05-day2-deployments.md B.3). These steps are for License Hub 2.0, the current standalone OVA. A site still on 5.1.2 follows the SSP Installer flow in 15-license-hub.md instead; there is no upgrade path from 5.1.2 to 2.0.`,
       'BROWNFIELD GATE — do this first if the site already runs Avi on an older version: Avi 32.1.1 deprecates 25-character and YAML licences and gives them a strict 90-day grace period from initial boot / upgrade completion, and that limit OVERRIDES existing validity dates (licences valid until 2029 still stop). Upgrade the entitlement on the Broadcom Support Portal BEFORE upgrading Avi — it is one-way, an upgraded licence cannot be downgraded. Intake E16a.',
@@ -637,6 +670,28 @@ function licenseHubEndpointStory(id: string, what: string): Story {
   };
 }
 
+const AVI_LICENSING_URL = 'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/build-and-deploy-avi-91/license-management-for-avi-load-balancer.html';
+
+/**
+ * Avi on Cloud Licensing (#374): no License Hub, the controller registers
+ * directly with the Avi Cloud Console. Same false-pass as the hub route: a
+ * registered controller is not a licensed one until LICENSE USAGE shows it.
+ */
+function aviCloudLicensingStory(id: string, what: string): Story {
+  return {
+    id,
+    title: `Avi Cloud Licensing — register ${what} with the Avi Cloud Console`,
+    tasks: [
+      `No License Hub on this route: ${what} registers directly with the Avi Cloud Console (portal.pulse.broadcom.com, outbound 443 from the controller, directly or through the controller's proxy setting — NOT on Broadcom's Public URLs list, so check the allowlist). A site that cannot reach it (disconnected / air-gapped) needs License Hub instead. TechDocs: ${AVI_LICENSING_URL}`,
+      'BROWNFIELD GATE — if the site already runs Avi on an older version: Avi 32.1.1 gives 25-character and YAML licences a strict 90-day grace period that overrides existing validity dates. Upgrade the entitlement on the Broadcom Support Portal BEFORE upgrading Avi (one-way). Intake E16a.',
+      'On the controller: Administration -> Licensing -> Cloud Licensing, and register it with the Avi Cloud Console using the Broadcom customer account — name who holds it.',
+      'Usage is reported to the Avi Cloud Console automatically while connected; licence files come in 180-day increments unlocked by that usage data, so the outbound path must stay open, not just work on day one.',
+      'Verify LICENSE USAGE on the controller, not the registration status: a non-zero used and available count is the test.',
+    ],
+    acceptance: `${what} registered with the Avi Cloud Console on Cloud Licensing, with a NON-ZERO used and available count under LICENSE USAGE; the outbound path to portal.pulse.broadcom.com is in the firewall/proxy allowlist.`,
+  };
+}
+
 const E10_HANDOVER: Epic = {
   id: 'E10',
   title: 'Validation & handover',
@@ -654,7 +709,7 @@ function wldEpicId(index: number): string {
   return index === 0 ? 'E9' : `E9-${index + 1}`;
 }
 
-function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
+function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicensing: AviLicensing): Epic {
   const name = (w.name || `wld${index + 1}`).trim();
   const id = wldEpicId(index);
   const connectivity = w.connectivity;
@@ -755,7 +810,11 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
       });
       // The controller exists now, so it can be onboarded and licensed. The hub
       // itself was deployed earlier in E8 (#213).
-      stories.push(licenseHubEndpointStory(`9.${stories.length + 1}`, "this workload domain's Avi controller"));
+      stories.push(
+        aviLicensing === 'cloud'
+          ? aviCloudLicensingStory(`9.${stories.length + 1}`, "this workload domain's Avi controller")
+          : licenseHubEndpointStory(`9.${stories.length + 1}`, "this workload domain's Avi controller"),
+      );
     }
     const lbPrereq =
       w.supervisorLb === 'avi'
@@ -779,9 +838,169 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize): Epic {
     id,
     title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
-    ref: w.stretched ? '02-intake.md section H, 03-multi-az-prep.md' : '02-intake.md section H',
     stories,
   };
+}
+
+// ---- Links to this site's own guides (#380) ---------------------------------
+//
+// One table instead of links scattered through the story text: each rule names
+// an epic (E1..E10; every workload domain is E9) and optionally a story by title,
+// and attaches absolute links to the published guides, so they still work once
+// the plan is exported to Jira / Azure DevOps / GitLab. Story numbers in E9 shift
+// with the selection, which is why stories are matched by title, not id.
+
+export const DOCS_SITE = 'https://vcf-planning.hollebollevsan.nl';
+
+function guide(title: string, slug: string, anchor = ''): GuideLink {
+  return { title, url: `${DOCS_SITE}/docs/${slug}/${anchor ? `#${anchor}` : ''}` };
+}
+
+const GD = {
+  netPlan: guide('Network / DNS / NTP / AD plan', '01-network-dns-plan'),
+  netVlan: guide('Network plan: VLAN / subnet', '01-network-dns-plan', 'a-vlan--subnet-plan'),
+  netNs: guide('Network plan: north-south connectivity', '01-network-dns-plan', 'b-north-south-connectivity-plan'),
+  netDns: guide('Network plan: DNS', '01-network-dns-plan', 'c-dns'),
+  netNtp: guide('Network plan: NTP', '01-network-dns-plan', 'd-ntp'),
+  netCerts: guide('Network plan: certificates', '01-network-dns-plan', 'f-certificates'),
+  intake: guide('Intake questionnaire', '02-intake'),
+  intakeWld: guide('Intake: workload domain / cluster', '02-intake', 'h-workload-domain--cluster'),
+  sizing: guide('Sizing', '04-sizing'),
+  sizer: { title: 'Management domain sizer', url: `${DOCS_SITE}/tools/mgmt-sizing/` },
+  workbook: guide('Workbook cell mapping', 'workbook-cell-mapping'),
+  prereq: guide('Prerequisites gate', 'prerequisites'),
+  prereqHw: guide('Prerequisites: hardware', 'prerequisites', 'hardware'),
+  prereqStorage: guide('Prerequisites: principal storage', 'prerequisites', 'principal-storage'),
+  prereqNet: guide('Prerequisites: network', 'prerequisites', 'network'),
+  prereqCa: guide('Prerequisites: certificate authority', 'prerequisites', 'certificate-authority'),
+  prereqAd: guide('Prerequisites: Active Directory', 'prerequisites', 'active-directory'),
+  prereqJump: guide('Prerequisites: jump host', 'prerequisites', 'jump-host'),
+  prereqSignoff: guide('Prerequisites: sign-off', 'prerequisites', 'sign-off'),
+  prereqLicence: guide('Prerequisites: VCF licensing (License Server)', 'prerequisites', 'vcf-licensing-license-server-and-registration'),
+  firewall: guide('Firewall ports', '07-firewall-ports'),
+  backup: guide('SFTP backup target', '08-backup-target'),
+  depot: guide('Binary depot', '09-binary-depot'),
+  coredump: guide('ESX coredump / Dump Collector', '11-esx-coredump'),
+  sso: guide('Fleet SSO (VCF Identity Broker)', '12-sso-configuration'),
+  shutdown: guide('Shutdown and startup runbook', '13-shutdown-startup'),
+  multiAz: guide('Multi-AZ (stretched cluster) prep', '03-multi-az-prep'),
+  multiAzWitness: guide('Multi-AZ prep: witness', '03-multi-az-prep', 'b-witness--third-site'),
+  stretch: guide('Stretch execution runbook', '22-stretch-execution'),
+  stretchFabric: guide('Stretch runbook: inter-AZ fabric', '22-stretch-execution', '1-manual--inter-az-fabric-before-any-of-this'),
+  stretchPool: guide('Stretch runbook: AZ2 network pool + hosts', '22-stretch-execution', '2-manual--build-the-az2-network-pool-then-commission-the-hosts'),
+  stretchWitness: guide('Stretch runbook: deploy the witness', '22-stretch-execution', '3-manual--deploy-the-witness'),
+  stretchCall: guide('Stretch runbook: the stretch call', '22-stretch-execution', '4-api--the-stretch-call-itself'),
+  stretchWld: guide('Stretch runbook: workload domain', '22-stretch-execution', 'workload-domain-same-pattern-one-precondition'),
+  day2: guide('Day-2 deployments', '05-day2-deployments'),
+  day2Placement: guide('Day-2: network placement', '05-day2-deployments', 'c-network-placement--the-options'),
+  day2Vcfa: guide('Day-2: VCF Automation deployment method', '05-day2-deployments', 'd-vcf-automation--deployment-method'),
+  day2Set: guide('Day-2: the deployable set', '05-day2-deployments', 'b-the-deployable-set'),
+  vcfaTenant: guide('VCF Automation first-time tenant configuration', '17-vcfa-tenant-config'),
+  vcfaSecure: guide('Securing external-facing VCF Automation', '19-securing-vcf-automation'),
+  avi: guide('Avi Load Balancer deployment', '14-avi-load-balancer'),
+  aviFirstLogin: guide('Avi: controller first-login setup', '14-avi-load-balancer', 'controller-first-login-setup'),
+  aviVcfa: guide('Avi: VCF Automation external access', '14-avi-load-balancer', 'vcf-automation-externalcustomer-access'),
+  aviSe: guide('Avi: Service Engine infrastructure', '14-avi-load-balancer', 'service-engine-infrastructure--cloud-content-library-and-se-group'),
+  aviLicensing: guide('Avi: licensing', '14-avi-load-balancer', 'licensing'),
+  hub: guide('License Hub deployment', '15-license-hub'),
+  hub20: guide('License Hub 2.0 (standalone OVA)', '15-license-hub', 'license-hub-20-standalone-ova'),
+  vdefend: guide('vDefend Security Services Platform', '18-vdefend-ssp'),
+  wldCreate: guide('Workload domain creation runbook', '23-workload-domain-creation'),
+  wldNet: guide('WLD runbook: network prep', '23-workload-domain-creation', '1-manual--network-prep'),
+  wldHosts: guide('WLD runbook: commission the hosts', '23-workload-domain-creation', '2-manual--commission-the-hosts'),
+  wldDeploy: guide('WLD runbook: create the domain', '23-workload-domain-creation', '4-create-the-domain--wizard-primary-path'),
+  supervisor: guide('vSphere Supervisor enablement', '10-supervisor-enablement'),
+  supervisorAvi: guide('Supervisor: Avi load balancer', '10-supervisor-enablement', '4-avi-load-balancer-only-if-used'),
+  registry: guide('Supervisor / VKS image registry connectivity', '20-supervisor-image-registry'),
+  artifacts: guide('Capturing configuration artifacts', '21-config-artifacts'),
+  testPlan: { title: 'Test plan', url: `${DOCS_SITE}/tools/test-plan/` },
+} satisfies Record<string, GuideLink>;
+
+interface GuideRule {
+  epic: string; // base epic id, e.g. 'E8' (all workload domains are 'E9')
+  story?: RegExp; // story title; omitted = the epic itself
+  guides: (sel: Selection) => GuideLink[];
+}
+
+const GUIDE_RULES: GuideRule[] = [
+  { epic: 'E1', guides: () => [GD.netPlan] },
+  { epic: 'E1', story: /^VLAN/, guides: () => [GD.netVlan] },
+  { epic: 'E1', story: /^(BGP|Distributed Transit Gateway) plan/, guides: () => [GD.netNs] },
+  { epic: 'E1', story: /^DNS & NTP/, guides: () => [GD.netDns, GD.netNtp] },
+  { epic: 'E1', story: /^Certificates/, guides: () => [GD.netCerts, GD.prereqCa] },
+  { epic: 'E2', guides: () => [GD.intake, GD.sizing] },
+  { epic: 'E2', story: /^Role-based intake/, guides: () => [GD.intake] },
+  { epic: 'E2', story: /^Sizing/, guides: () => [GD.sizer, GD.sizing] },
+  { epic: 'E3', guides: () => [GD.workbook] },
+  { epic: 'E3', story: /^Fill the P&P workbook/, guides: () => [GD.workbook] },
+  { epic: 'E4', guides: () => [GD.prereq] },
+  { epic: 'E4', story: /^Hardware ready/, guides: () => [GD.prereqHw, GD.prereqStorage, GD.sizer] },
+  { epic: 'E4', story: /^Physical network/, guides: () => [GD.prereqNet, GD.netNs] },
+  { epic: 'E4', story: /^Core services/, guides: () => [GD.firewall, GD.netDns, GD.prereqCa, GD.backup, GD.depot] },
+  { epic: 'E4', story: /^Access & final/, guides: () => [GD.prereqJump, GD.prereqSignoff] },
+  { epic: 'E5', story: /^Install & configure the management hosts/, guides: () => [GD.coredump] },
+  { epic: 'E5', story: /^Stage the VCF Installer/, guides: () => [GD.depot] },
+  { epic: 'E5', story: /^Deploy the management domain/, guides: () => [GD.workbook] },
+  { epic: 'E5', story: /^Verify VCF Management Services/, guides: () => [GD.prereqLicence, GD.firewall] },
+  { epic: 'E6', story: /^NSX north-south/, guides: () => [GD.netNs] },
+  { epic: 'E6', story: /^Certificates/, guides: () => [GD.prereqCa] },
+  { epic: 'E6', story: /^Identity & roles/, guides: () => [GD.prereqAd, GD.sso] },
+  { epic: 'E6', story: /^Backup & lifecycle/, guides: () => [GD.backup, GD.depot, GD.shutdown] },
+  { epic: 'E7', guides: () => [GD.multiAz, GD.stretch] },
+  { epic: 'E7', story: /^Inter-AZ fabric/, guides: () => [GD.stretchFabric] },
+  { epic: 'E7', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
+  { epic: 'E7', story: /^Witness site/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
+  { epic: 'E7', story: /^Stretch the cluster/, guides: () => [GD.stretchCall] },
+  { epic: 'E8', guides: (sel) => [GD.day2, ...(sel.vdefend ? [GD.vdefend] : [])] },
+  { epic: 'E8', story: /^Network placement/, guides: () => [GD.day2Placement] },
+  { epic: 'E8', story: /^VCF Automation \((?!deferred)/, guides: () => [GD.day2Vcfa, GD.vcfaTenant, GD.vcfaSecure] },
+  { epic: 'E8', story: /^Avi Load Balancer in front/, guides: () => [GD.avi, GD.aviFirstLogin, GD.aviVcfa] },
+  { epic: 'E8', story: /^Optional fleet components/, guides: () => [GD.day2Set] },
+  { epic: 'E8', story: /^Certificates, identity & licensing/, guides: () => [GD.prereqCa, GD.sso] },
+  { epic: 'E8', story: /^License Hub — deploy/, guides: (sel) => [GD.hub20, ...(sel.vdefend ? [GD.vdefend] : [])] },
+  { epic: 'E9', guides: () => [GD.intakeWld, GD.wldCreate] },
+  { epic: 'E9', story: /^WLD network prep/, guides: () => [GD.wldNet] },
+  { epic: 'E9', story: /commission the WLD hosts/i, guides: () => [GD.wldHosts] },
+  { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
+  { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
+  { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
+  { epic: 'E9', story: /^Stretch the WLD/, guides: () => [GD.stretchWld] },
+  { epic: 'E9', story: /^WLD connectivity/, guides: () => [GD.netNs] },
+  { epic: 'E9', story: /^Avi Load Balancer for Supervisor/, guides: () => [GD.avi, GD.aviSe, GD.supervisorAvi] },
+  { epic: 'E9', story: /^Enable vSphere Supervisor/, guides: () => [GD.supervisor, GD.registry] },
+  // The licensing stories appear in E8 and in every Avi workload domain.
+  { epic: '*', story: /^License Hub — onboard/, guides: () => [GD.hub, GD.aviLicensing] },
+  { epic: '*', story: /^Avi Cloud Licensing/, guides: () => [GD.aviLicensing, GD.firewall] },
+  { epic: 'E10', story: /^Health check/, guides: () => [GD.testPlan] },
+  { epic: 'E10', story: /^As-built/, guides: () => [GD.artifacts] },
+  { epic: 'E10', story: /^Handover/, guides: () => [GD.shutdown] },
+];
+
+function attachGuides(e: Epic, sel: Selection): Epic {
+  const base = e.id.split('-')[0];
+  const pick = (story?: Story): GuideLink[] => {
+    const out: GuideLink[] = [];
+    for (const r of GUIDE_RULES) {
+      if (r.epic !== base && r.epic !== '*') continue;
+      if (story ? !(r.story && r.story.test(story.title)) : r.story) continue;
+      for (const g of r.guides(sel)) if (!out.some((o) => o.url === g.url)) out.push(g);
+    }
+    return out;
+  };
+  const eg = pick();
+  return {
+    ...e,
+    ...(eg.length ? { guides: eg } : {}),
+    stories: e.stories.map((st) => {
+      const sg = pick(st);
+      return sg.length ? { ...st, guides: sg } : st;
+    }),
+  };
+}
+
+/** "Title: url · Title: url" for plain-text exports (CSV). */
+export function guidesText(guides?: GuideLink[]): string {
+  return (guides ?? []).map((g) => `${g.title}: ${g.url}`).join(' · ');
 }
 
 // ---- Assembly --------------------------------------------------------------
@@ -795,9 +1014,9 @@ export function selectedEpics(sel: Selection): Epic[] {
   // — otherwise a Supervisor-Avi-only fleet would have nowhere for the licensing
   // stories to live and they would silently vanish. (#213)
   if (sel.day2 || licenseHubNeeded(sel)) out.push(day2Epic(sel));
-  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize)));
+  sel.wlds.forEach((w, i) => out.push(wldEpic(w, i, sel.supervisorSize, sel.aviLicensing)));
   out.push(E10_HANDOVER);
-  return out;
+  return out.map((e) => attachGuides(e, sel));
 }
 
 /** Human-readable scope label. */
@@ -883,6 +1102,7 @@ export function coerceSelection(data: unknown): Selection | null {
       identityBroker: bool(comps.identityBroker, base.day2Components.identityBroker),
     },
     vdefend: bool(d.vdefend, base.vdefend),
+    aviLicensing: oneOf<AviLicensing>(d.aviLicensing, AVI_LICENSING.map((l) => l.value), base.aviLicensing),
     wlds,
   });
 }
@@ -934,13 +1154,14 @@ export function buildMarkdown(sel: Selection, progress: PlanProgress = {}): stri
     const pe = stats.perEpic[e.id];
     const prog = stats.done > 0 ? `  ·  ${pe.done}/${pe.total} done` : '';
     L.push(`## ${e.id} — ${e.title}  ·  Owner: ${e.owner}${prog}`);
-    if (e.ref) L.push(`Ref: ${e.ref}`);
+    if (e.guides) L.push(`Guides: ${e.guides.map((g) => `[${g.title}](${g.url})`).join(' · ')}`);
     L.push('');
     for (const s of e.stories) {
       const doneAt = progress[storyKey(e.id, s.id)];
       L.push(`- [${doneAt ? 'x' : ' '}] **Story ${s.id} — ${s.title}.**${doneAt ? ` _(done ${doneAt})_` : ''}`);
       for (const t of s.tasks) L.push(`  - ${t}`);
       if (s.acceptance) L.push(`  - _Acceptance:_ ${s.acceptance}`);
+      if (s.guides) L.push(`  - _Guide:_ ${s.guides.map((g) => `[${g.title}](${g.url})`).join(' · ')}`);
     }
     L.push('');
   }
@@ -965,11 +1186,11 @@ export function buildCsv(sel: Selection, progress: PlanProgress = {}): string {
   const rows: string[][] = [header];
   for (const e of selectedEpics(sel)) {
     const epicSummary = `${e.id} ${e.title}`;
-    rows.push(['Epic', epicSummary, '', e.owner, '', e.ref ?? '', '', '']);
+    rows.push(['Epic', epicSummary, '', e.owner, '', guidesText(e.guides), '', '']);
     for (const s of e.stories) {
       const storySummary = `${e.id}.${s.id.split('.').pop()} ${s.title}`;
       const doneAt = progress[storyKey(e.id, s.id)];
-      rows.push(['Story', storySummary, epicSummary, e.owner, s.acceptance ?? '', '', doneAt ? 'Done' : 'Open', doneAt ?? '']);
+      rows.push(['Story', storySummary, epicSummary, e.owner, s.acceptance ?? '', guidesText(s.guides), doneAt ? 'Done' : 'Open', doneAt ?? '']);
       for (const t of s.tasks) {
         rows.push(['Task', t, storySummary, '', '', '', '', '']);
       }
