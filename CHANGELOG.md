@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.5.1 — 2026-10-01
+- **`docs/04-sizing`: VCF Operations figures now cross-checked (#375).** The
+  vCPU / RAM per node size match VMware Configuration Maximums, VCF Operations
+  9.1.0 (KB 324340 points there for 9.1.x). Disk stays a workbook figure. Links
+  to the upgrade guide's new VCF Operations sizing and scaling doc for the
+  object / metric limits and scale up / out. The "no Broadcom table to
+  cross-check" caveat now only covers Automation, VCFMS, Cloud Proxy and
+  Ops-for-Networks.
+
 ## v5.5.0 — 2026-09-30
 - **Dutch translation pilot (#290).** English stays the default and the
   canonical text; this adds the machinery and one translated doc to see

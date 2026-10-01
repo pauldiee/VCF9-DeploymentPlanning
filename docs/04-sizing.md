@@ -133,9 +133,18 @@ against Broadcom TechDocs (issue #16). Results:
   pin FTT=1 **RAID-1** on the management cluster.
 - **vCenter disk** figures and the **NSX Manager XLarge** row reflect the pinned
   workbook revision and may differ from later 9.1 point releases.
-- **VCF Operations / Automation / VCFMS / Cloud Proxy / Ops-for-Networks** come
-  from the workbook's own reference tables; no external per-size Broadcom table
-  was available to cross-check — validate against the workbook itself.
+- **VCF Operations vCPU / RAM per size are confirmed** against VMware
+  Configuration Maximums, VCF Operations 9.1.0 (where Broadcom's sizing index,
+  KB 324340, points for 9.1.x): Extra Small 2 / 8 GB, Small 4 / 16, Medium
+  8 / 32, Large 16 / 48, Extra Large 24 / 128 — identical to the tool. The
+  **274 GB disk** per node is not in Configuration Maximums and stays a
+  workbook figure. Configuration Maximums also gives the object / metric limits
+  that actually decide the size; those, and how to scale up or out, are in the
+  upgrade guide's [VCF Operations sizing and
+  scaling](https://docs.hollebollevsan.nl/docs/24-vcf-operations-sizing-and-scaling/).
+- **Automation / VCFMS / Cloud Proxy / Ops-for-Networks** come from the
+  workbook's own reference tables; no external per-size Broadcom table was
+  cross-checked for them — validate against the workbook itself.
 - **Real-time Metrics does not match the workbook — deliberately.** The
   workbook's *Real-time Metrics* row multiplies by a node-count cell that **does
   not exist in the sheet**, so its formula evaluates to **0 vCPU / 0 RAM** at
