@@ -31,16 +31,21 @@ how many of each management appliance are deployed and at which size:
 
 | Profile | What it deploys | Fits | Reference fleet* |
 | ------- | --------------- | ---- | ---------------- |
-| **Simple** (Small) | Single NSX Manager, 1 services-runtime control node + 2 workers, single-node VCF Operations and VCF Automation — no management-plane HA | Labs, edge and small sites | 76 vCPU / 251 GB / 7,448 GB |
-| **HA-Small** | 3 NSX Managers, 3 control nodes + 3 workers, a **2-node** VCF Operations cluster (primary + replica), single-node VCF Automation — the HA layout on the small appliance sizes | The cheapest HA: no single points of failure in the core management plane | 106 vCPU / 335 GB / 8,422 GB |
-| **HA-Medium** | Medium vCenter, 3-node VCF Operations and VCF Automation | Typical production fleet | 184 vCPU / 656 GB / 11,445 GB |
-| **HA-Large** | Large vCenter (XLarge storage) and NSX Managers, 3-node VCF Operations and VCF Automation on Large | Large fleets, many workload domains | 298 vCPU / 949 GB / 15,357 GB |
+| **Simple** (Small) | Single NSX Manager, 1 services-runtime control node + workers (12 vCPU / 24 GB each), single-node VCF Operations; VCF Automation (optional) single-node — no management-plane HA | Labs, edge and small sites | 76 vCPU / 251 GB / 7,448 GB |
+| **HA-Small** | 3 NSX Managers, 3 control nodes + **smaller** workers (10 vCPU / 16 GB each), a **2-node** VCF Operations cluster (primary + replica); VCF Automation (optional) single-node — the HA layout on the small appliance sizes | The cheapest HA: no single points of failure in the core management plane | 106 vCPU / 335 GB / 8,422 GB |
+| **HA-Medium** | Medium vCenter, 3 NSX Managers, 3 control nodes + workers (12 vCPU / 24 GB each), 3-node VCF Operations; VCF Automation (optional) 3-node | Typical production fleet | 184 vCPU / 656 GB / 11,445 GB |
+| **HA-Large** | Large vCenter (XLarge storage) and NSX Managers, 3 larger control nodes + workers (16 vCPU / 32 GB each), 3-node VCF Operations; VCF Automation (optional) 3-node on Large | Large fleets, many workload domains | 298 vCPU / 949 GB / 15,357 GB |
 
 \* Management domain with VCF Operations, Cloud Proxy and VCF Automation, before
 workload domains and Day-N services — Broadcom's
 [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html),
-which the tool reproduces exactly (see below). Note that in HA-Small, VCF
-Automation itself is not highly available.
+which the tool reproduces exactly (see below). **VCF Automation is optional** in
+every profile (bring-up can defer it indefinitely); it is in the reference
+figures only because Broadcom's models include it, and the tool leaves it off by
+default. In HA-Small it is single-node, so not highly available. The worker
+count isn't fixed per profile: the workbook derives it from what runs on the
+services runtime, and the workers grow to a larger size once Log Management or
+Real-time Metrics are included (see below).
 
 The **Advanced management domain sizing** option overrides the profile-derived
 sizes when a fleet doesn't fit one of the four profiles (see below).

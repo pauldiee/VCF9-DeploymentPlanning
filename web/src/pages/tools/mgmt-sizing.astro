@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { OPTIONS, WORKBOOK_REVISION } from '../../lib/mgmt-sizing';
+import { docHref } from '../../lib/path';
 
 // Server-render the <option> lists from the shared engine so the dropdowns
 // never drift from the calculation tables.
@@ -40,33 +41,15 @@ const opt = (values: readonly string[]) => values;
 
         <fieldset>
           <legend>1. Your VCF fleet</legend>
-          <label for="deploymentModel">Deployment model <button type="button" class="sizer__info" aria-controls="profilePop" aria-expanded="false" title="Compare the deployment profiles" aria-label="Compare the deployment profiles"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></button>
+          <label for="deploymentModel">Deployment model
             <select id="deploymentModel">{opt(OPTIONS.deploymentModel).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint"><strong>Simple</strong> runs one copy of each management appliance — fine for labs and small sites, but a failure takes it offline. <strong>High Availability</strong> runs clustered copies that survive a failure. Click <strong>ⓘ</strong> to compare the four profiles. <strong>Not sure?</strong> High Availability.</p>
-          <label for="deploymentSize">Deployment size <button type="button" class="sizer__info" aria-controls="profilePop" aria-expanded="false" title="Compare the deployment profiles" aria-label="Compare the deployment profiles"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></button>
+          <p class="sizer__hint"><strong>Simple</strong> runs one copy of each management appliance — fine for labs and small sites, but a failure takes it offline. <strong>High Availability</strong> runs clustered copies that survive a failure. <strong>Not sure?</strong> High Availability.</p>
+          <label for="deploymentSize">Deployment size
             <select id="deploymentSize">{opt(OPTIONS.deploymentSize).map((v) => <option>{v}</option>)}</select>
           </label>
           <p class="sizer__hint">How large the environment is that VCF will manage. As a guide, the management vCenter at each size handles: <strong>Small</strong> up to 100 hosts / 1,000 VMs, <strong>Medium</strong> up to 400 hosts / 4,000 VMs, <strong>Large</strong> up to 1,000 hosts / 10,000 VMs. Simple is always Small. <strong>Not sure?</strong> Medium.</p>
-          <div id="profilePop" class="sizer__pop" role="region" aria-label="Deployment profiles compared" hidden>
-            <div class="sizer__pop-head"><strong>Deployment profiles compared</strong>
-              <button type="button" class="sizer__pop-close" aria-label="Close">&times;</button></div>
-            <dl class="sizer__profiles">
-              <div><dt><strong>Simple</strong> (Small)<span>76 vCPU · 251 GB · 7.4 TB*</span></dt>
-                <dd>Single NSX Manager, 1 services-runtime control node, single-node VCF Operations and VCF Automation — no management-plane HA.</dd>
-                <dd><em>Fits:</em> labs, edge and small sites.</dd></div>
-              <div><dt><strong>HA-Small</strong><span>106 vCPU · 335 GB · 8.4 TB*</span></dt>
-                <dd>3 NSX Managers, 3 control nodes, a <strong>2-node</strong> VCF Operations cluster, single-node VCF Automation — the HA layout on the small appliance sizes.</dd>
-                <dd><em>Fits:</em> the cheapest HA — no single points of failure in the core management plane.</dd></div>
-              <div><dt><strong>HA-Medium</strong><span>184 vCPU · 656 GB · 11.4 TB*</span></dt>
-                <dd>Medium vCenter, 3-node VCF Operations and VCF Automation.</dd>
-                <dd><em>Fits:</em> a typical production fleet.</dd></div>
-              <div><dt><strong>HA-Large</strong><span>298 vCPU · 949 GB · 15.4 TB*</span></dt>
-                <dd>Large vCenter (XLarge storage) and NSX Managers, 3-node VCF Operations and VCF Automation on Large.</dd>
-                <dd><em>Fits:</em> large fleets with many workload domains.</dd></div>
-            </dl>
-            <p class="sizer__hint">* Management domain with VCF Operations, Cloud Proxy and VCF Automation, before workload domains and Day-N services — Broadcom's <a href="https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html">VCF Fleet Sizing Models</a>, which this tool reproduces exactly.</p>
-          </div>
+          <div id="profileDesc" class="sizer__profile" aria-live="polite" data-docs={docHref('04-sizing')}></div>
           <label>Instance model
             <select id="instanceModel">{opt(OPTIONS.instanceModel).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -506,6 +489,16 @@ const opt = (values: readonly string[]) => values;
     ($('vcfAutomationSizeLabel') as HTMLElement).hidden = !state.vcfAutomation || state.advanced;
     ($('vcfAutomation') as HTMLInputElement).disabled = state.advanced;
     ($('advancedFields') as HTMLElement).hidden = !state.advanced;
+    // What the chosen deployment profile means, in plain words
+    {
+      const p = PROFILES[state.deploymentModel === 'Simple' ? 'Simple' : `HA-${state.deploymentSize}`];
+      $('profileDesc').innerHTML = p
+        ? `<p class="sizer__profile-head"><strong>${p.name}</strong><span>${p.ref}</span></p>`
+          + `<ul>${p.deploys.map((d) => `<li>${d}</li>`).join('')}</ul>`
+          + `<p><em>Fits:</em> ${p.fits}</p>`
+          + `<p class="sizer__profile-foot">~ Broadcom's reference footprint with VCF Operations, Cloud Proxy and VCF Automation, before workload domains. <a href="${$('profileDesc').dataset.docs}#deployment-profiles">Compare all four profiles</a></p>`
+        : '';
+    }
     // Supervisor size only applies when a Supervisor is included
     ($('supervisorSizeLabel') as HTMLElement).hidden = state.supervisorMode === 'Excluded';
     // Additional-instance-only services
@@ -739,22 +732,35 @@ const opt = (values: readonly string[]) => values;
   });
   $('btnReset').addEventListener('click', () => { loadState(defaultState()); toolbarMsg('Reset to defaults'); });
 
-  // ---- deployment profile info popover (opened from the (i) buttons) ----
-  {
-    const pop = $('profilePop');
-    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.sizer__info'));
-    const setOpen = (open: boolean) => {
-      pop.hidden = !open;
-      buttons.forEach((b) => b.setAttribute('aria-expanded', String(open)));
-    };
-    buttons.forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); setOpen(pop.hidden); }));
-    pop.querySelector('.sizer__pop-close')!.addEventListener('click', () => setOpen(false));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) setOpen(false); });
-    document.addEventListener('click', (e) => {
-      const t = e.target as Node;
-      if (!pop.hidden && !pop.contains(t) && !buttons.some((b) => b.contains(t))) setOpen(false);
-    });
-  }
+  // Deployment profiles explained under the model / size dropdowns. Reference
+  // footprints: Broadcom's VCF Fleet Sizing Models (management domain with VCF
+  // Operations, Cloud Proxy and VCF Automation), which the engine reproduces.
+  const PROFILES: Record<string, { name: string; ref: string; deploys: string[]; fits: string }> = {
+    Simple: {
+      name: 'Simple (Small)', ref: '~76 vCPU · 251 GB · 7.4 TB',
+      deploys: ['Small vCenter and a single NSX Manager', 'Services runtime: 1 control node + workers (12 vCPU / 24 GB each)',
+        'Single-node VCF Operations', 'VCF Automation (optional): single node'],
+      fits: 'labs, edge and small sites. No management-plane HA: one failed appliance takes that function offline.',
+    },
+    'HA-Small': {
+      name: 'High Availability – Small', ref: '~106 vCPU · 335 GB · 8.4 TB',
+      deploys: ['Small vCenter and 3 NSX Managers', 'Services runtime: 3 control nodes + <strong>smaller</strong> workers (10 vCPU / 16 GB each)',
+        'VCF Operations as a <strong>2-node</strong> cluster (primary + replica)', 'VCF Automation (optional): single node, so not highly available'],
+      fits: 'the cheapest HA: no single point of failure in the core management plane.',
+    },
+    'HA-Medium': {
+      name: 'High Availability – Medium', ref: '~184 vCPU · 656 GB · 11.4 TB',
+      deploys: ['Medium vCenter and 3 NSX Managers', 'Services runtime: 3 control nodes + workers (12 vCPU / 24 GB each)',
+        'VCF Operations as a 3-node cluster', 'VCF Automation (optional): 3 nodes'],
+      fits: 'a typical production fleet.',
+    },
+    'HA-Large': {
+      name: 'High Availability – Large', ref: '~298 vCPU · 949 GB · 15.4 TB',
+      deploys: ['Large vCenter (XLarge storage) and 3 Large NSX Managers', 'Services runtime: 3 larger control nodes + workers (16 vCPU / 32 GB each)',
+        'VCF Operations as a 3-node cluster', 'VCF Automation (optional): 3 nodes on Large'],
+      fits: 'large fleets with many workload domains.',
+    },
+  };
 
   function loadFromHash(): boolean {
     const m = location.hash.match(/[#&]s=([^&]+)/);
@@ -777,16 +783,13 @@ const opt = (values: readonly string[]) => values;
   .sizer { max-width: 1100px; }
   .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
   .sizer__lede { color: var(--text-muted); max-width: 70ch; }
-  .sizer__info { border: 0; background: none; padding: 0 0.2rem; cursor: pointer; color: var(--itq-orange); font-size: 0.95em; vertical-align: baseline; }
-  .sizer__info:hover, .sizer__info:focus-visible { color: var(--text-body); }
-  .sizer__pop { margin: 0.4rem 0 0.9rem; padding: 0.7rem 0.8rem; border: var(--border-width) solid var(--itq-orange); border-radius: var(--radius-sm); background: var(--surface-card); font-size: 0.8rem; }
-  .sizer__pop-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
-  .sizer__pop-close { border: 0; background: none; font-size: 1.2rem; line-height: 1; cursor: pointer; color: var(--text-muted); }
-  .sizer__profiles { margin: 0; display: grid; gap: 0.55rem; }
-  .sizer__profiles > div { padding: 0.45rem 0.6rem; border-radius: var(--radius-sm); background: var(--surface-page, transparent); border: var(--border-width) solid var(--border-default); }
-  .sizer__profiles dt { display: flex; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
-  .sizer__profiles dt span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .sizer__profiles dd { margin: 0.1rem 0 0; color: var(--text-body); }
+  .sizer__profile { margin: -0.3rem 0 0.9rem; padding: 0.55rem 0.75rem; border-left: 3px solid var(--itq-orange); border-radius: var(--radius-sm); background: var(--surface-card); font-size: 0.8rem; color: var(--text-body); }
+  .sizer__profile p { margin: 0; }
+  .sizer__profile-head { display: flex; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; }
+  .sizer__profile-head span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sizer__profile ul { margin: 0.3rem 0; padding-left: 1.1rem; }
+  .sizer__profile li { margin: 0.05rem 0; }
+  .sizer__profile-foot { margin-top: 0.3rem !important; color: var(--text-muted); }
   .sizer__intro { font-size: 0.85rem; margin: 0 0 0.8rem; padding: 0.6rem 0.8rem; border-left: 3px solid var(--itq-orange); background: var(--surface-card); }
   .sizer__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
   .sizer__toolbar button, .sizer__toolbar .sizer__filebtn {

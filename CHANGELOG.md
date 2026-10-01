@@ -8,11 +8,13 @@
   30 advanced scenarios added to the workbook check: **157 / 157 match**.
   One documented difference: the workbook reads some advanced cells even while
   the mode is off; the tool applies them only while it is on.
-- **Deployment profiles explained** — on the sizer behind an **ⓘ** button next
-  to *Deployment model* / *Deployment size* (opens a compact comparison, hidden by
-  default), and in `docs/04-sizing.md` — Simple, HA-Small, HA-Medium, HA-Large: what each deploys,
-  where it fits, and Broadcom's reference footprint. All four reference fleets
-  from the Fleet Sizing Models page now appear in the comparison, and all match.
+- **Deployment profiles explained** — under *Deployment model* / *Deployment
+  size* the sizer describes the chosen profile in plain words (what it deploys,
+  where it fits, Broadcom's reference footprint), updating as you change it, with
+  a link to the four-way comparison in `docs/04-sizing.md`. VCF Automation is
+  marked optional throughout, and HA-Small's smaller services-runtime workers
+  (10 vCPU / 16 GB) are called out. All four reference fleets from the Fleet
+  Sizing Models page appear in the comparison, and all match.
 - **Sizer form rewritten for people without much VCF knowledge.** Inputs are
   ordered as a walk-through (1. fleet → 2. hosts → 3. management infrastructure
   → 4. VCF management software → 5. optional services → 6. disaster recovery →
