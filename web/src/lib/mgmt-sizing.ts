@@ -128,6 +128,13 @@ export const OPTIONS = {
   gm: ['Excluded', 'Active GM', 'Standby GM', 'Connect Instance'] as const,
   spr: ['Exclude', 'Management Only', 'Workload Only', 'Management & Workload'] as const,
   clusterType: ['Standard', 'Stretched (multi-AZ)'] as const,
+  // Advanced Management Domain Sizing (workbook R24-R32)
+  advNsxModel: ['HA Cluster', 'Single Node'] as const,
+  advNsxSize: ['Medium', 'Large', 'XLarge'] as const,
+  advVcfOpsModel: ['Exclude', 'HA Cluster', 'Single Node'] as const,
+  advVcfOpsSize: ['Exclude', 'Extra Small', 'Small', 'Medium', 'Large', 'Extra Large'] as const,
+  advCollectorSize: ['Exclude', 'Small', 'Standard'] as const,
+  advVcfaSize: ['Exclude', 'Small', 'Medium', 'Large'] as const,
 };
 
 export function deploymentSizeOptions(model: string): string[] {
@@ -220,6 +227,18 @@ export interface SizingState {
   vcfRtm: boolean;
   vcfSd: boolean; // Software Depot — additional instance only
   vcfIdb: boolean; // Identity Broker — additional instance only
+  // Advanced Management Domain Sizing (workbook R24-R32): when on, these
+  // replace the profile-derived management vCenter / NSX sizes, and VCF
+  // Operations, its Cloud Proxy and VCF Automation follow these choices.
+  advanced: boolean;
+  advVcenterSize: string;
+  advVcenterStorage: string;
+  advNsxModel: string; // HA Cluster / Single Node
+  advNsxSize: string;
+  advVcfOpsModel: string; // Exclude / HA Cluster / Single Node
+  advVcfOpsSize: string;
+  advCollectorSize: string;
+  advVcfaSize: string;
   // protection blueprints (rows 82-91)
   spr: string; // Site Protection & DR scope
   rwr: boolean; // On-premises Ransomware Recovery
@@ -262,6 +281,16 @@ export function defaultState(): SizingState {
     vcfRtm: false,
     vcfSd: false,
     vcfIdb: false,
+    // workbook defaults for the advanced cells
+    advanced: false,
+    advVcenterSize: 'Medium',
+    advVcenterStorage: 'Default',
+    advNsxModel: 'HA Cluster',
+    advNsxSize: 'Medium',
+    advVcfOpsModel: 'Exclude',
+    advVcfOpsSize: 'Exclude',
+    advCollectorSize: 'Exclude',
+    advVcfaSize: 'Exclude',
     spr: 'Exclude',
     rwr: false,
     workloadDomains: [],
@@ -314,15 +343,21 @@ export interface DerivedSizes {
   vcenterSize: string;
   vcenterStorage: string;
   nsxManagerSize: string;
+  nsxHaCluster: boolean; // 3 NSX Managers (H40 "Mandatory - HA Cluster")
 }
-// Management vCenter + NSX Local Manager sizes are fixed by the profile
-// (workbook D40 / F40 / I40).
-export function deriveMgmtSizes(model: string, size: string): DerivedSizes {
-  const ha = model === 'High Availability';
+// Management vCenter + NSX Local Manager sizes come from the profile, or from
+// the Advanced Management Domain Sizing overrides (workbook D40 / F40 / H40 / I40).
+export function deriveMgmtSizes(s: SizingState): DerivedSizes {
+  if (s.advanced) {
+    return { vcenterSize: s.advVcenterSize, vcenterStorage: s.advVcenterStorage, nsxManagerSize: s.advNsxSize,
+      nsxHaCluster: s.advNsxModel === 'HA Cluster' };
+  }
+  const ha = s.deploymentModel === 'High Availability';
+  const size = s.deploymentSize;
   const vcenterSize = ha ? size : 'Small';
   const vcenterStorage = ha && size === 'Large' ? 'XLarge' : 'Large';
   const nsxManagerSize = ha && size === 'Large' ? 'Large' : 'Medium';
-  return { vcenterSize, vcenterStorage, nsxManagerSize };
+  return { vcenterSize, vcenterStorage, nsxManagerSize, nsxHaCluster: ha };
 }
 
 // VCF services runtime worker count and size (rows 23 + Static Reference
@@ -394,7 +429,7 @@ export function components(s: SizingState): Component[] {
   const ha = s.deploymentModel === 'High Availability';
   const size = s.deploymentSize;
   const first = s.instanceModel === 'First Instance';
-  const d = deriveMgmtSizes(s.deploymentModel, size);
+  const d = deriveMgmtSizes(s);
   const wlds = s.workloadDomains;
 
   // 8 SDDC Manager
@@ -404,7 +439,7 @@ export function components(s: SizingState): Component[] {
     lk(T.vcenter_disk_gb, d.vcenterSize + d.vcenterStorage));
   // 10 Management NSX Managers (+ Global Manager)
   {
-    const lmNodes = ha ? 3 : 1;
+    const lmNodes = d.nsxHaCluster ? 3 : 1;
     const gm = s.nsxGmSize !== 'Excluded';
     add(10, 'Management NSX Managers (Local / Global)', lmNodes + (gm ? 3 : 0),
       lk(T.nsxt_manager_cpu, d.nsxManagerSize) * lmNodes + (gm ? lk(T.nsxt_manager_cpu, s.nsxGmSize) * 3 : 0),
@@ -493,25 +528,50 @@ export function components(s: SizingState): Component[] {
     add(23, 'VCF services runtime (worker nodes)', w.nodes, w.cpu, w.ram, w.disk);
   }
   // 24 VCF Operations (HA-Small = 2 x Small, HA-Medium = 3 x Medium,
-  // HA-Large = 3 x Large, Simple = 1 x Small; HA-Small uses the Medium disk)
-  if (s.vcfOps === 'Include') {
-    const n = ha ? (size === 'Small' ? 2 : 3) : 1;
-    const z = ha ? size : 'Small';
-    const dz = ha && size === 'Small' ? 'Medium' : z;
-    add(24, 'VCF Operations', n, lk(T.vcfops_appliance_cpu, z) * n, lk(T.vcfops_appliance_ram, z) * n, lk(T.vcfops_appliance_disk, dz) * n);
+  // HA-Large = 3 x Large, Simple = 1 x Small; HA-Small uses the Medium disk).
+  // Advanced mode: its own model (HA Cluster 3 / Single Node 1) and size.
+  {
+    const adv = s.advanced;
+    let n = 0;
+    if (adv && s.advVcfOpsSize === 'Exclude') n = 0;
+    else if (adv && s.advVcfOpsModel === 'HA Cluster') n = 3;
+    else if (adv && s.advVcfOpsModel === 'Single Node') n = 1;
+    else if (s.vcfOps === 'Include') n = ha ? (size === 'Small' ? 2 : 3) : 1;
+    if (n) {
+      const z = adv ? s.advVcfOpsSize : ha ? size : 'Small';
+      const dz = adv ? z : ha && size === 'Small' ? 'Medium' : z;
+      add(24, 'VCF Operations', n, lk(T.vcfops_appliance_cpu, z) * n, lk(T.vcfops_appliance_ram, z) * n, lk(T.vcfops_appliance_disk, dz) * n);
+    }
   }
-  // 25 Cloud Proxy — with VCF Operations (Include or Existing), or on its own
-  if (s.vcfOps !== 'Exclude' || s.vcfOpsCollector) {
-    const z = !ha || size === 'Small' ? 'Small' : 'Standard';
-    add(25, 'Cloud Proxy', 1, lk(T.vcfo_p_cpu, z), lk(T.vcfo_p_ram, z), lk(T.vcfo_p_disk, z));
+  // 25 Cloud Proxy — with VCF Operations (Include or Existing), or on its own.
+  // Advanced mode: its own size; Exclude removes it. (As in the workbook, the
+  // advanced size is counted even when no proxy node is — rows J25 vs K25.)
+  {
+    const want = s.vcfOps !== 'Exclude' || s.vcfOpsCollector;
+    if (s.advanced) {
+      if (s.advCollectorSize !== 'Exclude') {
+        const z = s.advCollectorSize;
+        add(25, 'Cloud Proxy', want ? 1 : 0, lk(T.vcfo_p_cpu, z), lk(T.vcfo_p_ram, z), lk(T.vcfo_p_disk, z));
+      }
+    } else if (want) {
+      const z = !ha || size === 'Small' ? 'Small' : 'Standard';
+      add(25, 'Cloud Proxy', 1, lk(T.vcfo_p_cpu, z), lk(T.vcfo_p_ram, z), lk(T.vcfo_p_disk, z));
+    }
   }
-  // 26 License Server — first instance, with VCF Operations (Include or Existing)
-  if (first && s.vcfOps !== 'Exclude') add(26, 'License Server', 1, 2, 4, 12);
-  // 27 VCF Automation — on its own size, which decides the node count
-  if (s.vcfAutomation) {
-    const z = s.vcfAutomationSize;
-    const n = vcfAutomationNodes(z);
-    add(27, 'VCF Automation', n, lk(T.vcfa_appliance_cpu, z) * n, lk(T.vcfa_appliance_ram, z) * n, lk(T.vcfa_appliance_disk, z) * n);
+  // 26 License Server — first instance, with VCF Operations (Include or
+  // Existing, or an advanced VCF Operations model)
+  {
+    const advOps = s.advanced && s.advVcfOpsModel !== 'Exclude';
+    if (first && (s.vcfOps !== 'Exclude' || advOps)) add(26, 'License Server', 1, 2, 4, 12);
+  }
+  // 27 VCF Automation — on its own size, which decides the node count.
+  // Advanced mode: the advanced size (Exclude removes it).
+  {
+    const z = s.advanced ? s.advVcfaSize : s.vcfAutomation ? s.vcfAutomationSize : 'Exclude';
+    if (z !== 'Exclude') {
+      const n = vcfAutomationNodes(z);
+      add(27, 'VCF Automation', n, lk(T.vcfa_appliance_cpu, z) * n, lk(T.vcfa_appliance_ram, z) * n, lk(T.vcfa_appliance_disk, z) * n);
+    }
   }
   // 28 / 29 VCF Operations for Networks platform (first instance) + collector
   if (s.opsNetSize !== 'Excluded') {
@@ -575,7 +635,7 @@ export function workbookHostCount(s: SizingState, comps: Component[]): number {
   const ramNoProt = sum('ram', (r) => r !== 30);
   const ramProt = sum('ram', (r) => r === 30);
   const cpuHosts = ceil(cpuAll / s.cpuOver / s.coresPerHost);
-  if (s.deploymentModel === 'High Availability') {
+  if (deriveMgmtSizes(s).nsxHaCluster) {
     return Math.max(4, cpuHosts, ceil((ramNoProt + ramProt) / s.ramPerHost) + 1);
   }
   const ramHosts = ceil((ramNoProt + ramProt / s.ramOver) / s.ramPerHost) + 1;
@@ -634,7 +694,7 @@ export function compute(s: SizingState): SizingResult {
     components: comps, totals,
     vsan: { vmCapacity, swap, interim, redundancy, reserve, growth, raw },
     workbookHosts, requiredHosts,
-    derived: deriveMgmtSizes(s.deploymentModel, s.deploymentSize),
+    derived: deriveMgmtSizes(s),
     workers: vcfmsWorkers(s),
     perHostRaw, storageAvailable, survivorHosts, survivorBasis, perHostN1,
     fit: { cpu, ram, storage, hosts, overall, binding },

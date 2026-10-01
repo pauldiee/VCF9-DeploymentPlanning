@@ -31,6 +31,19 @@ const opt = (values: readonly string[]) => values;
         <button type="button" id="btnReset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset</button>
         <span id="toolbarMsg" class="sizer__toolbar-msg" role="status"></span>
       </div>
+      <details class="sizer__profiles" open>
+        <summary>Deployment profiles at a glance</summary>
+        <table class="sizer__table">
+          <thead><tr><th>Profile</th><th>What it deploys</th><th>Fits</th><th>Reference fleet*</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Simple</strong> (Small)</td><td>Single NSX Manager, 1 services-runtime control node, single-node VCF Operations and VCF Automation — no management-plane HA</td><td>Labs, edge and small sites</td><td>76 vCPU · 251 GB · 7.4 TB</td></tr>
+            <tr><td><strong>HA-Small</strong></td><td>3 NSX Managers, 3 control nodes, a <strong>2-node</strong> VCF Operations cluster, single-node VCF Automation — HA layout on the small appliance sizes</td><td>The cheapest HA: no single points of failure in the core management plane</td><td>106 vCPU · 335 GB · 8.4 TB</td></tr>
+            <tr><td><strong>HA-Medium</strong></td><td>Medium vCenter, 3-node VCF Operations and VCF Automation</td><td>Typical production fleet</td><td>184 vCPU · 656 GB · 11.4 TB</td></tr>
+            <tr><td><strong>HA-Large</strong></td><td>Large vCenter (XLarge storage) and NSX Managers, 3-node VCF Operations and VCF Automation on Large</td><td>Large fleets, many workload domains</td><td>298 vCPU · 949 GB · 15.4 TB</td></tr>
+          </tbody>
+        </table>
+        <p class="sizer__hint">* Management domain with VCF Operations, Cloud Proxy and VCF Automation, before workload domains and Day-N services — Broadcom's <a href="https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html">VCF Fleet Sizing Models</a>, which this tool reproduces exactly.</p>
+      </details>
     </header>
 
     <div class="sizer__grid">
@@ -51,6 +64,39 @@ const opt = (values: readonly string[]) => values;
           <label>Principal storage
             <select id="storageType">{opt(OPTIONS.storageType).map((v) => <option>{v}</option>)}</select>
           </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Advanced management domain sizing</legend>
+          <label class="sizer__check"><input id="advanced" type="checkbox" /> Override the profile-derived sizes</label>
+          <p class="sizer__hint">The workbook's <em>Advanced Management Domain Sizing</em>: pick the management vCenter, NSX Manager, VCF Operations, Cloud Proxy and VCF Automation sizes yourself instead of taking them from the profile.</p>
+          <div id="advancedFields" hidden>
+            <label>Management vCenter size
+              <select id="advVcenterSize">{opt(OPTIONS.vcenterSize).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>Management vCenter storage
+              <select id="advVcenterStorage">{opt(OPTIONS.vcenterStorage).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>NSX Manager model
+              <select id="advNsxModel">{opt(OPTIONS.advNsxModel).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>NSX Manager size
+              <select id="advNsxSize">{opt(OPTIONS.advNsxSize).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>VCF Operations model
+              <select id="advVcfOpsModel">{opt(OPTIONS.advVcfOpsModel).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>VCF Operations size
+              <select id="advVcfOpsSize">{opt(OPTIONS.advVcfOpsSize).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>Cloud Proxy size
+              <select id="advCollectorSize">{opt(OPTIONS.advCollectorSize).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <label>VCF Automation size
+              <select id="advVcfaSize">{opt(OPTIONS.advVcfaSize).map((v) => <option>{v}</option>)}</select>
+            </label>
+            <p class="sizer__hint">While this is on, VCF Operations, its Cloud Proxy and VCF Automation follow these choices (Exclude removes them); the NSX Manager model also sets the host minimum (4 for an HA cluster).</p>
+          </div>
         </fieldset>
 
         <fieldset>
@@ -230,8 +276,8 @@ const opt = (values: readonly string[]) => values;
 
   // ---- bind top-level inputs to state ----
   const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
-  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'supervisorMode', 'supervisorSize', 'aviSize', 'ssp', 'vcfOps', 'opsNetSize', 'logsSize', 'vcfAutomationSize', 'spr'] as const;
-  const chkIds = ['licenseHub', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'vcfIdb', 'rwr'] as const;
+  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'supervisorMode', 'supervisorSize', 'aviSize', 'ssp', 'vcfOps', 'opsNetSize', 'logsSize', 'vcfAutomationSize', 'spr', 'advVcenterSize', 'advVcenterStorage', 'advNsxModel', 'advNsxSize', 'advVcfOpsModel', 'advVcfOpsSize', 'advCollectorSize', 'advVcfaSize'] as const;
+  const chkIds = ['licenseHub', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'vcfIdb', 'rwr', 'advanced'] as const;
 
   function hydrate() {
     for (const id of numIds) ($(id) as HTMLInputElement).value = String((state as any)[id]);
@@ -427,8 +473,11 @@ const opt = (values: readonly string[]) => values;
     // Log Management replicas only apply when a size is chosen
     ($('logsReplicasLabel') as HTMLElement).hidden = state.logsSize === 'Exclude';
 
-    // VCF Automation size only applies when Automation is included
-    ($('vcfAutomationSizeLabel') as HTMLElement).hidden = !state.vcfAutomation;
+    // VCF Automation size only applies when Automation is included (and not in
+    // advanced mode, where the advanced size decides)
+    ($('vcfAutomationSizeLabel') as HTMLElement).hidden = !state.vcfAutomation || state.advanced;
+    ($('vcfAutomation') as HTMLInputElement).disabled = state.advanced;
+    ($('advancedFields') as HTMLElement).hidden = !state.advanced;
     // Supervisor size only applies when a Supervisor is included
     ($('supervisorSizeLabel') as HTMLElement).hidden = state.supervisorMode === 'Excluded';
     // Additional-instance-only services
@@ -455,7 +504,7 @@ const opt = (values: readonly string[]) => values;
     renderWldWarnings();
 
     // derived (profile-fixed) component sizes
-    $('derivedSizes').innerHTML = `Fixed by the deployment profile: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +
+    $('derivedSizes').innerHTML = `${state.advanced ? 'Set in advanced sizing' : 'Fixed by the deployment profile'}: management vCenter <strong>${r.derived.vcenterSize}</strong> ` +
       `(<strong>${r.derived.vcenterStorage}</strong> storage), NSX Local Manager <strong>${r.derived.nsxManagerSize}</strong>. ` +
       `The options below are your genuine choices.`;
 
@@ -514,6 +563,14 @@ const opt = (values: readonly string[]) => values;
     logsSize: OPTIONS.logsSize,
     vcfAutomationSize: OPTIONS.vcfAutomationSize,
     spr: OPTIONS.spr,
+    advVcenterSize: OPTIONS.vcenterSize,
+    advVcenterStorage: OPTIONS.vcenterStorage,
+    advNsxModel: OPTIONS.advNsxModel,
+    advNsxSize: OPTIONS.advNsxSize,
+    advVcfOpsModel: OPTIONS.advVcfOpsModel,
+    advVcfOpsSize: OPTIONS.advVcfOpsSize,
+    advCollectorSize: OPTIONS.advCollectorSize,
+    advVcfaSize: OPTIONS.advVcfaSize,
   };
   function sanitize(obj: any): SizingState {
     const out = defaultState();
@@ -601,7 +658,7 @@ const opt = (values: readonly string[]) => values;
       `**Profile:** ${s.deploymentModel} / ${s.deploymentSize}, ${s.instanceModel}, ${s.storageType}`,
       `**Cluster:** ${s.clusterType}, ${s.proposedHosts} hosts × ${s.coresPerHost} cores / ${gb(s.ramPerHost)} GB RAM / ${store}`,
       `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, ${isVsanType(s.storageType) ? `vSAN reserve ${s.reservePct}%` : 'vSAN reserve n/a (NFS / FC)'}, growth ${s.growthPct}%`,
-      `**Profile-fixed:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}`,
+      `**${s.advanced ? 'Advanced sizing' : 'Profile-fixed'}:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}${r.derived.nsxHaCluster ? ' ×3' : ' ×1'}`,
       ...(supLines.length ? ['', '## vSphere Supervisor / Edge', ...supLines] : []),
       '',
       `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} (tightest: ${r.fit.binding}, basis: ${r.survivorBasis})`,
@@ -675,6 +732,9 @@ const opt = (values: readonly string[]) => values;
   .sizer { max-width: 1100px; }
   .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
   .sizer__lede { color: var(--text-muted); max-width: 70ch; }
+  .sizer__profiles { margin-top: 1rem; }
+  .sizer__profiles summary { cursor: pointer; font-weight: 600; margin-bottom: 0.4rem; }
+  .sizer__profiles .sizer__table td:first-child { white-space: nowrap; }
   .sizer__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
   .sizer__toolbar button, .sizer__toolbar .sizer__filebtn {
     display: inline-flex; align-items: center; gap: 0.4rem;

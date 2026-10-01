@@ -60,6 +60,15 @@ function toState(cells) {
   s.ssp = c('W40', 'Excluded');
   s.spr = c('B82', 'Exclude');
   s.rwr = c('B83', 'Exclude') === 'Include';
+  s.advanced = c('R24', 'Unselected') === 'Selected';
+  s.advVcenterSize = c('R25', 'Medium');
+  s.advVcenterStorage = c('R26', 'Default');
+  s.advNsxModel = c('R27', 'Mandatory - HA Cluster') === 'Mandatory - Single Node' ? 'Single Node' : 'HA Cluster';
+  s.advNsxSize = c('R28', 'Medium');
+  s.advVcfOpsModel = c('R29', 'Exclude');
+  s.advVcfOpsSize = c('R30', 'Exclude');
+  s.advCollectorSize = c('R31', 'Exclude');
+  s.advVcfaSize = c('R32', 'Exclude');
   s.workloadDomains = [];
   for (let i = 0; i < 35; i++) {
     const r = 44 + i;
