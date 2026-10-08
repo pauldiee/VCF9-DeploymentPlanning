@@ -291,8 +291,8 @@ layouts:
 | Layout | What you pre-create on the host | Mount |
 | ------ | ------------------------------- | ----- |
 | **No NFS VMkernel** | Nothing — the NFS server must be reachable through the **management VMkernel** | `esxcli storage nfs add -H <nfs-server-ip> -s <share-path> -v <datastore-name>` |
-| **NFS + management on the same vDS** | A port group on `vSwitch0`, then a **dedicated NFS VMkernel** on it with an IP from the NFS network range | With VMkernel binding: `esxcli storage nfs add --host-vmknic=<nfs-server-ip>:<vmkX> --volume-name=<datastore-name> --share=<share-path>`; without: the plain command above |
-| **NFS on its own vDS** | A separate NFS virtual switch matching the `dvsSpec`, an NFS port group on it, and the NFS VMkernel with an IP from the NFS network range | Same two variants |
+| **NFS + management on the same vDS** | A port group on `vSwitch0`, then a **dedicated NFS VMkernel** on it with an IP in the NFS subnet (see *First-host NFS VMkernel IP* below) | With VMkernel binding: `esxcli storage nfs add --host-vmknic=<nfs-server-ip>:<vmkX> --volume-name=<datastore-name> --share=<share-path>`; without: the plain command above |
+| **NFS on its own vDS** | A separate NFS virtual switch matching the `dvsSpec`, an NFS port group on it, and the NFS VMkernel with an IP in the NFS subnet (see *First-host NFS VMkernel IP* below) | Same two variants |
 
 What has to line up with the Installer (or pre-validation fails at *"NFS
 Datastore Configuration"* —
@@ -302,10 +302,22 @@ Datastore Configuration"* —
   name you give the NFS vDS port group in the Installer (default
   **`SDDC-DPortGroup-NFS`**, or the `portgroupKey` in a JSON spec). TechDocs:
   *"During the deployment workflows in VCF Installer, you must use the same
-  port group name for the NFS vDS port group and define an NFS pool that
-  includes the assigned IP address."*
-- **NFS IP pool** — the Installer's NFS pool must **include** the IP you
-  assigned to the hand-built VMkernel.
+  port group name for the NFS vDS port group …"*
+- **First-host NFS VMkernel IP** — give the
+  hand-built VMkernel an address **in the NFS subnet but outside the
+  Installer's NFS IP range** (the workbook's *NFS IP Address Range* /
+  `includeIpAddressRanges` in a JSON spec). The Installer hands out that whole
+  range to the hosts' NFS VMkernels; an address taken from it on the first
+  host risks an IP conflict or a validation failure. This is field-verified
+  (VCF 9.1, separate NFS vDS): bring-up completed with an out-of-range
+  address —
+  [Hands-On Guide: How to install VCF 9.1 on NFS Principal Storage](https://configmgr.nl/vmware/hands-on-guide-how-to-install-vcf-9-1-on-nfs-principal-storage/).
+  Note that **TechDocs says the opposite**: assign the IP *"from the NFS
+  network spec IP range"* and *"define an NFS pool that includes the assigned
+  IP address"*
+  ([Mount NFS Datastore to an ESX Host](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/mount-nfs-datastore-to-an-esx-host(1).html);
+  that sentence also mislabels its own placeholders). KB 446573 doesn't
+  cover the IP at all. The out-of-range address is the one known to work.
 - **Dedicated VLAN** — with a dedicated NFS VMkernel, the NFS network must be
   its own VLAN, not shared with ESX management (William Lam, linked below;
   see [`01-network-dns-plan.md`](01-network-dns-plan.md), NFS row).

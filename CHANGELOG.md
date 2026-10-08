@@ -1,5 +1,20 @@
 # Changelog
 
+## v5.6.4 — 2026-10-08
+- **First-host NFS VMkernel IP corrected (#382).** `prerequisites.md` said the
+  VCF Installer's NFS IP range must *include* the IP of the hand-built NFS
+  VMkernel on the first host. Field experience on VCF 9.1 says the opposite:
+  use an address in the NFS subnet but **outside** that range, because the
+  Installer hands out the whole range and an in-range address risks a conflict
+  or validation failure
+  ([Hands-On Guide: How to install VCF 9.1 on NFS Principal Storage](https://configmgr.nl/vmware/hands-on-guide-how-to-install-vcf-9-1-on-nfs-principal-storage/)).
+  The doc now recommends the out-of-range address and flags that
+  [TechDocs](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/mount-nfs-datastore-to-an-esx-host(1).html)
+  says otherwise. The rule was also wrongly attributed to
+  [KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html),
+  which only covers port group name, MTU and the export ACL. The layout table
+  now says "an IP in the NFS subnet" instead of "from the NFS network range".
+
 ## v5.6.3 — 2026-10-01
 - **Deployment plan links our own guides (#380).** Every story this site has an
   install or configuration guide for now carries it: a **Guide** line in the
