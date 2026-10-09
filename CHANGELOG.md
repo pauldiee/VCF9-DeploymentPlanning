@@ -1,5 +1,30 @@
 # Changelog
 
+## v5.6.5 — 2026-10-09
+- **Reference guides regrouped (#383).** The site nav and the README had an
+  **Operations** band of seven unrelated guides and two bands of one guide each.
+  The build guides now sit in eight bands:
+  - **Foundation services:** backup target, binary depot, ESX coredump, SSO.
+  - **Build & expand** (new): workload domain, cluster creation, cluster
+    expansion, stretch.
+  - **Network & security services:** License Hub, Avi and vDefend SSP, merging
+    the old *Load balancer & licensing* and *Security services* bands.
+  - **Supervisor & VKS** and **VCF Automation:** unchanged.
+  - **Day-2 operations:** shutdown / startup, config artifacts, remove
+    components.
+  - **VVF / Standalone:** unchanged.
+  - **Reference data:** Firewall & Ports (moved here from Foundation) and the
+    workbook mapping.
+
+  URLs and file numbers are unchanged, so no links break.
+- **Previous / next pager removed** from doc pages (#383). It sat below long
+  pages where nobody saw it; the header menu is the way between guides.
+- **"On this page" stays reachable on long docs (#384).** The sticky TOC lists
+  every heading level (#339), so on long guides it ran past the bottom of the
+  screen. It is now capped at the viewport height and scrolls on its own, and
+  the highlighted section is kept in view inside it as you read. No visible
+  scrollbar (it narrowed the column); a fade at the bottom shows there is more.
+
 ## v5.6.4 — 2026-10-08
 - **First-host NFS VMkernel IP corrected (#382).** `prerequisites.md` said the
   VCF Installer's NFS IP range must *include* the IP of the hand-built NFS
