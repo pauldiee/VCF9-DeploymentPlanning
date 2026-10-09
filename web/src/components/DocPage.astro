@@ -5,7 +5,7 @@
 import { render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { NAV, navBySlug } from '../nav';
+import { navBySlug } from '../nav';
 import { docHref, docHrefNl } from '../lib/path';
 
 interface Props {
@@ -24,13 +24,8 @@ const { Content, headings } = await render(doc);
 const sections = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
 
 const hasNl = (slug: string) => nlSlugs.includes(slug);
-// On a Dutch page, stay in Dutch where a translation exists; otherwise English.
-const href = (slug: string) => (lang === 'nl' && hasNl(slug) ? docHrefNl(slug) : docHref(slug));
 
 const meta = navBySlug(doc.id);
-const idx = NAV.findIndex((n) => n.slug === doc.id);
-const prev = idx > 0 ? NAV[idx - 1] : undefined;
-const next = idx >= 0 && idx < NAV.length - 1 ? NAV[idx + 1] : undefined;
 
 const title = meta ? `${meta.label} — VCF 9 Deployment Planning and Operations` : 'VCF 9 Deployment Planning and Operations';
 
@@ -40,8 +35,8 @@ const altHref = lang === 'nl' ? docHref(doc.id) : hasNl(doc.id) ? docHrefNl(doc.
 
 const t =
   lang === 'nl'
-    ? { toc: 'Op deze pagina', pager: 'Tussen documenten', prev: 'Vorige', next: 'Volgende' }
-    : { toc: 'On this page', pager: 'Between documents', prev: 'Previous', next: 'Next' };
+    ? { toc: 'Op deze pagina' }
+    : { toc: 'On this page' };
 ---
 
 <BaseLayout title={title} description={meta?.blurb} active={doc.id} lang={lang} altHref={altHref}>
@@ -79,27 +74,6 @@ const t =
       )
     }
   </div>
-
-  <nav class="doc-pager" aria-label={t.pager} data-pagefind-ignore>
-    {
-      prev ? (
-        <a class="doc-pager__link doc-pager__link--prev" href={href(prev.slug)}>
-          <span class="doc-pager__dir"><i class="fa-solid fa-arrow-left" aria-hidden="true" /> {t.prev}</span>
-          <span class="doc-pager__title">{prev.label}</span>
-        </a>
-      ) : (
-        <span />
-      )
-    }
-    {
-      next && (
-        <a class="doc-pager__link doc-pager__link--next" href={href(next.slug)}>
-          <span class="doc-pager__dir">{t.next} <i class="fa-solid fa-arrow-right" aria-hidden="true" /></span>
-          <span class="doc-pager__title">{next.label}</span>
-        </a>
-      )
-    }
-  </nav>
 </BaseLayout>
 
 <style>
@@ -111,10 +85,22 @@ const t =
   }
   .doc-body-grid--no-toc { grid-template-columns: minmax(0, 1fr); }
 
+  /* Long docs list every heading level (#339), so the TOC can outgrow the
+     viewport: cap it there and let it scroll on its own (#384). The scrollbar
+     is hidden (it ate the narrow column's width); a bottom fade shows there
+     is more, and the scroll-spy keeps the active entry in view. */
   .doc-toc {
     position: sticky;
     top: calc(var(--header-h) + var(--space-5));
+    max-height: calc(100vh - var(--header-h) - var(--space-5) * 2);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
     font-size: var(--fs-small);
+  }
+  .doc-toc::-webkit-scrollbar { display: none; }
+  .doc-toc.has-more-below {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
   }
   .doc-toc__label {
     display: block;
@@ -187,12 +173,33 @@ const t =
   // Scroll-spy: highlight the TOC entry for the section currently in view.
   const tocLinks = document.querySelectorAll<HTMLAnchorElement>('.doc-toc__list a[data-toc-target]');
   if (tocLinks.length) {
+    const tocBox = document.querySelector<HTMLElement>('.doc-toc');
+    if (tocBox) {
+      const updateFade = () =>
+        tocBox.classList.toggle('has-more-below', tocBox.scrollTop + tocBox.clientHeight < tocBox.scrollHeight - 4);
+      tocBox.addEventListener('scroll', updateFade, { passive: true });
+      window.addEventListener('resize', updateFade);
+      updateFade();
+    }
+
     const sections = Array.from(tocLinks)
       .map((link) => document.getElementById(link.dataset.tocTarget ?? ''))
       .filter((el): el is HTMLElement => !!el);
 
     const setActive = (slug: string) => {
-      tocLinks.forEach((link) => link.classList.toggle('is-active', link.dataset.tocTarget === slug));
+      tocLinks.forEach((link) => {
+        const on = link.dataset.tocTarget === slug;
+        link.classList.toggle('is-active', on);
+        // Keep the active entry visible inside a TOC that scrolls on its own;
+        // scroll only the TOC, never the page.
+        if (on && tocBox) {
+          const box = tocBox.getBoundingClientRect();
+          const r = link.getBoundingClientRect();
+          if (r.top < box.top || r.bottom > box.bottom) {
+            tocBox.scrollBy({ top: r.top - box.top - box.height / 3, behavior: 'smooth' });
+          }
+        }
+      });
     };
 
     const observer = new IntersectionObserver(

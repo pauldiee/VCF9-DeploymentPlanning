@@ -39,22 +39,31 @@ stable identifiers (linked from across the repo), not a reading order — within
 band the guides are listed roughly in the order you would tackle them. The site
 sidebar mirrors these bands.
 
-**Foundation** — built once, close to bring-up:
+**Foundation services** — built once, close to bring-up:
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
-| `docs/07-firewall-ports.md`         | Deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
 | `docs/08-backup-target.md`          | Build guide for the SFTP backup target (building, verifying, field-notes gotchas) |
 | `docs/09-binary-depot.md`           | Build guide for the offline depot / VCF Download Tool (feed the depot, connect VCF, the fleet proxy) |
 | `docs/11-esx-coredump.md`           | Build guide for the ESXi network Dump Collector (enable on vCenter, point every host at it, verify) |
 | `docs/12-sso-configuration.md`      | Build guide for configuring fleet SSO via the VCF Identity Broker (identity provider, per-product federation, role mapping, verification) |
 
-**Load balancer & licensing:**
+**Build & expand** — adding domains, clusters, hosts and a second AZ:
+
+| Path                                | Purpose                                                |
+| ----------------------------------- | ------------------------------------------------------ |
+| `docs/23-workload-domain-creation.md` | Workload domain creation runbook — manual prep (network pool, commissioned hosts, DNS) vs the creation wizard, page by page, plus the DomainCreationSpec API path for LACP or no-cluster domains |
+| `docs/24-cluster-creation.md`       | Cluster creation runbook — adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard, page by page (or the API), including the 9.1.1+ vDS-reuse rules |
+| `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
+| `docs/22-stretch-execution.md`      | Stretch execution runbook — manual steps (AZ2 hosts, witness, AZ2 network pool) vs what the single stretch API call does for you, for management domain and workload domain |
+
+**Network & security services** — License Hub first, it licenses both Avi and vDefend:
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `docs/15-license-hub.md`            | Build guide for deploying License Hub (2.0 standalone OVA and 5.1.2 SSP Installer flows, post-deploy registration/licensing chain) |
 | `docs/14-avi-load-balancer.md`      | Build guide for deploying Avi Load Balancer (VCF Operations wizard, controller first-login setup, the licensing chain) |
+| `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
 
 **Supervisor & VKS:**
 
@@ -70,23 +79,13 @@ sidebar mirrors these bands.
 | `docs/17-vcfa-tenant-config.md`     | Build guide for first-time VCF Automation tenant/org config (Login Provider Manual setup — region, external IP block, external connections, organization + Avi) |
 | `docs/19-securing-vcf-automation.md` | Hardening for an external-facing (Pattern 3) VCF Automation instance — the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall (walkthroughs for Broadcom's *Securing VCF Automation Deployment* design page) |
 
-**Security services:**
-
-| Path                                | Purpose                                                |
-| ----------------------------------- | ------------------------------------------------------ |
-| `docs/18-vdefend-ssp.md`            | Build guide for deploying + first-time config of the vDefend Security Services Platform (SSP Installer wizard, form factors, onboard NSX Manager, activate Security Intelligence / NDR / Malware Prevention) |
-
-**Operations** — runbooks and reverse-direction tooling:
+**Day-2 operations** — runbooks and reverse-direction tooling:
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `docs/13-shutdown-startup.md`       | The ordered fleet shutdown / startup runbook (the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, infrastructure VMs last) |
-| `docs/16-remove-components.md`      | Cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
 | `docs/21-config-artifacts.md`       | Reverse direction — capture re-submittable spec JSON from a **built** VCF 9.1 instance (bring-up spec, Fleet LCM component specs, Supervisor export, NSX policy hierarchy), sanitise / parameterise / validate into reusable templates |
-| `docs/22-stretch-execution.md`      | Stretch execution runbook — manual steps (AZ2 hosts, witness, AZ2 network pool) vs what the single stretch API call does for you, for management domain and workload domain |
-| `docs/23-workload-domain-creation.md` | Workload domain creation runbook — manual prep (network pool, commissioned hosts, DNS) vs the creation wizard, page by page, plus the DomainCreationSpec API path for LACP or no-cluster domains |
-| `docs/24-cluster-creation.md`       | Cluster creation runbook — adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard, page by page (or the API), including the 9.1.1+ vDS-reuse rules |
-| `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
+| `docs/16-remove-components.md`      | Cleanly remove and reinstall optional Day-N fleet components (Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation) via `cleanup_component.py` |
 
 **VVF / Standalone** — VCF Operations without Fleet LCM:
 
@@ -99,6 +98,7 @@ sidebar mirrors these bands.
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
+| `docs/07-firewall-ports.md`         | Deployment-critical firewall flows by zone + links to the Ports & Protocols tools |
 | `docs/workbook-cell-mapping.md`     | Intake answers mapped to workbook cells                |
 
 **Dutch translations (pilot):** a small part of the docs is also available in

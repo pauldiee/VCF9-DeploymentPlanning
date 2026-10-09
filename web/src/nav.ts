@@ -9,7 +9,7 @@
 //   - Reference build guides have a `band` (see REFERENCE_BANDS) and their `step`
 //     mirrors the band name (used as the per-page eyebrow). They render grouped
 //     by band under "Reference".
-// Array order is also the prev/next pager order, so keep related guides adjacent.
+// Array order is the in-band display order, so keep related guides adjacent.
 export interface NavItem {
   slug: string;
   step: string;
@@ -21,12 +21,12 @@ export interface NavItem {
 
 // Render order for the reference bands.
 export const REFERENCE_BANDS = [
-  'Foundation',
-  'Load balancer & licensing',
+  'Foundation services',
+  'Build & expand',
+  'Network & security services',
   'Supervisor & VKS',
   'VCF Automation',
-  'Security services',
-  'Operations',
+  'Day-2 operations',
   'VVF / Standalone',
   'Reference data',
 ] as const;
@@ -82,67 +82,101 @@ export const NAV: NavItem[] = [
     blurb: 'An agile work breakdown (epics, stories, tasks); build your deployment scope and export it to Markdown or a backlog CSV.',
   },
 
-  // --- Reference: Foundation ------------------------------------------------
-  {
-    slug: '07-firewall-ports',
-    step: 'Foundation',
-    band: 'Foundation',
-    label: 'Firewall & Ports',
-    icon: 'shield-halved',
-    blurb: 'Deployment-critical firewall flows by zone, the 9.1 port gotchas, and links to the authoritative Ports & Protocols tools.',
-  },
+  // --- Reference: Foundation services -----------------------------------------
   {
     slug: '08-backup-target',
-    step: 'Foundation',
-    band: 'Foundation',
+    step: 'Foundation services',
+    band: 'Foundation services',
     label: 'Backup Target',
     icon: 'hard-drive',
     blurb: 'Build guide for the SFTP backup target every management component backs up to — building it, verifying it, and the field-notes gotchas.',
   },
   {
     slug: '09-binary-depot',
-    step: 'Foundation',
-    band: 'Foundation',
+    step: 'Foundation services',
+    band: 'Foundation services',
     label: 'Binary Depot',
     icon: 'box-archive',
     blurb: 'The offline depot and VCF Download Tool — build, feed, and connect the depot the platform installs and patches from.',
   },
   {
     slug: '11-esx-coredump',
-    step: 'Foundation',
-    band: 'Foundation',
+    step: 'Foundation services',
+    band: 'Foundation services',
     label: 'ESX Coredump',
     icon: 'bug',
     blurb: 'Build guide for the ESXi network Dump Collector: enable the service on vCenter, point every host at it, verify.',
   },
   {
     slug: '12-sso-configuration',
-    step: 'Foundation',
-    band: 'Foundation',
+    step: 'Foundation services',
+    band: 'Foundation services',
     label: 'SSO Configuration',
     icon: 'key',
     blurb: 'Configure fleet SSO via the VCF Identity Broker: the identity provider, per-product federation, role mapping, and verification.',
   },
 
-  // --- Reference: Load balancer & licensing ------------------------------
+  // --- Reference: Build & expand ----------------------------------------------
+  {
+    slug: '23-workload-domain-creation',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Workload Domain Creation',
+    icon: 'cubes',
+    blurb: 'Manual prep (network pool, commissioned hosts, DNS) vs the creation wizard/API: page-by-page walkthrough, plus the DomainCreationSpec JSON path for LACP or no-cluster domains.',
+  },
+  {
+    slug: '24-cluster-creation',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Cluster Creation',
+    icon: 'object-group',
+    blurb: 'Adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard (or the API), including the 9.1.1+ vDS-reuse rules.',
+  },
+  {
+    slug: '25-cluster-expansion',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Cluster Expansion',
+    icon: 'square-plus',
+    blurb: 'Adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and does not) automate per storage type.',
+  },
+  {
+    slug: '22-stretch-execution',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Stretch Execution',
+    icon: 'route',
+    blurb: 'Manual steps vs the one-call stretch API: AZ2 hosts, witness, network pool, then the PATCH that does the rest — for management and workload domains.',
+  },
+
+  // --- Reference: Network & security services ---------------------------------
   {
     slug: '15-license-hub',
-    step: 'Load balancer & licensing',
-    band: 'Load balancer & licensing',
+    step: 'Network & security services',
+    band: 'Network & security services',
     label: 'License Hub',
     icon: 'certificate',
     blurb: 'Deploy License Hub for vDefend and Avi subscription licensing — both the 2.0 standalone OVA and 5.1.2 SSP Installer flows — and the post-deploy registration chain.',
   },
   {
     slug: '14-avi-load-balancer',
-    step: 'Load balancer & licensing',
-    band: 'Load balancer & licensing',
+    step: 'Network & security services',
+    band: 'Network & security services',
     label: 'Avi Load Balancer',
     icon: 'scale-balanced',
     blurb: 'Deploy Avi Load Balancer from VCF Operations: the wizard, first-login controller setup, and the licensing chain.',
   },
+  {
+    slug: '18-vdefend-ssp',
+    step: 'Network & security services',
+    band: 'Network & security services',
+    label: 'vDefend SSP',
+    icon: 'shield-virus',
+    blurb: 'Deploy the vDefend Security Services Platform from the SSP Installer and configure it first time: form factors and footprint, the deploy wizard, onboarding NSX Manager, and activating Security Intelligence / NDR / Malware Prevention.',
+  },
 
-  // --- Reference: Supervisor & VKS --------------------------------------
+  // --- Reference: Supervisor & VKS --------------------------------------------
   {
     slug: '10-supervisor-enablement',
     step: 'Supervisor & VKS',
@@ -160,7 +194,7 @@ export const NAV: NavItem[] = [
     blurb: 'The runtime container-image supply chain for Supervisor / VKS: direct, proxy (Supervisor + TkgServiceConfiguration + the no-proxy list), and the fully air-gapped path (the VCF Software Depot OCI registry, imgpkg relocation, the depot image proxy).',
   },
 
-  // --- Reference: VCF Automation --------------------------------------
+  // --- Reference: VCF Automation ----------------------------------------------
   {
     slug: '17-vcfa-tenant-config',
     step: 'VCF Automation',
@@ -178,75 +212,33 @@ export const NAV: NavItem[] = [
     blurb: 'Hardening for an external-facing (Pattern 3) VCF Automation instance: the Transit Gateway firewall, the DFW exclusion-list sequence, IP-based portal locking, the Avi WAF policy, and the Avi management-plane Tier-1 firewall.',
   },
 
-  // --- Reference: Security services ---------------------------------
-  {
-    slug: '18-vdefend-ssp',
-    step: 'Security services',
-    band: 'Security services',
-    label: 'vDefend SSP',
-    icon: 'shield-virus',
-    blurb: 'Deploy the vDefend Security Services Platform from the SSP Installer and configure it first time: form factors and footprint, the deploy wizard, onboarding NSX Manager, and activating Security Intelligence / NDR / Malware Prevention.',
-  },
-
-  // --- Reference: Operations --------------------------------------
+  // --- Reference: Day-2 operations --------------------------------------------
   {
     slug: '13-shutdown-startup',
-    step: 'Operations',
-    band: 'Operations',
+    step: 'Day-2 operations',
+    band: 'Day-2 operations',
     label: 'Shutdown / Startup',
     icon: 'power-off',
     blurb: 'The ordered fleet shutdown and startup runbook: the 11-step management sequence, the fleet-level VCF Operations rule, shared NSX, and the infrastructure VMs that go last.',
   },
   {
-    slug: '16-remove-components',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'Remove Components',
-    icon: 'trash-can',
-    blurb: 'Cleanly remove and reinstall optional Day-N fleet components — Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation — via cleanup_component.py.',
-  },
-  {
-    slug: '22-stretch-execution',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'Stretch Execution',
-    icon: 'route',
-    blurb: 'Manual steps vs the one-call stretch API: AZ2 hosts, witness, network pool, then the PATCH that does the rest — for management and workload domains.',
-  },
-  {
-    slug: '23-workload-domain-creation',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'Workload Domain Creation',
-    icon: 'cubes',
-    blurb: 'Manual prep (network pool, commissioned hosts, DNS) vs the creation wizard/API: page-by-page walkthrough, plus the DomainCreationSpec JSON path for LACP or no-cluster domains.',
-  },
-  {
-    slug: '24-cluster-creation',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'Cluster Creation',
-    icon: 'object-group',
-    blurb: 'Adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard (or the API), including the 9.1.1+ vDS-reuse rules.',
-  },
-  {
-    slug: '25-cluster-expansion',
-    step: 'Operations',
-    band: 'Operations',
-    label: 'Cluster Expansion',
-    icon: 'square-plus',
-    blurb: 'Adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and does not) automate per storage type.',
-  },
-  {
     slug: '21-config-artifacts',
-    step: 'Operations',
-    band: 'Operations',
+    step: 'Day-2 operations',
+    band: 'Day-2 operations',
     label: 'Config Artifacts',
     icon: 'file-export',
     blurb: 'Pull re-submittable spec JSON out of a built VCF 9.1 instance (bring-up spec, Fleet LCM components, Supervisor export, the NSX policy hierarchy), then sanitise, parameterise and validate it into reusable templates.',
   },
+  {
+    slug: '16-remove-components',
+    step: 'Day-2 operations',
+    band: 'Day-2 operations',
+    label: 'Remove Components',
+    icon: 'trash-can',
+    blurb: 'Cleanly remove and reinstall optional Day-N fleet components — Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation — via cleanup_component.py.',
+  },
 
-  // --- Reference: VVF / Standalone --------------------------------------
+  // --- Reference: VVF / Standalone --------------------------------------------
   {
     slug: '27-vcf-operations-ha-cloud-proxy-vvf',
     step: 'VVF / Standalone',
@@ -264,7 +256,15 @@ export const NAV: NavItem[] = [
     blurb: 'No Fleet LCM in VVF/standalone: the vCenter adapter (role, service account, permission), renaming a node hostname, service-account password expiry, and AD/LDAP authentication sources.',
   },
 
-  // --- Reference: Reference data ------------------------------------
+  // --- Reference: Reference data ----------------------------------------------
+  {
+    slug: '07-firewall-ports',
+    step: 'Reference data',
+    band: 'Reference data',
+    label: 'Firewall & Ports',
+    icon: 'shield-halved',
+    blurb: 'Deployment-critical firewall flows by zone, the 9.1 port gotchas, and links to the authoritative Ports & Protocols tools.',
+  },
   {
     slug: 'workbook-cell-mapping',
     step: 'Reference data',
