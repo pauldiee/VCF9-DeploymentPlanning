@@ -149,6 +149,14 @@ export const NAV: NavItem[] = [
     icon: 'route',
     blurb: 'Manual steps vs the one-call stretch API: AZ2 hosts, witness, network pool, then the PATCH that does the rest — for management and workload domains.',
   },
+  {
+    slug: '28-memory-tiering',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Memory Tiering',
+    icon: 'memory',
+    blurb: 'Use a local NVMe device as a second memory tier: is it a fit, picking and sizing the drive, keeping it out of vSAN, enabling it per cluster or host, mirroring, encryption, monitoring and failure behaviour.',
+  },
 
   // --- Reference: Network & security services ---------------------------------
   {
