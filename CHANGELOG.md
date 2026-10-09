@@ -1,5 +1,33 @@
 # Changelog
 
+## v5.6.6 — 2026-10-09
+- **New build guide: Memory Tiering over NVMe (#385).**
+  [`docs/28-memory-tiering.md`](docs/28-memory-tiering.md) covers using a
+  local NVMe device as a second memory tier on VCF 9.1: whether it fits
+  (active memory under 50 % of DRAM, the fixed ~80 % trigger, no memory
+  overcommit), picking the device (vSAN SSD class D, F/G, ≥ 3 DWPD, dedicated)
+  and sizing it (1:1 default, 4 TB cap), keeping it out of vSAN, enabling it
+  per cluster (Configuration Profiles) or per host (`esxcli memtier`),
+  software mirroring, encryption, the VMs that stay in DRAM, vMotion / DRS /
+  HA behaviour, monitoring and device health, failure behaviour, known KBs,
+  and what differs on 9.0. Sources: the 9.1 TechDocs section, read verbatim
+  ([Memory Tiering over NVMe](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-resource-management/memory-tiering-over-nvme.html)),
+  Broadcom's VCF blog, Duncan Epping and William Lam.
+- **Where sources disagree, the newest one wins.** On nested VMs, the 9.1
+  launch blog (2026-05-07) says they tier like any other workload; Duncan
+  Epping's FAQ (2026-07-16) and the TechDocs page (last updated 2026-09-29)
+  describe an opt-in for VBS VMs only, for testing. The guide follows the
+  later two.
+- **Not verified:** whether the 9.1 VCF Installer / workload-domain vSAN
+  setup auto-claims the tiering device (documented for 9.0 in Broadcom's
+  [Design & Sizing Part 4](https://blogs.vmware.com/cloud-foundation/2025/12/16/nvme-memory-tiering-design-and-sizing-on-vmware-cloud-foundation-9-part-4/)).
+  The guide gives the safe path: keep the device out until the cluster
+  exists.
+- **`prerequisites.md`:** new *Memory Tiering over NVMe (only if in scope)*
+  checklist, and a bring-up gate line to keep the tiering NVMe out of vSAN.
+- Site nav: *Memory Tiering* in the **Build & expand** group; README and
+  CLAUDE.md updated.
+
 ## v5.6.5 — 2026-10-09
 - **Reference guides regrouped (#383).** The site nav and the README had an
   **Operations** band of seven unrelated guides and two bands of one guide each.

@@ -56,6 +56,7 @@ sidebar mirrors these bands.
 | `docs/24-cluster-creation.md`       | Cluster creation runbook — adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard, page by page (or the API), including the 9.1.1+ vDS-reuse rules |
 | `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
 | `docs/22-stretch-execution.md`      | Stretch execution runbook — manual steps (AZ2 hosts, witness, AZ2 network pool) vs what the single stretch API call does for you, for management domain and workload domain |
+| `docs/28-memory-tiering.md`        | Build guide for Memory Tiering over NVMe — fit check, NVMe device selection and sizing, keeping the device out of vSAN, enabling per cluster (Configuration Profiles) or host (`esxcli memtier`), mirroring, encryption, monitoring, failure behaviour |
 
 **Network & security services** — License Hub first, it licenses both Avi and vDefend:
 

@@ -20,7 +20,7 @@ both places so a filled template can be checked straight against this doc:
 | **Bring-up**               | Must be true **before the VCF Installer runs**. A miss here stops the deployment.            |
 | **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the NFS VMkernel or FC datastore when that is principal storage; the public URLs when anything is online). |
 | **Day-N**                  | Needed **after** bring-up, when you configure or deploy that piece. Collect the inputs early anyway — a missing value doesn't stop bring-up, it stops the day you need it. |
-| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
+| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, Memory Tiering, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
 
 **The bring-up gate, at a glance** — the subset that must be green before the
 Installer starts:
@@ -44,6 +44,8 @@ Installer starts:
 - [ ] **Jump host** — routed access + OVF Tool
 - [ ] **Active Directory** — reachable, accounts and groups pre-created
 - [ ] **Public URLs / proxy allowlist** — if anything is online
+- [ ] **Memory Tiering NVMe left out or disabled** — *Memory Tiering only*,
+      so vSAN can't claim it ([below](#memory-tiering-over-nvme-only-if-in-scope))
 
 Everything else in this document (workload-domain hardware, SMTP, the
 Certificate Authority, the SFTP backup target, Avi, vSphere Supervisor, fleet
@@ -433,6 +435,39 @@ host before bring-up.
 > cluster expansion; see [`25-cluster-expansion.md`](25-cluster-expansion.md).
 > TechDocs: [Deploy a New VCF Fleet or VCF Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html)
 > (storage page). TechDocs-sourced — not yet field-verified in this repo.
+
+## Memory Tiering over NVMe (only if in scope)
+
+*When needed: **Day-N (if in scope)** — but the hardware is ordered with the
+hosts, and the device has to survive bring-up unclaimed.* Memory Tiering uses
+a local NVMe device as extra (slower) host memory. It is enabled per cluster
+after the cluster exists; the full guide is
+[`28-memory-tiering.md`](28-memory-tiering.md).
+
+- [ ] **It fits the workload:** memory consumption high, **active memory
+      below 50 % of DRAM**, CPU headroom left, and no memory overcommit
+      planned on those clusters.
+- [ ] **A dedicated NVMe device per host** (two for a software mirror), from
+      the [compatibility guide](https://compatibilityguide.broadcom.com)'s
+      **vSAN SSD** list: NVMe, endurance class **D (≥ 7300 TBW)**,
+      performance class **F or G**, **≥ 3 DWPD**. Local only, never shared
+      with vSAN, boot or a datastore. This is often a different drive than
+      the vSAN ReadyNode's.
+- [ ] **Sized at least as large as host DRAM** (default 1:1 ratio, 4 TB
+      maximum tier); a mirror device the same size or larger.
+- [ ] **No existing partitions** on the device.
+- [ ] **No Intel Optane PMem or NVDIMM-N** in the hosts.
+- [ ] **Kept out of vSAN at bring-up / workload-domain creation.** VCF's vSAN
+      deployment may auto-claim every eligible disk (documented for 9.0, not
+      verified for 9.1). Leave the tiering device out or disabled until the
+      cluster is built, then add it — see
+      [`28-memory-tiering.md` §3](28-memory-tiering.md#3-keep-the-device-out-of-vsan).
+
+> TechDocs: [Memory Tiering over NVMe](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-resource-management/memory-tiering-over-nvme.html)
+> (requirements) and
+> [Capacity Planning Considerations](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-resource-management/memory-tiering-over-nvme/capacity-planning-considerations.html).
+> The official P&P workbook has no Memory Tiering fields. TechDocs-sourced —
+> not yet field-verified in this repo.
 
 ## Network
 
