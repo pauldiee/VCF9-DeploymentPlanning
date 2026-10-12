@@ -103,7 +103,43 @@ The IP/VLAN sheets hand off in a fixed order:
 | vSAN-OSA cache    | All-flash, ~1.2 TB raw per host, two disk groups (~600 GB cache/group)        | Skip if vSAN-ESA / NFS / FC. 32 GB host RAM needed to support the max disk groups |
 | vSAN-OSA capacity | All-flash, ~12.5 TB raw per host, two disk groups (~6.25 TB/group)            | Skip if vSAN-ESA / NFS / FC                            |
 | vSAN-ESA          | ~12.5 TB raw per host, e.g. 4× 3.2 TB NVMe SSDs                               | Recommended for new builds                             |
-| NICs              | Min 1× 10 GbE + 1× 1 GbE BMC; 25 GbE **recommended** for vSAN-ESA             | Plan **2× pNICs** as the normal route — the Installer's vDS profiles assume it (Default profile = one NSX-enabled vDS for **all** traffic, 2 uplinks, `vmnic0`/`vmnic1`; the custom switch configuration also supports **VDS LAG** uplinks). Hosts *can* run [a single pNIC](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html), but single-NIC bring-up is **API-only** (JSON spec) per the workbook |
+| NICs              | Min 1× 10 GbE + 1× 1 GbE BMC; 25 GbE **recommended** for vSAN-ESA             | Plan **2× pNICs** as the normal route — the Installer's vDS profiles assume it (Default profile = one NSX-enabled vDS for **all** traffic, 2 uplinks, `vmnic0`/`vmnic1`; the custom switch configuration also supports **VDS LAG** uplinks). Hosts *can* run [a single pNIC](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html), but single-NIC bring-up is **API-only** (JSON spec) per the workbook. See the single-uplink note below |
+
+> **Single uplink, redundancy from the fabric (e.g. Cisco UCS fabric
+> failover).** If each host gets one vNIC and the fabric fails it over (UCS
+> fabric failover, or similar on other converged / blade platforms), ESX still
+> sees **one** pNIC. Broadcom supports that
+> ([Commission Hosts](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html):
+> *"Hosts can have a single physical NIC or multiple physical NICs"*), but plan for these:
+>
+> - **API-only bring-up.** The workbook says *"Single NIC is supported with API
+>   Only"*. Build the JSON spec from the start. The Installer wizard's vDS
+>   profiles expect two uplinks.
+> - **No teaming at the host.** The vDS and the NSX host TEP have a single
+>   uplink, so failover happens below ESX, where vCenter and NSX can't see it.
+>   The fabric must detect *upstream* failures as well. On UCS, make sure the
+>   vNIC's network control policy takes the vNIC link down when the fabric
+>   interconnect loses its uplinks (*Action on Uplink Fail = Link Down*).
+>   Otherwise traffic can be black-holed while the host still sees a link up.
+>   That's a fabric design check: VCF does not validate it.
+> - **vSphere HA warns about management network redundancy.** Each host shows
+>   a "no management network redundancy" configuration issue. Accept it, or
+>   suppress it with the HA advanced option `das.ignoreRedundantNetWarning =
+>   true`.
+> - **NFS principal storage is fragile on one pNIC.** Pre-validation can fail
+>   a working single-NIC NFS setup
+>   ([KB 441194](https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html)),
+>   and the Installer can leave the NFS VMkernel stranded on `vSwitch0`. See
+>   [NFS v3](#nfs-v3-only-if-in-scope). vSAN is the easier pairing.
+> - **Later hosts must match.** Workload-domain and expansion hosts need the
+>   same NIC layout. Extra vmnics on a host are unusable
+>   ([KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)).
+>
+> **Recommendation:** if the fabric can present **two** vNICs per host (on UCS:
+> one pinned to fabric A and one to fabric B, *without* fabric failover), use
+> them. You get the standard 2-pNIC layout, the Installer wizard and default
+> profiles work, the HA warning goes away, and failover happens in ESX, where
+> vCenter and NSX can see it.
 
 > **Two easy-to-miss gate checks:** disks intended for vSAN must have **no
 > existing partitions** (the workbook repeats this on every storage row — a

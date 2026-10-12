@@ -1,5 +1,21 @@
 # Changelog
 
+## v5.6.7 — 2026-10-12
+- **`prerequisites.md`: single-uplink caveats (#386).** New note under the
+  management-domain hardware table for hosts with one pNIC whose redundancy
+  comes from the fabric (e.g. Cisco UCS fabric failover). It covers: bring-up
+  is API-only (workbook: *"Single NIC is supported with API Only"*); there's no
+  teaming at the host, so failover is invisible to vCenter and NSX, and the
+  fabric must also take the vNIC down on upstream uplink loss; the vSphere HA
+  management-redundancy warning (`das.ignoreRedundantNetWarning`); NFS
+  fragility on one pNIC
+  ([KB 441194](https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html));
+  later hosts must match the NIC layout
+  ([KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)).
+  Recommendation: two vNICs, one per fabric, without fabric failover. Source
+  for support:
+  [Commission Hosts (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html).
+
 ## v5.6.6 — 2026-10-09
 - **New build guide: Memory Tiering over NVMe (#385).**
   [`docs/28-memory-tiering.md`](docs/28-memory-tiering.md) covers using a
