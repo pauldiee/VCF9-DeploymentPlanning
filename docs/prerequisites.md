@@ -119,13 +119,22 @@ The IP/VLAN sheets hand off in a fixed order:
 >   uplink, so failover happens below ESX, where vCenter and NSX can't see it.
 >   The fabric must detect *upstream* failures as well. On UCS, make sure the
 >   vNIC's network control policy takes the vNIC link down when the fabric
->   interconnect loses its uplinks (*Action on Uplink Fail = Link Down*).
->   Otherwise traffic can be black-holed while the host still sees a link up.
->   That's a fabric design check: VCF does not validate it.
+>   interconnect loses its uplinks (*Action on Uplink Fail = Link Down*, the
+>   UCS default; don't change it to *Warning*). With *Link Down*, *"the vNIC
+>   will be instructed to go into a down state when its corresponding Uplink
+>   (logical or physical) goes down"*. With *Warning*, *"traffic could become
+>   blackholed"* while the host still sees a link up
+>   ([Cisco: HyperFlex and the Network Control Policy](https://www.cisco.com/c/en/us/support/docs/hyperconverged-infrastructure/hyperflex-hx-data-platform/215030-hyperflex-and-the-network-control-policy.html),
+>   2019; it is written for HyperFlex, but the network control policy is the
+>   generic UCS one). That's a fabric design check: VCF does not validate it.
 > - **vSphere HA warns about management network redundancy.** Each host shows
->   a "no management network redundancy" configuration issue. Accept it, or
->   suppress it with the HA advanced option `das.ignoreRedundantNetWarning =
->   true`.
+>   `Host <xxx> currently has no management network redundancy`. Broadcom
+>   says it *"can be safely ignored"*. To suppress it, *"set the VMware HA
+>   advanced option das.ignoreRedundantNetWarning to true and reconfigure
+>   VMware HA on that host"*
+>   ([KB 317612](https://knowledge.broadcom.com/external/article/317612/network-redundancy-message-when-configur.html)).
+>   The KB's click-paths are from older vSphere clients; only the option name
+>   carries over.
 > - **NFS principal storage is fragile on one pNIC.** Pre-validation can fail
 >   a working single-NIC NFS setup
 >   ([KB 441194](https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html)),
