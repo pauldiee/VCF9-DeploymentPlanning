@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.6.8 — 2026-10-12
+- **`prerequisites.md`: citations for the single-uplink note (#386).** The
+  UCS *Action on Uplink Fail = Link Down* line now quotes
+  [Cisco: HyperFlex and the Network Control Policy](https://www.cisco.com/c/en/us/support/docs/hyperconverged-infrastructure/hyperflex-hx-data-platform/215030-hyperflex-and-the-network-control-policy.html):
+  *Link Down* is the default, and *Warning* risks black-holed traffic. The
+  vSphere HA line now quotes
+  [KB 317612](https://knowledge.broadcom.com/external/article/317612/network-redundancy-message-when-configur.html)
+  for the warning text and `das.ignoreRedundantNetWarning`. The KB's
+  click-paths are from older vSphere clients, and the note says so.
+
 ## v5.6.7 — 2026-10-12
 - **`prerequisites.md`: single-uplink caveats (#386).** New note under the
   management-domain hardware table for hosts with one pNIC whose redundancy
