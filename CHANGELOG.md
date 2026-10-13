@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.7.0 — 2026-10-13
+- **Version Overview: catch the 9.1.1.0100 patch wave (#389).** The
+  2026-10-12 patches (vCenter, ESXi, NSX, the VCF Operations components,
+  VCF Automation, Fleet/SDDC Lifecycle and more) weren't on the page yet.
+  Two causes:
+  - **Late scheduled runs.** The daily scrape is set for 06:17 UTC, but
+    GitHub has been starting it at 12:30–15:30 UTC. Yesterday's run finished
+    before the patch pages went up. The workflow now also runs at 18:17 UTC.
+  - **NSX parse miss.** The
+    [NSX 9.1.1.0100 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/nsx/nsx-9-1-1-0100-release-notes.html)
+    header has no `Build` word (`NSX 9.1.1.0100 | 12 OCT 2026 | 25762940`).
+    The scraper now also accepts a bare 8-digit build there.
+  Data refreshed in the same change.
+
 ## v5.6.9 — 2026-10-13
 - **New build guide: single-pNIC builds (#387).**
   [`docs/29-single-pnic-build.md`](docs/29-single-pnic-build.md) is the
