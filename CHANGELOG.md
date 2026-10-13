@@ -1,5 +1,28 @@
 # Changelog
 
+## v5.7.3 — 2026-10-13
+- **Version Overview: builds checked against the VCF Download Tool depot
+  listing (#391).** A depot listing for the 9.1.1.0100 wave matched the
+  site build for build, except for:
+  - **Real-Time Metrics.** The
+    [0100 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vcf-operations/9100100/real-time-metrics-9-1-1-0100-release-notes.html)
+    print 25801571, which is the Metrics Store build. Since 9.1.0.0200 the
+    Store has shipped with the same build as VCF Services Runtime (see the
+    [9.1.1.0 BOM](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html));
+    at 9.1.0 GA it shared the Real-Time Metrics build instead.
+    The depot ships Real-Time Metrics as **25794546**.
+  - **Real-Time Metrics Store.** It was patched to 9.1.1.0100 (build
+    25801571) without release notes of its own, so TechDocs only had its
+    GA build.
+  - **Cloud Proxy and License Server** are also in the depot at 9.1.1.0100.
+    They're left off the page on purpose: they're part of VCF Operations
+    and get patched with it, so the VCF Operations row already covers them.
+  - A new `depotVerified` entry in the component list records the depot
+    build. It applies only while TechDocs still shows the exact value it was
+    written for, so the next patch replaces it automatically. Rows that use
+    it get a ‡ marker and a footnote.
+  Data refreshed in the same change.
+
 ## v5.7.2 — 2026-10-13
 - **Version Overview: VCF Operations 9.1.1 was stuck at GA (#390).** The
   9.1.1 leaf is spelled `vcf-operations-9-1-1-0100-…` with a dash, while

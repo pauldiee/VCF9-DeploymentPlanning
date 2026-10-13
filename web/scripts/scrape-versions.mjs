@@ -33,7 +33,8 @@
 //         #187 (walk ALL sub-indexes; VSP/Identity Broker/Telemetry nested-with-GA-fallback; +3 Ops components),
 //         #214 (knownBadRender), #230 (vCenter off the KB), #258 (License Hub), #265 (per-minor lines),
 //         #370 (VCF Download Tool), #389 (leaf header without the "Build" word),
-//         #390 (per-line index renames; vSAN Witness; PowerCLI / VCF SDK from package feeds)
+//         #390 (per-line index renames; vSAN Witness; PowerCLI / VCF SDK from package feeds),
+//         #391 (depotVerified: builds reconciled against the VCF Download Tool depot listing)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -96,6 +97,7 @@ const RELEASE_NOTES = `${TD}.html`;
 //               see normBom()) -- used to read its GA build when a line has no patch tree yet,
 //               or when it has shipped no patch leaf.
 //   knownBadRender: see extractLeafBuild() (#214).
+//   depotVerified: see applyDepotVerified() (#391).
 const COMPONENTS = [
   // vCenter reads TechDocs, not KB 326316, since #230 (the KB lagged a security patch by a day).
   { key: 'vcenter', name: 'vCenter Server', category: 'Core',
@@ -136,12 +138,22 @@ const COMPONENTS = [
   { key: 'vcf-ops-log-management', name: 'Log Management', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'log-management', bomName: 'Log management' },
   // Broadcom's leaf slug misspells "metrics" as "mertics"; tolerate both.
+  // The 9.1.1.0100 RTM leaf prints the Metrics Store build (25801571) under "Real-Time Metrics";
+  // the depot ships RTM as 25794546 (#391). Since 9.1.0.0200 the Store has carried the VCF
+  // Services Runtime build (0200: both 25555874; 9.1.1.0 BOM: both 25714471; 0100: both 25801571;
+  // at 9.1.0 GA it shared RTM's 25346020 instead) and it has no 0100 leaf of its own.
   { key: 'vcf-ops-real-time-metrics', name: 'Real-Time Metrics', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'real-time-me(?:rt|tr)ics',
-    bomName: 'Real-time metrics' },
+    bomName: 'Real-time metrics',
+    depotVerified: [{ line: '9.1.1', when: { version: '9.1.1.0100', build: '25801571' },
+      set: { build: '25794546' }, verified: '2026-10-13',
+      note: 'The release notes print the Real-Time Metrics Store build for this component' }] },
   { key: 'vcf-ops-real-time-metrics-store', name: 'Real-Time Metrics Store', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'real-time-me(?:rt|tr)ics-store',
-    bomName: 'Real-time metrics store' },
+    bomName: 'Real-time metrics store',
+    depotVerified: [{ line: '9.1.1', when: { version: '9.1.1.0', build: '25714471' },
+      set: { version: '9.1.1.0100', build: '25801571', releaseDate: '2026-10-12' }, verified: '2026-10-13',
+      note: 'Patched in the 9.1.1.0100 wave without release notes of its own' }] },
 
   // Leaf slug is dashless at GA/9.1.0 ("vcfautomation-...") but dashed on its first 9.1.1 patch
   // ("vcf-automation-9-1-1-0100-..."); tolerate both (#353, same family of inconsistency as the
@@ -184,6 +196,9 @@ const COMPONENTS = [
     bomName: 'VCF services runtime' },
   { key: 'telemetry', name: 'Telemetry', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'telemetry', bomName: 'Telemetry' },
+  // Cloud Proxy + License Server are deliberately NOT rows (#391): they are part of VCF Operations
+  // and move up with it (depot 9.1.1.0100: VCF Ops 25795063, Cloud proxy 25795064, License server
+  // 25795080), so the VCF Operations row already stands for them.
   { key: 'identity-broker', name: 'Identity Broker', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'identity-broker', bomName: 'Identity broker' },
 ];
@@ -344,6 +359,23 @@ function extractBomBuild(html, c, line) {
   return null;
 }
 
+// Builds reconciled by a human against the VCF Download Tool depot listing (#391), for
+// components whose TechDocs value is wrong (a leaf printing a sibling's build) or missing (patched
+// with no leaf, so only the BOM's GA build is readable). Applied ONLY while the scrape returns
+// exactly the recorded `when` (version + build) for that line; as soon as Broadcom publishes
+// anything newer, the entry stops matching and the scraped value wins again -- no stale override.
+function applyDepotVerified(r, c, line) {
+  const hit = (c.depotVerified || []).find((d) =>
+    d.line === line.v && d.when.version === r.version && d.when.build === r.build);
+  if (!hit) return r;
+  return {
+    ...r, version: hit.set.version ?? r.version, build: hit.set.build,
+    releaseDate: hit.set.releaseDate ?? r.releaseDate, patched: true,
+    reconciled: { scraped: `${r.version} / ${r.build}`, verified: hit.verified, note: hit.note,
+      source: 'VCF Download Tool depot listing' },
+  };
+}
+
 // Walk a line's patch tree for one component. Returns null (not throw) when the tree is
 // reachable but carries no leaf for this component yet -- the caller then falls back to the BOM.
 async function scrapeTechdocs(c, line) {
@@ -475,11 +507,13 @@ async function main() {
         let r = line.patch ? await scrapeTechdocs(c, line) : null;
         if (!r && bomHtml) r = extractBomBuild(bomHtml, c, line);
         if (!r) throw new Error(line.patch ? 'no patch leaf and not found in BOM' : 'not found in BOM');
+        r = applyDepotVerified(r, c, line);
         comps.push({
           ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null,
           sourceUrl: r.sourceUrl, patched: r.patched ?? true, ...(r.pinned ? { pinned: r.pinned } : {}),
+          ...(r.reconciled ? { reconciled: r.reconciled } : {}),
         });
-        const tag = r.pinned ? 'PIN ' : r.patched === false ? 'GA  ' : 'OK  ';
+        const tag = r.pinned ? 'PIN ' : r.reconciled ? 'DEPO' : r.patched === false ? 'GA  ' : 'OK  ';
         console.log(`${tag} ${line.v}  ${c.key.padEnd(20)} ${r.version}  Build ${r.build}` +
           (r.pinned ? `  (upstream renders "${r.pinned.raw}"; verified ${r.pinned.verified})` : ''));
       } catch (err) {
