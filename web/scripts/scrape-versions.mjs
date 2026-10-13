@@ -32,7 +32,7 @@
 // Issues: #179 (page), #180 (VCF Operations nodes), #181 (optional add-ons), #184 (GA release dates),
 //         #187 (walk ALL sub-indexes; VSP/Identity Broker/Telemetry nested-with-GA-fallback; +3 Ops components),
 //         #214 (knownBadRender), #230 (vCenter off the KB), #258 (License Hub), #265 (per-minor lines),
-//         #370 (VCF Download Tool)
+//         #370 (VCF Download Tool), #389 (leaf header without the "Build" word)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -264,10 +264,13 @@ function isoDate(s) {
 // when the page renders EXACTLY the recorded malformed string for the recorded version.
 function extractLeafBuild(html, c) {
   const text = plain(html);
-  const m = text.match(/(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*Build\s*(\d+)/i);
+  // Header row is "<version> | <date> | Build <n>", but some leaves drop the "Build" word
+  // (NSX 9.1.1.0100: "NSX 9.1.1.0100 | 12 OCT 2026 | 25762940", #389). Without the word,
+  // accept only a bare 8-digit number so an unrelated "x.y.z.wwww | ... | n" can't match.
+  const m = text.match(/(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*(?:Build\s*(\d+)|(\d{8})(?!\d))/i);
   if (!m) return null;
   const version = m[1].trim();
-  const build = m[3].trim();
+  const build = (m[3] ?? m[4]).trim();
   if (!/^\d{8}$/.test(build)) {
     const kbr = c?.knownBadRender;
     if (kbr && kbr.raw === build && kbr.version === version) {
