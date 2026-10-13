@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.7.4 — 2026-10-13
+- **docs/26: adding the licensing privileges in the vSphere Client
+  (#392).** Before this, adding `Global.Licenses` and Certificate
+  Management → Create/Delete (below Admins priv) to an *existing* role was
+  documented as PowerCLI only (`Set-VIRole`). A new subsection,
+  [vSphere Client — add the licensing privileges to an existing role](docs/26-vcf-operations-vvf-vcenter.md#vsphere-client--add-the-licensing-privileges-to-an-existing-role),
+  gives the click-path: Administration → Access Control → Roles → Edit. It
+  also covers the built-in-role catch, the LicenseService.Administrators
+  group requirement, and the Activate Management step.
+
 ## v5.7.3 — 2026-10-13
 - **Version Overview: builds checked against the VCF Download Tool depot
   listing (#391).** A depot listing for the 9.1.1.0100 wave matched the
