@@ -57,6 +57,7 @@ sidebar mirrors these bands.
 | `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
 | `docs/22-stretch-execution.md`      | Stretch execution runbook — manual steps (AZ2 hosts, witness, AZ2 network pool) vs what the single stretch API call does for you, for management domain and workload domain |
 | `docs/28-memory-tiering.md`        | Build guide for Memory Tiering over NVMe — fit check, NVMe device selection and sizing, keeping the device out of vSAN, enabling per cluster (Configuration Profiles) or host (`esxcli memtier`), mirroring, encryption, monitoring, failure behaviour |
+| `docs/29-single-pnic-build.md`     | Build guide for single-pNIC hosts (e.g. fabric-redundant UCS vNICs) — when to use it, the conflicting Broadcom sources, host/fabric prep, the one-vDS / one-uplink bring-up JSON spec, validation snags (NFS), HA warning, fabric failover test, and the API fragments for later workload domains, clusters and expansions |
 
 **Network & security services** — License Hub first, it licenses both Avi and vDefend:
 

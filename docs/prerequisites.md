@@ -136,8 +136,8 @@ The IP/VLAN sheets hand off in a fixed order:
 >   The KB's click-paths are from older vSphere clients; only the option name
 >   carries over.
 > - **NFS principal storage is fragile on one pNIC.** Pre-validation can fail
->   a working single-NIC NFS setup
->   ([KB 441194](https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html)),
+>   a working single-NIC NFS setup (KB 441194, since withdrawn by Broadcom;
+>   [archived copy](http://web.archive.org/web/20260611100122/https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html)),
 >   and the Installer can leave the NFS VMkernel stranded on `vSwitch0`. See
 >   [NFS v3](#nfs-v3-only-if-in-scope). vSAN is the easier pairing.
 > - **Later hosts must match.** Workload-domain and expansion hosts need the
@@ -149,6 +149,10 @@ The IP/VLAN sheets hand off in a fixed order:
 > them. You get the standard 2-pNIC layout, the Installer wizard and default
 > profiles work, the HA warning goes away, and failover happens in ESX, where
 > vCenter and NSX can see it.
+>
+> **Going single-pNIC anyway?** The step-by-step build (JSON spec, validation
+> snags, post-bring-up, later hosts) is in
+> [`29-single-pnic-build.md`](29-single-pnic-build.md).
 
 > **Two easy-to-miss gate checks:** disks intended for vSAN must have **no
 > existing partitions** (the workbook repeats this on every storage row — a
