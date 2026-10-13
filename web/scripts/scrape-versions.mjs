@@ -195,19 +195,9 @@ const COMPONENTS = [
     bomName: 'VCF services runtime' },
   { key: 'telemetry', name: 'Telemetry', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'telemetry', bomName: 'Telemetry' },
-  // Cloud Proxy + License Server (#391): deployed at bring-up, patched on the wave cadence, but
-  // with no patch leaf so far (BOM only). The leaf slugs are guesses kept for when Broadcom adds
-  // one; until then the line's BOM build is read and depotVerified carries the depot build.
-  { key: 'cloud-proxy', name: 'Cloud Proxy', category: 'Management',
-    indexPath: 'vcf-operations.html', nested: true, leafSlug: 'cloud-proxy', bomName: 'Cloud proxy',
-    depotVerified: [{ line: '9.1.1', when: { version: '9.1.1.0', build: '25679891' },
-      set: { version: '9.1.1.0100', build: '25795064', releaseDate: '2026-10-12' }, verified: '2026-10-13',
-      note: 'Patched in the 9.1.1.0100 wave without release notes of its own' }] },
-  { key: 'license-server', name: 'License Server', category: 'Management',
-    indexPath: 'vcf-operations.html', nested: true, leafSlug: 'license-server', bomName: 'License server',
-    depotVerified: [{ line: '9.1.1', when: { version: '9.1.1.0', build: '25679819' },
-      set: { version: '9.1.1.0100', build: '25795080', releaseDate: '2026-10-12' }, verified: '2026-10-13',
-      note: 'Patched in the 9.1.1.0100 wave without release notes of its own' }] },
+  // Cloud Proxy + License Server are deliberately NOT rows (#391): they are part of VCF Operations
+  // and move up with it (depot 9.1.1.0100: VCF Ops 25795063, Cloud proxy 25795064, License server
+  // 25795080), so the VCF Operations row already stands for them.
   { key: 'identity-broker', name: 'Identity Broker', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'identity-broker', bomName: 'Identity broker' },
 ];

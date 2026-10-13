@@ -254,38 +254,6 @@
           "patched": true
         },
         {
-          "key": "cloud-proxy",
-          "name": "Cloud Proxy",
-          "category": "Management",
-          "version": "9.1.1.0100",
-          "build": "25795064",
-          "releaseDate": "2026-10-12",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
-          "patched": true,
-          "reconciled": {
-            "scraped": "9.1.1.0 / 25679891",
-            "verified": "2026-10-13",
-            "note": "Patched in the 9.1.1.0100 wave without release notes of its own",
-            "source": "VCF Download Tool depot listing"
-          }
-        },
-        {
-          "key": "license-server",
-          "name": "License Server",
-          "category": "Management",
-          "version": "9.1.1.0100",
-          "build": "25795080",
-          "releaseDate": "2026-10-12",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
-          "patched": true,
-          "reconciled": {
-            "scraped": "9.1.1.0 / 25679819",
-            "verified": "2026-10-13",
-            "note": "Patched in the 9.1.1.0100 wave without release notes of its own",
-            "source": "VCF Download Tool depot listing"
-          }
-        },
-        {
           "key": "identity-broker",
           "name": "Identity Broker",
           "category": "Management",
@@ -528,26 +496,6 @@
           "category": "Management",
           "version": "9.1.0.0",
           "build": "25181946",
-          "releaseDate": "2026-05-12",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
-          "patched": false
-        },
-        {
-          "key": "cloud-proxy",
-          "name": "Cloud Proxy",
-          "category": "Management",
-          "version": "9.1.0.0",
-          "build": "25346033",
-          "releaseDate": "2026-05-12",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
-          "patched": false
-        },
-        {
-          "key": "license-server",
-          "name": "License Server",
-          "category": "Management",
-          "version": "9.1.0.0",
-          "build": "25346031",
           "releaseDate": "2026-05-12",
           "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html",
           "patched": false

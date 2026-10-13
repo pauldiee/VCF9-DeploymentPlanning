@@ -10,10 +10,12 @@
     ships with the same build as VCF Services Runtime (see the
     [9.1.1.0 BOM](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html)).
     The depot ships Real-Time Metrics as **25794546**.
-  - **Real-Time Metrics Store, Cloud Proxy, License Server.** All three
-    were patched to 9.1.1.0100 without release notes of their own, so
-    TechDocs only has their GA builds. Cloud Proxy and License Server are
-    new rows.
+  - **Real-Time Metrics Store.** It was patched to 9.1.1.0100 (build
+    25801571) without release notes of its own, so TechDocs only had its
+    GA build.
+  - **Cloud Proxy and License Server** are also in the depot at 9.1.1.0100.
+    They're left off the page on purpose: they're part of VCF Operations
+    and get patched with it, so the VCF Operations row already covers them.
   - A new `depotVerified` entry in the component list records the depot
     build. It applies only while TechDocs still shows the exact value it was
     written for, so the next patch replaces it automatically. Rows that use
