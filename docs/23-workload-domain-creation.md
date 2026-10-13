@@ -142,11 +142,14 @@ and Supervisor if enabled.
 ## 5. Create the domain — API (LACP, no-cluster, or scripted)
 
 Needed instead of the wizard when: the domain needs **more than one vDS**,
-hosts have **more than two pNICs**, you want **LACP** uplink teaming, or
-you're building "Domain infrastructure only" (no cluster) for later
-expansion. The spec is `DomainCreationSpec`, submitted the same
-validate-then-PATCH pattern as the stretch runbook:
-`POST /v1/domains/validations` → `PUT /v1/domains`.
+hosts have **more than two pNICs** or **a single pNIC** (see
+[`29-single-pnic-build.md`](29-single-pnic-build.md)), you want **LACP**
+uplink teaming, or you're building "Domain infrastructure only" (no cluster)
+for later expansion. The spec is `DomainCreationSpec`, validated first and
+then submitted, like the stretch runbook (which PATCHes an existing cluster;
+domain creation POSTs a new domain):
+`POST /v1/domains/validations` → `POST /v1/domains`
+([SDDC Manager API 9.1.1 — Domains](https://developer.broadcom.com/xapis/sddc-manager-api/9.1.1/domains/)).
 
 ### Building the JSON by hand
 

@@ -1,5 +1,46 @@
 # Changelog
 
+## v5.6.9 — 2026-10-13
+- **New build guide: single-pNIC builds (#387).**
+  [`docs/29-single-pnic-build.md`](docs/29-single-pnic-build.md) is the
+  step-by-step companion to the `prerequisites.md` single-uplink note (#386).
+  It has three worked layouts, each with its bring-up `dvsSpecs`:
+  A, management (`vmk0` + appliance VMs) on a single-uplink vDS with
+  vMotion/vSAN/NSX on a dual-uplink vDS; B, management-only single uplink
+  with NFS on its own vDS; C, the whole host on one pNIC. It also covers a
+  dated table of the Broadcom
+  sources, which disagree (TechDocs
+  [Commission Hosts](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html)
+  and the workbook support it API-only;
+  [KB 441799](https://knowledge.broadcom.com/external/article/441799) says
+  two uplinks are the minimum but cites Cloud Builder and a 5.x spec shape;
+  KB 441194 has been withdrawn); host and fabric prep; the bring-up JSON with
+  one vDS and one uplink (`vmnicsToUplinks`, `FAILOVER_ORDER`,
+  `failover_explicit`, checked against the
+  [VCF Installer API 9.1.1](https://developer.broadcom.com/xapis/vcf-installer-api/9.1.1/data-structures/DvsSpec/)
+  schemas); validation snags (KB 441799, the vMotion/vSAN connectivity check
+  in [KB 437248](https://knowledge.broadcom.com/external/article/437248/91-vcf-installer-fails-on-vmotion-networ.html),
+  NFS); the vSphere HA redundancy warning, which only applies where HA's
+  network is single-uplink (with vSAN, HA uses the vSAN network:
+  [KB 313261](https://knowledge.broadcom.com/external/article?legacyId=2033250)); a
+  fabric failover test; and the
+  [SDDC Manager API 9.1.1](https://developer.broadcom.com/xapis/sddc-manager-api/9.1.1/data-structures/PortgroupSpec/)
+  fragments for later workload domains, clusters and expansions.
+  TechDocs-sourced, not yet lab- or field-verified. Added to the site nav
+  under *Build & expand*.
+- **`prerequisites.md`:** KB 441194 now returns 404, so the single-uplink
+  note links an
+  [archived copy](http://web.archive.org/web/20260611100122/https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html)
+  and says it was withdrawn. The note now also covers the management-only
+  single-uplink layout, not only the whole-host one, says when the HA warning
+  applies, and points to the new guide.
+- **`23-workload-domain-creation.md` §5: the create call is `POST /v1/domains`,
+  not `PUT` (#388).** It's also validate-then-POST, not validate-then-PATCH,
+  per the
+  [SDDC Manager API 9.1.1 Domains reference](https://developer.broadcom.com/xapis/sddc-manager-api/9.1.1/domains/).
+  The list of reasons to use the API instead of the wizard now includes
+  single-pNIC hosts, linked to the new guide.
+
 ## v5.6.8 — 2026-10-12
 - **`prerequisites.md`: citations for the single-uplink note (#386).** The
   UCS *Action on Uplink Fail = Link Down* line now quotes

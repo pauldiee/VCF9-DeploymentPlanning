@@ -157,6 +157,14 @@ export const NAV: NavItem[] = [
     icon: 'memory',
     blurb: 'Use a local NVMe device as a second memory tier: is it a fit, picking and sizing the drive, keeping it out of vSAN, enabling it per cluster or host, mirroring, encryption, monitoring and failure behaviour.',
   },
+  {
+    slug: '29-single-pnic-build',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Single-pNIC Builds',
+    icon: 'ethernet',
+    blurb: 'Management (or the whole host) on one fabric-redundant pNIC: three worked layouts with their API-only bring-up specs, validation snags, the HA warning, a fabric failover test, and matching later hosts.',
+  },
 
   // --- Reference: Network & security services ---------------------------------
   {
