@@ -45,11 +45,31 @@
           "key": "sddc-manager",
           "name": "SDDC Manager",
           "category": "Core",
-          "version": "9.1.1.0",
-          "build": "25713928",
-          "releaseDate": "2026-09-03",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
-          "patched": false
+          "version": "9.1.1.0200",
+          "build": "25801071",
+          "releaseDate": "2026-10-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/sddc-manager/sddc-manager-9-1-1-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vsan-esa-witness",
+          "name": "vSAN ESA Witness",
+          "category": "Core",
+          "version": "9.1.1.0100",
+          "build": "25784021",
+          "releaseDate": "2026-10-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vsan/vsan-9-1-1-0100-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vsan-osa-witness",
+          "name": "vSAN OSA Witness",
+          "category": "Core",
+          "version": "9.1.1.0100",
+          "build": "25783993",
+          "releaseDate": "2026-10-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vsan/vsan-9-1-1-0100-release-notes.html",
+          "patched": true
         },
         {
           "key": "vcf-operations",
@@ -195,11 +215,11 @@
           "key": "vcf-download-tool",
           "name": "VCF Download Tool",
           "category": "Management",
-          "version": "9.1.1.0",
-          "build": "25713929",
-          "releaseDate": "2026-09-03",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
-          "patched": false
+          "version": "9.1.1.0200",
+          "build": "25801073",
+          "releaseDate": "2026-10-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vcf-download-tool/vcf-download-tool-9-1-1-0200-release-notes.html",
+          "patched": true
         },
         {
           "key": "vsp",
@@ -276,6 +296,26 @@
           "build": "25570100",
           "releaseDate": "2026-07-13",
           "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vcf-installer/sddc-manager-9-1-0-0400-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vsan-esa-witness",
+          "name": "vSAN ESA Witness",
+          "category": "Core",
+          "version": "9.1.0.0200",
+          "build": "25558001",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsan/vsan-9-1-0-0200-release-notes.html",
+          "patched": true
+        },
+        {
+          "key": "vsan-osa-witness",
+          "name": "vSAN OSA Witness",
+          "category": "Core",
+          "version": "9.1.0.0200",
+          "build": "25558000",
+          "releaseDate": "2026-07-13",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsan/vsan-9-1-0-0200-release-notes.html",
           "patched": true
         },
         {
@@ -500,6 +540,26 @@
       "build": null,
       "releaseDate": null,
       "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes/release-notes-for-avi-load-balancer-version-32-1-3.html",
+      "patched": true
+    },
+    {
+      "key": "powercli",
+      "name": "VCF PowerCLI",
+      "category": "Tools",
+      "version": "9.1.1",
+      "build": "25718932",
+      "releaseDate": "2026-09-10",
+      "sourceUrl": "https://www.powershellgallery.com/packages/VCF.PowerCLI",
+      "patched": true
+    },
+    {
+      "key": "vcf-sdk-python",
+      "name": "VCF SDK (Python)",
+      "category": "Tools",
+      "version": "9.1.1.0",
+      "build": null,
+      "releaseDate": "2026-09-03",
+      "sourceUrl": "https://pypi.org/project/vcf-sdk/",
       "patched": true
     }
   ]
