@@ -75,11 +75,11 @@
           "key": "vcf-operations",
           "name": "VCF Operations",
           "category": "Operations",
-          "version": "9.1.1.0",
-          "build": "25679751",
-          "releaseDate": "2026-09-03",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html",
-          "patched": false
+          "version": "9.1.1.0100",
+          "build": "25795063",
+          "releaseDate": "2026-10-12",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vcf-operations/9100100/vcf-operations-9-1-1-0100-release-notes.html",
+          "patched": true
         },
         {
           "key": "vcf-ops-for-networks",
