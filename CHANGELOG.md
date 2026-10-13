@@ -24,6 +24,12 @@
   note links an
   [archived copy](http://web.archive.org/web/20260611100122/https://knowledge.broadcom.com/external/article/441194/vcf-91-deployment-fails-nfs-datastore-co.html)
   and says it was withdrawn. The note also points to the new guide.
+- **`23-workload-domain-creation.md` §5: the create call is `POST /v1/domains`,
+  not `PUT` (#388).** It's also validate-then-POST, not validate-then-PATCH,
+  per the
+  [SDDC Manager API 9.1.1 Domains reference](https://developer.broadcom.com/xapis/sddc-manager-api/9.1.1/domains/).
+  The list of reasons to use the API instead of the wizard now includes
+  single-pNIC hosts, linked to the new guide.
 
 ## v5.6.8 — 2026-10-12
 - **`prerequisites.md`: citations for the single-uplink note (#386).** The
