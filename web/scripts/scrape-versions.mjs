@@ -139,8 +139,9 @@ const COMPONENTS = [
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'log-management', bomName: 'Log management' },
   // Broadcom's leaf slug misspells "metrics" as "mertics"; tolerate both.
   // The 9.1.1.0100 RTM leaf prints the Metrics Store build (25801571) under "Real-Time Metrics";
-  // the depot ships RTM as 25794546 (#391). The Store always carries the VCF Services Runtime
-  // build (9.1.1.0 BOM: both 25714471; 0100: both 25801571) and has no 0100 leaf of its own.
+  // the depot ships RTM as 25794546 (#391). Since 9.1.0.0200 the Store has carried the VCF
+  // Services Runtime build (0200: both 25555874; 9.1.1.0 BOM: both 25714471; 0100: both 25801571;
+  // at 9.1.0 GA it shared RTM's 25346020 instead) and it has no 0100 leaf of its own.
   { key: 'vcf-ops-real-time-metrics', name: 'Real-Time Metrics', category: 'Management',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'real-time-me(?:rt|tr)ics',
     bomName: 'Real-time metrics',
