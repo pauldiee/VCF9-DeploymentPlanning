@@ -106,17 +106,22 @@ The IP/VLAN sheets hand off in a fixed order:
 | NICs              | Min 1× 10 GbE + 1× 1 GbE BMC; 25 GbE **recommended** for vSAN-ESA             | Plan **2× pNICs** as the normal route — the Installer's vDS profiles assume it (Default profile = one NSX-enabled vDS for **all** traffic, 2 uplinks, `vmnic0`/`vmnic1`; the custom switch configuration also supports **VDS LAG** uplinks). Hosts *can* run [a single pNIC](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html), but single-NIC bring-up is **API-only** (JSON spec) per the workbook. See the single-uplink note below |
 
 > **Single uplink, redundancy from the fabric (e.g. Cisco UCS fabric
-> failover).** If each host gets one vNIC and the fabric fails it over (UCS
-> fabric failover, or similar on other converged / blade platforms), ESX still
-> sees **one** pNIC. Broadcom supports that
+> failover).** If a host gets one vNIC and the fabric fails it over (UCS
+> fabric failover, or similar on other converged / blade platforms), ESX
+> sees **one** pNIC on that path. Usually it's just the management vNIC
+> (`vmk0`), with everything else on dual vNICs. Sometimes it's the whole
+> host. Broadcom supports both
 > ([Commission Hosts](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html):
-> *"Hosts can have a single physical NIC or multiple physical NICs"*), but plan for these:
+> *"Hosts can have a single physical NIC or multiple physical NICs. For hosts
+> with multiple physical NICs, only one can be connected to a standard
+> switch"*), but plan for these:
 >
 > - **API-only bring-up.** The workbook says *"Single NIC is supported with API
 >   Only"*. Build the JSON spec from the start. The Installer wizard's vDS
->   profiles expect two uplinks.
-> - **No teaming at the host.** The vDS and the NSX host TEP have a single
->   uplink, so failover happens below ESX, where vCenter and NSX can't see it.
+>   profiles expect two uplinks on every vDS.
+> - **No teaming at the host on that path.** The single-uplink vDS (and in
+>   the whole-host case, the NSX host TEP) has one uplink, so failover
+>   happens below ESX, where vCenter and NSX can't see it.
 >   The fabric must detect *upstream* failures as well. On UCS, make sure the
 >   vNIC's network control policy takes the vNIC link down when the fabric
 >   interconnect loses its uplinks (*Action on Uplink Fail = Link Down*, the
@@ -127,7 +132,12 @@ The IP/VLAN sheets hand off in a fixed order:
 >   ([Cisco: HyperFlex and the Network Control Policy](https://www.cisco.com/c/en/us/support/docs/hyperconverged-infrastructure/hyperflex-hx-data-platform/215030-hyperflex-and-the-network-control-policy.html),
 >   2019; it is written for HyperFlex, but the network control policy is the
 >   generic UCS one). That's a fabric design check: VCF does not validate it.
-> - **vSphere HA warns about management network redundancy.** Each host shows
+> - **vSphere HA may warn about management network redundancy.** With vSAN,
+>   HA uses the vSAN network
+>   ([KB 313261](https://knowledge.broadcom.com/external/article?legacyId=2033250)),
+>   so a single-uplink management vDS alone
+>   shouldn't trigger it; with NFS/FC, or vSAN on the single uplink, each host
+>   shows
 >   `Host <xxx> currently has no management network redundancy`. Broadcom
 >   says it *"can be safely ignored"*. To suppress it, *"set the VMware HA
 >   advanced option das.ignoreRedundantNetWarning to true and reconfigure
@@ -144,14 +154,15 @@ The IP/VLAN sheets hand off in a fixed order:
 >   same NIC layout. Extra vmnics on a host are unusable
 >   ([KB 442933](https://knowledge.broadcom.com/external/article/442933/steps-for-adding-new-host-to-workload-do.html)).
 >
-> **Recommendation:** if the fabric can present **two** vNICs per host (on UCS:
+> **Recommendation:** if the fabric can present **two** vNICs where you planned one (on UCS:
 > one pinned to fabric A and one to fabric B, *without* fabric failover), use
 > them. You get the standard 2-pNIC layout, the Installer wizard and default
 > profiles work, the HA warning goes away, and failover happens in ESX, where
 > vCenter and NSX can see it.
 >
-> **Going single-pNIC anyway?** The step-by-step build (JSON spec, validation
-> snags, post-bring-up, later hosts) is in
+> **Going single-pNIC anyway?** The step-by-step build, with worked layouts
+> (management-only and whole-host), JSON specs, validation snags,
+> post-bring-up and later hosts, is in
 > [`29-single-pnic-build.md`](29-single-pnic-build.md).
 
 > **Two easy-to-miss gate checks:** disks intended for vSAN must have **no

@@ -161,9 +161,9 @@ export const NAV: NavItem[] = [
     slug: '29-single-pnic-build',
     step: 'Build & expand',
     band: 'Build & expand',
-    label: 'Single-pNIC Hosts',
+    label: 'Single-pNIC Builds',
     icon: 'ethernet',
-    blurb: 'Build on hosts with one physical NIC (e.g. fabric-redundant blades): the API-only bring-up spec with one vDS and one uplink, validation snags, the HA warning, a fabric failover test, and matching later hosts.',
+    blurb: 'Management (or the whole host) on one fabric-redundant pNIC: three worked layouts with their API-only bring-up specs, validation snags, the HA warning, a fabric failover test, and matching later hosts.',
   },
 
   // --- Reference: Network & security services ---------------------------------
