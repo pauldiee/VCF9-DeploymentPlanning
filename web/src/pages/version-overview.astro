@@ -13,6 +13,9 @@ const { _updated, _family, _sourceErrors, lines, addons } = data;
 // release notes render a malformed build string (#214). Current, not stale - so these are
 // footnoted, never folded into the "could not be read" warning above. Checked across all lines.
 const pinned = lines.flatMap((ln) => ln.components).filter((c) => c.pinned);
+// Rows whose build was reconciled against the VCF Download Tool depot listing (#391): TechDocs
+// prints the wrong build, or the component patched without release notes. Also current.
+const reconciled = lines.flatMap((ln) => ln.components.filter((c) => c.reconciled).map((c) => `${c.name} (${ln.v})`));
 
 // Group a component list by category, preserving manifest order within each group. Rows with a
 // `parent` (the VCF Operations sub-components, #180) render indented beneath their parent as a
@@ -100,6 +103,20 @@ const fmtDate = (iso) =>
     }
 
     {
+      reconciled.length > 0 && (
+        <p class="vo-note vo-note--pin">
+          <i class="fa-solid fa-circle-info" aria-hidden="true" />
+          <strong>&Dagger;</strong> {reconciled.length === 1 ? 'One build is' : `${reconciled.length} builds are`}{' '}
+          taken from the <strong>VCF Download Tool depot listing</strong>, because Broadcom&rsquo;s
+          release notes either print a different component&rsquo;s build or don&rsquo;t cover the
+          patch at all ({reconciled.join(', ')}). Hover the &Dagger; for what the release notes or
+          Bill of Materials show. The override applies only while TechDocs still shows that exact
+          value, so the next patch replaces it automatically.
+        </p>
+      )
+    }
+
+    {
       lineSections.map((ln) => (
         <>
           <h2 class="vo-line">VCF {ln.v}<span class="vo-line__meta">GA {fmtDate(ln.ga)}</span></h2>
@@ -140,6 +157,14 @@ const fmtDate = (iso) =>
                               title={`Broadcom's release notes render this build as "${c.pinned.raw}", which is malformed. Showing the verified build ${c.pinned.build} (checked ${c.pinned.verified}). ${c.pinned.note}`}
                             >
                               &dagger;
+                            </sup>
+                          )}
+                          {c.reconciled && (
+                            <sup
+                              class="vo-pin"
+                              title={`TechDocs shows ${c.reconciled.scraped}. ${c.reconciled.note}. Build verified against the ${c.reconciled.source} (${c.reconciled.verified}).`}
+                            >
+                              &Dagger;
                             </sup>
                           )}
                         </td>
