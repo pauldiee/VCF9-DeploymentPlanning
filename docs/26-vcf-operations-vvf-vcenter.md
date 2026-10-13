@@ -260,6 +260,28 @@ $root = (Get-Folder -Server $vc -NoRecursion).ExtensionData.MoRef
 $am.FetchUserPrivilegeOnEntities(@($root), 'svc-vcfops-vc01@vsphere.local').Privileges -contains 'Global.Licenses'
 ```
 
+### vSphere Client — add the licensing privileges to an existing role
+
+The click-path version of the `Set-VIRole` fix above, for when the role
+already exists without the licensing privileges:
+
+1. vSphere Client → **Administration** → **Access Control** → **Roles**.
+2. Select the VCF Operations role and click **Edit** (the pencil icon
+   above the role list).
+3. In the privilege categories, tick:
+   - **Global** → **Licenses** (`Global.Licenses`)
+   - **Certificate Management** → **Create/Delete (below Admins priv)**
+     (`CertificateManagement.Manage`). Leave **Create/Delete (Admins
+     priv)** unticked; it isn't needed (see the note above).
+4. **Save**.
+
+You can't edit a built-in role (Read-Only, for example). If your role is a
+clone of one, edit the clone. The role alone isn't enough: the account
+also needs
+[LicenseService.Administrators](#add-the-account-to-licenseserviceadministrators)
+membership. Then update the credentials in VCF Operations and use
+**Activate Management** (see [Field notes](#field-notes)).
+
 ## Step 2 — Create the service account
 
 **Use a local (SSO domain) account, not AD.** This matches how VCF itself
