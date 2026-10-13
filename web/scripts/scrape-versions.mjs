@@ -32,7 +32,8 @@
 // Issues: #179 (page), #180 (VCF Operations nodes), #181 (optional add-ons), #184 (GA release dates),
 //         #187 (walk ALL sub-indexes; VSP/Identity Broker/Telemetry nested-with-GA-fallback; +3 Ops components),
 //         #214 (knownBadRender), #230 (vCenter off the KB), #258 (License Hub), #265 (per-minor lines),
-//         #370 (VCF Download Tool), #389 (leaf header without the "Build" word)
+//         #370 (VCF Download Tool), #389 (leaf header without the "Build" word),
+//         #390 (per-line index renames; vSAN Witness; PowerCLI / VCF SDK from package feeds)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -77,7 +78,13 @@ const RELEASE_NOTES = `${TD}.html`;
 //
 // One entry per component that ships inside the VCF BOM and patches on the 9-1-N-NNNN cadence.
 //   indexPath:  path under a line's patch tree to the component's patch index
-//               (e.g. "vsphere/vcenter.html" -> "<line.patch>/vsphere/vcenter.html").
+//               (e.g. "vsphere/vcenter.html" -> "<line.patch>/vsphere/vcenter.html"). May be
+//               an array of candidates tried in order (first one that isn't a 404 wins):
+//               Broadcom renames indexes between lines (#390: 9.1.0 "vcf-installer.html" is
+//               9.1.1 "sddc-manager.html"; "vmware-download-tool.html" is "vcf-download-tool.html").
+//   leafLabel:  the product label in front of the version on the leaf's header, for leaves that
+//               carry several products (#390: the vSAN leaf lists vSAN, ESA Witness and OSA
+//               Witness, each with its own build). Without it the first header row is taken.
 //   leafSlug:   the release-notes filename stem. Built into a minor-parameterised regex
 //               "/<slug>-9-1-<minor>-(\d{4})-release-notes.html$". The slug may itself contain
 //               regex (the Real-Time Metrics leaf misspells "metrics" as "mertics" upstream, so
@@ -98,7 +105,14 @@ const COMPONENTS = [
   { key: 'nsx', name: 'NSX', category: 'Core',
     indexPath: 'nsx.html', leafSlug: 'nsx', bomName: 'NSX' },
   { key: 'sddc-manager', name: 'SDDC Manager', category: 'Core',
-    indexPath: 'vcf-installer.html', leafSlug: 'sddc-manager', bomName: 'SDDC Manager' },
+    indexPath: ['sddc-manager.html', 'vcf-installer.html'], leafSlug: 'sddc-manager', bomName: 'SDDC Manager' },
+  // vSAN (#390): the vSAN build is the ESX build (vSAN ships in ESX), so the rows worth tracking
+  // are the two witness appliances. Both are listed on the same vsan-9-1-Z-NNNN leaf, each with
+  // its own build, and each has its own BOM row.
+  { key: 'vsan-esa-witness', name: 'vSAN ESA Witness', category: 'Core',
+    indexPath: 'vsan.html', leafSlug: 'vsan', leafLabel: 'vSAN ESA Witness', bomName: 'vSAN ESA Witness' },
+  { key: 'vsan-osa-witness', name: 'vSAN OSA Witness', category: 'Core',
+    indexPath: 'vsan.html', leafSlug: 'vsan', leafLabel: 'vSAN OSA Witness', bomName: 'vSAN OSA Witness' },
 
   { key: 'vcf-operations', name: 'VCF Operations', category: 'Operations',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'vcfoperations', bomName: 'VCF Operations' },
@@ -155,7 +169,8 @@ const COMPONENTS = [
   // ("vmware-download-tool.html" -> "vcf-download-tool-9-1-Z-NNNN-release-notes.html") and its
   // own BOM row, so a line without a patch leaf yet falls back to its GA build.
   { key: 'vcf-download-tool', name: 'VCF Download Tool', category: 'Management',
-    indexPath: 'vmware-download-tool.html', leafSlug: 'vcf-download-tool', bomName: 'VCF download tool' },
+    indexPath: ['vcf-download-tool.html', 'vmware-download-tool.html'], leafSlug: 'vcf-download-tool',
+    bomName: 'VCF download tool' },
 
   // Management components (#187): live in the vcf-operations/<ver>/ tree, patch on their own
   // cadence but not on every Express Patch -- walk the tree, and if no leaf exists yet fall back
@@ -189,6 +204,15 @@ const ADDONS = [
     index: 'https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes.html',
     leaf: /release-notes-for-avi-load-balancer-version-(\d+)-(\d+)-(\d+)\.html$/i,
     versionRe: /Avi Load Balancer Version\s+(\d+\.\d+\.\d+)/i },
+
+  // Tools (#390): client-side tooling, not in the BOM or the TechDocs patch trees, and their
+  // release notes live on developer.broadcom.com (a JS-rendered SPA a bare fetch can't read).
+  // The package feeds are machine-readable and are what an admin installs from anyway.
+  // PowerCLI's gallery version is "<X.Y.Z>.<8-digit build>" (e.g. 9.1.1.25718932).
+  { key: 'powercli', name: 'VCF PowerCLI', category: 'Tools', strategy: 'psgallery', id: 'VCF.PowerCLI',
+    url: 'https://www.powershellgallery.com/packages/VCF.PowerCLI' },
+  { key: 'vcf-sdk-python', name: 'VCF SDK (Python)', category: 'Tools', strategy: 'pypi', id: 'vcf-sdk',
+    url: 'https://pypi.org/project/vcf-sdk/' },
 ];
 
 const UA = 'Mozilla/5.0 (compatible; VCF9-DeploymentPlanning version scraper; +https://github.com/pauldiee/VCF9-DeploymentPlanning)';
@@ -267,7 +291,9 @@ function extractLeafBuild(html, c) {
   // Header row is "<version> | <date> | Build <n>", but some leaves drop the "Build" word
   // (NSX 9.1.1.0100: "NSX 9.1.1.0100 | 12 OCT 2026 | 25762940", #389). Without the word,
   // accept only a bare 8-digit number so an unrelated "x.y.z.wwww | ... | n" can't match.
-  const m = text.match(/(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*(?:Build\s*(\d+)|(\d{8})(?!\d))/i);
+  const header = /(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*(?:Build\s*(\d+)|(\d{8})(?!\d))/.source;
+  const label = c?.leafLabel ? `${c.leafLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+` : '';
+  const m = text.match(new RegExp(label + header, 'i'));
   if (!m) return null;
   const version = m[1].trim();
   const build = (m[3] ?? m[4]).trim();
@@ -317,17 +343,22 @@ function extractBomBuild(html, c, line) {
 // Walk a line's patch tree for one component. Returns null (not throw) when the tree is
 // reachable but carries no leaf for this component yet -- the caller then falls back to the BOM.
 async function scrapeTechdocs(c, line) {
-  const index = `${line.patch}/${c.indexPath}`;
   const re = leafRe(c.leafSlug, line.z);
+  let index, indexHtml = null;
+  for (const p of [].concat(c.indexPath)) {
+    index = `${line.patch}/${p}`;
+    indexHtml = await fetchText(index).catch((err) => {
+      if (/^HTTP 404$/.test(String(err.message || err))) return null;
+      throw err;
+    });
+    if (indexHtml) break;
+  }
   // A fresh line's patch tree doesn't grow every component's sub-index at once -- Broadcom adds
   // one as that component first patches (#353: 9.1.1's tree opened with only vcf-operations.html
   // and vcf-automation.html, days before vsphere/esx.html existed). A 404 here means "no patch
   // tree for this component yet", the same as an empty sub-index list below -- fall back to BOM
-  // rather than surfacing it as a source error and freezing on the last-known value.
-  const indexHtml = await fetchText(index).catch((err) => {
-    if (/^HTTP 404$/.test(String(err.message || err))) return null;
-    throw err;
-  });
+  // rather than surfacing it as a source error and freezing on the last-known value. With
+  // several candidate paths (#390), only "all of them 404" means that.
   if (!indexHtml) return null;
   const subtreeDir = index.replace(/\.html$/i, '');
   const inSubtree = hrefs(indexHtml, index).filter((h) => h.startsWith(subtreeDir + '/'));
@@ -387,6 +418,33 @@ async function scrapeAvi(c) {
   return { version, build: null, releaseDate: null, sourceUrl: leaf.h };
 }
 
+// PowerShell Gallery (OData v2): the latest version of a module, and its publish date.
+async function scrapePsGallery(c) {
+  const feed = `https://www.powershellgallery.com/api/v2/FindPackagesById()?id='${c.id}'&$filter=IsLatestVersion`;
+  const xml = await fetchText(feed);
+  const v = xml.match(/<d:Version>([^<]+)<\/d:Version>/);
+  if (!v) throw new Error('no version in gallery feed');
+  const pub = xml.match(/<d:Published[^>]*>(\d{4}-\d{2}-\d{2})/);
+  const parts = v[1].trim().split('.');
+  const tail = parts[parts.length - 1];
+  // "9.1.1.25718932" -> version 9.1.1, build 25718932; anything else is shown whole, no build.
+  const hasBuild = parts.length === 4 && /^\d{8}$/.test(tail);
+  return { version: hasBuild ? parts.slice(0, 3).join('.') : v[1].trim(), build: hasBuild ? tail : null,
+    releaseDate: pub ? pub[1] : null, sourceUrl: c.url };
+}
+
+// PyPI JSON API: the latest release and its upload date. No build number is published.
+async function scrapePypi(c) {
+  const j = JSON.parse(await fetchText(`https://pypi.org/pypi/${c.id}/json`));
+  const version = j?.info?.version;
+  if (!version) throw new Error('no version in PyPI metadata');
+  const files = j.releases?.[version] || [];
+  const up = files[0]?.upload_time;
+  return { version, build: null, releaseDate: up ? up.slice(0, 10) : null, sourceUrl: c.url };
+}
+
+const ADDON_SCRAPERS = { page: scrapePage, avi: scrapeAvi, psgallery: scrapePsGallery, pypi: scrapePypi };
+
 function loadPrev() {
   try { return JSON.parse(readFileSync(OUT, 'utf8')); } catch { return { lines: [], addons: [] }; }
 }
@@ -439,7 +497,7 @@ async function main() {
   for (const c of ADDONS) {
     const base = { key: c.key, name: c.name, category: c.category };
     try {
-      const r = c.strategy === 'page' ? await scrapePage(c) : await scrapeAvi(c);
+      const r = await ADDON_SCRAPERS[c.strategy](c);
       addons.push({ ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null, sourceUrl: r.sourceUrl, patched: true });
       console.log(`OK   addon ${c.key.padEnd(20)} ${r.version}  Build ${r.build}`);
     } catch (err) {

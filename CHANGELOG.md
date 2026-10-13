@@ -1,5 +1,28 @@
 # Changelog
 
+## v5.7.1 — 2026-10-13
+- **Version Overview: missed 9.1.1.0200 patches, plus vSAN Witness and
+  Tools rows (#390).**
+  - **Renamed indexes in the 9.1.1 patch tree.** SDDC Manager's index is
+    `vcf-installer.html` in the 9.1.0 tree but `sddc-manager.html` in 9.1.1.
+    The VCF Download Tool index went from `vmware-download-tool.html` to
+    `vcf-download-tool.html`. The scraper got a 404 on both and fell back to
+    the 9.1.1.0 GA build. A component's `indexPath` can now list several
+    candidate paths. Both rows now show **9.1.1.0200**
+    ([SDDC Manager](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/sddc-manager/sddc-manager-9-1-1-0200-release-notes.html),
+    [VCF Download Tool](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vcf-download-tool/vcf-download-tool-9-1-1-0200-release-notes.html)).
+  - **vSAN ESA Witness / vSAN OSA Witness** rows added under Core, read
+    from the
+    [vSAN patch release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vsan/vsan-9-1-1-0100-release-notes.html).
+    vSAN itself has the ESX build because it ships inside ESX, so only the
+    witness appliances get rows of their own.
+  - **New Tools section:** VCF PowerCLI, read from the
+    [PowerShell Gallery](https://www.powershellgallery.com/packages/VCF.PowerCLI),
+    and the VCF SDK for Python, read from
+    [PyPI](https://pypi.org/project/vcf-sdk/). Their release notes are on
+    developer.broadcom.com, which a plain fetch can't read.
+  Data refreshed in the same change.
+
 ## v5.7.0 — 2026-10-13
 - **Version Overview: catch the 9.1.1.0100 patch wave (#389).** The
   2026-10-12 patches (vCenter, ESXi, NSX, the VCF Operations components,
