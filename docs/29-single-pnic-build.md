@@ -392,12 +392,74 @@ above):
 
 ## 6. Validation snags you may hit
 
-| Symptom | Applies to | What it is | What to do |
-| ------- | ---------- | ---------- | ---------- |
-| *"VCmanager Found less than two uplinks for the DVS"* | A, B, C | [KB 441799](https://knowledge.broadcom.com/external/article/441799)'s error, about the management vDS. The KB's fix (add a second vmnic) defeats the point, and the KB itself looks unreliable ([§2](#2-what-supported-means--the-sources-and-where-they-disagree)). | Don't add a phantom vmnic. Open a support case citing [Commission Hosts (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html) and the workbook's *"Single NIC is supported with API Only"*. If you can make the fabric present a second management vNIC instead, that removes the problem. |
-| *"Failed to validate connectivity of VMOTION network"* (or VSAN) | C | The connectivity check doesn't cope with a vmnic still in use by `vSwitch0`: *"if the active vmnic is already in use by the VSS(vSwitch0), then the validation will fail"* ([KB 437248](https://knowledge.broadcom.com/external/article/437248/91-vcf-installer-fails-on-vmotion-networ.html), 9.0 and 9.1). In C, vMotion and vSAN share `vmnic0`, which is on `vSwitch0` during validation. | First prove vMotion/vSAN connectivity by hand (`vmkping` with the right MTU). The KB's skip is `validation.disable.network.connectivity.check=true` in `/etc/vmware/vcf/domainmanager/application.properties` plus `systemctl restart domainmanager`. The KB words it for SDDC Manager; for bring-up the same file is on the Installer appliance. A and B don't hit this: their vMotion and vSAN vmnics are free during validation. |
-| NFS: *"NFS datastore mount failed on host <hostname>: An error occurred during host configuration"* at **NFS Datastore Configuration** | C with NFS (possibly B) | Withdrawn KB 441194 said the 9.1 check wrongly expects multiple pNICs. | First rule out the ordinary causes in [KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html): port group name, MTU on the standard switch, array export ACL. If NFS demonstrably works from every host (`vmkping` + mounted datastore) and the check still fails, raise it with Broadcom support. The withdrawn KB's workaround was `validation.disable.nfs.configuration.connectivity.check=true` in the same properties file, plus a `domainmanager` restart. Because Broadcom pulled the KB, only use it if support tells you to. |
-| NFS datastore drops **during** bring-up, after the uplink moves to the vDS | C with NFS | The Installer migrated `vmnic0` to the vDS but left the NFS VMkernel on `vSwitch0`, which now has no uplink. Documented on 9.0 by William Lam; not confirmed fixed in 9.1. | In vCenter, migrate the NFS VMkernel to the NFS port group on the vDS (*Migrate Networking* on the vDS), confirm the datastore is back, then **retry** the deployment in the Installer; it resumes where it stopped ([Lam](https://williamlam.com/2025/07/workaround-for-single-nic-using-nfs-storage-with-vcf-9-0.html)). |
+| Snag | Applies to |
+| ---- | ---------- |
+| [6.1 "Less than two uplinks for the DVS"](#61-less-than-two-uplinks-for-the-dvs) | A, B, C |
+| [6.2 vMotion / vSAN connectivity check fails](#62-vmotion--vsan-connectivity-check-fails) | C |
+| [6.3 NFS Datastore Configuration check fails](#63-nfs-datastore-configuration-check-fails) | C with NFS, possibly B |
+| [6.4 NFS datastore drops during bring-up](#64-nfs-datastore-drops-during-bring-up) | C with NFS |
+
+### 6.1 "Less than two uplinks for the DVS"
+
+- **Error:** *"VCmanager Found less than two uplinks for the DVS"*
+- **Applies to:** A, B, C (all three have a one-uplink management vDS).
+- **Cause:** [KB 441799](https://knowledge.broadcom.com/external/article/441799)
+  treats fewer than two pNICs on the management vDS as a minimum-requirement
+  violation. Its fix (add a second vmnic) defeats the point, and the KB
+  itself looks unreliable
+  ([§2](#2-what-supported-means--the-sources-and-where-they-disagree)).
+- **Fix:** don't add a phantom vmnic. Open a support case citing
+  [Commission Hosts (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/host-management/commission-hosts.html)
+  and the workbook's *"Single NIC is supported with API Only"*. If the
+  fabric can present a second management vNIC instead, that removes the
+  problem.
+
+### 6.2 vMotion / vSAN connectivity check fails
+
+- **Error:** *"Failed to validate connectivity of VMOTION network"* (or
+  VSAN).
+- **Applies to:** C. A and B don't hit it: their vMotion and vSAN vmnics are
+  unassigned during validation.
+- **Cause:** *"if the active vmnic is already in use by the VSS(vSwitch0),
+  then the validation will fail"*
+  ([KB 437248](https://knowledge.broadcom.com/external/article/437248/91-vcf-installer-fails-on-vmotion-networ.html),
+  9.0 and 9.1). In C, vMotion and vSAN share `vmnic0`, which is still on
+  `vSwitch0` during validation.
+- **Fix:** first prove vMotion/vSAN connectivity by hand (`vmkping` with the
+  right MTU). Then skip the check: add
+  `validation.disable.network.connectivity.check=true` to
+  `/etc/vmware/vcf/domainmanager/application.properties` and run
+  `systemctl restart domainmanager`. The KB words this for SDDC Manager; for
+  bring-up, the same file is on the Installer appliance.
+
+### 6.3 NFS Datastore Configuration check fails
+
+- **Error:** *"NFS datastore mount failed on host <hostname>: An error
+  occurred during host configuration"*
+- **Applies to:** C with NFS, possibly B.
+- **Cause:** withdrawn KB 441194 said the 9.1 check wrongly expects multiple
+  pNICs.
+- **Fix:** first rule out the ordinary causes in
+  [KB 446573](https://knowledge.broadcom.com/external/article/446573/vcf-installer-prevalidation-fails-at-nfs.html):
+  port group name, MTU on the standard switch, array export ACL. If NFS
+  demonstrably works from every host (`vmkping` + mounted datastore) and the
+  check still fails, raise it with Broadcom support. The withdrawn KB's
+  workaround was `validation.disable.nfs.configuration.connectivity.check=true`
+  in the same properties file, plus a `domainmanager` restart. Because
+  Broadcom pulled the KB, only use it if support tells you to.
+
+### 6.4 NFS datastore drops during bring-up
+
+- **Symptom:** the NFS datastore goes offline after the Installer moves the
+  uplink to the vDS.
+- **Applies to:** C with NFS.
+- **Cause:** the Installer migrated `vmnic0` to the vDS but left the NFS
+  VMkernel on `vSwitch0`, which now has no uplink. Documented on 9.0 by
+  William Lam; not confirmed fixed in 9.1.
+- **Fix:** in vCenter, migrate the NFS VMkernel to the NFS port group on the
+  vDS (*Migrate Networking* on the vDS), confirm the datastore is back, then
+  **retry** the deployment in the Installer. It resumes where it stopped
+  ([Lam](https://williamlam.com/2025/07/workaround-for-single-nic-using-nfs-storage-with-vcf-9-0.html)).
 
 ---
 
@@ -450,7 +512,7 @@ proves it.
   intended vDS and tunnels up (NSX Manager → **System** → **Fabric** →
   **Hosts**).
 - **`vSwitch0`** is gone or empty: no VMkernel left behind (C with NFS, see
-  [§6](#6-validation-snags-you-may-hit)).
+  [§6.4](#64-nfs-datastore-drops-during-bring-up)).
 
 ### 7.3 Test fabric failover before go-live
 
