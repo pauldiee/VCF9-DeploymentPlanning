@@ -166,13 +166,53 @@ Per the workbook, single NIC is *API Only*: you deploy with
 predefined vDS profiles put two uplinks on every vDS. This repo hasn't
 tested whether its custom switch configuration accepts a one-uplink vDS.
 
-Start from Broadcom's example spec, linked from
+> **You upload the whole deployment, not just the network part.** The JSON
+> spec replaces the **entire** wizard: vCenter, NSX Manager, SDDC Manager,
+> VCF Operations, VCF Management Services, the hosts, storage, DNS/NTP,
+> every network, and passwords. There is no way to run the wizard and swap
+> in only the networking. So the job is: get a **complete, working** spec
+> for your environment first, then edit **two blocks** for the single-pNIC
+> layout, and leave everything else alone:
+>
+> | Block | What you change |
+> | ----- | --------------- |
+> | `dvsSpecs` | Replace it entirely with your example's version ([§4.1](#41-example-a--management-on-one-pnic-vsan)–[§4.3](#43-example-c--whole-host-on-one-pnic)) |
+> | `networkSpecs[]` | Per entry, only `teamingPolicy`, `activeUplinks`, `standbyUplinks` ([§4.4](#44-networkspecs-teaming-per-network)); VLANs, subnets and IP ranges stay as they are |
+
+There are two ways to get the complete spec. Both end with the same edit.
+
+**Option 1: let the wizard write it (recommended).** You get a spec that
+already matches your environment, in the Installer's own format.
+
+1. Run the VCF Installer **deployment wizard** with your workbook values, as
+   for a normal build. On the vDS page, pick the profile closest to your
+   layout (or Custom). Its vmnic assignments don't matter, because you
+   replace `dvsSpecs` anyway.
+2. On the **Validate & Deploy** step, **download the JSON spec**. Don't
+   deploy.
+3. Click **Save and close**, then **Cancel Progress** on the Installer home
+   page.
+4. Edit `dvsSpecs` and `networkSpecs[]` as in the table above.
+5. Upload the edited file with **Deploy Using JSON Spec** ([§5](#5-deploy-from-the-json-spec)).
+
+Broadcom documents this download, edit and re-upload loop as a workaround
+in [KB 416114](https://knowledge.broadcom.com/external/article/416114/vcf-90-installer-validation-failed-with.html)
+(the click-path above is from that KB, written for the 9.0 Installer) and
+in the
+[VCF Installer 9.0 known issues](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/vmware-cloud-foundation-90-release-notes/component-specific/vcf-installer-90-known-issues.html).
+Check that the downloaded file has the passwords you expect. The spec
+TechDocs offers for download *after* a deployment *"does not include
+passwords"*. Any you leave out are auto-generated (the Installer warns
+*"Using auto-generated passwords where passwords were not provided"*).
+
+**Option 2: start from Broadcom's example.** Take the example spec linked
+from
 [Use a JSON Specification File to Deploy VMware Cloud Foundation or vSphere Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/use-a-json-specification-to-deploy-vmware-cloud-foundation-or-vmware-vsphere-foundation.html)
 ([example02](https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/dita/vmware/vcf/vcf-90/installation/resources/domainSpec-sfo-m01-example02.json),
-three vDSes with two vmnics each). Fill everything **except** networking from
-your workbook as usual. Then replace `dvsSpecs` with your example's version
-below, and set the teaming in each `networkSpecs[]` entry
-([§4.4](#44-networkspecs-teaming-per-network)).
+three vDSes with two vmnics each) and fill in **every** value from your
+workbook: FQDNs, IPs, VLANs, host thumbprints, passwords, sizes. Then make
+the same two edits. This gives more control, but every field is now yours
+to get right.
 
 Field names and enums are from the
 [VCF Installer API 9.1.1 reference](https://developer.broadcom.com/xapis/vcf-installer-api/9.1.1/data-structures/DvsSpec/)
