@@ -114,8 +114,12 @@ const COMPONENTS = [
   { key: 'vsan-osa-witness', name: 'vSAN OSA Witness', category: 'Core',
     indexPath: 'vsan.html', leafSlug: 'vsan', leafLabel: 'vSAN OSA Witness', bomName: 'vSAN OSA Witness' },
 
+  // Leaf slug is dashless for 9.1.0 ("vcfoperations-9-1-0-0400-...") but dashed for 9.1.1
+  // ("vcf-operations-9-1-1-0100-...") (#390, same split as VCF Automation in #353). Safe against
+  // the sibling leaves: leafRe needs the version straight after the slug, so
+  // "vcf-operations-orchestrator-9-1-1-..." can't match.
   { key: 'vcf-operations', name: 'VCF Operations', category: 'Operations',
-    indexPath: 'vcf-operations.html', nested: true, leafSlug: 'vcfoperations', bomName: 'VCF Operations' },
+    indexPath: 'vcf-operations.html', nested: true, leafSlug: 'vcf-?operations', bomName: 'VCF Operations' },
   // VCF Operations for Networks + HCX (#187): separate products in the family, not internal nodes.
   { key: 'vcf-ops-for-networks', name: 'VCF Operations for Networks', category: 'Operations',
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'vcf-operations-for-networks',

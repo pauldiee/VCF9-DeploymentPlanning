@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.7.2 — 2026-10-13
+- **Version Overview: VCF Operations 9.1.1 was stuck at GA (#390).** The
+  9.1.1 leaf is spelled `vcf-operations-9-1-1-0100-…` with a dash, while
+  9.1.0 uses `vcfoperations-…`. This is the same split VCF Automation had
+  in #353. The scraper now accepts both spellings, so the row shows
+  [VCF Operations 9.1.1.0100](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vcf-operations/9100100/vcf-operations-9-1-1-0100-release-notes.html)
+  (build 25795063) instead of 9.1.1.0. Data refreshed in the same change.
+
 ## v5.7.1 — 2026-10-13
 - **Version Overview: missed 9.1.1.0200 patches, plus vSAN Witness and
   Tools rows (#390).**
