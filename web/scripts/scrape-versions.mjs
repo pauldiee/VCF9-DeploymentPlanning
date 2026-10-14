@@ -34,7 +34,8 @@
 //         #214 (knownBadRender), #230 (vCenter off the KB), #258 (License Hub), #265 (per-minor lines),
 //         #370 (VCF Download Tool), #389 (leaf header without the "Build" word),
 //         #390 (per-line index renames; vSAN Witness; PowerCLI / VCF SDK from package feeds),
-//         #391 (depotVerified: builds reconciled against the VCF Download Tool depot listing)
+//         #391 (depotVerified: builds reconciled against the VCF Download Tool depot listing),
+//         #393 (ESX "Live Patchable" flag from the patch leaf)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -98,12 +99,14 @@ const RELEASE_NOTES = `${TD}.html`;
 //               or when it has shipped no patch leaf.
 //   knownBadRender: see extractLeafBuild() (#214).
 //   depotVerified: see applyDepotVerified() (#391).
+//   livePatch:  read the leaf's "Live Patchable | Yes/No" row (#393; ESX only). See
+//               extractLivePatchable().
 const COMPONENTS = [
   // vCenter reads TechDocs, not KB 326316, since #230 (the KB lagged a security patch by a day).
   { key: 'vcenter', name: 'vCenter Server', category: 'Core',
     indexPath: 'vsphere/vcenter.html', leafSlug: 'vcenter', bomName: 'vCenter' },
   { key: 'esxi', name: 'ESXi', category: 'Core',
-    indexPath: 'vsphere/esx.html', leafSlug: 'esx', bomName: 'ESX' },
+    indexPath: 'vsphere/esx.html', leafSlug: 'esx', bomName: 'ESX', livePatch: true },
   { key: 'nsx', name: 'NSX', category: 'Core',
     indexPath: 'nsx.html', leafSlug: 'nsx', bomName: 'NSX' },
   { key: 'sddc-manager', name: 'SDDC Manager', category: 'Core',
@@ -330,6 +333,15 @@ function extractLeafBuild(html, c) {
   return { version, releaseDate: isoDate(m[2]), build };
 }
 
+// ESX patch leaves carry a details row "Live Patchable | Yes" (some write "Live Patchable: | No")
+// next to "Host Reboot Required" (#393). The first hit is that details row; the ESX Images table
+// further down repeats the header word without a Yes/No after it, so it can't match. Anything
+// else returns null (shown as no pill) -- never guess a reboot-free patch.
+function extractLivePatchable(html) {
+  const m = plain(html).match(/Live\s*Patchable\s*:?\s*(Yes|No)\b/i);
+  return m ? m[1].toLowerCase() === 'yes' : null;
+}
+
 // Read a component's GA build from a line's Bill of Materials table. The BOM table is
 // 4-column -- [Component] [VVF component? ("", "Yes", "Yes (VCF Installer)")] [Version] [Build] --
 // so parse rows into cells rather than regexing the flattened text: the middle column pushes
@@ -425,6 +437,7 @@ async function scrapeTechdocs(c, line) {
   const leafHtml = await fetchText(leafUrl);
   const got = extractLeafBuild(leafHtml, c);
   if (!got || !got.build) throw new Error('leaf carried no build');
+  if (c.livePatch) got.livePatchable = extractLivePatchable(leafHtml);
   return { ...got, sourceUrl: leafUrl, patched: true };
 }
 
@@ -512,6 +525,7 @@ async function main() {
           ...base, version: r.version, build: r.build, releaseDate: r.releaseDate ?? null,
           sourceUrl: r.sourceUrl, patched: r.patched ?? true, ...(r.pinned ? { pinned: r.pinned } : {}),
           ...(r.reconciled ? { reconciled: r.reconciled } : {}),
+          ...(typeof r.livePatchable === 'boolean' ? { livePatchable: r.livePatchable } : {}),
         });
         const tag = r.pinned ? 'PIN ' : r.reconciled ? 'DEPO' : r.patched === false ? 'GA  ' : 'OK  ';
         console.log(`${tag} ${line.v}  ${c.key.padEnd(20)} ${r.version}  Build ${r.build}` +

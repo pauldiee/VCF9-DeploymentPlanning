@@ -148,6 +148,12 @@ const fmtDate = (iso) =>
                         <td class="vo-ver">
                           {c.version ?? ''}
                           {c.patched === false && <span class="vo-pill">GA</span>}
+                          {c.livePatchable === true && (
+                            <span class="vo-pill vo-pill--live" title="The release notes mark this patch Live Patchable: hosts can take it without a reboot, if the cluster meets the live-patch prerequisites (vLCM image, DRS on, sequential remediation; no DPU hosts or blocking driver modules).">Live patch</span>
+                          )}
+                          {c.livePatchable === false && (
+                            <span class="vo-pill" title="The release notes mark this patch not live-patchable: hosts need a maintenance-mode reboot.">Reboot</span>
+                          )}
                         </td>
                         <td class="vo-build">
                           {c.build ?? 'N/A'}
@@ -266,7 +272,10 @@ const fmtDate = (iso) =>
       <p>
         <strong>Always confirm with Broadcom before advising a build.</strong> Patch cadence is
         high and components move independently. Rows marked <span class="vo-pill">GA</span> have no
-        Express Patch yet, so they run at their general-availability build. The VCF Operations
+        Express Patch yet, so they run at their general-availability build. On ESXi,
+        {' '}<span class="vo-pill vo-pill--live">Live patch</span> or <span class="vo-pill">Reboot</span>
+        {' '}is the release notes&rsquo; own &ldquo;Live Patchable&rdquo; flag for that patch; a host
+        can still be blocked from live patching (DPU hosts, some driver modules; KB 419942 / KB 428958). The VCF Operations
         services listed under Management &mdash; Orchestrator, Log Management, Real-Time Metrics and
         its Store &mdash; are independently-versioned components of that product family, each with
         its own build.
@@ -388,5 +397,9 @@ const fmtDate = (iso) =>
     border-radius: var(--radius-sm);
     vertical-align: middle;
   }
+  /* A reboot-free ESX patch (#393): the brand chip, so it stands apart from the plain
+     tag-coloured GA / Reboot pills without borrowing the orange warning treatment. */
+  .vo-pill--live { background: var(--surface-chip-brand); color: #fff; }
+  .vo-pill[title] { cursor: help; }
   .vo-src { font-size: var(--fs-small); color: var(--text-muted); }
 </style>
