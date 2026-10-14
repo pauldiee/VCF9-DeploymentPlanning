@@ -44,6 +44,7 @@ const flowItems = navFlowItems();
 const referenceBands = navReferenceBands();
 const meta = active ? navBySlug(active) : undefined;
 const sizerHref = withBase('tools/mgmt-sizing/');
+const opsLogsSizerHref = withBase('tools/ops-logs-sizing/');
 const planExportHref = withBase('tools/deployment-plan/');
 const planTrackerHref = withBase('tools/plan-tracker/');
 const testPlanHref = withBase('tools/test-plan/');
@@ -190,6 +191,14 @@ const testPlanHref = withBase('tools/test-plan/');
                   <li>
                     <a class:list={['ref-link', { 'is-active': active === 'tools/mgmt-sizing' }]} href={sizerHref}>
                       <i class="fa-solid fa-calculator" aria-hidden="true" /> Sizing Calculator
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class:list={['ref-link', { 'is-active': active === 'tools/ops-logs-sizing' }]}
+                      href={opsLogsSizerHref}
+                    >
+                      <i class="fa-solid fa-chart-line" aria-hidden="true" /> Ops &amp; Logs Sizer
                     </a>
                   </li>
                   <li>

@@ -1,5 +1,38 @@
 # Changelog
 
+## v5.8.0 — 2026-10-14
+- **New tool + guide: VCF Operations & Log Management Sizer (#394).**
+  [`docs/30-ops-logs-sizing.md`](docs/30-ops-logs-sizing.md) and
+  `/tools/ops-logs-sizing/` take your object, host and log-volume numbers and
+  recommend:
+  - a **VCF Operations** node size and count (Simple / HA / CA), using HA's
+    and CA's halved capacity, the CA fault-domain limits and the
+    fewest-nodes rule;
+  - the **Unified Cloud Proxy** size and count;
+  - a **Log Management** size and replica count, with the per-replica disk,
+    VIPs, IPs and services-runtime workers;
+  - a **Real-Time Metrics** size.
+
+  Sources are
+  [Configuration Maximums](https://configmax.broadcom.com/) (VCF Operations
+  9.1.0),
+  [KB 397782](https://knowledge.broadcom.com/external/article/397782/vcf-operations-90-sizing-guidelines.html)
+  and the 9.1
+  [Log Management Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-operations-design/vcf-operations-for-logs-deployment-models.html),
+  read 2026-10-14. The guide shows where they disagree:
+  - Medium Log Management is 24 / 48 on the deploy page (the worker node)
+    but 16 / 32 for the replica.
+  - The connections per VIP are printed in opposite orders; the tool uses
+    the lower figure.
+  - The Large replica minimum is 3 in TechDocs but 6 in the workbook.
+
+  Storage needs two assumptions Broadcom doesn't publish: 350 bytes per
+  event (implied by ConfigMax) and no compression. Both are adjustable in
+  the tool. The engine is checked on every build by
+  `web/scripts/verify-ops-logs-sizer.mjs` (30 cases, including KB 397782's
+  own 4 × Extra Large example). The tool is linked from the header and
+  sidebar Tools menus and from `docs/04-sizing.md`.
+
 ## v5.7.5 — 2026-10-14
 - **Version Overview: ESXi rows show whether the patch is live-patchable
   (#393).** The scraper now reads the "Live Patchable" row from each ESX

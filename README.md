@@ -57,6 +57,7 @@ sidebar mirrors these bands.
 | `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |
 | `docs/22-stretch-execution.md`      | Stretch execution runbook — manual steps (AZ2 hosts, witness, AZ2 network pool) vs what the single stretch API call does for you, for management domain and workload domain |
 | `docs/28-memory-tiering.md`        | Build guide for Memory Tiering over NVMe — fit check, NVMe device selection and sizing, keeping the device out of vSAN, enabling per cluster (Configuration Profiles) or host (`esxcli memtier`), mirroring, encryption, monitoring, failure behaviour |
+| `docs/30-ops-logs-sizing.md`      | Reference — VCF Operations / Cloud Proxy / Log Management / Real-Time Metrics sizing: which size and how many nodes or replicas for your object, host and log-volume numbers (Configuration Maximums 9.1, KB 397782, Log Management Detailed Design), with the source conflicts and storage assumptions; backs the interactive Ops & Logs sizer |
 | `docs/29-single-pnic-build.md`     | Build guide for single-pNIC builds (e.g. a fabric-redundant UCS management vNIC) — three worked layouts (management-only on one pNIC with vSAN or NFS, whole host on one pNIC) with their bring-up JSON, the conflicting Broadcom sources, host/fabric prep, validation snags, the HA warning (and when it applies), a fabric failover test, and the API fragments for later workload domains, clusters and expansions |
 
 **Network & security services** — License Hub first, it licenses both Avi and vDefend:
@@ -112,6 +113,7 @@ language toggle in the header. English remains the canonical text.
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
 | `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
+| `web/src/pages/tools/ops-logs-sizing.astro` | Interactive VCF Operations / Log Management / Real-Time Metrics sizer (client-side) |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/pages/tools/plan-tracker.astro` | Interactive deployment tracker — the plan as a checklist (story checkboxes, per-epic progress, save/load progress file); follows the scope set in the export tool |
 | `web/src/pages/tools/test-plan.astro` | Interactive test plan — scope-driven verification cases in phases TP-0…TP-6 with P/F1/F2/NA tracking, actual-result capture, "How to run this" instructions, and Excel/report/CSV/runbook export; follows the scope set in the export tool |
@@ -147,6 +149,7 @@ language toggle in the header. English remains the canonical text.
 | `web/`                              | ITQ-branded Astro site (GitHub + GitLab Pages) rendering the `docs/` in place |
 | `web/scripts/scrape-versions.mjs`   | Node scraper behind the Version Overview — walks the Broadcom TechDocs patch tree per maintenance version (with a Bill-of-Materials fallback for lines with no patch tree yet) + the add-on release-notes trees, emits `web/src/data/vcf-versions.json`; run daily by `.github/workflows/scrape-versions.yml` |
 | `web/src/lib/mgmt-sizing.ts`        | Sizing engine — appliance tables + formulas from the 9.1.1 workbook (v1.9.1.102) |
+| `web/src/lib/ops-logs-sizing.ts`    | Ops & Logs sizing engine — Configuration Maximums 9.1 / KB 397782 / Log Management design limits; checked by `web/scripts/verify-ops-logs-sizer.mjs` on every build |
 | `web/scripts/verify-sizer.mjs`, `web/test/sizer-golden-*.json` | Checks the sizing engine against the workbook's own Excel-computed results (157 scenarios; runs on every build) |
 | `web/scripts/sizer-golden/`         | Regenerates those golden results by driving Excel over a copy of the workbook (`scenarios.py` + `Get-SizerGolden.ps1`) |
 | `web/src/lib/deployment-plan.ts`    | Deployment-plan engine — structured epics/stories/tasks + Markdown/CSV exporters + progress tracking |

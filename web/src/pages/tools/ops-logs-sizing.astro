@@ -1,0 +1,328 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { OPS_MODELS, SOURCES_DATE } from '../../lib/ops-logs-sizing';
+import { docHref, withBase } from '../../lib/path';
+---
+
+<BaseLayout
+  title="VCF Operations & Log Management Sizer | VCF 9.1 Planning"
+  description="Recommends a VCF Operations node size and count, Cloud Proxy count, Log Management size and replica count, and a Real-Time Metrics size from your environment's numbers, using Broadcom's VCF 9.1 limits."
+  active="tools/ops-logs-sizing"
+>
+  <article class="sizer ols">
+    <header class="sizer__head">
+      <p class="itq-eyebrow">Sizing tool</p>
+      <h1>VCF Operations &amp; Log Management Sizer</h1>
+      <p class="sizer__lede">
+        Enter what you will monitor and how much log volume to expect, and get back the
+        <strong>size and node count</strong> for VCF Operations, the Cloud Proxies, Log Management and
+        Real-Time Metrics. The limits come from Broadcom's VCF 9.1 Configuration Maximums and the
+        <em>Log Management Detailed Design</em> (read {SOURCES_DATE}); the rules and sources are in
+        <a href={docHref('30-ops-logs-sizing')}>the companion guide</a>. Take the sizes into the
+        <a href={withBase('tools/mgmt-sizing/')}>Management Domain sizer</a> to check they fit your
+        cluster. Everything runs in your browser; nothing is sent anywhere.
+      </p>
+      <div class="sizer__toolbar">
+        <button type="button" id="btnShare"><i class="fa-solid fa-link" aria-hidden="true"></i> Copy share link</button>
+        <button type="button" id="btnSummary"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i> Copy summary</button>
+        <button type="button" id="btnReset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset</button>
+        <span id="toolbarMsg" class="sizer__toolbar-msg" role="status"></span>
+      </div>
+    </header>
+
+    <div class="sizer__grid">
+      <!-- ================= INPUTS ================= -->
+      <section class="sizer__inputs">
+        <fieldset>
+          <legend>1. What you will monitor</legend>
+          <div class="ols__pair">
+            <label>ESX hosts<input type="number" min="0" id="hosts" /></label>
+            <label>vCenter instances<input type="number" min="0" id="vcenters" /></label>
+            <label>Virtual machines<input type="number" min="0" id="vms" /></label>
+            <label>Datastores<input type="number" min="0" id="datastores" /></label>
+          </div>
+          <label>Other monitored objects<input type="number" min="0" id="otherObjects" /></label>
+          <p class="sizer__hint">Everything else VCF Operations collects: NSX, vSAN, management packs, Kubernetes. An <em>object</em> is anything with its own properties and metrics, so each VM, host and datastore is one.</p>
+          <label>Known object count <span class="sizer__tag">optional</span><input type="number" min="0" id="objectsOverride" /></label>
+          <p class="sizer__hint">If you already run VCF Operations (or Aria Operations), its real object count beats the estimate above. <strong>0</strong> uses the estimate.</p>
+          <label>Collected metrics <span class="sizer__tag">optional</span><input type="number" min="0" id="metrics" /></label>
+          <p class="sizer__hint">From an existing install: the sum of the adapter instances' metrics on <em>Cluster Management</em>. <strong>0</strong> sizes on objects only.</p>
+          <label>Growth allowance %<input type="number" min="0" id="growthPct" /></label>
+          <p class="sizer__hint">Applied to objects, metrics and log volume. VCF Operations and Log Management can't be scaled back down once scaled up, so size for where you'll be, not where you are.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>2. VCF Operations</legend>
+          <label>Deployment model
+            <select id="opsModel">{OPS_MODELS.map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint"><strong>Simple</strong>: one node. <strong>High Availability</strong>: every object is kept on two nodes, so it holds half as much as the same nodes without HA. <strong>Continuous Availability</strong>: node pairs across two fault domains plus a witness, also half capacity.</p>
+          <label>Locations that need their own Cloud Proxy<input type="number" min="1" id="proxySites" /></label>
+          <p class="sizer__hint">Sites or network zones whose vCenters and endpoints are collected locally.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend><label class="sizer__check"><input type="checkbox" id="logsInclude" /> 3. Log Management</label></legend>
+          <div id="logsFields">
+            <label>Size
+              <select id="logsSize"><option>Auto</option><option>Small</option><option>Medium</option><option>Large</option></select>
+            </label>
+            <div class="ols__pair">
+              <label>Events/sec per ESX host<input type="number" min="0" id="epsPerHost" /></label>
+              <label>Extra events/sec<input type="number" min="0" id="extraEps" /></label>
+            </div>
+            <p class="sizer__hint">Broadcom's estimate is <strong>hosts &times; 250</strong>. Add extra for heavy senders, such as firewall-rule logging.</p>
+            <label>Known events/sec <span class="sizer__tag">optional</span><input type="number" min="0" id="epsOverride" /></label>
+            <p class="sizer__hint">From a current log platform. <strong>0</strong> uses the estimate.</p>
+            <div class="ols__pair">
+              <label>Syslog (TCP) senders<input type="number" min="0" id="syslogSources" /></label>
+              <label>HTTP / API senders<input type="number" min="0" id="httpSources" /></label>
+            </div>
+            <p class="sizer__hint">Sets how many ingestion VIPs you need. Syslog <strong>0</strong> means one per ESX host.</p>
+            <div class="ols__pair">
+              <label>Retention (days)<input type="number" min="1" id="retentionDays" /></label>
+              <label>Spare replicas<select id="spareReplicas"><option value="0">None (N)</option><option value="1">N+1</option><option value="2">N+2</option></select></label>
+            </div>
+            <details class="ols__assume">
+              <summary>Storage assumptions</summary>
+              <div class="ols__pair">
+                <label>Bytes per event<input type="number" min="1" id="bytesPerEvent" /></label>
+                <label>Stored GB per ingested GB<input type="number" min="0.1" step="0.1" id="storageFactor" /></label>
+              </div>
+              <p class="sizer__hint">Broadcom publishes neither. <strong>350 bytes</strong> is what Configuration Maximums implies (600 GB/day per Small replica at 20,000 events/sec). A factor of <strong>1</strong> stores logs as received, with no compression. Change both if you have measured values.</p>
+            </details>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><label class="sizer__check"><input type="checkbox" id="rtmInclude" /> 4. Real-Time Metrics</label></legend>
+          <p class="sizer__hint">Sized on the ESX host and vCenter counts from step 1.</p>
+        </fieldset>
+      </section>
+
+      <!-- ================= RESULTS ================= -->
+      <section class="sizer__results" aria-live="polite">
+        <h2>VCF Operations</h2>
+        <div id="opsVerdict" class="verdict"></div>
+        <table class="sizer__table" id="opsTable">
+          <thead><tr><th>Size</th><th>Nodes</th><th>vCPU</th><th>RAM&nbsp;GB</th><th>Note</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="sizer__hint" id="proxyLine"></p>
+
+        <div id="logsOut">
+          <h2>Log Management</h2>
+          <div id="logsVerdict" class="verdict"></div>
+          <dl class="sizer__stats" id="logsStats"></dl>
+          <table class="sizer__table" id="logsTable">
+            <thead><tr><th>Size</th><th>Replicas</th><th>Disk / replica</th><th>VIPs</th><th>IPs</th><th>Workers</th><th>Note</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p class="sizer__hint">Workers are VCF services runtime worker nodes: 12&nbsp;vCPU / 24&nbsp;GB each for Small, 24&nbsp;vCPU / 48&nbsp;GB for Medium, and two of those per Large replica. The runtime adds them itself. IPs: 6 to start, plus 1 per Small or Medium replica (2 per Large), plus 1 for each extra VIP.</p>
+        </div>
+
+        <div id="rtmOut">
+          <h2>Real-Time Metrics</h2>
+          <div id="rtmVerdict" class="verdict"></div>
+        </div>
+      </section>
+    </div>
+
+    <p class="sizer__source">
+      Limits from Configuration Maximums (VCF Operations 9.1.0), KB 397782 and the VCF 9.1
+      <em>Log Management Detailed Design</em>, read {SOURCES_DATE}. This is a planning aid: the
+      figures are Broadcom's published limits, not lab measurements. Confirm against the
+      <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>
+      for your own object and metric mix.
+    </p>
+  </article>
+</BaseLayout>
+
+<script>
+  import { defaultState, migrateState, compute, type OpsLogsState } from '../../lib/ops-logs-sizing';
+
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+  const gb = (n: number) => (n >= 1024 ? `${(n / 1024).toFixed(n >= 10240 ? 0 : 1)} TB` : `${fmt(n)} GB`);
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+  const NUMS = ['hosts', 'vcenters', 'vms', 'datastores', 'otherObjects', 'objectsOverride', 'metrics', 'growthPct', 'proxySites',
+    'epsPerHost', 'extraEps', 'epsOverride', 'syslogSources', 'httpSources', 'retentionDays', 'bytesPerEvent', 'storageFactor'] as const;
+
+  function load(): OpsLogsState {
+    const h = location.hash.match(/^#s=(.+)$/);
+    if (h) {
+      try { return migrateState(JSON.parse(decodeURIComponent(atob(h[1])))); } catch { /* fall through */ }
+    }
+    return defaultState();
+  }
+  let state = load();
+
+  function paintInputs() {
+    for (const k of NUMS) $<HTMLInputElement>(k).value = String(state[k]);
+    $<HTMLSelectElement>('opsModel').value = state.opsModel;
+    $<HTMLSelectElement>('logsSize').value = state.logsSize;
+    $<HTMLSelectElement>('spareReplicas').value = String(state.spareReplicas);
+    $<HTMLInputElement>('logsInclude').checked = state.logsInclude;
+    $<HTMLInputElement>('rtmInclude').checked = state.rtmInclude;
+  }
+
+  function readInputs() {
+    const raw: Record<string, unknown> = {};
+    for (const k of NUMS) raw[k] = $<HTMLInputElement>(k).value;
+    raw.opsModel = $<HTMLSelectElement>('opsModel').value;
+    raw.logsSize = $<HTMLSelectElement>('logsSize').value;
+    raw.spareReplicas = $<HTMLSelectElement>('spareReplicas').value;
+    raw.logsInclude = $<HTMLInputElement>('logsInclude').checked;
+    raw.rtmInclude = $<HTMLInputElement>('rtmInclude').checked;
+    state = migrateState(raw);
+  }
+
+  let summary = '';
+
+  function render() {
+    const r = compute(state);
+    const lines: string[] = [];
+
+    // ---- VCF Operations
+    const o = r.ops;
+    const ov = $('opsVerdict');
+    if (o.pick) {
+      ov.className = 'verdict verdict--ok';
+      ov.innerHTML = `<strong>${o.pick.size} &times; ${o.pick.nodes}</strong> node${o.pick.nodes === 1 ? '' : 's'} (${state.opsModel}${o.witness ? ' + witness' : ''}): ${fmt(o.pick.vcpu)} vCPU / ${fmt(o.pick.ram)} GB. Sized for ${fmt(o.objects)} objects${o.metrics ? ` and ${fmt(o.metrics)} metrics` : ''}.`;
+      lines.push(`VCF Operations: ${o.pick.size} x ${o.pick.nodes} (${state.opsModel}${o.witness ? ' + witness' : ''}), ${o.pick.vcpu} vCPU / ${o.pick.ram} GB, for ${o.objects} objects${o.metrics ? ` / ${o.metrics} metrics` : ''}`);
+    } else {
+      ov.className = 'verdict verdict--bad';
+      ov.innerHTML = state.opsModel === 'Simple'
+        ? `No single node holds ${fmt(o.objects)} objects. Use <strong>High Availability</strong> (a Simple deployment can be scaled out to HA).`
+        : `No ${state.opsModel} cluster holds ${fmt(o.objects)} objects. Split the monitored estate across more than one VCF Operations instance.`;
+      lines.push(`VCF Operations: no ${state.opsModel} configuration fits ${o.objects} objects`);
+    }
+    $('opsTable').querySelector('tbody')!.innerHTML = o.options.map((x) => {
+      const best = o.pick && x.size === o.pick.size;
+      const note = [x.why, x.vcAdapterWarn && x.nodes ? 'vCenter count exceeds this node\'s own collector: use Cloud Proxies' : ''].filter(Boolean).join('; ');
+      return `<tr class="${x.nodes ? (best ? 'ols__best' : '') : 'ols__no'}"><td>${x.size}${best ? ' <span class="sizer__tag">pick</span>' : ''}</td><td>${x.nodes ?? '&ndash;'}</td><td>${x.nodes ? fmt(x.vcpu) : ''}</td><td>${x.nodes ? fmt(x.ram) : ''}</td><td class="ols__note">${esc(note)}</td></tr>`;
+    }).join('');
+    const p = o.proxy;
+    $('proxyLine').innerHTML = `<strong>Cloud Proxy:</strong> ${p.count} &times; Unified ${p.size} (${fmt(p.vcpu)} vCPU / ${fmt(p.ram)} GB in total), ${esc(p.why)}.`;
+    lines.push(`Cloud Proxy: ${p.count} x Unified ${p.size} (${p.vcpu} vCPU / ${p.ram} GB), ${p.why}`);
+
+    // ---- Log Management
+    $('logsFields').hidden = !state.logsInclude;
+    $('logsOut').hidden = !r.logs;
+    if (r.logs) {
+      const L = r.logs;
+      const lv = $('logsVerdict');
+      const pk = L.pick;
+      if (pk && pk.fits) {
+        lv.className = 'verdict verdict--ok';
+        lv.innerHTML = `<strong>${pk.size} &times; ${pk.replicas}</strong> replicas (${pk.activeReplicas} active${state.spareReplicas ? ` + ${state.spareReplicas} spare` : ''}), ${gb(pk.diskPerReplicaGb)} each, ${pk.vips} VIP${pk.vips === 1 ? '' : 's'}. ${esc(L.pickReason)}.`;
+        lines.push(`Log Management: ${pk.size} x ${pk.replicas} replicas, ${pk.diskPerReplicaGb} GB each, ${pk.vips} VIP(s), ${pk.ips} IPs; runtime workers ${pk.workers} (${pk.workerVcpu} vCPU / ${pk.workerRam} GB)`);
+      } else {
+        lv.className = 'verdict verdict--bad';
+        lv.innerHTML = esc(L.pickReason.charAt(0).toUpperCase() + L.pickReason.slice(1)) + '.';
+        lines.push(`Log Management: ${L.pickReason}`);
+      }
+      $('logsStats').innerHTML = [
+        ['Events/sec', `${fmt(L.eps)}${L.epsEstimated ? ' (estimate)' : ''}`],
+        ['Ingest / day', gb(L.gbPerDay)],
+        ['Retained data', gb(L.storageGb)],
+        ['Retention', `${state.retentionDays} days`],
+      ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+      lines.push(`  ${L.eps} events/sec, ${Math.round(L.gbPerDay)} GB/day, ${L.storageGb} GB retained over ${state.retentionDays} days`);
+      $('logsTable').querySelector('tbody')!.innerHTML = L.options.map((x) => {
+        const best = pk && pk.fits && x.size === pk.size;
+        return `<tr class="${x.fits ? (best ? 'ols__best' : '') : 'ols__no'}"><td>${x.size}${best ? ' <span class="sizer__tag">pick</span>' : ''}</td><td>${x.replicas}</td><td>${gb(x.diskPerReplicaGb)}</td><td>${x.vips}</td><td>${x.ips}</td><td>${x.workers} (${fmt(x.workerVcpu)}&nbsp;vCPU / ${fmt(x.workerRam)}&nbsp;GB)</td><td class="ols__note">${esc(x.why)}</td></tr>`;
+      }).join('');
+    }
+
+    // ---- Real-Time Metrics
+    $('rtmOut').hidden = !r.rtm;
+    if (r.rtm) {
+      const rv = $('rtmVerdict');
+      const z = r.rtm.pick;
+      if (z) {
+        rv.className = 'verdict verdict--ok';
+        rv.innerHTML = `<strong>${z.name}</strong>: up to ${fmt(z.maxHosts)} hosts / ${z.maxVcenters} vCenters. ${z.vcpu} vCPU / ${z.ram} GB / ${gb(z.diskGb)}, on the VCF services runtime (no separate appliances).`;
+        lines.push(`Real-Time Metrics: ${z.name} (${z.vcpu} vCPU / ${z.ram} GB / ${z.diskGb} GB)`);
+      } else {
+        rv.className = 'verdict verdict--bad';
+        rv.textContent = `No size covers ${r.rtm.why}.`;
+        lines.push(`Real-Time Metrics: no size covers ${r.rtm.why}`);
+      }
+    }
+    summary = lines.join('\n');
+  }
+
+  function msg(t: string) {
+    const m = $('toolbarMsg');
+    m.textContent = t;
+    setTimeout(() => { if (m.textContent === t) m.textContent = ''; }, 2500);
+  }
+
+  document.querySelector('.sizer__inputs')!.addEventListener('input', () => { readInputs(); render(); });
+  $('btnReset').addEventListener('click', () => { state = defaultState(); history.replaceState(null, '', location.pathname); paintInputs(); render(); });
+  $('btnShare').addEventListener('click', async () => {
+    const url = `${location.origin}${location.pathname}#s=${btoa(encodeURIComponent(JSON.stringify(state)))}`;
+    history.replaceState(null, '', url);
+    try { await navigator.clipboard.writeText(url); msg('Link copied'); } catch { msg('Link is in the address bar'); }
+  });
+  $('btnSummary').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(summary); msg('Summary copied'); } catch { msg('Copy failed'); }
+  });
+
+  paintInputs();
+  render();
+</script>
+
+<style is:global>
+  .sizer { max-width: 1100px; }
+  .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
+  .sizer__lede { color: var(--text-muted); max-width: 75ch; }
+  .sizer__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
+  .sizer__toolbar button {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font: inherit; font-size: 0.8rem; padding: 0.35rem 0.75rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    background: var(--surface-card); color: var(--text-body); cursor: pointer;
+  }
+  .sizer__toolbar button:hover { border-color: var(--itq-orange); color: var(--itq-orange); }
+  .sizer__toolbar-msg { font-size: 0.78rem; color: var(--itq-orange); font-weight: var(--fw-semibold); }
+  .sizer__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6, 1.5rem); align-items: start; margin-top: 1.2rem; }
+  @media (max-width: 900px) { .sizer__grid { grid-template-columns: 1fr; } }
+  .sizer fieldset { border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm); padding: 0.9rem 1rem 1rem; margin: 0 0 1rem; }
+  .sizer legend { font-weight: var(--fw-semibold); color: var(--text-body); padding: 0 0.4rem; }
+  .sizer label { display: block; font-size: 0.85rem; margin: 0.45rem 0; color: var(--text-muted); }
+  .sizer label.sizer__check { display: flex; align-items: center; gap: 0.5rem; color: var(--text-body); margin: 0; font-size: inherit; }
+  .sizer select, .sizer input[type='number'] {
+    display: block; width: 100%; margin-top: 0.2rem; padding: 0.4rem 0.5rem;
+    border: var(--border-width) solid var(--border-default); border-radius: var(--radius-sm);
+    font: inherit; background: var(--surface-card); color: var(--text-body);
+  }
+  .sizer input[type='checkbox'] { width: auto; accent-color: var(--itq-orange); }
+  .sizer__hint { font-size: 0.78rem; color: var(--text-muted); margin: 0.3rem 0 0.6rem; }
+  .sizer__tag { display: inline-block; font-size: 0.68rem; font-weight: 600; line-height: 1.4; padding: 0 0.4rem; margin-left: 0.25rem; border-radius: 999px; border: 1px solid currentColor; color: var(--text-muted); vertical-align: middle; }
+  .sizer__results { position: sticky; top: calc(var(--header-h) + 1rem); }
+  .sizer__results h2 { font-size: 1.05rem; margin: 1.3rem 0 0.5rem; color: var(--text-body); }
+  .sizer__results h2:first-child { margin-top: 0; }
+  .verdict { padding: 0.8rem 1rem; border-radius: var(--radius-sm); border-left: 4px solid; margin-bottom: 0.8rem; font-size: 0.92rem; }
+  .verdict--ok { background: var(--status-ok-bg); border-color: var(--status-ok-border); color: var(--status-ok-text); }
+  .verdict--bad { background: var(--status-bad-bg); border-color: var(--status-bad-border); color: var(--status-bad-text); }
+  .sizer__table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .sizer__table th, .sizer__table td { text-align: right; padding: 0.35rem 0.45rem; border-bottom: var(--border-width) solid var(--border-default); }
+  .sizer__table th:first-child, .sizer__table td:first-child { text-align: left; white-space: nowrap; }
+  .sizer__table thead th { color: var(--text-muted); font-weight: var(--fw-semibold); }
+  .sizer__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; margin: 0.4rem 0 0.8rem; }
+  .sizer__stats div { display: flex; justify-content: space-between; border-bottom: 1px dotted var(--border-default); padding: 0.2rem 0; }
+  .sizer__stats dt { color: var(--text-muted); font-size: 0.82rem; margin: 0; }
+  .sizer__stats dd { margin: 0; font-weight: var(--fw-semibold); font-size: 0.85rem; }
+  .sizer__source { font-size: 0.78rem; color: var(--text-muted); margin-top: 2rem; border-top: var(--border-width) solid var(--border-default); padding-top: 0.8rem; }
+
+  .ols__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.8rem; }
+  .ols__note { text-align: left !important; font-size: 0.75rem; color: var(--text-muted); }
+  .ols__no td { color: var(--text-muted); }
+  .ols__best td { font-weight: var(--fw-semibold); }
+  .ols__assume { margin-top: 0.6rem; font-size: 0.85rem; }
+  .ols__assume summary { cursor: pointer; color: var(--text-body); font-weight: var(--fw-semibold); }
+  @media (max-width: 480px) { .ols__pair { grid-template-columns: 1fr; } }
+</style>
