@@ -9,11 +9,13 @@ up its footprint. This page covers the step before that: **which size, and how m
 replicas**, for the environment you will monitor. Take the result back into the Management
 Domain sizer to check that it fits your cluster.
 
-Everything here is Broadcom's published limits, read on **2026-10-14** from the sources in
-[Sources](#sources). None of it is lab-measured. For an existing VCF Operations or Aria
-Operations install, the
-[VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) with your real object and
-metric counts is still the authority.
+The rules follow Broadcom's official
+[VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) (build 2026-10-05), which
+the tool was matched against on **2026-10-14**: 75 reference scenarios give the same result
+(see [How this compares with the official estimator](#how-this-compares-with-the-official-estimator)).
+The limits are Broadcom's published figures from the sources in [Sources](#sources), read the
+same day. None of it is lab-measured. For an existing VCF Operations or Aria Operations install,
+your real object and metric counts beat any estimate.
 
 ---
 
@@ -38,22 +40,35 @@ From Configuration Maximums (VCF Operations 9.1.0). The figures are identical to
 1. **Count objects.** An object is anything VCF Operations collects properties and metrics
    for: every VM, host, datastore and vCenter, plus NSX, vSAN and management-pack objects.
    If you already run VCF Operations, use its real count instead.
-2. **Add growth.** Neither VCF Operations nor Log Management can be scaled back down, so
-   size for where you'll be, not where you are.
-3. **Apply the model.**
-   - **Simple** is one node, held to the *single node* limits.
+2. **Count metrics.** Use the real count if you have one. Otherwise estimate it at the
+   official estimator's per-kind rates: **262 per VM, 292 per host, 230 per vCenter, 93 per
+   datastore** (227 per cluster, 165 per datacenter, not asked for here). Objects with no
+   rate are counted at the VM rate. Metrics usually set the size from about 15,000 VMs.
+3. **Add the 20% buffer, then growth.** The estimator always adds 20% to objects and metrics,
+   and applies growth on top (growth 10% gives ×1.32). Neither VCF Operations nor Log
+   Management can be scaled back down, so size for where you'll be, not where you are.
+4. **Apply the model.**
+   - **Simple** is one node, held to the *single node* limits. When no single node is big
+     enough, the estimator offers a multi-node cluster **without HA** on the per-node cluster
+     limits, and so does the tool.
    - **High Availability** replicates every object to a second node, so KB 397782 says the
      limit is *"two times less compared to a non HA configuration"*. Nodes needed =
-     ⌈2 × objects ÷ objects per node in a cluster⌉, at least 2.
+     ⌈2 × objects ÷ objects per node in a cluster⌉, at least 2. The estimator does **not**
+     double metrics: nodes for metrics = ⌈metrics ÷ metrics per node⌉.
    - **Continuous Availability** replicates to a node pair across two fault domains, so
      capacity is also halved. The node count must be even, each fault domain is capped by
      the last column above, and a **witness** node (2 vCPU / 8 GB) is added in a third site.
-4. **Check metrics** the same way if you know the metric count. They can set the node count
-   before objects do.
-5. **Pick the fewest nodes.** KB 397782: *"Use the configuration which has the least number
-   of nodes, but is able to accommodate the number of objects to be monitored."* Its
-   example: 352,000 objects (no HA) is **4 × Extra Large** rather than 10 × Large, which
-   saves almost half the CPU. All nodes in a cluster must be the same size.
+5. **Pick the size.** The estimator picks **the smallest size whose single-node limits hold all
+   objects and metrics**, in every model. The exception is Small in HA and CA, which counts at
+   half its limits (5,000 objects / 800,000 metrics). Only when no size qualifies does it take
+   the fewest nodes, which is KB 397782's rule: *"Use the configuration which has the least
+   number of nodes, but is able to accommodate the number of objects to be monitored."* Its
+   example: 352,000 objects (no HA) is **4 × Extra Large** rather than 10 × Large. The two
+   rules differ in HA: at 19,000 objects and 4.9M metrics the estimator picks **Medium × 3**
+   over Large × 2. All nodes in a cluster must be the same size.
+
+The estimator also sizes each node's data disk from metric retention and rollup. The tool
+doesn't.
 
 Raising node memory to its maximum (Extra Small 16, Small 32, Medium 64, Large 96, Extra Large
 256 GB) raises the limits by about 20% for a single node and 10% for a cluster. The tool doesn't
@@ -97,34 +112,38 @@ hard cap, but don't plan on it.
 
 ### How the size is picked
 
-1. **Estimate events per second.** The design page: *"The number of EPS can be approximated
-   by the number of ESX hosts in the fleet multiplied by 250."* Add your heavy senders on
-   top. The page names firewall-rule logging as one that *"can generate a significant volume
-   of EPS"*.
-2. **Replicas for load** = ⌈EPS ÷ events per replica⌉.
+1. **Estimate events per second.** The official estimator uses **200 per ESX host**. The design
+   page says more: *"The number of EPS can be approximated by the number of ESX hosts in the
+   fleet multiplied by 250."* The tool defaults to 200; set 250 for the published figure. Add
+   your heavy senders on top. The page names firewall-rule logging as one that *"can generate
+   a significant volume of EPS"*.
+2. **Replicas for load** = the larger of ⌈EPS ÷ events per replica⌉ and ⌈GB per day ÷ GB/day
+   per replica⌉. The estimator uses both limits.
 3. **Replicas for retention.** Each replica's disk ranges from 500 GB to 9 TB, so the
-   retained data needs at least ⌈retained GB ÷ 9 TB⌉ replicas.
-4. **Add spares.** *"plan for an extra replica or two (N+1 or N+2)"*. Then apply the size's
-   minimum (3 for Medium and Large).
-5. **Choose the size.** Broadcom advises *"scaling up the size to medium once you exceed 5-6
-   small replicas, or large once you get to 6-8 medium replicas"*. Many small replicas make a
-   later size change a big jump, because it applies to every replica (12 Small become 12
-   Medium). The tool uses the upper end of each range: Small up to 6 replicas, Medium up to
-   8, otherwise Large.
+   retained data needs at least ⌈retained GB ÷ 9,000⌉ replicas. The estimator caps a replica
+   at 9,000 GB.
+4. **Spares are optional.** The design page advises *"plan for an extra replica or two (N+1 or
+   N+2)"*. The estimator adds none, so the tool defaults to none and lets you choose N+1 or
+   N+2. Then apply the size's minimum (3 for Medium and Large).
+5. **Choose the size.** The estimator uses **Small while it needs at most 5 replicas, Medium up
+   to 12**, otherwise Large. The design page puts it more loosely: *"scaling up the size to
+   medium once you exceed 5-6 small replicas, or large once you get to 6-8 medium replicas"*.
+   Many small replicas make a later size change a big jump, because it applies to every
+   replica (12 Small become 12 Medium).
 6. **Size the VIPs.** Each VIP has its own load balancer with the per-VIP limits above. Add
    VIPs, and point senders at different FQDNs, when events or connections go over one VIP.
    Broadcom recommends against putting an external load balancer in front.
 
 ### Storage: the assumptions
 
-Broadcom says only that *"Storage capacity is a factor of the retention period and the number
-of log messages received"*. It publishes no bytes-per-event figure and no compression ratio,
-so the tool turns events into storage with two values you can change:
+The TechDocs pages say only that *"Storage capacity is a factor of the retention period and the
+number of log messages received"*. The tool uses the official estimator's defaults, which you
+can change:
 
-- **Bytes per event: 350.** This is what Configuration Maximums implies: 600 GB/day per Small
-  replica ÷ 20,000 events/sec ≈ 350 bytes.
-- **Stored GB per ingested GB: 1.** Logs are stored as received, with no compression. This is
-  deliberately conservative.
+- **Bytes per event: 400.** Configuration Maximums implies about 350: 600 GB/day per Small
+  replica ÷ 20,000 events/sec.
+- **Stored GB per ingested GB: 1.25.** Retained = GB per day × retention days × 1.25.
+- **Binary units.** The estimator counts a "GB" per day as 1024³ bytes, and so does the tool.
 
 If you can measure both on a current log platform, use your own numbers.
 
@@ -161,6 +180,37 @@ The sources disagree in two places. All three TechDocs pages involved show *Last
 - **The Large minimum is 3 replicas** on the design and deploy pages. The P&P workbook (and so
   the [Management Domain sizer](04-sizing.md)) uses a minimum of 6. This page and its tool
   follow TechDocs.
+
+### How this compares with the official estimator
+
+The [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) (build 2026-10-05) sizes
+VCF Operations and Log Management through a public API (`/api/recommend`,
+`/api/logs/recommend`). This tool was compared with it on **2026-10-14** and changed to match
+(#400). Where the estimator and the published pages disagree, the tool follows the estimator,
+because that's what you'll be compared against:
+
+| Rule | Official estimator (followed) | Published source |
+| --- | --- | --- |
+| Buffer | +20% on objects and metrics, before growth | Not mentioned |
+| Metrics | Estimated per object kind (262 / 292 / 230 / 93) | KB 397782 has no per-kind rates |
+| HA / CA | Objects doubled, metrics not | KB 397782: *"two times less"* |
+| Size preference | Smallest size whose single node holds it (Small at half in HA/CA) | KB 397782: fewest nodes |
+| Simple past one node | Multi-node cluster without HA | Not covered |
+| Events/sec per ESX host | 200 | Design page: 250 |
+| Bytes per event, storage factor | 400 B, × 1.25, GiB | Not published |
+| GB/day per replica | A limit on replicas | Listed in Configuration Maximums |
+| Spare replicas | None | Design page: N+1 or N+2 |
+| Size switch | Small ≤ 5, Medium ≤ 12 replicas | Design page: *"5-6"* / *"6-8"* |
+| Disk cap per replica | 9,000 GB | Design page: *"9 TB"* |
+
+The 75 reference results (39 VCF Operations, 36 Log Management, across sizes and models) are
+stored in `web/scripts/ops-logs-estimator-fixtures.json`, and the site build re-checks the tool
+against them, so a change that drifts from the estimator fails the build. If Broadcom changes
+the estimator, re-capture those results.
+
+Two things the tool keeps that the estimator doesn't: the **host limit per Log Management
+size** (Small 1,500, Medium 3,000, Large 4,560, from the design page), and the **per-VIP**
+limits that set the number of ingestion VIPs.
 
 ---
 
@@ -213,6 +263,7 @@ is not the same quantity as the table (see [`04-sizing.md`](04-sizing.md), #200)
   wizard sizes and replica ranges.
 - [VCF Operations Models (VCF 9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-operations.html):
   Simple, High Availability and Continuous Availability.
-- [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/).
+- [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) (build 2026-10-05,
+  compared 2026-10-14): the rules the tool follows where the published pages differ.
 - For scaling an existing VCF Operations cluster up or out, see the upgrade guide's
   [VCF Operations sizing and scaling](https://github.com/pauldiee/VCFUpgradeGuide/blob/main/docs/24-vcf-operations-sizing-and-scaling.md).

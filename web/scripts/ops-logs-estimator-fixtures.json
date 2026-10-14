@@ -1,0 +1,1155 @@
+{
+ "source": "Broadcom VCF Operations Sizing Estimator, https://vcfopssizer.broadcom.com/ (build 2026-10-05), API /api/recommend and /api/logs/recommend, version 9.1",
+ "captured": "2026-10-14",
+ "issue": "#400",
+ "opsInputs": "vCenter adapter counts (vCenterServers, HostSystem, VirtualMachine, vSANDatastore), retention 6, rollup 36, growth 0",
+ "logsInputs": "esxiHosts, averageEventSizeBytes 400, additionalEps 0",
+ "ops": [
+  {
+   "hosts": 4,
+   "vms": 20,
+   "datastores": 2,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 32,
+   "metrics": 8189,
+   "pick": [
+    "Extra Small",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": 1,
+    "Extra Small": 1
+   }
+  },
+  {
+   "hosts": 4,
+   "vms": 20,
+   "datastores": 2,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 32,
+   "metrics": 8189,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 4,
+   "vms": 20,
+   "datastores": 2,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 32,
+   "metrics": 8189,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": 1
+   }
+  },
+  {
+   "hosts": 16,
+   "vms": 160,
+   "datastores": 4,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 217,
+   "metrics": 56633,
+   "pick": [
+    "Extra Small",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": 1,
+    "Extra Small": 1
+   }
+  },
+  {
+   "hosts": 16,
+   "vms": 160,
+   "datastores": 4,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 217,
+   "metrics": 56633,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 16,
+   "vms": 160,
+   "datastores": 4,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 217,
+   "metrics": 56633,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": 1
+   }
+  },
+  {
+   "hosts": 64,
+   "vms": 640,
+   "datastores": 10,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 858,
+   "metrics": 225034,
+   "pick": [
+    "Small",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": 1,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 64,
+   "vms": 640,
+   "datastores": 10,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 858,
+   "metrics": 225034,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 64,
+   "vms": 640,
+   "datastores": 10,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 858,
+   "metrics": 225034,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 64,
+   "vms": 1500,
+   "datastores": 20,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 1902,
+   "metrics": 496534,
+   "pick": [
+    "Small",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": 1,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 64,
+   "vms": 1500,
+   "datastores": 20,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 1902,
+   "metrics": 496534,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 64,
+   "vms": 1500,
+   "datastores": 20,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 1902,
+   "metrics": 496534,
+   "pick": [
+    "Small",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 200,
+   "vms": 2400,
+   "datastores": 0,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 3121,
+   "metrics": 824916,
+   "pick": [
+    "Small",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": 1,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 200,
+   "vms": 2400,
+   "datastores": 0,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 3121,
+   "metrics": 824916,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 200,
+   "vms": 2400,
+   "datastores": 0,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 3121,
+   "metrics": 824916,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 200,
+   "vms": 4000,
+   "datastores": 40,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 5089,
+   "metrics": 1332420,
+   "pick": [
+    "Small",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": 1,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 200,
+   "vms": 4000,
+   "datastores": 40,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 5089,
+   "metrics": 1332420,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 200,
+   "vms": 4000,
+   "datastores": 40,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 5089,
+   "metrics": 1332420,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": 2,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 500,
+   "vms": 10000,
+   "datastores": 0,
+   "vcenters": 1,
+   "model": "Simple",
+   "objects": 12601,
+   "metrics": 3319476,
+   "pick": [
+    "Medium",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 500,
+   "vms": 10000,
+   "datastores": 0,
+   "vcenters": 1,
+   "model": "High Availability",
+   "objects": 12601,
+   "metrics": 3319476,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 500,
+   "vms": 10000,
+   "datastores": 0,
+   "vcenters": 1,
+   "model": "Continuous Availability",
+   "objects": 12601,
+   "metrics": 3319476,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 800,
+   "vms": 12000,
+   "datastores": 100,
+   "vcenters": 2,
+   "model": "Simple",
+   "objects": 15482,
+   "metrics": 4064832,
+   "pick": [
+    "Medium",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 1,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 800,
+   "vms": 12000,
+   "datastores": 100,
+   "vcenters": 2,
+   "model": "High Availability",
+   "objects": 15482,
+   "metrics": 4064832,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 800,
+   "vms": 12000,
+   "datastores": 100,
+   "vcenters": 2,
+   "model": "Continuous Availability",
+   "objects": 15482,
+   "metrics": 4064832,
+   "pick": [
+    "Medium",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 2,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 1000,
+   "vms": 15000,
+   "datastores": 0,
+   "vcenters": 2,
+   "model": "Simple",
+   "objects": 19202,
+   "metrics": 5066952,
+   "pick": [
+    "Large",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 2,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 1000,
+   "vms": 15000,
+   "datastores": 0,
+   "vcenters": 2,
+   "model": "High Availability",
+   "objects": 19202,
+   "metrics": 5066952,
+   "pick": [
+    "Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 3,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 1000,
+   "vms": 15000,
+   "datastores": 0,
+   "vcenters": 2,
+   "model": "Continuous Availability",
+   "objects": 19202,
+   "metrics": 5066952,
+   "pick": [
+    "Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 4,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 1500,
+   "vms": 22000,
+   "datastores": 0,
+   "vcenters": 3,
+   "model": "Simple",
+   "objects": 28204,
+   "metrics": 7443228,
+   "pick": [
+    "Large",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 1,
+    "Medium": 2,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 1500,
+   "vms": 22000,
+   "datastores": 0,
+   "vcenters": 3,
+   "model": "High Availability",
+   "objects": 28204,
+   "metrics": 7443228,
+   "pick": [
+    "Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 4,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 1500,
+   "vms": 22000,
+   "datastores": 0,
+   "vcenters": 3,
+   "model": "Continuous Availability",
+   "objects": 28204,
+   "metrics": 7443228,
+   "pick": [
+    "Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 2,
+    "Medium": 4,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 2000,
+   "vms": 30000,
+   "datastores": 0,
+   "vcenters": 4,
+   "model": "Simple",
+   "objects": 38405,
+   "metrics": 10133904,
+   "pick": [
+    "Extra Large",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 2,
+    "Medium": 3,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 2000,
+   "vms": 30000,
+   "datastores": 0,
+   "vcenters": 4,
+   "model": "High Availability",
+   "objects": 38405,
+   "metrics": 10133904,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 3,
+    "Medium": 5,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 2000,
+   "vms": 30000,
+   "datastores": 0,
+   "vcenters": 4,
+   "model": "Continuous Availability",
+   "objects": 38405,
+   "metrics": 10133904,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 4,
+    "Medium": 6,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 3000,
+   "vms": 45000,
+   "datastores": 500,
+   "vcenters": 6,
+   "model": "Simple",
+   "objects": 58207,
+   "metrics": 15256656,
+   "pick": [
+    "Extra Large",
+    1
+   ],
+   "nodes": {
+    "Extra Large": 1,
+    "Large": 3,
+    "Medium": 4,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 3000,
+   "vms": 45000,
+   "datastores": 500,
+   "vcenters": 6,
+   "model": "High Availability",
+   "objects": 58207,
+   "metrics": 15256656,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 4,
+    "Medium": 7,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 3000,
+   "vms": 45000,
+   "datastores": 500,
+   "vcenters": 6,
+   "model": "Continuous Availability",
+   "objects": 58207,
+   "metrics": 15256656,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 4,
+    "Medium": 8,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 4000,
+   "vms": 60000,
+   "datastores": 0,
+   "vcenters": 8,
+   "model": "Simple",
+   "objects": 76810,
+   "metrics": 20267808,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 4,
+    "Medium": 6,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 4000,
+   "vms": 60000,
+   "datastores": 0,
+   "vcenters": 8,
+   "model": "High Availability",
+   "objects": 76810,
+   "metrics": 20267808,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 5,
+    "Medium": null,
+    "Small": null,
+    "Extra Small": null
+   }
+  },
+  {
+   "hosts": 4000,
+   "vms": 60000,
+   "datastores": 0,
+   "vcenters": 8,
+   "model": "Continuous Availability",
+   "objects": 76810,
+   "metrics": 20267808,
+   "pick": [
+    "Extra Large",
+    2
+   ],
+   "nodes": {
+    "Extra Large": 2,
+    "Large": 6,
+    "Medium": null,
+    "Small": null,
+    "Extra Small": null
+   }
+  }
+ ],
+ "logs": [
+  {
+   "hosts": 8,
+   "retentionDays": 1,
+   "eps": 1600,
+   "pick": [
+    "Small",
+    1,
+    500
+   ],
+   "error": null
+  },
+  {
+   "hosts": 8,
+   "retentionDays": 7,
+   "eps": 1600,
+   "pick": [
+    "Small",
+    1,
+    500
+   ],
+   "error": null
+  },
+  {
+   "hosts": 8,
+   "retentionDays": 30,
+   "eps": 1600,
+   "pick": [
+    "Small",
+    1,
+    1932
+   ],
+   "error": null
+  },
+  {
+   "hosts": 8,
+   "retentionDays": 90,
+   "eps": 1600,
+   "pick": [
+    "Small",
+    1,
+    5794
+   ],
+   "error": null
+  },
+  {
+   "hosts": 16,
+   "retentionDays": 1,
+   "eps": 3200,
+   "pick": [
+    "Small",
+    1,
+    500
+   ],
+   "error": null
+  },
+  {
+   "hosts": 16,
+   "retentionDays": 7,
+   "eps": 3200,
+   "pick": [
+    "Small",
+    1,
+    902
+   ],
+   "error": null
+  },
+  {
+   "hosts": 16,
+   "retentionDays": 30,
+   "eps": 3200,
+   "pick": [
+    "Small",
+    1,
+    3863
+   ],
+   "error": null
+  },
+  {
+   "hosts": 16,
+   "retentionDays": 90,
+   "eps": 3200,
+   "pick": [
+    "Small",
+    2,
+    5794
+   ],
+   "error": null
+  },
+  {
+   "hosts": 64,
+   "retentionDays": 1,
+   "eps": 12800,
+   "pick": [
+    "Small",
+    1,
+    515
+   ],
+   "error": null
+  },
+  {
+   "hosts": 64,
+   "retentionDays": 7,
+   "eps": 12800,
+   "pick": [
+    "Small",
+    1,
+    3605
+   ],
+   "error": null
+  },
+  {
+   "hosts": 64,
+   "retentionDays": 30,
+   "eps": 12800,
+   "pick": [
+    "Small",
+    2,
+    7725
+   ],
+   "error": null
+  },
+  {
+   "hosts": 64,
+   "retentionDays": 90,
+   "eps": 12800,
+   "pick": [
+    "Medium",
+    6,
+    7725
+   ],
+   "error": null
+  },
+  {
+   "hosts": 200,
+   "retentionDays": 1,
+   "eps": 40000,
+   "pick": [
+    "Small",
+    3,
+    537
+   ],
+   "error": null
+  },
+  {
+   "hosts": 200,
+   "retentionDays": 7,
+   "eps": 40000,
+   "pick": [
+    "Small",
+    3,
+    3756
+   ],
+   "error": null
+  },
+  {
+   "hosts": 200,
+   "retentionDays": 30,
+   "eps": 40000,
+   "pick": [
+    "Medium",
+    6,
+    8047
+   ],
+   "error": null
+  },
+  {
+   "hosts": 200,
+   "retentionDays": 90,
+   "eps": 40000,
+   "pick": [
+    "Large",
+    17,
+    8520
+   ],
+   "error": null
+  },
+  {
+   "hosts": 300,
+   "retentionDays": 1,
+   "eps": 60000,
+   "pick": [
+    "Small",
+    4,
+    604
+   ],
+   "error": null
+  },
+  {
+   "hosts": 300,
+   "retentionDays": 7,
+   "eps": 60000,
+   "pick": [
+    "Small",
+    4,
+    4225
+   ],
+   "error": null
+  },
+  {
+   "hosts": 300,
+   "retentionDays": 30,
+   "eps": 60000,
+   "pick": [
+    "Medium",
+    9,
+    8047
+   ],
+   "error": null
+  },
+  {
+   "hosts": 300,
+   "retentionDays": 90,
+   "eps": 60000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 520,
+   "retentionDays": 1,
+   "eps": 104000,
+   "pick": [
+    "Medium",
+    3,
+    1395
+   ],
+   "error": null
+  },
+  {
+   "hosts": 520,
+   "retentionDays": 7,
+   "eps": 104000,
+   "pick": [
+    "Medium",
+    4,
+    7323
+   ],
+   "error": null
+  },
+  {
+   "hosts": 520,
+   "retentionDays": 30,
+   "eps": 104000,
+   "pick": [
+    "Large",
+    14,
+    8967
+   ],
+   "error": null
+  },
+  {
+   "hosts": 520,
+   "retentionDays": 90,
+   "eps": 104000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 1000,
+   "retentionDays": 1,
+   "eps": 200000,
+   "pick": [
+    "Medium",
+    6,
+    1342
+   ],
+   "error": null
+  },
+  {
+   "hosts": 1000,
+   "retentionDays": 7,
+   "eps": 200000,
+   "pick": [
+    "Medium",
+    7,
+    8047
+   ],
+   "error": null
+  },
+  {
+   "hosts": 1000,
+   "retentionDays": 30,
+   "eps": 200000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 1000,
+   "retentionDays": 90,
+   "eps": 200000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 1500,
+   "retentionDays": 1,
+   "eps": 300000,
+   "pick": [
+    "Medium",
+    9,
+    1342
+   ],
+   "error": null
+  },
+  {
+   "hosts": 1500,
+   "retentionDays": 7,
+   "eps": 300000,
+   "pick": [
+    "Medium",
+    10,
+    8449
+   ],
+   "error": null
+  },
+  {
+   "hosts": 1500,
+   "retentionDays": 30,
+   "eps": 300000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 1500,
+   "retentionDays": 90,
+   "eps": 300000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 2400,
+   "retentionDays": 1,
+   "eps": 480000,
+   "pick": [
+    "Large",
+    9,
+    2146
+   ],
+   "error": null
+  },
+  {
+   "hosts": 2400,
+   "retentionDays": 7,
+   "eps": 480000,
+   "pick": [
+    "Large",
+    16,
+    8449
+   ],
+   "error": null
+  },
+  {
+   "hosts": 2400,
+   "retentionDays": 30,
+   "eps": 480000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  },
+  {
+   "hosts": 2400,
+   "retentionDays": 90,
+   "eps": 480000,
+   "pick": null,
+   "error": "Your workload exceeds the maximum supported cluster of 19 Large replicas. Maximum supported storage retention exceeded."
+  }
+ ]
+}

@@ -16,6 +16,13 @@
 //        "ESX hosts x 250" EPS estimate, N+1 / N+2 advice, scale-up thresholds, 500 GB - 9 TB
 //        disk per replica. GB/day per replica from Configuration Maximums 9.1.0.
 //   RTM  Configuration Maximums, VCF Operations 9.1.0, "Real-Time Metrics" categories.
+//   EST  Broadcom's official VCF Operations Sizing Estimator (vcfopssizer.broadcom.com, build
+//        2026-10-05), compared through its public API on 2026-10-14 (#400). Where it differs
+//        from the published pages the estimator wins, because it is what people compare against;
+//        the published figure stays in docs/30 and in the input hints. Taken from it: metrics per
+//        object kind, the fixed 20% buffer, the size-preference rule, metrics not doubled for
+//        HA/CA, multi-node non-HA, 200 events/sec per ESX host, 400 bytes per event, GiB and the
+//        1.25 storage factor, GB/day as a replica limit, no default spare, the 5 / 12 switch.
 
 export const SOURCES_DATE = '2026-10-14';
 
@@ -41,6 +48,20 @@ export const OPS_SIZES: OpsSize[] = [
   { name: 'Large', vcpu: 16, ram: 48, ramMax: 96, singleObjects: 44_000, singleMetrics: 8_000_000, nodeObjects: 36_000, nodeMetrics: 6_000_000, maxNodes: 16, caPerFaultDomain: 8, maxVcAdapters: 100 },
   { name: 'Extra Large', vcpu: 24, ram: 128, ramMax: 256, singleObjects: 100_000, singleMetrics: 20_000_000, nodeObjects: 88_000, nodeMetrics: 15_000_000, maxNodes: 12, caPerFaultDomain: 6, maxVcAdapters: 120 },
 ];
+
+// Metrics collected per object kind (EST, /api/adapterInfos?version=9.1, vCenter adapter).
+// Objects the estimator has no kind for ("other") are counted at the VM rate: a conservative
+// stand-in, since VMs are among the heaviest kinds.
+export const METRICS_PER = { vm: 262, host: 292, vcenter: 230, datastore: 93, other: 262 } as const;
+
+// EST adds a fixed buffer to objects and metrics before growth (growth 0 gives x1.2, growth 10%
+// gives x1.32).
+export const EST_BUFFER_PCT = 20;
+
+// EST's size preference in HA / CA: the smallest size whose single-node limits hold everything,
+// except that Small switches to Medium at HALF its single-node limits (measured: 800k metrics,
+// exactly 1.6M / 2). Medium, Large and Extra Large switch at their full single-node limits.
+export const SMALL_HA_PREFERENCE_FACTOR = 0.5;
 
 // The CA witness node (KB 397782): 2 vCPU / 8 GB.
 export const CA_WITNESS = { vcpu: 2, ram: 8 };
@@ -85,12 +106,17 @@ export const LOG_SIZES: LogSize[] = [
 ];
 
 export const LOG_DISK_MIN_GB = 500;
-export const LOG_DISK_MAX_GB = 9 * 1024; // "can be scaled up to 9 TB per replica"
+export const LOG_DISK_MAX_GB = 9_000; // "can be scaled up to 9 TB per replica"; the estimator caps at 9,000 GB
 export const LOG_BASE_IPS = 6; // "Allow for 6 IPs for an initial log management installation"
-export const EPS_PER_HOST = 250; // "ESX hosts in the fleet multiplied by 250"
-// The design page's scale-up advice: medium "once you exceed 5-6 small replicas", large "once
-// you get to 6-8 medium replicas". The upper end of each range is used.
-export const LOG_SCALE_UP_AT = { Small: 6, Medium: 8 } as const;
+export const EPS_PER_HOST = 200; // EST "epsPerUnit" for ESX hosts; the design page says 250
+export const EPS_PER_HOST_TECHDOCS = 250; // "ESX hosts in the fleet multiplied by 250"
+export const LOG_BYTES_PER_EVENT = 400; // EST default average event size
+export const LOG_STORAGE_FACTOR = 1.25; // EST: retained = GiB/day x retention x 1.25
+export const GIB = 1024 ** 3; // EST computes "GB" per day in binary units
+// Scale-up points, from EST: Small while it needs at most 5 replicas, Medium up to 12. The design
+// page's wording is softer ("medium once you exceed 5-6 small replicas, or large once you get to
+// 6-8 medium replicas").
+export const LOG_SCALE_UP_AT = { Small: 5, Medium: 12 } as const;
 
 // ---------------------------------------------------------------- Real-Time Metrics
 export const RTM_SIZES = [
@@ -108,7 +134,8 @@ export interface OpsLogsState {
   datastores: number;
   otherObjects: number; // anything else monitored: NSX, vSAN, management packs ...
   objectsOverride: number; // 0 = use the count above
-  metrics: number; // 0 = unknown, objects-only check
+  metrics: number; // 0 = estimate from the counts above
+  bufferPct: number; // EST's fixed buffer, before growth
   growthPct: number;
   // VCF Operations
   opsModel: OpsModel;
@@ -131,10 +158,11 @@ export interface OpsLogsState {
 
 export function defaultState(): OpsLogsState {
   return {
-    hosts: 64, vcenters: 2, vms: 1_500, datastores: 20, otherObjects: 300, objectsOverride: 0, metrics: 0, growthPct: 20,
+    hosts: 64, vcenters: 2, vms: 1_500, datastores: 20, otherObjects: 300, objectsOverride: 0, metrics: 0,
+    bufferPct: EST_BUFFER_PCT, growthPct: 0,
     opsModel: 'High Availability', proxySites: 1,
     logsInclude: true, logsSize: 'Auto', epsPerHost: EPS_PER_HOST, extraEps: 0, epsOverride: 0, syslogSources: 0, httpSources: 0,
-    retentionDays: 30, bytesPerEvent: 350, storageFactor: 1, spareReplicas: 1,
+    retentionDays: 30, bytesPerEvent: LOG_BYTES_PER_EVENT, storageFactor: LOG_STORAGE_FACTOR, spareReplicas: 0,
     rtmInclude: false,
   };
 }
@@ -175,8 +203,9 @@ export interface OpsOption {
 }
 
 export interface OpsResult {
-  objects: number; // after growth
-  metrics: number; // after growth, 0 = not given
+  objects: number; // after buffer and growth
+  metrics: number; // after buffer and growth
+  metricsEstimated: boolean;
   options: OpsOption[];
   pick: OpsOption | null;
   witness: boolean;
@@ -185,20 +214,34 @@ export interface OpsResult {
 
 function opsOption(z: OpsSize, model: OpsModel, objects: number, metrics: number, vcenters: number): OpsOption {
   const base = { size: z.name, vcAdapterWarn: vcenters > z.maxVcAdapters };
+  const fmt = (n: number) => n.toLocaleString('en-US');
   if (model === 'Simple') {
-    const ok = objects <= z.singleObjects && (!metrics || metrics <= z.singleMetrics);
-    return { ...base, nodes: ok ? 1 : null, vcpu: ok ? z.vcpu : 0, ram: ok ? z.ram : 0, objectCapacity: z.singleObjects,
-      why: ok ? '' : objects > z.singleObjects ? `more than ${z.singleObjects.toLocaleString('en-US')} objects on one node` : 'too many metrics for one node' };
+    // One node while it holds the load; otherwise a multi-node cluster without HA, which the
+    // estimator offers too ("no HA" with several nodes), on the per-node cluster limits.
+    if (objects <= z.singleObjects && metrics <= z.singleMetrics) {
+      return { ...base, nodes: 1, vcpu: z.vcpu, ram: z.ram, objectCapacity: z.singleObjects, why: '' };
+    }
+    if (z.nodeObjects === null || z.nodeMetrics === null) {
+      return { ...base, nodes: null, vcpu: 0, ram: 0, objectCapacity: z.singleObjects,
+        why: objects > z.singleObjects ? `more than ${fmt(z.singleObjects)} objects on one node` : `more than ${fmt(z.singleMetrics)} metrics on one node` };
+    }
+    const byObj = Math.ceil(objects / z.nodeObjects);
+    const byMet = Math.ceil(metrics / z.nodeMetrics);
+    const n = Math.max(2, byObj, byMet);
+    if (n > z.maxNodes) return { ...base, nodes: null, vcpu: 0, ram: 0, objectCapacity: z.maxNodes * z.nodeObjects, why: `needs ${n} nodes, max ${z.maxNodes}` };
+    return { ...base, nodes: n, vcpu: n * z.vcpu, ram: n * z.ram, objectCapacity: n * z.nodeObjects,
+      why: `no HA; ${byMet > byObj ? 'metrics set' : 'objects set'} the node count` };
   }
   if (z.nodeObjects === null || z.nodeMetrics === null) {
     return { ...base, nodes: null, vcpu: 0, ram: 0, objectCapacity: 0, why: 'single node only, no HA or CA' };
   }
-  // HA and CA both replicate each object to a second node: "two times less" than non-HA.
+  // HA and CA replicate each object to a second node: "two times less" objects than non-HA
+  // (KB 397782). The estimator doubles objects only, not metrics, so neither do we (#400).
   const ca = model === 'Continuous Availability';
   const maxNodes = ca ? z.caPerFaultDomain * 2 : z.maxNodes;
   if (ca && z.caPerFaultDomain === 0) return { ...base, nodes: null, vcpu: 0, ram: 0, objectCapacity: 0, why: 'no Continuous Availability at this size' };
   const byObj = Math.ceil((objects * 2) / z.nodeObjects);
-  const byMet = metrics ? Math.ceil((metrics * 2) / z.nodeMetrics) : 0;
+  const byMet = Math.ceil(metrics / z.nodeMetrics);
   let n = Math.max(2, byObj, byMet);
   if (ca && n % 2) n++; // equal nodes in both fault domains
   const cap = Math.floor((maxNodes * z.nodeObjects) / 2);
@@ -210,16 +253,37 @@ function opsOption(z: OpsSize, model: OpsModel, objects: number, metrics: number
     why: byMet > byObj ? 'metrics set the node count' : '' };
 }
 
-export function sizeOps(s: OpsLogsState): OpsResult {
-  const g = 1 + s.growthPct / 100;
-  const counted = s.vms + s.hosts + s.datastores + s.vcenters + s.otherObjects;
-  const objects = Math.ceil((s.objectsOverride > 0 ? s.objectsOverride : counted) * g);
-  const metrics = s.metrics > 0 ? Math.ceil(s.metrics * g) : 0;
-  const options = OPS_SIZES.map((z) => opsOption(z, s.opsModel, objects, metrics, s.vcenters));
-  // KB 397782: "Use the configuration which has the least number of nodes, but is able to
-  // accommodate the number of objects" -- then the smaller total vCPU on a tie.
+// The estimator's preference (#400): the smallest size whose single-node limits hold all objects
+// and metrics (Small at half its limits in HA / CA). If no size qualifies, the fewest nodes, then
+// the smaller total vCPU -- which is KB 397782's "least number of nodes" rule.
+function preferred(options: OpsOption[], model: OpsModel, objects: number, metrics: number): OpsOption | null {
   const fits = options.filter((o) => o.nodes !== null);
-  const pick = fits.sort((a, b) => a.nodes! - b.nodes! || a.vcpu - b.vcpu)[0] ?? null;
+  for (const o of fits) {
+    const z = OPS_SIZES.find((x) => x.name === o.size)!;
+    const f = model !== 'Simple' && z.name === 'Small' ? SMALL_HA_PREFERENCE_FACTOR : 1;
+    if (objects <= z.singleObjects * f && metrics <= z.singleMetrics * f) return o;
+  }
+  return [...fits].sort((a, b) => a.nodes! - b.nodes! || a.vcpu - b.vcpu)[0] ?? null;
+}
+
+// Metrics from the counts, at the estimator's per-kind rates. With a known object count, the
+// counted mix's average rate is applied to it.
+export function estimateMetrics(s: OpsLogsState): number {
+  const m = METRICS_PER;
+  const counted = s.vms + s.hosts + s.datastores + s.vcenters + s.otherObjects;
+  const raw = s.vms * m.vm + s.hosts * m.host + s.datastores * m.datastore + s.vcenters * m.vcenter + s.otherObjects * m.other;
+  if (s.objectsOverride > 0) return Math.round(s.objectsOverride * (counted > 0 ? raw / counted : m.other));
+  return raw;
+}
+
+export function sizeOps(s: OpsLogsState): OpsResult {
+  const g = (1 + s.bufferPct / 100) * (1 + s.growthPct / 100);
+  const counted = s.vms + s.hosts + s.datastores + s.vcenters + s.otherObjects;
+  const objects = Math.round((s.objectsOverride > 0 ? s.objectsOverride : counted) * g);
+  const metricsEstimated = !(s.metrics > 0);
+  const metrics = Math.round((metricsEstimated ? estimateMetrics(s) : s.metrics) * g);
+  const options = OPS_SIZES.map((z) => opsOption(z, s.opsModel, objects, metrics, s.vcenters));
+  const pick = preferred(options, s.opsModel, objects, metrics);
 
   const sites = Math.max(1, s.proxySites);
   const need = (p: (typeof PROXY_SIZES)[number]) => Math.max(sites, Math.ceil(objects / p.objects), Math.ceil(s.vcenters / p.vcAdapters));
@@ -231,7 +295,7 @@ export function sizeOps(s: OpsLogsState): OpsResult {
   const why = count > sites
     ? `${count} proxies: ${Math.ceil(objects / p.objects) >= Math.ceil(s.vcenters / p.vcAdapters) ? `objects exceed ${p.objects.toLocaleString('en-US')} per proxy` : `more than ${p.vcAdapters} vCenters per proxy`}`
     : `one per location (${sites})`;
-  return { objects, metrics, options, pick, witness: s.opsModel === 'Continuous Availability',
+  return { objects, metrics, metricsEstimated, options, pick, witness: s.opsModel === 'Continuous Availability',
     proxy: { size: p.name, count, vcpu: count * p.vcpu, ram: count * p.ram, why } };
 }
 
@@ -265,13 +329,14 @@ export interface LogsResult {
   pickReason: string;
 }
 
-function logOption(z: LogSize, s: OpsLogsState, eps: number, storageGb: number): LogOption {
+function logOption(z: LogSize, s: OpsLogsState, eps: number, gbPerDay: number, storageGb: number): LogOption {
   const spare = s.spareReplicas;
   const byEps = Math.ceil(eps / z.eps);
+  const byDay = Math.ceil(gbPerDay / z.gbPerDay); // the estimator treats GB/day per replica as a limit
   const byDisk = Math.ceil(storageGb / LOG_DISK_MAX_GB);
-  const active = Math.max(byEps, byDisk, 1);
+  const active = Math.max(byEps, byDay, byDisk, 1);
   const replicas = Math.max(z.minReplicas, active + spare);
-  const disk = Math.min(LOG_DISK_MAX_GB, Math.max(LOG_DISK_MIN_GB, Math.ceil(storageGb / replicas / 50) * 50));
+  const disk = Math.min(LOG_DISK_MAX_GB, Math.max(LOG_DISK_MIN_GB, Math.ceil(storageGb / replicas)));
   const syslog = s.syslogSources > 0 ? s.syslogSources : s.hosts;
   const vips = Math.max(1, Math.ceil(eps / z.vipEps), Math.ceil(syslog / z.vipTcp), Math.ceil(s.httpSources / z.vipHttp));
   const workers = replicas * z.workersPerReplica;
@@ -291,9 +356,9 @@ export function sizeLogs(s: OpsLogsState): LogsResult {
   const g = 1 + s.growthPct / 100;
   const estimated = !(s.epsOverride > 0);
   const eps = Math.ceil((estimated ? s.hosts * s.epsPerHost + s.extraEps : s.epsOverride) * g);
-  const gbPerDay = (eps * s.bytesPerEvent * 86_400) / 1e9;
+  const gbPerDay = (eps * s.bytesPerEvent * 86_400) / GIB;
   const storageGb = Math.ceil(gbPerDay * s.retentionDays * s.storageFactor);
-  const options = LOG_SIZES.map((z) => logOption(z, s, eps, storageGb));
+  const options = LOG_SIZES.map((z) => logOption(z, s, eps, gbPerDay, storageGb));
   let pick: LogOption | null = null;
   let pickReason = '';
   if (s.logsSize !== 'Auto') {
@@ -302,8 +367,8 @@ export function sizeLogs(s: OpsLogsState): LogsResult {
   } else {
     const [S, M, L] = options;
     if (S.fits && S.replicas <= LOG_SCALE_UP_AT.Small) { pick = S; pickReason = `Small fits in ${S.replicas} replica(s)`; }
-    else if (M.fits && M.replicas <= LOG_SCALE_UP_AT.Medium) { pick = M; pickReason = S.fits ? `Small would need ${S.replicas} replicas; Broadcom advises Medium past 5-6 Small replicas` : `Small does not fit (${S.why})`; }
-    else if (L.fits) { pick = L; pickReason = M.fits ? `Medium would need ${M.replicas} replicas; Broadcom advises Large past 6-8 Medium replicas` : `Medium does not fit (${M.why})`; }
+    else if (M.fits && M.replicas <= LOG_SCALE_UP_AT.Medium) { pick = M; pickReason = S.fits ? `Small would need ${S.replicas} replicas; Medium past ${LOG_SCALE_UP_AT.Small} Small replicas` : `Small does not fit (${S.why})`; }
+    else if (L.fits) { pick = L; pickReason = M.fits ? `Medium would need ${M.replicas} replicas; Large past ${LOG_SCALE_UP_AT.Medium} Medium replicas` : `Medium does not fit (${M.why})`; }
     else pickReason = `no size fits (Large: ${L.why}); split across more than one Log Management instance`;
   }
   return { eps, epsEstimated: estimated, gbPerDay, storageGb, options, pick, pickReason };
