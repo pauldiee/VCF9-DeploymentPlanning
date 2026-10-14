@@ -221,7 +221,9 @@ notice).
    failure mode.
 7. *(Optional)* **Prefer IPv6** for internal communications.
 8. *(Optional)* **Set up a proxy server** — Network Proxy IP/password; if
-   forwarding logs through it, port 9543 must be open; **Use SSL
+   forwarding logs through it, port 9543 must be open (Log Management in VVF
+   needs VCF Management Services first — see
+   [`31-log-management.md`](31-log-management.md)); **Use SSL
    connection to proxy** + **Verify proxy's SSL cert** if applicable; a
    **Custom CA** field accepts an inspecting proxy's root CA
    (`-----BEGIN CERTIFICATE-----` / `-----END CERTIFICATE-----`) — **this

@@ -134,7 +134,9 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 >   ([KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html)),
 >   and the script fails at its first step if 9543 is closed. Listed in the
 >   [Ports and Protocols portal](https://ports.broadcom.com/view/) for SDDC Manager 9.1.0
->   (read from a 2026-09-23 capture).
+>   (read from a 2026-09-23 capture). Log Management's full in/out flow list
+>   (agents, ESX syslog 1514, the Cloud Proxy Log Forwarder, integrations), for
+>   VCF and VVF: [`31-log-management.md` §6](31-log-management.md#6-firewall-flows).
 > - **Cloud Proxy** needs **443, 4505, 4506** for Telegraf-based app monitoring.
 > - **License Server** requires an FQDN/IP **outside** the VCF services-runtime
 >   range (IPv4 only) — a routing/reachability point, not just a port.

@@ -317,6 +317,9 @@ it, and nothing in VCF Operations switches it on. Broadcom
 The KB uses the 9.0 name; in 9.1 that is Log Management. The fix is a manual
 agent install on the SDDC Manager appliance, using a script attached to the KB.
 Plan it as a post-deploy step of Log Management (deployment plan Story 8.4).
+This section covers SDDC Manager only (VCF only, since VVF has none). For every
+other source, agent secrets and the full Log Management flow list, on VCF and
+VVF alike, see [`31-log-management.md`](31-log-management.md).
 
 **Before you start**
 
@@ -358,6 +361,12 @@ Plan it as a post-deploy step of Log Management (deployment plan Story 8.4).
   Each section is tagged `vmw_product=vcf` and `vcf_component=<name>`, which is
   what you filter on in Log Management. The file header says not to modify it;
   local edits are lost on a re-run.
+- **Writes no `secret=` line.** In 9.1, agent authentication is optional by
+  default, so that works out of the box. If you **enforce** agent
+  authentication (a Global Setting), unauthenticated ingestion is dropped:
+  generate a secret for SDDC Manager and add `secret=<value>` under `[server]`
+  after **every** run of the script
+  ([`31-log-management.md` §4](31-log-management.md#4-agents-and-authentication)).
 
 **Not yet verified (check these on your own deployment):**
 

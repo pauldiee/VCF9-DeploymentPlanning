@@ -253,6 +253,14 @@ export const NAV: NavItem[] = [
     icon: 'trash-can',
     blurb: 'Cleanly remove and reinstall optional Day-N fleet components — Log Management, Real-time Metrics, VON, Depot Service, Identity Broker, VCF Automation — via cleanup_component.py.',
   },
+  {
+    slug: '31-log-management',
+    step: 'Day-2 operations',
+    band: 'Day-2 operations',
+    label: 'Log Management Sources',
+    icon: 'file-lines',
+    blurb: 'Getting logs into Log Management on VCF and VVF 9.1: whether your platform can run it, the deploy, which sources send on their own and which need an agent, agent secrets, and the firewall flows.',
+  },
 
   // --- Reference: VVF / Standalone --------------------------------------------
   {
