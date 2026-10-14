@@ -1,5 +1,33 @@
 # Changelog
 
+## v5.9.0 — 2026-10-14
+- **New guide: getting logs into Log Management, for VCF and VVF (#399).**
+  [`docs/31-log-management.md`](docs/31-log-management.md) works on its own,
+  outside the deployment plan. It covers:
+  - **Can your platform run it?** In 9.1, Log Management is a VCF Management
+    Services component. VVF 9.1 *without* the management services has no Log
+    Management, per
+    [TechDocs](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-vmware-vsphere-foundation-using-the-deployment-wizard/deploying-vmware-vsphere-foundation-9-1-without-vcf-management-services.html).
+    The guide shows how to add the management services with VCF Installer
+    9.1.1+ first. The 9.0 VVF standalone OVA page has no 9.1 equivalent.
+  - **Deploy** from VCF Operations (*Build → Lifecycle → VCF Management*), the
+    same on both platforms, including the import follow-ups.
+  - **Per source:** which ones send automatically and which need work
+    (SDDC Manager → `05` §B.6, Linux VMs → agent). Each source is marked VCF
+    or VVF.
+  - **Agent secrets:** optional by default in 9.1, but enforcing them drops
+    unauthenticated agents. That includes the KB 396643 SDDC Manager agent,
+    whose `liagent.ini` has no `secret=` line; `05` §B.6 now says so.
+  - **Cloud Proxy Log Forwarder** as a second ingestion target.
+  - **Firewall flows in and out**, from the
+    [Ports and Protocols portal](https://ports.broadcom.com/view/) (Log
+    Management 9.1.0 + 9.1.1, read 2026-10-14).
+  - The **vCenter/ESX section is a placeholder** until #228's support case is
+    settled.
+- Linked from `05` §B.6, `07` §E, `27` step 8 and deployment plan Story 8.4
+  (as a guide link when Log Management is selected). Added to the site nav
+  under *Day-2 operations*, and to the README and CLAUDE.md file tables.
+
 ## v5.8.1 — 2026-10-14
 - **Log Management doesn't collect SDDC Manager's own logs: documented the
   manual agent install (#398).** In VCF 9.0 and 9.1 nothing forwards SDDC
