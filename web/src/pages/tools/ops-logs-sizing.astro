@@ -5,21 +5,22 @@ import { docHref, withBase } from '../../lib/path';
 ---
 
 <BaseLayout
-  title="VCF Operations & Log Management Sizer | VCF 9.1 Planning"
-  description="Recommends a VCF Operations node size and count, Cloud Proxy count, Log Management size and replica count, and a Real-Time Metrics size from your environment's numbers, using Broadcom's VCF 9.1 limits."
+  title="Ops & Logs Planning Sizer | VCF 9.1 Planning"
+  description="Planning companion to Broadcom's VCF Operations Sizing Estimator: what Log Management and Real-Time Metrics add to the VCF services runtime (workers, IPs, VIPs), Cloud Proxies per location, and a quick VCF Operations estimate."
   active="tools/ops-logs-sizing"
 >
   <article class="sizer ols">
     <header class="sizer__head">
       <p class="itq-eyebrow">Sizing tool</p>
-      <h1>VCF Operations &amp; Log Management Sizer</h1>
+      <h1>Ops &amp; Logs Planning Sizer</h1>
       <p class="sizer__lede">
-        Enter what you will monitor and how much log volume to expect, and get back the
-        <strong>size and node count</strong> for VCF Operations, the Cloud Proxies, Log Management and
-        Real-Time Metrics. It follows Broadcom's official
-        <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>
-        and the VCF 9.1 Configuration Maximums and <em>Log Management Detailed Design</em> (compared
-        and read {SOURCES_DATE}); the rules, sources and where they differ are in
+        A planning companion to Broadcom's
+        <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>.
+        It covers what the estimator leaves out: <strong>what Log Management and Real-Time Metrics add
+        to the VCF services runtime</strong> (worker nodes, IPs for the runtime block, ingestion VIPs),
+        the Log Management host and VIP limits, and <strong>Cloud Proxies per location</strong>. It also
+        gives a quick VCF Operations estimate that matches the estimator (compared {SOURCES_DATE}); use
+        the estimator itself for the final node size. Rules, sources and where they disagree are in
         <a href={docHref('30-ops-logs-sizing')}>the companion guide</a>. Take the sizes into the
         <a href={withBase('tools/mgmt-sizing/')}>Management Domain sizer</a> to check they fit your
         cluster. Everything runs in your browser; nothing is sent anywhere.
@@ -107,13 +108,11 @@ import { docHref, withBase } from '../../lib/path';
 
       <!-- ================= RESULTS ================= -->
       <section class="sizer__results" aria-live="polite">
-        <h2>VCF Operations</h2>
-        <div id="opsVerdict" class="verdict"></div>
-        <table class="sizer__table" id="opsTable">
-          <thead><tr><th>Size</th><th>Nodes</th><th>vCPU</th><th>RAM&nbsp;GB</th><th>Note</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <p class="sizer__hint" id="proxyLine"></p>
+        <div id="fpOut">
+          <h2>Services runtime footprint</h2>
+          <dl class="sizer__stats" id="fpStats"></dl>
+          <p class="sizer__hint" id="fpHint"></p>
+        </div>
 
         <div id="logsOut">
           <h2>Log Management</h2>
@@ -130,11 +129,22 @@ import { docHref, withBase } from '../../lib/path';
           <h2>Real-Time Metrics</h2>
           <div id="rtmVerdict" class="verdict"></div>
         </div>
+
+        <h2>Cloud Proxies</h2>
+        <p class="sizer__hint" id="proxyLine"></p>
+
+        <h2>VCF Operations <span class="sizer__tag">quick estimate</span></h2>
+        <p class="sizer__hint">Matches the official estimator for the counts entered here. For the final node size, and for management packs, an audit-file import or data-disk sizing, use the <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>.</p>
+        <div id="opsVerdict" class="verdict"></div>
+        <table class="sizer__table" id="opsTable">
+          <thead><tr><th>Size</th><th>Nodes</th><th>vCPU</th><th>RAM&nbsp;GB</th><th>Note</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </section>
     </div>
 
     <p class="sizer__source">
-      Rules matched to Broadcom's
+      VCF Operations estimate matched to Broadcom's
       <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>
       (build 2026-10-05, compared {SOURCES_DATE}); limits from Configuration Maximums (VCF Operations
       9.1.0), KB 397782 and the VCF 9.1 <em>Log Management Detailed Design</em>. This is a planning
@@ -208,7 +218,7 @@ import { docHref, withBase } from '../../lib/path';
       return `<tr class="${x.nodes ? (best ? 'ols__best' : '') : 'ols__no'}"><td>${x.size}${best ? ' <span class="sizer__tag">pick</span>' : ''}</td><td>${x.nodes ?? '&ndash;'}</td><td>${x.nodes ? fmt(x.vcpu) : ''}</td><td>${x.nodes ? fmt(x.ram) : ''}</td><td class="ols__note">${esc(note)}</td></tr>`;
     }).join('');
     const p = o.proxy;
-    $('proxyLine').innerHTML = `<strong>Cloud Proxy:</strong> ${p.count} &times; Unified ${p.size} (${fmt(p.vcpu)} vCPU / ${fmt(p.ram)} GB in total), ${esc(p.why)}.`;
+    $('proxyLine').innerHTML = `<strong>${p.count} &times; Unified ${p.size}</strong> (${fmt(p.vcpu)} vCPU / ${fmt(p.ram)} GB in total), ${esc(p.why)}. Cloud Proxies are separate appliances, not on the services runtime.`;
     lines.push(`Cloud Proxy: ${p.count} x Unified ${p.size} (${p.vcpu} vCPU / ${p.ram} GB), ${p.why}`);
 
     // ---- Log Management
@@ -254,6 +264,23 @@ import { docHref, withBase } from '../../lib/path';
         rv.textContent = `No size covers ${r.rtm.why}.`;
         lines.push(`Real-Time Metrics: no size covers ${r.rtm.why}`);
       }
+    }
+    // ---- Services runtime footprint
+    const f = r.footprint;
+    $('fpOut').hidden = !f.logs && !f.rtm;
+    if (f.logs || f.rtm) {
+      const rows: [string, string][] = [];
+      if (f.logs) {
+        rows.push(['Log Management workers', `${f.logs.workers} (${fmt(f.logs.vcpu)} vCPU / ${fmt(f.logs.ram)} GB)`]);
+        rows.push(['IPs from the runtime block', `${f.logs.ips}`]);
+        rows.push(['Ingestion VIPs', `${f.logs.vips}`]);
+        rows.push(['Log storage', gb(f.logs.diskGb)]);
+      }
+      if (f.rtm) rows.push(['Real-Time Metrics', `${f.rtm.size} (${fmt(f.rtm.vcpu)} vCPU / ${fmt(f.rtm.ram)} GB / ${gb(f.rtm.diskGb)})`]);
+      rows.push(['Total added', `${fmt(f.vcpu)} vCPU / ${fmt(f.ram)} GB / ${gb(f.diskGb)}`]);
+      $('fpStats').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+      $('fpHint').innerHTML = `On top of the VCF Management Services' own footprint, on the management cluster and the services runtime's datastore.${f.logs ? ` Reserve the ${f.logs.ips} IPs in the services-runtime block of your network plan (Step 1).` : ''}${f.rtm ? ' Real-Time Metrics IPs are not counted here.' : ''}`;
+      lines.unshift(`Services runtime footprint: ${f.vcpu} vCPU / ${f.ram} GB / ${Math.round(f.diskGb)} GB${f.logs ? `; Log Management ${f.logs.ips} IPs from the runtime block, ${f.logs.vips} VIP(s)` : ''}`);
     }
     summary = lines.join('\n');
   }

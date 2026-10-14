@@ -49,7 +49,7 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |
 | NSX Edge node mgmt              | `.75`, `.76`         | `sfo-m01-en01` / `en02`                  |
 | VCF Operations for Networks     | `.77`, `.78`         | Day-2, optional — platform + collector (a **Large** platform is a 3-node cluster: reserve 2 more) |
-| Log Management                  | — (runtime block)    | Day-2, optional — 1 FQDN + 6 IPs (+2 per extra replica), **allocated from the services-runtime block**; needs the `/27` variant of the block above |
+| Log Management                  | — (runtime block)    | Day-2, optional — 1 FQDN + 6 IPs (+1 per Small/Medium replica, +2 per Large), **allocated from the services-runtime block**; needs the `/27` variant of the block above |
 | Real-time metrics               | — (runtime block)    | Day-2, optional — 6 IPs, also from the services-runtime block |
 | Identity Broker                 | —                    | FQDN only — IP served from the services-runtime block (`.32–.47`) |
 

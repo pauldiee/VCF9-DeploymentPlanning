@@ -380,6 +380,30 @@ export function sizeRtm(s: OpsLogsState) {
   return { pick, why: pick ? '' : `more than ${RTM_SIZES[2].maxHosts.toLocaleString('en-US')} hosts or ${RTM_SIZES[2].maxVcenters} vCenters` };
 }
 
+// ---------------------------------------------------------------- Services runtime footprint
+// What Log Management and Real-Time Metrics add to the VCF services runtime: the planning output
+// the official estimator doesn't give (#401). Log Management IPs follow the design page: "6 IPs
+// for an initial log management installation plus 1 IP for every small or medium replica and 2
+// IPs for every large replica", plus one per extra VIP. Real-Time Metrics IPs aren't counted:
+// no 9.1 page read for this tool states them.
+export interface Footprint {
+  logs: { size: string; replicas: number; workers: number; vcpu: number; ram: number; ips: number; vips: number; diskGb: number } | null;
+  rtm: { size: string; vcpu: number; ram: number; diskGb: number } | null;
+  vcpu: number;
+  ram: number;
+  diskGb: number;
+}
+
+export function footprint(logs: LogsResult | null, rtm: ReturnType<typeof sizeRtm> | null): Footprint {
+  const L = logs?.pick && logs.pick.fits ? logs.pick : null;
+  const R = rtm?.pick ?? null;
+  const l = L ? { size: L.size, replicas: L.replicas, workers: L.workers, vcpu: L.workerVcpu, ram: L.workerRam, ips: L.ips, vips: L.vips, diskGb: L.totalDiskGb } : null;
+  const r = R ? { size: R.name, vcpu: R.vcpu, ram: R.ram, diskGb: R.diskGb } : null;
+  return { logs: l, rtm: r, vcpu: (l?.vcpu ?? 0) + (r?.vcpu ?? 0), ram: (l?.ram ?? 0) + (r?.ram ?? 0), diskGb: (l?.diskGb ?? 0) + (r?.diskGb ?? 0) };
+}
+
 export function compute(s: OpsLogsState) {
-  return { ops: sizeOps(s), logs: s.logsInclude ? sizeLogs(s) : null, rtm: s.rtmInclude ? sizeRtm(s) : null };
+  const logs = s.logsInclude ? sizeLogs(s) : null;
+  const rtm = s.rtmInclude ? sizeRtm(s) : null;
+  return { ops: sizeOps(s), logs, rtm, footprint: footprint(logs, rtm) };
 }
