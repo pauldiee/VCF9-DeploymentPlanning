@@ -16,8 +16,10 @@ import { docHref, withBase } from '../../lib/path';
       <p class="sizer__lede">
         Enter what you will monitor and how much log volume to expect, and get back the
         <strong>size and node count</strong> for VCF Operations, the Cloud Proxies, Log Management and
-        Real-Time Metrics. The limits come from Broadcom's VCF 9.1 Configuration Maximums and the
-        <em>Log Management Detailed Design</em> (read {SOURCES_DATE}); the rules and sources are in
+        Real-Time Metrics. It follows Broadcom's official
+        <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>
+        and the VCF 9.1 Configuration Maximums and <em>Log Management Detailed Design</em> (compared
+        and read {SOURCES_DATE}); the rules, sources and where they differ are in
         <a href={docHref('30-ops-logs-sizing')}>the companion guide</a>. Take the sizes into the
         <a href={withBase('tools/mgmt-sizing/')}>Management Domain sizer</a> to check they fit your
         cluster. Everything runs in your browser; nothing is sent anywhere.
@@ -46,9 +48,12 @@ import { docHref, withBase } from '../../lib/path';
           <label>Known object count <span class="sizer__tag">optional</span><input type="number" min="0" id="objectsOverride" /></label>
           <p class="sizer__hint">If you already run VCF Operations (or Aria Operations), its real object count beats the estimate above. <strong>0</strong> uses the estimate.</p>
           <label>Collected metrics <span class="sizer__tag">optional</span><input type="number" min="0" id="metrics" /></label>
-          <p class="sizer__hint">From an existing install: the sum of the adapter instances' metrics on <em>Cluster Management</em>. <strong>0</strong> sizes on objects only.</p>
-          <label>Growth allowance %<input type="number" min="0" id="growthPct" /></label>
-          <p class="sizer__hint">Applied to objects, metrics and log volume. VCF Operations and Log Management can't be scaled back down once scaled up, so size for where you'll be, not where you are.</p>
+          <p class="sizer__hint">From an existing install: the sum of the adapter instances' metrics on <em>Cluster Management</em>. <strong>0</strong> estimates them at the official estimator's rates: 262 per VM, 292 per host, 230 per vCenter, 93 per datastore (other objects at the VM rate). Metrics often set the size before objects do.</p>
+          <div class="ols__pair">
+            <label>Estimator buffer %<input type="number" min="0" id="bufferPct" /></label>
+            <label>Growth allowance %<input type="number" min="0" id="growthPct" /></label>
+          </div>
+          <p class="sizer__hint">The official estimator always adds <strong>20%</strong> to objects and metrics, before growth. Growth also applies to log volume. VCF Operations and Log Management can't be scaled back down once scaled up, so size for where you'll be, not where you are.</p>
         </fieldset>
 
         <fieldset>
@@ -56,7 +61,7 @@ import { docHref, withBase } from '../../lib/path';
           <label>Deployment model
             <select id="opsModel">{OPS_MODELS.map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint"><strong>Simple</strong>: one node. <strong>High Availability</strong>: every object is kept on two nodes, so it holds half as much as the same nodes without HA. <strong>Continuous Availability</strong>: node pairs across two fault domains plus a witness, also half capacity.</p>
+          <p class="sizer__hint"><strong>Simple</strong>: one node, or a multi-node cluster without HA when one node isn't enough. <strong>High Availability</strong>: every object is kept on two nodes, so it holds half as many objects as the same nodes without HA. <strong>Continuous Availability</strong>: node pairs across two fault domains plus a witness, also half the objects.</p>
           <label>Locations that need their own Cloud Proxy<input type="number" min="1" id="proxySites" /></label>
           <p class="sizer__hint">Sites or network zones whose vCenters and endpoints are collected locally.</p>
         </fieldset>
@@ -71,7 +76,7 @@ import { docHref, withBase } from '../../lib/path';
               <label>Events/sec per ESX host<input type="number" min="0" id="epsPerHost" /></label>
               <label>Extra events/sec<input type="number" min="0" id="extraEps" /></label>
             </div>
-            <p class="sizer__hint">Broadcom's estimate is <strong>hosts &times; 250</strong>. Add extra for heavy senders, such as firewall-rule logging.</p>
+            <p class="sizer__hint">The official estimator uses <strong>200</strong> per host; the <em>Log Management Detailed Design</em> says <strong>hosts &times; 250</strong>. Add extra for heavy senders, such as firewall-rule logging.</p>
             <label>Known events/sec <span class="sizer__tag">optional</span><input type="number" min="0" id="epsOverride" /></label>
             <p class="sizer__hint">From a current log platform. <strong>0</strong> uses the estimate.</p>
             <div class="ols__pair">
@@ -89,7 +94,7 @@ import { docHref, withBase } from '../../lib/path';
                 <label>Bytes per event<input type="number" min="1" id="bytesPerEvent" /></label>
                 <label>Stored GB per ingested GB<input type="number" min="0.1" step="0.1" id="storageFactor" /></label>
               </div>
-              <p class="sizer__hint">Broadcom publishes neither. <strong>350 bytes</strong> is what Configuration Maximums implies (600 GB/day per Small replica at 20,000 events/sec). A factor of <strong>1</strong> stores logs as received, with no compression. Change both if you have measured values.</p>
+              <p class="sizer__hint">The official estimator's defaults: <strong>400 bytes</strong> per event, and <strong>1.25</strong> GB stored per GB ingested, counted in binary GB (GiB). Configuration Maximums implies about 350 bytes (600 GB/day per Small replica at 20,000 events/sec). Change both if you have measured values.</p>
             </details>
           </div>
         </fieldset>
@@ -129,11 +134,12 @@ import { docHref, withBase } from '../../lib/path';
     </div>
 
     <p class="sizer__source">
-      Limits from Configuration Maximums (VCF Operations 9.1.0), KB 397782 and the VCF 9.1
-      <em>Log Management Detailed Design</em>, read {SOURCES_DATE}. This is a planning aid: the
-      figures are Broadcom's published limits, not lab measurements. Confirm against the
+      Rules matched to Broadcom's
       <a href="https://vcfopssizer.broadcom.com/" target="_blank" rel="noopener">VCF Operations Sizing Estimator</a>
-      for your own object and metric mix.
+      (build 2026-10-05, compared {SOURCES_DATE}); limits from Configuration Maximums (VCF Operations
+      9.1.0), KB 397782 and the VCF 9.1 <em>Log Management Detailed Design</em>. This is a planning
+      aid, not a lab measurement. For an existing install, enter its real object and metric counts,
+      or run them through the estimator itself.
     </p>
   </article>
 </BaseLayout>
@@ -146,7 +152,7 @@ import { docHref, withBase } from '../../lib/path';
   const gb = (n: number) => (n >= 1024 ? `${(n / 1024).toFixed(n >= 10240 ? 0 : 1)} TB` : `${fmt(n)} GB`);
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
-  const NUMS = ['hosts', 'vcenters', 'vms', 'datastores', 'otherObjects', 'objectsOverride', 'metrics', 'growthPct', 'proxySites',
+  const NUMS = ['hosts', 'vcenters', 'vms', 'datastores', 'otherObjects', 'objectsOverride', 'metrics', 'bufferPct', 'growthPct', 'proxySites',
     'epsPerHost', 'extraEps', 'epsOverride', 'syslogSources', 'httpSources', 'retentionDays', 'bytesPerEvent', 'storageFactor'] as const;
 
   function load(): OpsLogsState {
@@ -189,13 +195,11 @@ import { docHref, withBase } from '../../lib/path';
     const ov = $('opsVerdict');
     if (o.pick) {
       ov.className = 'verdict verdict--ok';
-      ov.innerHTML = `<strong>${o.pick.size} &times; ${o.pick.nodes}</strong> node${o.pick.nodes === 1 ? '' : 's'} (${state.opsModel}${o.witness ? ' + witness' : ''}): ${fmt(o.pick.vcpu)} vCPU / ${fmt(o.pick.ram)} GB. Sized for ${fmt(o.objects)} objects${o.metrics ? ` and ${fmt(o.metrics)} metrics` : ''}.`;
-      lines.push(`VCF Operations: ${o.pick.size} x ${o.pick.nodes} (${state.opsModel}${o.witness ? ' + witness' : ''}), ${o.pick.vcpu} vCPU / ${o.pick.ram} GB, for ${o.objects} objects${o.metrics ? ` / ${o.metrics} metrics` : ''}`);
+      ov.innerHTML = `<strong>${o.pick.size} &times; ${o.pick.nodes}</strong> node${o.pick.nodes === 1 ? '' : 's'} (${state.opsModel}${o.witness ? ' + witness' : ''}): ${fmt(o.pick.vcpu)} vCPU / ${fmt(o.pick.ram)} GB. Sized for ${fmt(o.objects)} objects and ${fmt(o.metrics)} metrics${o.metricsEstimated ? ' (estimated)' : ''}.`;
+      lines.push(`VCF Operations: ${o.pick.size} x ${o.pick.nodes} (${state.opsModel}${o.witness ? ' + witness' : ''}), ${o.pick.vcpu} vCPU / ${o.pick.ram} GB, for ${o.objects} objects / ${o.metrics} metrics${o.metricsEstimated ? ' (estimated)' : ''}`);
     } else {
       ov.className = 'verdict verdict--bad';
-      ov.innerHTML = state.opsModel === 'Simple'
-        ? `No single node holds ${fmt(o.objects)} objects. Use <strong>High Availability</strong> (a Simple deployment can be scaled out to HA).`
-        : `No ${state.opsModel} cluster holds ${fmt(o.objects)} objects. Split the monitored estate across more than one VCF Operations instance.`;
+      ov.innerHTML = `No ${state.opsModel === 'Simple' ? 'cluster without HA' : `${state.opsModel} cluster`} holds ${fmt(o.objects)} objects and ${fmt(o.metrics)} metrics. Split the monitored estate across more than one VCF Operations instance.`;
       lines.push(`VCF Operations: no ${state.opsModel} configuration fits ${o.objects} objects`);
     }
     $('opsTable').querySelector('tbody')!.innerHTML = o.options.map((x) => {

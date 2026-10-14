@@ -1,5 +1,36 @@
 # Changelog
 
+## v5.9.1 — 2026-10-14
+- **Ops & Logs sizer now matches Broadcom's official estimator (#400).** The
+  [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) (build
+  2026-10-05) was compared like-for-like through its public API. Where it
+  differs from the published pages, the tool now follows the estimator:
+  - **VCF Operations:**
+    - Metrics are estimated per object kind (VM 262, host 292, vCenter 230,
+      datastore 93).
+    - A fixed +20% buffer is applied before growth.
+    - HA/CA doubles objects but not metrics.
+    - Simple can run multi-node without HA.
+    - Preferred size: the smallest whose single node holds the load (Small at
+      half in HA/CA), with KB 397782's fewest-nodes rule as the fallback.
+  - **Log Management:**
+    - 200 events/sec per host (250 per TechDocs, settable).
+    - 400 bytes per event, × 1.25 storage factor, binary GB.
+    - GB/day per replica is a limit.
+    - No spare replica by default (N+1/N+2 optional).
+    - Size switch at 5 / 12 replicas.
+    - 9,000 GB disk cap per replica.
+  - **Result:** all 75 reference scenarios (39 VCF Operations, 36 Log
+    Management) now give the same answer as the estimator. Those results are
+    stored in `web/scripts/ops-logs-estimator-fixtures.json`, and
+    `verify-ops-logs-sizer.mjs` re-checks them on every build (342 checks).
+  - [`docs/30-ops-logs-sizing.md`](docs/30-ops-logs-sizing.md): rules
+    rewritten, plus a dated *How this compares with the official estimator*
+    table. (`vropssizer.broadcom.com` is the same app under its old name.)
+  - **Defaults changed:** growth 0% (the buffer covers the old 20%), events/sec
+    per host 200, 400 bytes, factor 1.25, no spare. Older share links keep
+    their saved values.
+
 ## v5.9.0 — 2026-10-14
 - **New guide: getting logs into Log Management, for VCF and VVF (#399).**
   [`docs/31-log-management.md`](docs/31-log-management.md) works on its own,
