@@ -274,6 +274,14 @@ export const NAV: NavItem[] = [
 
   // --- Reference: Reference data ----------------------------------------------
   {
+    slug: '30-ops-logs-sizing',
+    step: 'Reference data',
+    band: 'Reference data',
+    label: 'Ops & Logs Sizing',
+    icon: 'chart-line',
+    blurb: 'Which size and how many nodes for VCF Operations, Cloud Proxies, Log Management and Real-Time Metrics, from your object, host and log-volume numbers. Backs the interactive sizer.',
+  },
+  {
     slug: '07-firewall-ports',
     step: 'Reference data',
     band: 'Reference data',

@@ -10,6 +10,11 @@ This toolkit provides an interactive tool that does both:
 
 > **[▶ Open the Management Domain Sizing calculator](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)**
 
+> **Not sure which VCF Operations or Log Management size to enter?** The
+> [Ops & Logs Sizer](https://vcf-planning.hollebollevsan.nl/tools/ops-logs-sizing/)
+> ([guide](30-ops-logs-sizing.md)) recommends a size and node / replica count from
+> your object, host and log-volume numbers.
+
 It reproduces the workbook's sizing calculation — the **VCF 9.1.1** workbook,
 pinned revision `v1.9.1.102` — and adds a **cluster fit check**: enter the hosts
 you intend to build and it shows whether the fleet fits **at N-1** (surviving one
