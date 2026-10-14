@@ -29,7 +29,8 @@
           "build": "25782009",
           "releaseDate": "2026-10-12",
           "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x/vsphere/esx/esx-9-1-1-0100-release-notes.html",
-          "patched": true
+          "patched": true,
+          "livePatchable": true
         },
         {
           "key": "nsx",
@@ -288,7 +289,8 @@
           "build": "25557999",
           "releaseDate": "2026-07-13",
           "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-0-x/vsphere/esx/esx-9-1-0-0200-release-notes.html",
-          "patched": true
+          "patched": true,
+          "livePatchable": false
         },
         {
           "key": "nsx",

@@ -1,5 +1,18 @@
 # Changelog
 
+## v5.7.5 — 2026-10-14
+- **Version Overview: ESXi rows show whether the patch is live-patchable
+  (#393).** The scraper now reads the "Live Patchable" row from each ESX
+  patch release note. The ESXi row gets a **Live patch** pill (no host
+  reboot) or a **Reboot** pill. Today that is 9.1.1.0100 → Live patch
+  and 9.1.0.0200 → Reboot. If the row is missing, the scraper shows no
+  pill rather than guessing. The page note points to the per-host
+  blockers in
+  [KB 419942](https://knowledge.broadcom.com/external/article/419942/prerequisites-for-enabling-vsphere-lifec.html)
+  and [KB 428958](https://knowledge.broadcom.com/external/article/428958/vmkernel-live-patch-is-incompatible-beca.html).
+  The full 9.0 / 9.1 history is in the upgrade guide's
+  [patching doc](https://github.com/pauldiee/VCFUpgradeGuide/blob/main/docs/20-patching-an-existing-vcf9-fleet.md#which-esx-patches-are-live-patchable).
+
 ## v5.7.4 — 2026-10-13
 - **docs/26: adding the licensing privileges in the vSphere Client
   (#392).** Before this, adding `Global.Licenses` and Certificate
