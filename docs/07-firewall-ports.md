@@ -108,6 +108,7 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 | vCenter (Management IP) | License Server (Management IP) | 443 | TCP | License synchronization with vCenter |
 | License Server (Management IP) | VCF Operations (Management IP) | 443 | TCP | License Server sends status updates to VCF Operations |
 | Management components | vCenter (syslog) | **1514** | TCP | Syslog — **9.1 change: use 1514 (TLS); plain 514 is blocked** |
+| SDDC Manager | Log Management (cluster VIP / nodes) | **9543** | TCP | Log agent on SDDC Manager → Log Management ingestion API over TLS — **only after the manual agent install** ([KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html), see [`05` §B.6](05-day2-deployments.md#b6--log-management-does-not-collect-sddc-managers-own-logs)) |
 | Fleet appliances | VCF Operations / License Server | 443 | TCP | Fleet management, licensing |
 | Jump / bastion host, VCF Operations | Avi Controller VIP + nodes | 443 | TCP | Avi controller UI / API (only if Avi LB in scope) |
 | Avi Service Engines | Avi Controllers | 8443 | TCP | SE ↔ controller secure channel (full Avi matrix: see the tools above) |
@@ -128,6 +129,12 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 >   must use **1514 (TLS)** — [Broadcom KB 430675](https://knowledge.broadcom.com/external/article/430675/vcenter-server-syslog-messages-are-not-r.html).
 >   The full vCenter port list is on TechDocs:
 >   [Required Ports for vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vcenter-installation-and-setup/deploying-the-vcenter-server-appliance/vcenter-server-appliance-requirements/required-ports-for-vcenter-server.html).
+> - **SDDC Manager → Log Management, TCP 9543.** SDDC Manager doesn't forward its
+>   own logs out of the box. The agent is installed by hand
+>   ([KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html)),
+>   and the script fails at its first step if 9543 is closed. Listed in the
+>   [Ports and Protocols portal](https://ports.broadcom.com/view/) for SDDC Manager 9.1.0
+>   (read from a 2026-09-23 capture).
 > - **Cloud Proxy** needs **443, 4505, 4506** for Telegraf-based app monitoring.
 > - **License Server** requires an FQDN/IP **outside** the VCF services-runtime
 >   range (IPv4 only) — a routing/reachability point, not just a port.

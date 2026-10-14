@@ -62,7 +62,7 @@ network placement from section C.
 | **License Server**            | One appliance                                                  | **Additional license server only** — the first one is deployed **automatically at bring-up**. Tied to VCF Operations |
 | **VCF Automation**            | VCF Automation appliance(s) + **VCF services runtime** nodes   | Two deployment methods — see D. Needs a node **cluster CIDR** |
 | **Identity Broker**           | Appliance mode: a **three-node cluster** ([TechDocs deployment modes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/deployment-models-for-sso.html)) | **Additional instance only** — the first broker arrives **at bring-up** with the VCF Management Services (no opt-in; FQDN + services-runtime IP asked by the Installer). A Day-N **appliance-mode** broker is deployed via VCF Operations fleet management, e.g. to serve **up to five VCF instances** from one broker or to create a separate SSO boundary. Day-N work on the bring-up broker itself is configuration: identity provider (AD/LDAP), user/group provisioning |
-| **Log Management** (formerly *VCF Operations for Logs* — renamed in 9.1) | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them |
+| **Log Management** (formerly *VCF Operations for Logs* — renamed in 9.1) | Services-runtime **worker nodes** (6 IPs, +2 per extra replica — **allocated from the services-runtime block**) + cluster VIP (**integrated** LB — not external) | Node size + replica count (size it in `04-sizing.md`); size the Step 1 runtime block `/27` to absorb them. **SDDC Manager's own logs need a manual agent install — see B.6** |
 | **VCF Operations for Networks**| Platform node + Collector node                                | **IP-only — the wizard has no FQDN field** (see B.2). Optional dual-stack (IPv4 / IPv6). One generated password covers three accounts and is **shown once** |
 
 ### B.1 — VCF Operations load balancer is **external, never served by VCF**
@@ -303,6 +303,75 @@ nothing auto-provisions or registers a vCenter service account for VCF
 Operations.** You create the role and service account in vCenter yourself,
 then add the vCenter adapter instance in VCF Operations — full step-by-step
 in [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md).
+
+## B.6 — Log Management does not collect SDDC Manager's own logs
+
+Deploying Log Management does **not** start forwarding SDDC Manager's logs to
+it, and nothing in VCF Operations switches it on. Broadcom
+[KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html)
+(environment: VCF 9.0 and 9.1) states it plainly:
+
+> "As of VCF 9.0 there is no automated way to deploy and configure logs agent
+> in SDDC-M to forward logs to VCF Operations for logs"
+
+The KB uses the 9.0 name; in 9.1 that is Log Management. The fix is a manual
+agent install on the SDDC Manager appliance, using a script attached to the KB.
+Plan it as a post-deploy step of Log Management (deployment plan Story 8.4).
+
+**Before you start**
+
+- **Firewall:** SDDC Manager → Log Management, **TCP 9543** (the ingestion API
+  over TLS). The Ports and Protocols tool lists it for SDDC Manager 9.1.0 as
+  *"VCF Operations for Logs management API used by SDDC Manager"*; see
+  [`07-firewall-ports.md` §E](07-firewall-ports.md#e-fleet--operations-cloud-proxy-license-server-syslog).
+- **Access:** SSH to SDDC Manager as `vcf`, then `su` to root, and a way to copy
+  a file onto the appliance (SCP/SFTP).
+- **Target FQDN:** the script takes one argument, the Log Management address.
+  Its generated config describes that field as *"your VCF Ops for Logs server /
+  cluster load balancer"*, so the Log Management **cluster VIP FQDN** is the
+  natural choice. The KB itself only says `<VCF_ops_logs_FQDN>`.
+
+**Run it**
+
+1. Download `deploy_vcf_ops_logs_agent.sh` from the KB's *Attachments* section
+   and copy it to SDDC Manager.
+2. As root: `/bin/bash deploy_vcf_ops_logs_agent.sh <log-management-fqdn>`
+3. The script prints the certificate it received on port 9543 and asks whether
+   you trust it. **Check the fingerprint against Log Management's actual
+   certificate before you answer `y`.** It's interactive, so it can't run
+   unattended.
+4. If SDDC Manager doesn't show up in Log Management afterwards, restart the
+   agent (`systemctl restart liagentd`) and refresh the UI, as the KB suggests.
+
+**What the script does** (read before running it, since it runs as root):
+
+- Pulls the certificate presented on `<fqdn>:9543` and, after you confirm it,
+  stores it as `/etc/pki/tls/certs/<fqdn>.pem`. That file is the agent's
+  only trust anchor (`ssl_ca_path`).
+- Fetches the agent package metadata from Log Management with `curl -k` (TLS
+  not verified for that call), then installs the agent RPM from Log Management
+  over the pinned certificate.
+- **Overwrites `/var/lib/loginsight-agent/liagent.ini` entirely** with an
+  SDDC Manager file set: `proto=cfapi`, `port=9543`, `ssl=yes`, plus file-log
+  sections for LCM, domain manager, common services, operations manager, the
+  SDDC Manager UI app, SoS, audit, VAMI, lighttpd and the agent's own logs.
+  Each section is tagged `vmw_product=vcf` and `vcf_component=<name>`, which is
+  what you filter on in Log Management. The file header says not to modify it;
+  local edits are lost on a re-run.
+
+**Not yet verified (check these on your own deployment):**
+
+- **Certificate replacement.** The agent trusts exactly the certificate it
+  pinned. When Log Management's certificate is replaced (for example the
+  fleet-wide CA-signed replacement in deployment plan Story 8.5), expect
+  forwarding to stop until you re-run the script. Run it after the final
+  certificate is in place, or re-run it then.
+- **CA-signed chains.** Without `-showcerts`, `openssl s_client` captures only
+  the first certificate presented (the leaf). Whether the agent accepts a
+  CA-signed leaf as its only trust anchor hasn't been tested.
+- **SDDC Manager upgrades.** Whether the agent and its `liagent.ini` survive
+  an SDDC Manager upgrade is unknown. Check that logs still arrive after each
+  upgrade.
 
 ---
 
