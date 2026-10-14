@@ -11,9 +11,11 @@ This toolkit provides an interactive tool that does both:
 > **[▶ Open the Management Domain Sizing calculator](https://vcf-planning.hollebollevsan.nl/tools/mgmt-sizing/)**
 
 > **Not sure which VCF Operations or Log Management size to enter?** The
-> [Ops & Logs Sizer](https://vcf-planning.hollebollevsan.nl/tools/ops-logs-sizing/)
-> ([guide](30-ops-logs-sizing.md)) recommends a size and node / replica count from
-> your object, host and log-volume numbers.
+> [Ops & Logs Planning Sizer](https://vcf-planning.hollebollevsan.nl/tools/ops-logs-sizing/)
+> ([guide](30-ops-logs-sizing.md)) recommends a Log Management size and replica count and
+> what it adds to the services runtime (workers, IPs, VIPs), plus a quick VCF Operations
+> estimate. For the final VCF Operations node size, use Broadcom's
+> [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/).
 
 It reproduces the workbook's sizing calculation — the **VCF 9.1.1** workbook,
 pinned revision `v1.9.1.102` — and adds a **cluster fit check**: enter the hosts

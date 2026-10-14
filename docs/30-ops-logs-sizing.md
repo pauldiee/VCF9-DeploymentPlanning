@@ -1,8 +1,28 @@
 # VCF Operations & Log Management Sizing
 
-> **Interactive tool:** [VCF Operations & Log Management Sizer](https://vcf-planning.hollebollevsan.nl/tools/ops-logs-sizing/)
-> applies the rules on this page to your numbers and recommends a size and count for each
-> component.
+> **Interactive tool:** [Ops & Logs Planning Sizer](https://vcf-planning.hollebollevsan.nl/tools/ops-logs-sizing/) applies the rules on this page
+> to your numbers. It's a **companion** to Broadcom's
+> [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/), not a replacement:
+> use the estimator for the final VCF Operations node size.
+
+## What the planning sizer adds
+
+The official estimator sizes VCF Operations well, and better than this tool: it works per
+management pack, imports an existing install's object counts and sizes the data disk. What it
+doesn't give you, checked against its 2026-10-05 build:
+
+- **The services runtime footprint.** Log Management runs on VCF services runtime worker
+  nodes. The tool shows how many workers (and their vCPU / GB), **how many IPs to reserve in
+  the services-runtime block** of your network plan, and how many ingestion VIPs. The
+  estimator gives vCPU / RAM per replica only.
+- **Real-Time Metrics**, which the estimator doesn't size at all.
+- **Log Management limits** the estimator leaves out: hosts per size and the per-VIP limits.
+- **Cloud Proxies per location**. The estimator sizes collectors by load only.
+- **Where the sources disagree** (estimator vs TechDocs), dated, so you can explain a
+  different answer.
+
+The VCF Operations section is kept as a **quick estimate**: it gives the same answer as the
+estimator for the counts it asks for.
 
 The [Management Domain sizer](04-sizing.md) starts from a size you have already chosen and adds
 up its footprint. This page covers the step before that: **which size, and how many nodes or
@@ -159,7 +179,9 @@ Log Management deploys no appliances of its own. The services runtime adds worke
 | Large | 24 vCPU / 48 GB | 2 | 2 |
 
 Allow **6 IPs** for the initial installation plus the per-replica IPs, plus one for each VIP you
-add. All replicas run on the same cluster and datastore as the services runtime, so that
+add. The design page, verbatim: *"Allow for 6 IPs for an initial log management installation
+plus 1 IP for every small or medium replica and 2 IPs for every large replica."* (Until #401 the
+network plan said "+2 per additional replica"; it now follows this page.) All replicas run on the same cluster and datastore as the services runtime, so that
 datastore has to hold every replica's disk.
 
 ### Where the sources disagree

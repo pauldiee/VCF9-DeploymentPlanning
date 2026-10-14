@@ -141,6 +141,17 @@ eq('RTM small', eng.sizeRtm(st({ hosts: 400, vcenters: 2 })).pick.name, 'Small')
 eq('RTM medium by vCenters', eng.sizeRtm(st({ hosts: 400, vcenters: 3 })).pick.name, 'Medium');
 eq('RTM none', eng.sizeRtm(st({ hosts: 6_000, vcenters: 2 })).pick, null);
 
+// --- Services runtime footprint (#401) ------------------------------------------
+// 200 hosts, 1 day -> Small x3: 3 workers of 12 vCPU / 24 GB, 6 + 3 IPs. RTM Small adds
+// 18 vCPU / 22 GB / 500 GB.
+{
+  const f = eng.compute(st({ hosts: 200, vcenters: 2, retentionDays: 1, rtmInclude: true })).footprint;
+  eq('footprint logs', [f.logs.size, f.logs.workers, f.logs.vcpu, f.logs.ram, f.logs.ips], ['Small', 3, 36, 72, 9]);
+  eq('footprint totals', [f.vcpu, f.ram], [36 + 18, 72 + 22]);
+  const none = eng.compute(st({ logsInclude: false, rtmInclude: false })).footprint;
+  eq('footprint empty', [none.logs, none.rtm, none.vcpu], [null, null, 0]);
+}
+
 // --- Official estimator reference results (#400) ---------------------------------
 {
   const fx = JSON.parse(readFileSync(join(here, 'ops-logs-estimator-fixtures.json'), 'utf8'));

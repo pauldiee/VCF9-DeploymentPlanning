@@ -1,5 +1,33 @@
 # Changelog
 
+## v5.9.2 — 2026-10-14
+- **Ops & Logs sizer repositioned as a planning companion to the official
+  estimator (#401).** Now that it matches the
+  [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) (#400),
+  it leads with what the estimator doesn't give:
+  - **Renamed** to *Ops & Logs Planning Sizer* in the tool, menus, sidebar,
+    nav and docs. The URL is unchanged.
+  - **New "Services runtime footprint" summary**, shown first: Log Management
+    worker nodes (vCPU / GB), the **IPs to reserve in the services-runtime
+    block**, ingestion VIPs and log storage, plus Real-Time Metrics, with a
+    total. It's also in *Copy summary*. Engine: `footprint()`, covered by the
+    verify script (345 checks).
+  - Results now run footprint → Log Management → Real-Time Metrics → Cloud
+    Proxies → **VCF Operations, labelled a quick estimate** that points to the
+    official estimator for the final node size.
+  - [`docs/30`](docs/30-ops-logs-sizing.md) gets a *What the planning sizer
+    adds* section; `docs/04`'s cross-link is updated.
+  - **Log Management IP count corrected** in `docs/01` (Step 1), `docs/05` §B
+    and the Rainpole sample. They said "+2 per additional replica". The
+    [Log Management Detailed Design](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-operations-design/vcf-operations-for-logs-deployment-models.html)
+    says *"6 IPs for an initial log management installation plus 1 IP for
+    every small or medium replica and 2 IPs for every large replica"*, which is
+    what the sizer already used.
+- **Nav: the Rainpole worked example is now reachable on desktop (#402).** A
+  nav audit found every doc and tool listed, except the worked Step 1 plan:
+  it was only in the mobile menu. It's now in the *Planning Flow* menu and
+  linked from the top of `docs/01`.
+
 ## v5.9.1 — 2026-10-14
 - **Ops & Logs sizer now matches Broadcom's official estimator (#400).** The
   [VCF Operations Sizing Estimator](https://vcfopssizer.broadcom.com/) (build

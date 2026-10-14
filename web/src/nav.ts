@@ -285,9 +285,9 @@ export const NAV: NavItem[] = [
     slug: '30-ops-logs-sizing',
     step: 'Reference data',
     band: 'Reference data',
-    label: 'Ops & Logs Sizing',
+    label: 'Ops & Logs Planning',
     icon: 'chart-line',
-    blurb: 'Which size and how many nodes for VCF Operations, Cloud Proxies, Log Management and Real-Time Metrics, from your object, host and log-volume numbers. Backs the interactive sizer.',
+    blurb: 'Companion to the official VCF Operations Sizing Estimator: what Log Management and Real-Time Metrics add to the services runtime (workers, IPs, VIPs), Cloud Proxies per site, a quick VCF Operations estimate, and where the estimator and TechDocs disagree.',
   },
   {
     slug: '07-firewall-ports',
