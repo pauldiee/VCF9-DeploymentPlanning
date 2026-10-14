@@ -1,5 +1,27 @@
 # Changelog
 
+## v5.8.1 — 2026-10-14
+- **Log Management doesn't collect SDDC Manager's own logs: documented the
+  manual agent install (#398).** In VCF 9.0 and 9.1 nothing forwards SDDC
+  Manager's logs to Log Management automatically. The fix is a script attached
+  to
+  [KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html),
+  run by hand.
+  - New [`docs/05-day2-deployments.md` §B.6](docs/05-day2-deployments.md#b6--log-management-does-not-collect-sddc-managers-own-logs):
+    prerequisites, the run steps, and what the script does (it pins the
+    certificate from port 9543 as the agent's only trust anchor, fetches the
+    package metadata with `curl -k`, and overwrites `liagent.ini`
+    entirely). Three items are marked unverified: re-running after a
+    certificate replacement, CA-signed chains, and survival across an SDDC
+    Manager upgrade. The Log Management row in §B's table points to it.
+  - [`docs/07-firewall-ports.md` §E](docs/07-firewall-ports.md#e-fleet--operations-cloud-proxy-license-server-syslog):
+    new flow SDDC Manager → Log Management, TCP 9543, plus a gotcha bullet.
+    Checked against the [Ports and Protocols portal](https://ports.broadcom.com/view/)
+    for SDDC Manager 9.1.0 (2026-09-23 capture).
+  - Deployment plan Story 8.4 (doc + export tool): when Log Management is
+    selected, a task for the agent install (re-run after 8.5's certificate
+    replacement) and an acceptance check that SDDC Manager logs arrive.
+
 ## v5.8.0 — 2026-10-14
 - **New tool + guide: VCF Operations & Log Management Sizer (#394).**
   [`docs/30-ops-logs-sizing.md`](docs/30-ops-logs-sizing.md) and
