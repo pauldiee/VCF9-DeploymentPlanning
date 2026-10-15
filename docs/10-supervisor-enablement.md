@@ -49,6 +49,7 @@ firewall matrix). Pick the edition that matches the target build:
 | 7 | [Validate](#7-validate) | Proving it actually works, not just that it finished |
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |
 | — | [Break-glass access to the Supervisor control plane](#break-glass-access-to-the-supervisor-control-plane) | Get a `root` shell / cluster-admin `kubectl` on a CP VM when something upstream says the Supervisor is unreachable |
+| — | [Supervisor control-plane backup and restore](#supervisor-control-plane-backup-and-restore) | Turn on the VAMI option, what it does and doesn't cover, when **not** to restore, the restore workflow — and the backup to take before a vCenter upgrade |
 | 9 | [The other networking paths](#9-the-other-networking-paths) | Distributed TGW, classic NSX segment, vDS |
 | 10 | [References](#10-references) | The TechDocs and KBs behind the above |
 
@@ -1472,8 +1473,11 @@ satisfies both.
   accordingly.
 - **NSX policy IDs containing `?`, `#`, `[` or `]` cannot be used** with the
   Supervisor **[documented]**.
-- Since 9.0.2, **Supervisor control-plane backup is enabled by default**
-  **[documented]**.
+- **Supervisor control-plane backup** is an option in the vCenter file-based
+  backup. This page used to say it is enabled by default since 9.0.2; that
+  line could not be re-found in the current 9.1 release notes (checked
+  2026-10-15), so tick and verify it. See
+  [Supervisor control-plane backup and restore](#supervisor-control-plane-backup-and-restore).
 - If the API server is unresponsive, the documented diagnostic path is to SSH the
   control plane and run `systemctl status kubelet`,
   `journalctl -u kubelet -n 100 --no-pager`, `journalctl -u containerd -n 100`,
@@ -1556,6 +1560,125 @@ Supervisor.
 - vCenter-side operation — independent of the networking model (CTGW / DTGW /
   classic segment / vDS).
 - Nothing here persists: on a Supervisor upgrade the CP VMs are replaced.
+
+---
+
+## Supervisor control-plane backup and restore
+
+The Supervisor control plane has no backup tool of its own. It rides on the
+**vCenter file-based backup**: one extra option in the VAMI backup schedule,
+and a separate **Restore** workflow in the vSphere Client. Workloads in
+vSphere Namespaces are *not* covered by it. Same procedure in the 8.0 U3,
+9.0 and 9.1 books **[documented]**.
+
+### What is and isn't captured
+
+| Backed up by | What | Restored by |
+| --- | --- | --- |
+| **Supervisor control-plane backup** (the VAMI option) | etcd state; the container images for infrastructure pods (so CP VMs can be restored *after a vCenter upgrade*); the Kubernetes CA certificate and key (so vSphere Pods and Spherelet keep trusting it); all vSphere Namespaces and the state of their Kubernetes resources (deployments, pods, VMs, VKS resources, PVCs) | Supervisor Management → Restore |
+| **vCenter file-based backup itself** | Supervisor settings vCenter owns: namespace resource pools, CP VM settings, VKS content libraries, CIDRs / DNS / NTP, storage policies, certificates, container registries, identity providers, default CNI, permissions, vSphere Zones, PNID changes | vCenter restore |
+| **Velero / Velero Plugin for vSphere** | Workload data in vSphere Namespaces and VKS clusters | Velero |
+| **NSX Manager backup** | Load balancer and ingress services depend on it | NSX restore |
+
+**[documented]** — the lowest supported Supervisor version for the
+control-plane backup is **vSphere 8 Update 3**. Below that, the Supervisor is
+silently *not included* in the vCenter backup. The backup target can be FTP,
+FTPS, HTTP, HTTPS, SFTP, NFS or SMB.
+
+### Turn it on
+
+1. VAMI (`https://<vcenter>:5480`) → log in as `root` → **Backup**.
+2. **Edit** the backup schedule (create one first if there is none).
+3. Select **Supervisors Control Plane**. The state of *all* Supervisors on
+   that vCenter is then included in every vCenter backup **[documented]**.
+
+Don't assume it's on: tick it and check it. A broken Supervisor backup can
+make the whole vCenter backup fail, so check that the last run actually
+**succeeded** with the option enabled:
+
+- **SFTP target drops the long Supervisor stream** — `Broken pipe` in
+  `/var/log/vmware/applmgmt/backup.log`, `supervisors_backup_restore.py
+  --backup failed`. Raise the keep-alive / connection timeout on the SFTP
+  server ([KB 412555][kb412555], [KB 413151][kb413151]; 8.0 U3 and 9.0.x)
+  **[documented]**.
+- **9.0.2: `MANIFEST_UNKNOWN` for `auto-attach-service`** in
+  `/var/log/vmware/wcp/sv_backup_script.log` after upgrading vCenter and the
+  Supervisor to 9.0.2. The workaround resets the VKS Cluster Management
+  service; fixed in 9.1 ([KB 437859][kb437859]) **[documented]**.
+
+### When to back up, and when not to
+
+Back up only when the Supervisor is **Running** (freshly enabled or after a
+completed upgrade). **Don't** back up while it is in an error state, while the
+Supervisor or a Supervisor Service such as VKS is being upgraded, or after a
+failed upgrade: the backup may be inconsistent or unusable
+([when to back up and restore][sup-br-when]) **[documented]**.
+
+Broadcom's own caution: restore is for **specific recovery scenarios**, not a
+general fix for problems during lifecycle operations such as a Supervisor
+upgrade. It can orphan workloads or leave the control plane unhealthy. Avoid
+a restore when **[documented]**:
+
+- **The Supervisor Kubernetes version differs** between the backup and the
+  current environment. The mismatch **blocks** the restore.
+- **New VKS clusters were created, or VKS was upgraded, since the backup.**
+  The clusters' VMs may be orphaned; a VKS upgrade gets downgraded and
+  existing clusters can become unmanageable.
+- **New vSphere Pods were created since the backup.** The restore may try to
+  downgrade host components and hang on maintenance mode; clean up the
+  orphaned pod VMs.
+- **vCenter is restored from a backup older than a Supervisor upgrade or
+  restore.** CP VMs get orphaned (to *Discovered virtual machines*) or
+  duplicated. Delete those, then restore the Supervisor from a backup taken
+  together with that vCenter backup.
+
+### Restore
+
+Restoring vCenter and restoring the Supervisor are **two separate
+workflows**: a vCenter restore does *not* restore the Supervisor control
+plane. To get the vCenter-owned settings back as well, **restore vCenter
+first, then the Supervisor**. If only the Supervisor is restored, its
+configuration is overwritten to match what vCenter currently holds. A
+namespace deleted in the vSphere Client only comes back with a vCenter
+restore **[documented]**.
+
+1. vSphere Client → **Supervisor Management** → **Supervisors** →
+   **Restore**.
+2. Pick the vCenter, then the backup source: browse the backup server root
+   folder, give a single backup file URL, or **reuse the location and user
+   name from the vCenter backup schedule**. Enter the credentials.
+3. **Next** → pick the backup file (it downloads) → pick the Supervisor →
+   **Finish**.
+4. The Supervisor goes back to *Configuring*; **all CP VMs are deleted and
+   redeployed** from the backup. Watch it via **View** in the *Config Status*
+   column.
+
+Known restore failures **[documented]**:
+
+- **Stuck at 25% for up to 12 hours (NSX networking).** The
+  `wcp-cluster-user-…` service account gets locked when password rotation
+  overlaps the restore. Wait for the 12-hourly sync, or unlock it with
+  `dir-cli` / `ldapmodify` ([KB 429913][kb429913]).
+- **Restore canceled and re-run within ten seconds** — the destroy task of
+  the previous CP VMs can hang on ESX Agent Manager lifecycle hooks
+  ([9.1 release notes][relnotes]).
+- **After an NSX restore**, a VPC created after the NSX backup and attached to
+  a namespace is missing and blocks the Supervisor restore; re-create the VPC
+  ([9.1 release notes][relnotes]).
+
+**Upgrade use.** The recovery in [KB 457944][kb457944] (Supervisor CP VMs
+deleted by a vCenter 9.1.0 / 9.1.1 upgrade after an earlier vLCM database
+reset) is *revert the vCenter upgrade, then restore the Supervisor from its
+backup*. That only works if the pre-upgrade vCenter backup included the
+Supervisors Control Plane option. Take one immediately before any vCenter
+upgrade, with nothing changed on the Supervisor in between. Upgrade-side
+detail: [VCFUpgradeGuide field notes](https://docs.hollebollevsan.nl/docs/04-field-notes/#a-past-vlcm-database-reset-deletes-supervisor-vms-on-the-91x-upgrade).
+
+*Sources: [Backup and restore the Supervisor control plane (9.1)][sup-br] ·
+[When to back up and restore (9.1)][sup-br-when] ·
+[Considerations (8.0)][sup-br-consider] · [KB 412555][kb412555] ·
+[KB 413151][kb413151] · [KB 437859][kb437859] · [KB 429913][kb429913] ·
+[KB 457944][kb457944] · [9.1 release notes][relnotes]*
 
 ---
 
@@ -1725,11 +1848,19 @@ one combined fillable CSV whose sections mirror this guide.
 [easy]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor.html
 [easy-req]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor/requirements-for-simplified-supervisor-deployment.html
 [kb406786]: https://knowledge.broadcom.com/external/article/406786/vks-supervisor-enablement-stuck-at-confi.html
+[kb412555]: https://knowledge.broadcom.com/external/article/412555
+[kb413151]: https://knowledge.broadcom.com/external/article/413151
+[kb429913]: https://knowledge.broadcom.com/external/article/429913
+[kb437859]: https://knowledge.broadcom.com/external/article/437859
 [kb442187]: https://knowledge.broadcom.com/external/article/442187/vks-guest-cluster-deployment-hangs-with.html
+[kb457944]: https://knowledge.broadcom.com/external/article/457944
 [nsx-wizard90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/deploy-a-thee-zone-supervisor-with-nsx-t-data-center-networking.html
 [relnotes]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-service-administration-and-development/9-1/release-notes/vmware-vsphere-supervisor-release-notes.html
 [req-vpc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/requirements-for-supervisor-deployment-with-nsx-vpc.html
 [req-nsx90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsphere-supervisor-installation-and-configuration/deploying-supervisor-with-nsx-networking/requirements-for-cluster-supervisor-deployment-with-nsx.html
+[sup-br]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/backing-up-and-restoring-vsphere-supervisor/backup-and-restore-the-supervisor-control-plane.html
+[sup-br-consider]: https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere-supervisor/8-0/backing-up-and-restoring-vsphere-supervisor/considerations-for-backing-up-and-restoring-vsphere-iaas-control-plane.html
+[sup-br-when]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/backing-up-and-restoring-vsphere-supervisor/when-to-back-up-the-vsphere-supervisor.html
 [stretched]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/overview-of-running-vsphere-iaas-control-plane-on-vsan-stretched-cluster.html
 [zones]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/create-vsphere-zones-for-a-multi-zone-deployment-with-nsx-vpc.html
 [ts]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/troubleshooting-vsphere-with-kubernetes.html

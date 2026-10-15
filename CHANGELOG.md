@@ -1,5 +1,23 @@
 # Changelog
 
+## v5.9.3 — 2026-10-15
+- **`docs/10`: Supervisor control-plane backup and restore (#403).** New
+  section, from the 8.0 U3 / 9.0 / 9.1 TechDocs *Backing Up and Restoring
+  vSphere Supervisor* pages. It covers the VAMI **Supervisors Control Plane**
+  option (8.0 U3 minimum), what that backup captures versus the vCenter
+  backup, Velero and NSX, and when not to back up or restore (a Kubernetes
+  version mismatch blocks the restore). It also covers the separate restore
+  workflow (vCenter first, then the Supervisor) and the known backup and
+  restore failures
+  ([KB 412555](https://knowledge.broadcom.com/external/article/412555),
+  [413151](https://knowledge.broadcom.com/external/article/413151),
+  [437859](https://knowledge.broadcom.com/external/article/437859),
+  [429913](https://knowledge.broadcom.com/external/article/429913)).
+  Linked from pauldiee/VCFUpgradeGuide#92, whose
+  [KB 457944](https://knowledge.broadcom.com/external/article/457944)
+  recovery needs this backup. The old "enabled by default since 9.0.2" line
+  is reworded: it isn't in the current 9.1 release notes.
+
 ## v5.9.2 — 2026-10-14
 - **Ops & Logs sizer repositioned as a planning companion to the official
   estimator (#401).** Now that it matches the
