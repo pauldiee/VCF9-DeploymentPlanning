@@ -9,7 +9,8 @@
   choice sits right under the platform switch, and *Leave out* warns that the
   VCF Installer doesn't offer it (manual build only). Log Management requires
   the management services: with them left out it is set to *Exclude* and
-  locked. VVF mode shows no VCF-only selections.
+  locked. VVF mode shows no VCF-only selections, and lists Supervisor / Avi /
+  License Hub last as *Add-ons*, since most VVF environments use none of them.
   Optional extras: Supervisor, Avi and License Hub. There is no SDDC Manager,
   NSX, workload domains or VCF Automation. Defaults follow the Installer's VVF
   wizard (Medium vCenter, Medium VCF Operations, Small management services). The

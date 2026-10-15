@@ -268,7 +268,7 @@ same workbook tables as the VCF profile.
 | License Server | Always (2 vCPU / 4 GB / 12 GB): *"You must add at least one license server to each VCF Operations instance that you use for license management."* | Wizard page above |
 | VCF Management Services | **Include** (default) or **Leave out**, chosen right under the platform switch; sized by the deployment model + size (Installer: Simple / Small). *Leave out* warns that the VCF Installer doesn't offer it: it is a manual build | See below |
 | Log Management | Requires the management services: with them left out, Log Management is set to *Exclude* and locked | [`31-log-management.md`](31-log-management.md) §1 |
-| Supervisor control plane, Avi controllers, License Hub (Avi) | Optional, same sizes as VCF | Avi is listed under *Add-ons* on the FQDN page |
+| Supervisor control plane, Avi controllers, License Hub (Avi) | Optional, same sizes as VCF. Listed last in VVF mode (*Add-ons*), as most VVF environments use none of them | Avi is listed under *Add-ons* on the FQDN page |
 
 **VCF Management Services.** The VCF Installer *"deploys vSphere Foundation only
 with VCF management services"*. A manual build without them is

@@ -41,8 +41,8 @@ const opt = (values: readonly string[]) => values;
       <section class="sizer__inputs">
         <p class="sizer__intro">Work top to bottom. Every field says what it is; where a field says <strong>Not sure?</strong>, that value is a safe starting point you can refine later with the VCF architect.</p>
 
-        <fieldset>
-          <legend>1. Your <span id="platformWord">VCF fleet</span></legend>
+        <fieldset id="fsPlatform">
+          <legend><span data-num></span>Your <span id="platformWord">VCF fleet</span></legend>
           <label for="platform">Platform
             <select id="platform">
               <option value="VCF">VMware Cloud Foundation (VCF)</option>
@@ -82,8 +82,8 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint"><strong>vSAN-ESA</strong>: storage built from the hosts' own NVMe disks (current generation). <strong>vSAN-OSA</strong>: the older vSAN with separate cache and capacity disks. <strong>NFS / FC</strong>: an external storage array. <strong>Not sure?</strong> vSAN-ESA.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>2. Your hosts</legend>
+        <fieldset id="fsHosts">
+          <legend><span data-num></span>Your hosts</legend>
           <p class="sizer__hint">The management cluster you intend to build — the tool checks whether everything above and below fits on it, even with one host down.</p>
           <label>Cluster type
             <select id="clusterType">{opt(OPTIONS.clusterType).map((v) => <option>{v}</option>)}</select>
@@ -137,10 +137,11 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">Extra storage headroom for future growth. <strong>Not sure?</strong> 10.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>3. Management infrastructure</legend>
+        <fieldset id="fsInfra">
+          <legend><span data-num></span><span data-only="vcf">Management infrastructure</span><span data-only="vvf">Add-ons</span></legend>
           <p class="sizer__hint" id="derivedSizes" data-only="vcf"></p>
-          <p class="sizer__hint">Optional infrastructure that runs in the management cluster. Leave anything you have not heard about in the design on <strong>Excluded</strong>.</p>
+          <p class="sizer__hint" data-only="vcf">Optional infrastructure that runs in the management cluster. Leave anything you have not heard about in the design on <strong>Excluded</strong>.</p>
+          <p class="sizer__hint" data-only="vvf">Optional extras that most VVF environments do not use. Leave them on <strong>Excluded</strong> unless the design includes Kubernetes (Supervisor) or the Avi load balancer.</p>
           <label data-only="vcf">NSX Edges or Virtual Network Appliances
             <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -171,8 +172,8 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint" data-only="vvf">A small licensing appliance, for Avi only when it is licensed on-premises (Avi can also license directly from the cloud). It is not the License Server, which is always counted. <strong>Not sure?</strong> Leave off.</p>
         </fieldset>
 
-        <fieldset data-only="vvf">
-          <legend>4. VVF management software</legend>
+        <fieldset data-only="vvf" id="fsVvf">
+          <legend><span data-num></span>VVF management software</legend>
           <label>vCenter size
             <select id="vvfVcenterSize">{opt(OPTIONS.vcenterSize).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -195,8 +196,8 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">The <strong>License Server</strong> (2 vCPU / 4 GB / 12 GB) is always counted: every VCF Operations instance that manages licences needs one.</p>
         </fieldset>
 
-        <fieldset data-only="vcf">
-          <legend>4. VCF management software</legend>
+        <fieldset data-only="vcf" id="fsVcfSoftware">
+          <legend><span data-num></span>VCF management software</legend>
           <label>VCF Operations
             <select id="vcfOps">{opt(OPTIONS.vcfOps).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -215,8 +216,8 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">Network monitoring and traffic-flow analysis (formerly Aria Operations for Networks / vRNI). <strong>Not sure?</strong> Excluded.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>5. Optional services</legend>
+        <fieldset id="fsServices">
+          <legend><span data-num></span>Optional services</legend>
           <p class="sizer__hint">These run inside VCF's own management platform (the <em>services runtime</em>), so they do not add separate appliances — they add capacity to it. The result below shows how many runtime nodes that comes to.</p>
           <label>Log Management size
             <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
@@ -235,8 +236,8 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint" id="workerOut"></p>
         </fieldset>
 
-        <fieldset data-only="vcf">
-          <legend>6. Disaster recovery</legend>
+        <fieldset data-only="vcf" id="fsDr">
+          <legend><span data-num></span>Disaster recovery</legend>
           <label>Site Protection &amp; Disaster Recovery
             <select id="spr">{opt(OPTIONS.spr).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -245,16 +246,16 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">An isolated recovery environment for ransomware incidents. Only when that add-on is planned.</p>
         </fieldset>
 
-        <fieldset data-only="vcf">
-          <legend>7. Workload domains
+        <fieldset data-only="vcf" id="fsWld">
+          <legend><span data-num></span>Workload domains
             <button type="button" id="addWld" class="sizer__add">+ Add workload domain</button>
           </legend>
           <p class="sizer__hint">A <strong>workload domain</strong> is a separate vCenter + NSX environment where the customer's own workloads run. Its management VMs (vCenter, NSX Managers, and any Avi / vDefend controllers) live in <em>this</em> management cluster, so add one row per planned workload domain. <strong>NSX model</strong>: <em>Shared</em> reuses an existing NSX, <em>Dedicated</em> gets its own (HA Cluster = 3 managers).</p>
           <div id="wldList"></div>
         </fieldset>
 
-        <fieldset data-only="vcf">
-          <legend>8. Advanced: override sizes <span class="sizer__tag">experts</span></legend>
+        <fieldset data-only="vcf" id="fsAdvanced">
+          <legend><span data-num></span>Advanced: override sizes <span class="sizer__tag">experts</span></legend>
           <label class="sizer__check"><input id="advanced" type="checkbox" /> Override the profile-derived sizes</label>
           <p class="sizer__hint">Leave this off unless a design document specifies sizes that differ from the profile. It is the workbook's <em>Advanced Management Domain Sizing</em>.</p>
           <div id="advancedFields" hidden>
@@ -481,6 +482,28 @@ const opt = (values: readonly string[]) => values;
     state.logsReplicas = v;
   }
 
+  // ---- section order: in VVF the add-ons (Supervisor / Avi / License Hub)
+  // go last, as most VVF environments do not use them. Legends are numbered
+  // by visible position.
+  const SECTION_ORDER = {
+    vcf: ['fsPlatform', 'fsHosts', 'fsInfra', 'fsVcfSoftware', 'fsServices', 'fsDr', 'fsWld', 'fsAdvanced', 'fsVvf'],
+    vvf: ['fsPlatform', 'fsHosts', 'fsVvf', 'fsServices', 'fsInfra', 'fsVcfSoftware', 'fsDr', 'fsWld', 'fsAdvanced'],
+  };
+  let lastOrder = '';
+  function orderSections(vvf: boolean) {
+    const key = vvf ? 'vvf' : 'vcf';
+    if (key === lastOrder) return;
+    lastOrder = key;
+    const host = $('fsPlatform').parentElement!;
+    for (const id of SECTION_ORDER[key]) host.appendChild($(id));
+    let n = 0;
+    for (const id of SECTION_ORDER[key]) {
+      const fs = $(id);
+      if (fs.hidden) continue;
+      fs.querySelector<HTMLElement>('[data-num]')!.textContent = `${++n}. `;
+    }
+  }
+
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
   const pct = (n: number) => (n === Infinity ? 'n/a' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
@@ -513,6 +536,7 @@ const opt = (values: readonly string[]) => values;
     // platform: show only the inputs that apply
     document.querySelectorAll<HTMLElement>('[data-only]').forEach((el) => { el.hidden = el.dataset.only !== (vvf ? 'vvf' : 'vcf'); });
     $('platformWord').textContent = vvf ? 'vSphere Foundation' : 'VCF fleet';
+    orderSections(vvf);
     const servicesOff = vvf && !state.vvfMgmtServices;
     document.querySelectorAll<HTMLElement>('[data-group="services"]').forEach((el) => { el.hidden = servicesOff; });
     if (servicesOff) $('servicesProfileHint').hidden = true;
