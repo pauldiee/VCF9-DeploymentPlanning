@@ -198,6 +198,24 @@ sources (2026-10-01):
 - **Security Services Platform** (Medium 64 vCPU / 222 GB / 3.26 TB) matches the
   9.1 [SSP sizing and reservations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/security-modernization/vdefend-lateral-security/security-services-platform-for-vmware-cloud-foundation/security-services-platform-detailed-design/security-services-platform-for-vcf-sizing-and-reservations.html)
   total.
+- **Cloud Proxy** — Small 4 / 16, Standard 8 / 48 — are the **Unified** Cloud
+  Proxy figures in [KB 397782](https://knowledge.broadcom.com/external/article/397782)
+  (VCF Operations 9.0 sizing). VCF 9 deploys the unified configuration (see
+  [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md));
+  the plain Cloud Proxy in the same KB is smaller (2 / 8, 4 / 32), so the tool
+  errs on the large side.
+- **License Server** (2 vCPU / 4 GB / 12 GB) is a workbook figure. TechDocs
+  sends you to the workbook's *Management Domain Sizing* tab for its
+  requirements rather than listing them, so there is no separate official
+  figure to check it against (checked 2026-10-15, as are the Cloud Proxy and
+  Supervisor entries).
+- **Supervisor control plane: storage differs.** The 9.1
+  [Change the Control Plane Size of a Supervisor](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/configuring-and-managing-a-supervisor-cluster/change-the-control-plane-size-on-a-supervisor-cluster.html)
+  page matches the workbook's vCPU / RAM (Tiny 2 / 8, Small 4 / 16, Medium
+  8 / 24, Large 16 / 32), but lists **32 GB** storage per VM where the workbook
+  uses **48 GB**, and has **no XLarge** (the workbook's 32 / 64). The tool keeps
+  the workbook figures so it still matches the workbook exactly; the difference
+  is 16 GB per control-plane VM, on the safe side.
 - **Log Management** per replica (8/16, 16/32, 32/64) matches Configuration
   Maximums; the 9.1 *Deploy Log Management* page lists Medium as 24 / 48 — an
   inconsistency on Broadcom's side.
@@ -282,6 +300,25 @@ CPU, +1 node; see [How the numbers are derived](#how-the-numbers-are-derived)),
 fed with only those four services plus Log Management. At Simple / Small that
 gives **1 control node + 2 workers**, the same node count as VCF's Simple
 profile. This is the tool's own model, not a Broadcom figure.
+
+> **Broadcom's own sources disagree on the Simple worker count** (all three
+> pages *Last Updated October 15, 2026*, read 2026-10-15):
+>
+> | Source | Simple model |
+> | ------ | ------------ |
+> | [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html) and the 9.1.1 workbook | 1 control node + **2** workers |
+> | [VCF Management Services Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-management-services-models.html), [Simple VCF Management Services Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-management-services-availabilty-detailed-design/vcf-management-services-simple-deployment-model.html) | 1 control node + **3** workers |
+>
+> [William Lam (September 2026)](https://williamlam.com/2026/09/vcf-9-1-1-adopting-the-reduced-vcf-management-services-vcfms-footprint-after-an-upgrade.html)
+> explains the gap: VCF 9.1.1 removed one worker from new Simple deployments,
+> so 3 is the 9.1.0 layout and the design pages haven't caught up. The VVF
+> wizard needs Installer 9.1.1 anyway, so the tool uses 2. One caveat:
+> [KB 455842](https://knowledge.broadcom.com/external/article/455842), the
+> procedure for shrinking the workers after an upgrade, says it *"is not
+> applicable to a VMware vSphere Foundation … Environment"*, so VVF's runtime
+> may be sized differently from VCF's. No source gives VVF's worker count; a
+> deployed VVF 9.1.1 shows it under *Build > Lifecycle > VCF Management >
+> Components > VCF Services Runtime*.
 
 **Defaults** (Installer layout, vSAN-ESA): vCenter Medium, 1 × VCF Operations
 Medium, Cloud Proxy Small, License Server, management services Simple / Small =

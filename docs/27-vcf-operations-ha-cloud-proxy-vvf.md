@@ -299,7 +299,7 @@ instance as an OVF template, and it doesn't support IPv6.**
 12. **Register it with the VCF Business Services Console** — required
     before it's actually usable, not optional. If this VCF Operations
     instance is already registered, see
-    [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/add-license-server.html);
+    [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/register-an-additional-license-server-with-the-vcf-business-services-console.html);
     if it isn't yet, see
     [Registering VCF Operations and a License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations.html).
 
@@ -363,7 +363,7 @@ instance as an OVF template, and it doesn't support IPv6.**
 - [Configure a VCF Operations Cluster for High Availability](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-and-configuration-of-components-for-advanced-architectures/run-the-setup-wizard-to-create-an-ha-node.html) — source for Step 3
 - [Deploy Cloud Proxy as part of a VCF 9.1 Upgrade](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation/upgrade-backup-and-restore/configuring-cloud-proxies-in-vrealize-operations-cloud.html) — source for Step 4
 - [Deploy a License Server](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/manual-adding-vcf-components-post-deployment/add-license-server.html) — source for Step 5
-- [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/add-license-server.html)
+- [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/register-an-additional-license-server-with-the-vcf-business-services-console.html)
 - [Registering VCF Operations and a License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations.html)
 - [Collecting Data with Cloud Proxy in VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/collecting-data-with-cloud-proxies-in-vrealize-operations-cloud.html)
 - [Broadcom KB 324340 — current Cloud Proxy sizing](https://knowledge.broadcom.com/external/article/324340)

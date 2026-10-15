@@ -1,5 +1,22 @@
 # Changelog
 
+## v5.9.6 — 2026-10-15
+- **Dead License Server links fixed (#406).** TechDocs moved
+  `licensing/register-vcf-operations/add-license-server.html` (now 404).
+  `docs/06` Story 5.4 now links
+  [License Server Overview](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/license-server-overview.html),
+  and `docs/27` links
+  [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/register-an-additional-license-server-with-the-vcf-business-services-console.html)
+  at its new address.
+- **`docs/04`: size check notes (#405).** No figures changed. The Cloud Proxy
+  sizes are the Unified Cloud Proxy figures in
+  [KB 397782](https://knowledge.broadcom.com/external/article/397782). The
+  License Server has no official figure beyond the workbook. The 9.1 Supervisor
+  page lists 32 GB storage and no XLarge where the workbook uses 48 GB and has
+  an XLarge. A dated table records Broadcom's conflicting Simple worker counts
+  (2 vs 3; 9.1.1 removed one) and that
+  [KB 455842](https://knowledge.broadcom.com/external/article/455842) excludes VVF.
+
 ## v5.9.5 — 2026-10-15
 - **Sizer: VVF / Standalone profile and a licensing panel (#405).** The
   management sizer gets a **Platform** switch. *VMware vSphere Foundation (VVF)*
