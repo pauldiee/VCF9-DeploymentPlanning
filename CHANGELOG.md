@@ -1,5 +1,27 @@
 # Changelog
 
+## v5.9.5 — 2026-10-15
+- **Sizer: VVF / Standalone profile and a licensing panel (#405).** The
+  management sizer gets a **Platform** switch. *VMware vSphere Foundation (VVF)*
+  counts vCenter, VCF Operations (single node or HA), an optional Cloud Proxy,
+  the License Server, and **VCF Management Services as an option** (on by
+  default, as the VCF Installer deploys them; Log Management needs them).
+  Optional extras: Supervisor, Avi and License Hub. There is no SDDC Manager,
+  NSX, workload domains or VCF Automation. Defaults follow the Installer's VVF
+  wizard (Medium vCenter, Medium VCF Operations, Small management services). The
+  workbook has no VVF sheet, so the component list is sourced from the TechDocs
+  9.1 VVF deployment and FQDN pages, linked in `docs/04`. The management
+  services' worker count reuses the VCF formula with only the VVF service set.
+  VVF also shows the vCPU / RAM left for workloads at N-1.
+  A new **Licensing** panel (VCF and VVF) counts cores to license (16-core
+  minimum per CPU, from a new *CPUs per host* input), the vSAN TiB included
+  (VCF 1, VVF 0.25 per core, rounded up) and the add-on still to buy, per
+  [KB 313548](https://knowledge.broadcom.com/external/article/313548).
+  `verify-sizer.mjs` now also checks the panel against all six KB examples for
+  both platforms (12/12); the 157 workbook scenarios are unchanged. Also fixes
+  a page bug: `.sizer label { display: block }` overrode the `hidden`
+  attribute, so the toggled fields (e.g. *Supervisor size*) never actually hid.
+
 ## v5.9.4 — 2026-10-15
 - **`CLAUDE.md`: the GitLab sync is manual (#404).** The Git remotes
   section said "Run that after a `pushall`" about

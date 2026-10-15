@@ -28,7 +28,7 @@ This repo flips the order:
 | `docs/01-network-dns-plan.md`       | Step 1 — one-page network / DNS / NTP / AD plan        |
 | `docs/02-intake.md`                 | Step 2 — role-based intake questionnaire               |
 | `docs/03-multi-az-prep.md`          | Extra prep for stretched / multi-AZ builds (if `A13`=Yes) |
-| `docs/04-sizing.md`                 | Step 3 — management-domain sizing + link to the fit-check calculator |
+| `docs/04-sizing.md`                 | Step 3 — management-domain sizing (VCF + VVF profile, licensing count) + link to the fit-check calculator |
 | `docs/05-day2-deployments.md`       | Day-N — fleet components added after bring-up (VCF Automation, Log Management, Operations for Networks, network placement) |
 | `docs/06-deployment-plan.md`        | Agile work breakdown (epics/stories/tasks); build a scope (stretch, Day-2, workload domains) and export it |
 
@@ -113,7 +113,7 @@ language toggle in the header. English remains the canonical text.
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
-| `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool (client-side) |
+| `web/src/pages/tools/mgmt-sizing.astro` | Interactive sizing & cluster fit-check tool, VCF / VVF, with core + vSAN TiB licensing panel (client-side) |
 | `web/src/pages/tools/ops-logs-sizing.astro` | Interactive Ops & Logs Planning Sizer (client-side): services-runtime footprint of Log Management + Real-Time Metrics, Cloud Proxies, quick VCF Operations estimate |
 | `web/src/pages/tools/deployment-plan.astro` | Interactive deployment-plan export tool — scope + deployment choices (connectivity, storage, stretch, per-WLD Supervisor, VCF Automation model, Day-2 components) + Markdown/CSV backlog export |
 | `web/src/pages/tools/plan-tracker.astro` | Interactive deployment tracker — the plan as a checklist (story checkboxes, per-epic progress, save/load progress file); follows the scope set in the export tool |

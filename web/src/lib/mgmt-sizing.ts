@@ -105,6 +105,7 @@ const T = {
 // ---------------------------------------------------------------------------
 
 export const OPTIONS = {
+  platform: ['VCF', 'VVF'] as const,
   deploymentModel: ['Simple', 'High Availability'] as const,
   // Simple deploys at Small only; High Availability at Small, Medium or Large
   // (workbook lists sizing_vcf_deployment_model_small / sizing_vcf_deployment_model).
@@ -135,6 +136,10 @@ export const OPTIONS = {
   advVcfOpsSize: ['Exclude', 'Extra Small', 'Small', 'Medium', 'Large', 'Extra Large'] as const,
   advCollectorSize: ['Exclude', 'Small', 'Standard'] as const,
   advVcfaSize: ['Exclude', 'Small', 'Medium', 'Large'] as const,
+  // VVF / Standalone profile (no workbook sheet — see vvfComponents)
+  vvfOpsModel: ['Single Node', 'HA - 2 nodes', 'HA - 3 nodes'] as const,
+  vvfOpsSize: ['Extra Small', 'Small', 'Medium', 'Large', 'Extra Large'] as const,
+  vvfCollectorSize: ['Exclude', 'Small', 'Standard'] as const,
 };
 
 export function deploymentSizeOptions(model: string): string[] {
@@ -188,6 +193,11 @@ export interface WorkloadDomain {
 }
 
 export interface SizingState {
+  // VCF = the workbook's Management Domain Sizing sheet. VVF = vSphere
+  // Foundation: no SDDC Manager / NSX / workload domains, and VCF Management
+  // Services optional. In VVF, deploymentModel / deploymentSize size the
+  // management services only.
+  platform: string;
   // deployment profile
   deploymentModel: string;
   deploymentSize: string;
@@ -243,6 +253,15 @@ export interface SizingState {
   spr: string; // Site Protection & DR scope
   rwr: boolean; // On-premises Ransomware Recovery
   workloadDomains: WorkloadDomain[];
+  // VVF / Standalone profile
+  vvfVcenterSize: string;
+  vvfVcenterStorage: string;
+  vvfOpsModel: string;
+  vvfOpsSize: string;
+  vvfCollectorSize: string;
+  vvfMgmtServices: boolean;
+  // licensing panel
+  socketsPerHost: number;
 }
 
 export function defaultState(): SizingState {
@@ -294,8 +313,22 @@ export function defaultState(): SizingState {
     spr: 'Exclude',
     rwr: false,
     workloadDomains: [],
+    // VVF defaults follow the VCF Installer's vSphere Foundation wizard:
+    // Medium vCenter, single Medium VCF Operations, small (Simple) management services.
+    platform: 'VCF',
+    vvfVcenterSize: 'Medium',
+    vvfVcenterStorage: 'Default',
+    vvfOpsModel: 'Single Node',
+    vvfOpsSize: 'Medium',
+    vvfCollectorSize: 'Small',
+    vvfMgmtServices: true,
+    socketsPerHost: 2,
   };
 }
+
+// Applied when the platform is switched to VVF: the Installer deploys the
+// management services at Simple / Small (TechDocs, see vvfComponents).
+export const VVF_SERVICES_PROFILE = { deploymentModel: 'Simple', deploymentSize: 'Small' } as const;
 
 // Brings a state saved by an older version of the tool (workbook v1.9.1.001
 // field shapes) up to this one, so stored / shared / imported plans keep working.
@@ -380,29 +413,39 @@ const VCFMS_WORKER_DAYN_RAM: Record<string, number> = {
 
 export interface WorkerSizing { nodes: number; cpu: number; ram: number; disk: number; perNodeCpu: number; perNodeRam: number }
 export function vcfmsWorkers(s: SizingState): WorkerSizing {
-  const key = s.instanceModel + s.deploymentModel + s.deploymentSize;
+  // VVF: one services runtime, sized like a first instance, without the
+  // VCF-only Day-0 services (Identity Broker, Salt) and Day-N services other
+  // than Log Management — see vvfComponents.
+  const vvf = s.platform === 'VVF';
+  const key = (vvf ? 'First Instance' : s.instanceModel) + s.deploymentModel + s.deploymentSize;
   const prof = s.deploymentModel + s.deploymentSize;
-  const addl = s.instanceModel === 'Additional Instance';
+  const addl = !vvf && s.instanceModel === 'Additional Instance';
   const logs = s.logsSize !== 'Exclude';
-  const dayN = logs || s.vcfRtm;
+  const rtm = !vvf && s.vcfRtm;
+  const dayN = logs || rtm;
   const wCpu = (dayN ? VCFMS_WORKER_DAYN_CPU[key] : undefined) ?? lk(T.vcfms_worker_cpu, key);
   const wRam = (dayN ? VCFMS_WORKER_DAYN_RAM[key] : undefined) ?? lk(T.vcfms_worker_ram, key);
   const reps = logs ? Math.min(LOGS_REPLICA_MAX, Math.max(logsReplicaMin(s.logsSize), s.logsReplicas)) : 0;
   const sd = addl && s.vcfSd;
   const idb = addl && s.vcfIdb;
   // Day-N (rows 393-396)
-  const dnCpu = (logs ? reps * lk(T.logman_worker_cpu, s.logsSize) : 0) + (s.vcfRtm ? lk(T.vodap_worker_cpu, prof) : 0)
+  const dnCpu = (logs ? reps * lk(T.logman_worker_cpu, s.logsSize) : 0) + (rtm ? lk(T.vodap_worker_cpu, prof) : 0)
     + (sd ? lk(T.software_depot_cpu, prof) : 0) + (idb ? lk(T.idbroker_cpu, prof) : 0);
-  const dnRam = (logs ? reps * lk(T.logman_worker_ram, s.logsSize) : 0) + (s.vcfRtm ? lk(T.vodap_worker_ram, prof) : 0)
+  const dnRam = (logs ? reps * lk(T.logman_worker_ram, s.logsSize) : 0) + (rtm ? lk(T.vodap_worker_ram, prof) : 0)
     + (sd ? lk(T.software_depot_ram, prof) : 0) + (idb ? lk(T.idbroker_ram, prof) : 0);
-  const dnDisk = (logs ? reps * lk(T.vrli_appliance_disk, s.logsSize) : 0) + (s.vcfRtm ? 205 : 0)
+  const dnDisk = (logs ? reps * lk(T.vrli_appliance_disk, s.logsSize) : 0) + (rtm ? 205 : 0)
     + (sd ? lk(T.software_depot_disk, prof) : 0) + (idb ? lk(T.idbroker_disk, prof) : 0);
-  // Day-0 (row 398)
-  const d0Cpu = addl
+  // Day-0 (row 398). VVF: fleet lifecycle, SDDC lifecycle, software depot and
+  // telemetry — the components TechDocs lists for VVF management services.
+  const d0Cpu = vvf
+    ? lk(T.software_depot_cpu, prof) + lk(T.sddc_lcm_cpu, prof) + lk(T.telemetry_cpu, prof) + lk(T.fleet_cpu, prof)
+    : addl
     ? lk(T.sddc_lcm_cpu, prof) + lk(T.salt_cpu, prof) + lk(T.telemetry_cpu, prof)
     : lk(T.idbroker_cpu, prof) + lk(T.software_depot_cpu, prof) + lk(T.sddc_lcm_cpu, prof) + lk(T.salt_cpu, prof)
       + lk(T.salt_raas_cpu, prof) + lk(T.telemetry_cpu, prof) + lk(T.fleet_cpu, prof);
-  const d0Ram = addl
+  const d0Ram = vvf
+    ? lk(T.software_depot_ram, prof) + lk(T.sddc_lcm_ram, prof) + lk(T.telemetry_ram, prof) + lk(T.fleet_ram, prof)
+    : addl
     ? lk(T.sddc_lcm_ram, prof) + lk(T.salt_ram, prof) + lk(T.telemetry_ram, prof)
     : lk(T.idbroker_ram, prof) + lk(T.software_depot_ram, prof) + lk(T.sddc_lcm_ram, prof) + lk(T.salt_ram, prof)
       + lk(T.salt_raas_ram, prof) + lk(T.telemetry_ram, prof) + lk(T.fleet_ram, prof);
@@ -413,15 +456,75 @@ export function vcfmsWorkers(s: SizingState): WorkerSizing {
     + (key === 'Additional InstanceSimpleSmall' || key === 'First InstanceHigh AvailabilityMedium' ? 0 : 1); // D388
   const byCpu = (wCpu ? up(cpuNeed / wCpu) : 0)
     + (key === 'Additional InstanceSimpleSmall' ? 0
-      : !logs && !s.vcfRtm && key === 'Additional InstanceHigh AvailabilityMedium' ? 0
-      : (logs || s.vcfRtm) && key === 'First InstanceHigh AvailabilityMedium' ? 0 : 1); // D389
+      : !logs && !rtm && key === 'Additional InstanceHigh AvailabilityMedium' ? 0
+      : (logs || rtm) && key === 'First InstanceHigh AvailabilityMedium' ? 0 : 1); // D389
   const nodes = Math.max(byRam, byCpu); // J23
   return { nodes, cpu: nodes * wCpu, ram: nodes * wRam, disk: lk(T.vcfms_worker_disk, key) + dnDisk, perNodeCpu: wCpu, perNodeRam: wRam };
 }
 
 const SSP_SIZE = (nsxSize: string) => (nsxSize === 'XLarge' ? 'XLarge' : nsxSize);
 
+// VVF / Standalone management footprint. The workbook has no VVF sheet, so this
+// list is built from TechDocs 9.1 (checked 2026-10-15), with appliance sizes
+// from the same workbook tables:
+// - "vSphere Foundation FQDNs and IP Addresses": vCenter, VCF Operations
+//   primary node, Cloud Proxy (Optional), License Server, and the VCF
+//   Management Services (fleet / instance components + services runtime).
+// - "Start a New vSphere Foundation Deployment by Using the VCF Installer
+//   Deployment Wizard": medium vCenter, medium VCF Operations, small VCF
+//   management services; the Installer deploys VVF only with them.
+// - "Deploying VMware vSphere Foundation 9.1 Without VCF Management Services":
+//   a supported model; no Log Management, no software depot.
+// - "Deploy VCF Management Services and License Server for vSphere
+//   Foundation": services runtime, fleet lifecycle, SDDC lifecycle, software
+//   depot, telemetry.
+// No SDDC Manager, NSX, workload domains, VCF Automation, Operations for
+// Networks or protection blueprints. Rows reuse the workbook row numbers of
+// the matching VCF component.
+function vvfComponents(s: SizingState): Component[] {
+  const list: Component[] = [];
+  const add = (row: number, name: string, nodes: number, cpu: number, ram: number, disk: number) => {
+    if (nodes || cpu || ram || disk) list.push({ row, name, nodes, cpu, ram, disk });
+  };
+  add(9, 'vCenter', 1, lk(T.vcenter_appliance_cpu, s.vvfVcenterSize), lk(T.vcenter_appliance_ram, s.vvfVcenterSize),
+    lk(T.vcenter_disk_gb, s.vvfVcenterSize + s.vvfVcenterStorage));
+  if (s.supervisorMode !== 'Excluded') {
+    const n = s.supervisorMode === 'High Availability' ? 3 : 1;
+    add(13, 'vSphere Supervisor', n, lk(T.supervisor_cpu, s.supervisorSize) * n, lk(T.supervisor_ram, s.supervisorSize) * n,
+      lk(T.supervisor_disk, s.supervisorSize) * n);
+  }
+  if (s.aviSize !== 'Excluded') {
+    add(14, 'Avi Load Balancer', 3, lk(T.avi_lb_cpu, s.aviSize) * 3, lk(T.avi_lb_ram, s.aviSize) * 3, lk(T.avi_lb_disk, s.aviSize) * 3);
+  }
+  if (s.licenseHub) add(17, 'License Hub (Avi licensing)', 1, T.ssp_lic_cpu, T.ssp_lic_ram, T.ssp_lic_disk);
+  if (s.vvfMgmtServices) {
+    const n = lk(T.vcfms_control_nodes, s.deploymentModel);
+    add(22, 'VCF services runtime (control nodes)', n, lk(T.vcfms_control_cpu, s.deploymentSize) * n,
+      lk(T.vcfms_control_ram, s.deploymentSize) * n, lk(T.vcfms_control_disk, s.deploymentSize) * n);
+    const w = vcfmsWorkers(s);
+    add(23, 'VCF services runtime (worker nodes)', w.nodes, w.cpu, w.ram, w.disk);
+  }
+  {
+    const n = vvfOpsNodes(s.vvfOpsModel);
+    const z = s.vvfOpsSize;
+    add(24, 'VCF Operations', n, lk(T.vcfops_appliance_cpu, z) * n, lk(T.vcfops_appliance_ram, z) * n, lk(T.vcfops_appliance_disk, z) * n);
+  }
+  if (s.vvfCollectorSize !== 'Exclude') {
+    const z = s.vvfCollectorSize;
+    add(25, 'Cloud Proxy', 1, lk(T.vcfo_p_cpu, z), lk(T.vcfo_p_ram, z), lk(T.vcfo_p_disk, z));
+  }
+  add(26, 'License Server', 1, 2, 4, 12);
+  return list;
+}
+
+// VCF Operations node count for the VVF profile: single node, primary +
+// replica (HA), or primary + replica + one data node.
+export function vvfOpsNodes(model: string): number {
+  return model === 'HA - 3 nodes' ? 3 : model === 'HA - 2 nodes' ? 2 : 1;
+}
+
 export function components(s: SizingState): Component[] {
+  if (s.platform === 'VVF') return vvfComponents(s);
   const list: Component[] = [];
   const add = (row: number, name: string, nodes: number, cpu: number, ram: number, disk: number) => {
     if (nodes || cpu || ram || disk) list.push({ row, name, nodes, cpu, ram, disk });
@@ -612,7 +715,7 @@ export interface SizingResult {
   components: Component[];
   totals: { nodes: number; cpu: number; ram: number; disk: number };
   vsan: { vmCapacity: number; swap: number; interim: number; redundancy: number; reserve: number; growth: number; raw: number };
-  workbookHosts: number; // the workbook's own minimum host count (cell R8)
+  workbookHosts: number; // the workbook's own minimum host count (cell R8); VVF: vvfHostCount
   requiredHosts: number; // workbook R8, raised for vSAN capacity and stretched clusters
   derived: DerivedSizes;
   workers: WorkerSizing;
@@ -642,6 +745,54 @@ export function workbookHostCount(s: SizingState, comps: Component[]): number {
   return Math.max(isVsan(s.storageType) ? 3 : 2, cpuHosts, ramHosts);
 }
 
+// VVF minimum hosts (no workbook cell to follow): enough cores and RAM with
+// oversubscription applied, plus one host for N-1; at least 3 hosts on vSAN, 2 otherwise.
+export function vvfHostCount(s: SizingState, totals: { cpu: number; ram: number }): number {
+  const cpuHosts = ceil(totals.cpu / s.cpuOver / s.coresPerHost);
+  const ramHosts = ceil(totals.ram / s.ramOver / s.ramPerHost) + 1;
+  return Math.max(isVsan(s.storageType) ? 3 : 2, cpuHosts, ramHosts);
+}
+
+// ---------------------------------------------------------------------------
+// Licensing (KB 313548, "Counting Cores for VMware Cloud Foundation and
+// vSphere Foundation and TiBs for vSAN")
+// ---------------------------------------------------------------------------
+
+export const LICENSE_MIN_CORES_PER_CPU = 16;
+// vSAN entitlement per licensed core: VCF 1 TiB; VVF 0.25 TiB, rounded up to the next TiB.
+export const VSAN_TIB_PER_CORE: Record<string, number> = { VCF: 1, VVF: 0.25 };
+const GB_PER_TIB = 1024 ** 4 / 1e9; // disk sizes are entered in decimal GB
+
+export interface Licensing {
+  platform: string;
+  sockets: number;
+  coresPerCpu: number;
+  evenSplit: boolean; // cores per host divide evenly over the sockets
+  physicalCores: number; // across the proposed hosts
+  licensedCoresPerHost: number;
+  licensedCores: number;
+  vsan: boolean;
+  rawTiB: number; // raw vSAN capacity across the proposed hosts
+  entitledTiB: number;
+  addOnTiB: number; // vSAN add-on capacity to buy (0 when the entitlement covers it)
+}
+
+export function licensing(s: SizingState): Licensing {
+  const sockets = Math.max(1, Math.round(s.socketsPerHost) || 1);
+  const coresPerCpu = s.coresPerHost / sockets;
+  const licensedCoresPerHost = sockets * Math.max(LICENSE_MIN_CORES_PER_CPU, Math.ceil(coresPerCpu));
+  const licensedCores = licensedCoresPerHost * s.proposedHosts;
+  const vsan = isVsan(s.storageType);
+  const rawTiB = vsan ? (s.capacityDisksPerHost * s.capacityDiskSizeGb * s.proposedHosts) / GB_PER_TIB : 0;
+  const entitledTiB = ceil(licensedCores * (VSAN_TIB_PER_CORE[s.platform] ?? 1));
+  const addOnTiB = vsan ? Math.max(0, ceil(rawTiB - entitledTiB)) : 0;
+  return {
+    platform: s.platform, sockets, coresPerCpu, evenSplit: Number.isInteger(coresPerCpu),
+    physicalCores: s.coresPerHost * s.proposedHosts, licensedCoresPerHost, licensedCores,
+    vsan, rawTiB, entitledTiB, addOnTiB,
+  };
+}
+
 export function compute(s: SizingState): SizingResult {
   const comps = components(s);
   const totals = comps.reduce(
@@ -665,7 +816,7 @@ export function compute(s: SizingState): SizingResult {
   const perHostRaw = s.capacityDisksPerHost * s.capacityDiskSizeGb;
   const storageAvailable = isVsan(s.storageType) ? perHostRaw * n : s.externalStorageGb;
 
-  const workbookHosts = workbookHostCount(s, comps);
+  const workbookHosts = s.platform === 'VVF' ? vvfHostCount(s, totals) : workbookHostCount(s, comps);
   let requiredHosts = workbookHosts;
   const hostsForStorage = isVsan(s.storageType) && perHostRaw > 0 ? ceil(raw / perHostRaw) : 0;
   requiredHosts = Math.max(requiredHosts, hostsForStorage);
