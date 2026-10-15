@@ -112,4 +112,34 @@ for (const sc of golden) {
 }
 rmSync(tmp, { recursive: true, force: true });
 console.log(`\n${golden.length - fails}/${golden.length} scenarios match workbook ${eng.WORKBOOK_REVISION}`);
-process.exit(fails ? 1 : 0);
+
+// Licensing panel vs the worked examples in KB 313548 ("Counting Cores for
+// VMware Cloud Foundation and vSphere Foundation and TiBs for vSAN"):
+// hosts, CPUs per host, cores per CPU, TiB per host, then the KB's licensed
+// cores, VCF / VVF entitled TiB and VCF / VVF vSAN TiB still to buy (negative
+// = surplus, which the panel shows as 0).
+const KB313548 = [
+  [3, 1, 8, 3.840, 48, 48, 12, -36, 0],
+  [3, 2, 16, 1.840, 96, 96, 24, -90, -18],
+  [3, 2, 16, 49.920, 96, 96, 24, 54, 126],
+  [3, 2, 24, 61.440, 144, 144, 36, 41, 149],
+  [3, 1, 6, 8.393, 48, 48, 12, -22, 14],
+  [4, 2, 20, 4.473, 160, 160, 40, -142, -22],
+];
+const GB_PER_TIB = 1024 ** 4 / 1e9;
+let licFails = 0;
+for (const [hosts, cpus, cores, tib, licCores, vcfEnt, vvfEnt, vcfAdd, vvfAdd] of KB313548) {
+  for (const [platform, ent, add] of [['VCF', vcfEnt, vcfAdd], ['VVF', vvfEnt, vvfAdd]]) {
+    const s = { ...eng.defaultState(), platform, proposedHosts: hosts, socketsPerHost: cpus, coresPerHost: cpus * cores,
+      storageType: 'vSAN-ESA', capacityDisksPerHost: 1, capacityDiskSizeGb: tib * GB_PER_TIB };
+    const L = eng.licensing(s);
+    const got = [L.licensedCores, L.entitledTiB, L.addOnTiB];
+    const want = [licCores, ent, Math.max(0, add)];
+    if (got.some((v, i) => v !== want[i])) {
+      licFails++;
+      console.log(`FAIL KB 313548 ${platform} ${hosts}x${cpus}x${cores} ${tib} TiB: engine ${got.join('/')} vs KB ${want.join('/')}`);
+    }
+  }
+}
+console.log(`${KB313548.length * 2 - licFails}/${KB313548.length * 2} licensing examples match KB 313548`);
+process.exit(fails || licFails ? 1 : 0);

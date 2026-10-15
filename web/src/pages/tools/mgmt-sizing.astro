@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { OPTIONS, WORKBOOK_REVISION } from '../../lib/mgmt-sizing';
-import { docHref } from '../../lib/path';
+import { docHref, withBase } from '../../lib/path';
 
 // Server-render the <option> lists from the shared engine so the dropdowns
 // never drift from the calculation tables.
@@ -10,7 +10,7 @@ const opt = (values: readonly string[]) => values;
 
 <BaseLayout
   title="Management Domain Sizing & Fit Check | VCF 9.1 Planning"
-  description="Interactive VCF 9.1 management-domain sizing calculator with a cluster fit check: does your proposed host count and spec fit the fleet at N-1?"
+  description="Interactive VCF and VVF 9.1 management sizing calculator with a cluster fit check (does your proposed host count and spec fit at N-1?) and a core / vSAN TiB licensing count."
   active="tools/mgmt-sizing"
 >
   <article class="sizer">
@@ -21,8 +21,10 @@ const opt = (values: readonly string[]) => values;
         Reproduces the Broadcom <em>Planning &amp; Preparation Workbook</em>
         (<strong>{WORKBOOK_REVISION}</strong>) <em>Management Domain Sizing</em> sheet, and adds the
         check the spreadsheet lacks: enter the cluster you intend to build and see whether the
-        fleet <strong>fits at N-1</strong>, and where the headroom is. Everything runs in your
-        browser; nothing is sent anywhere.
+        fleet <strong>fits at N-1</strong>, and where the headroom is. For <strong>vSphere Foundation
+        (VVF)</strong>, switch the platform: the workbook has no VVF sheet, so that profile is built
+        from Broadcom TechDocs with the same appliance sizes. Both platforms get a licence count
+        (cores and vSAN TiB). Everything runs in your browser; nothing is sent anywhere.
       </p>
       <div class="sizer__toolbar">
         <button type="button" id="btnShare"><i class="fa-solid fa-link" aria-hidden="true"></i> Copy share link</button>
@@ -39,29 +41,49 @@ const opt = (values: readonly string[]) => values;
       <section class="sizer__inputs">
         <p class="sizer__intro">Work top to bottom. Every field says what it is; where a field says <strong>Not sure?</strong>, that value is a safe starting point you can refine later with the VCF architect.</p>
 
-        <fieldset>
-          <legend>1. Your VCF fleet</legend>
-          <label for="deploymentModel">Deployment model
+        <fieldset id="fsPlatform">
+          <legend><span data-num></span>Your <span id="platformWord">VCF fleet</span></legend>
+          <label for="platform">Platform
+            <select id="platform">
+              <option value="VCF">VMware Cloud Foundation (VCF)</option>
+              <option value="VVF">VMware vSphere Foundation (VVF) / standalone</option>
+            </select>
+          </label>
+          <p class="sizer__hint"><strong>VCF</strong> follows the workbook's management domain (SDDC Manager, NSX, workload domains). <strong>VVF</strong> has none of those: vCenter, VCF Operations, a License Server and, optionally, the VCF Management Services. In VVF the management VMs usually share the cluster with your workloads.</p>
+          <div data-only="vvf" class="sizer__profile">
+            <p class="sizer__profile-head"><strong>vSphere Foundation profile</strong><span>not in the workbook</span></p>
+            <p>Built from the TechDocs 9.1 VVF deployment pages, with appliance sizes from the workbook tables. The VCF Installer deploys VVF with a Medium vCenter, a Medium VCF Operations node and Small management services; a manual build can leave the management services out. <a href={`${docHref('04-sizing')}#vvf--standalone-profile`}>What it counts and why</a></p>
+          </div>
+          <label data-only="vvf">VCF Management Services
+            <select id="vvfMgmtServicesSel">
+              <option value="Include">Include (VCF Installer deployment)</option>
+              <option value="Exclude">Leave out (manual deployment only)</option>
+            </select>
+          </label>
+          <p class="sizer__hint" data-only="vvf">The services runtime with fleet and SDDC lifecycle, the software depot and telemetry. <strong>Not sure?</strong> Include.</p>
+          <p class="sizer__warn" data-only="vvf" id="servicesManualWarn" hidden>Leaving the management services out is <strong>not offered by the VCF Installer</strong>: it deploys VVF only with them. You deploy vCenter, VCF Operations and the License Server by hand instead (<a href={docHref('27-vcf-operations-ha-cloud-proxy-vvf')}>guide</a>). There is then no Log Management and no software depot; the services can be added later with VCF Installer 9.1.1 or later.</p>
+          <p class="sizer__hint" data-only="vvf" id="servicesProfileHint">The two fields below size the <strong>VCF Management Services</strong> (services runtime) only. The Installer uses <strong>Simple / Small</strong>; a JSON spec can change it.</p>
+          <label for="deploymentModel" data-group="services">Deployment model
             <select id="deploymentModel">{opt(OPTIONS.deploymentModel).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint"><strong>Simple</strong> runs one copy of each management appliance — fine for labs and small sites, but a failure takes it offline. <strong>High Availability</strong> runs clustered copies that survive a failure. <strong>Not sure?</strong> High Availability.</p>
-          <label for="deploymentSize">Deployment size
+          <p class="sizer__hint" data-only="vcf"><strong>Simple</strong> runs one copy of each management appliance — fine for labs and small sites, but a failure takes it offline. <strong>High Availability</strong> runs clustered copies that survive a failure. <strong>Not sure?</strong> High Availability.</p>
+          <label for="deploymentSize" data-group="services">Deployment size
             <select id="deploymentSize">{opt(OPTIONS.deploymentSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">How large the environment is that VCF will manage. As a guide, the management vCenter at each size handles: <strong>Small</strong> up to 100 hosts / 1,000 VMs, <strong>Medium</strong> up to 400 hosts / 4,000 VMs, <strong>Large</strong> up to 1,000 hosts / 10,000 VMs. Simple is always Small. <strong>Not sure?</strong> Medium.</p>
-          <div id="profileDesc" class="sizer__profile" aria-live="polite" data-docs={docHref('04-sizing')}></div>
-          <label>Instance model
+          <p class="sizer__hint" data-only="vcf">How large the environment is that VCF will manage. As a guide, the management vCenter at each size handles: <strong>Small</strong> up to 100 hosts / 1,000 VMs, <strong>Medium</strong> up to 400 hosts / 4,000 VMs, <strong>Large</strong> up to 1,000 hosts / 10,000 VMs. Simple is always Small. <strong>Not sure?</strong> Medium.</p>
+          <div id="profileDesc" class="sizer__profile" data-only="vcf" aria-live="polite" data-docs={docHref('04-sizing')}></div>
+          <label data-only="vcf">Instance model
             <select id="instanceModel">{opt(OPTIONS.instanceModel).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint"><strong>First Instance</strong>: the first (or only) VCF instance — it also hosts the fleet-wide services. <strong>Additional Instance</strong>: a second site or region joining an existing VCF fleet. <strong>Not sure?</strong> First Instance.</p>
+          <p class="sizer__hint" data-only="vcf"><strong>First Instance</strong>: the first (or only) VCF instance — it also hosts the fleet-wide services. <strong>Additional Instance</strong>: a second site or region joining an existing VCF fleet. <strong>Not sure?</strong> First Instance.</p>
           <label>Storage for the management cluster
             <select id="storageType">{opt(OPTIONS.storageType).map((v) => <option>{v}</option>)}</select>
           </label>
           <p class="sizer__hint"><strong>vSAN-ESA</strong>: storage built from the hosts' own NVMe disks (current generation). <strong>vSAN-OSA</strong>: the older vSAN with separate cache and capacity disks. <strong>NFS / FC</strong>: an external storage array. <strong>Not sure?</strong> vSAN-ESA.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>2. Your hosts</legend>
+        <fieldset id="fsHosts">
+          <legend><span data-num></span>Your hosts</legend>
           <p class="sizer__hint">The management cluster you intend to build — the tool checks whether everything above and below fits on it, even with one host down.</p>
           <label>Cluster type
             <select id="clusterType">{opt(OPTIONS.clusterType).map((v) => <option>{v}</option>)}</select>
@@ -75,6 +97,10 @@ const opt = (values: readonly string[]) => values;
             <input id="coresPerHost" type="number" min="1" step="1" />
           </label>
           <p class="sizer__hint">Physical cores of all CPUs in one host together — not threads / hyperthreading.</p>
+          <label>CPUs (sockets) per host
+            <input id="socketsPerHost" type="number" min="1" step="1" />
+          </label>
+          <p class="sizer__hint">Only used for the licence count: every CPU is licensed at <strong>16 cores minimum</strong>.</p>
           <label>RAM per host (GB)
             <input id="ramPerHost" type="number" min="1" step="1" />
           </label>
@@ -111,40 +137,67 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">Extra storage headroom for future growth. <strong>Not sure?</strong> 10.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>3. Management infrastructure</legend>
-          <p class="sizer__hint" id="derivedSizes"></p>
-          <p class="sizer__hint">Optional infrastructure that runs in the management cluster. Leave anything you have not heard about in the design on <strong>Excluded</strong>.</p>
-          <label>NSX Edges or Virtual Network Appliances
+        <fieldset id="fsInfra">
+          <legend><span data-num></span><span data-only="vcf">Management infrastructure</span><span data-only="vvf">Add-ons</span></legend>
+          <p class="sizer__hint" id="derivedSizes" data-only="vcf"></p>
+          <p class="sizer__hint" data-only="vcf">Optional infrastructure that runs in the management cluster. Leave anything you have not heard about in the design on <strong>Excluded</strong>.</p>
+          <p class="sizer__hint" data-only="vvf">Optional extras that most VVF environments do not use. Leave them on <strong>Excluded</strong> unless the design includes Kubernetes (Supervisor) or the Avi load balancer.</p>
+          <label data-only="vcf">NSX Edges or Virtual Network Appliances
             <select id="nsxEdgeSize">{opt(OPTIONS.nsxEdgeSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">Route traffic between VCF's virtual networks (NSX) and the physical network. <strong>NSX Edge</strong> is the classic option, <strong>VNA</strong> the newer VPC option. <strong>Not sure?</strong> Excluded, unless the network design puts NSX routing on the management cluster.</p>
-          <label>NSX Global Manager
+          <p class="sizer__hint" data-only="vcf">Route traffic between VCF's virtual networks (NSX) and the physical network. <strong>NSX Edge</strong> is the classic option, <strong>VNA</strong> the newer VPC option. <strong>Not sure?</strong> Excluded, unless the network design puts NSX routing on the management cluster.</p>
+          <label data-only="vcf">NSX Global Manager
             <select id="nsxGmSize">{opt(OPTIONS.nsxGmSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">Only for <em>NSX Federation</em> — one network and security policy spanning several sites. <strong>Not sure?</strong> Excluded.</p>
+          <p class="sizer__hint" data-only="vcf">Only for <em>NSX Federation</em> — one network and security policy spanning several sites. <strong>Not sure?</strong> Excluded.</p>
           <label>vSphere Supervisor (Kubernetes) on the management cluster
             <select id="supervisorMode">{opt(OPTIONS.supervisorMode).map((v) => <option>{v}</option>)}</select>
           </label>
           <label id="supervisorSizeLabel" hidden>Supervisor size
             <select id="supervisorSize">{opt(OPTIONS.supervisorSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">The Supervisor runs Kubernetes on vSphere. Only when Kubernetes runs <em>in the management domain</em>; counts its 1 or 3 control-plane VMs. An Edge-backed Supervisor also needs the NSX Edges at <strong>Large</strong> or bigger. <strong>Not sure?</strong> Excluded.</p>
+          <p class="sizer__hint" data-only="vcf">The Supervisor runs Kubernetes on vSphere. Only when Kubernetes runs <em>in the management domain</em>; counts its 1 or 3 control-plane VMs. An Edge-backed Supervisor also needs the NSX Edges at <strong>Large</strong> or bigger. <strong>Not sure?</strong> Excluded.</p>
+          <p class="sizer__hint" data-only="vvf">The Supervisor runs Kubernetes on vSphere. Without NSX it uses vDS networking with a load balancer (Foundation Load Balancer or Avi). Counts its 1 or 3 control-plane VMs only. <strong>Not sure?</strong> Excluded.</p>
           <p class="sizer__warn" id="edgeWarn" hidden></p>
           <label>Avi Load Balancer
             <select id="aviSize">{opt(OPTIONS.aviSize).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">VMware's load balancer (formerly NSX Advanced Load Balancer), e.g. for Kubernetes or VCF Automation. Counts its 3 controllers; the service engines run in the workload domains. <strong>Not sure?</strong> Excluded.</p>
-          <label>Security Services Platform (vDefend)
+          <p class="sizer__hint">VMware's load balancer (formerly NSX Advanced Load Balancer), e.g. for Kubernetes or VCF Automation. Counts its 3 controllers; the service engines run <span data-only="vcf">in the workload domains</span><span data-only="vvf">next to the workloads they serve</span> and are not counted. <strong>Not sure?</strong> Excluded.</p>
+          <label data-only="vcf">Security Services Platform (vDefend)
             <select id="ssp">{opt(OPTIONS.ssp).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint">The platform behind vDefend advanced security (intrusion detection, malware prevention). Only with a vDefend licence. <strong>Not sure?</strong> Excluded.</p>
-          <label class="sizer__check"><input id="licenseHub" type="checkbox" /> License Hub (vDefend / Avi licensing)</label>
-          <p class="sizer__hint">A small licensing appliance. Needed for vDefend; for Avi only when it is licensed on-premises (Avi can also license directly from the cloud). <strong>Not sure?</strong> Tick it only if vDefend is bought.</p>
+          <p class="sizer__hint" data-only="vcf">The platform behind vDefend advanced security (intrusion detection, malware prevention). Only with a vDefend licence. <strong>Not sure?</strong> Excluded.</p>
+          <label class="sizer__check"><input id="licenseHub" type="checkbox" /> License Hub (<span data-only="vcf">vDefend / </span>Avi licensing)</label>
+          <p class="sizer__hint" data-only="vcf">A small licensing appliance. Needed for vDefend; for Avi only when it is licensed on-premises (Avi can also license directly from the cloud). <strong>Not sure?</strong> Tick it only if vDefend is bought.</p>
+          <p class="sizer__hint" data-only="vvf">A small licensing appliance, for Avi only when it is licensed on-premises (Avi can also license directly from the cloud). It is not the License Server, which is always counted. <strong>Not sure?</strong> Leave off.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>4. VCF management software</legend>
+        <fieldset data-only="vvf" id="fsVvf">
+          <legend><span data-num></span>VVF management software</legend>
+          <label>vCenter size
+            <select id="vvfVcenterSize">{opt(OPTIONS.vcenterSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint"><strong>Small</strong> up to 100 hosts / 1,000 VMs, <strong>Medium</strong> up to 400 hosts / 4,000 VMs, <strong>Large</strong> up to 1,000 hosts / 10,000 VMs. <strong>Not sure?</strong> Medium (the Installer default).</p>
+          <label>vCenter storage
+            <select id="vvfVcenterStorage">{opt(OPTIONS.vcenterStorage).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <label>VCF Operations
+            <select id="vvfOpsModel">{opt(OPTIONS.vvfOpsModel).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">VVF includes VCF Operations; you need it to license the hosts. <strong>Single Node</strong> is what the Installer deploys. <strong>HA - 2 nodes</strong> adds a replica; <strong>HA - 3 nodes</strong> adds a data node as well. <strong>Not sure?</strong> Single Node.</p>
+          <label>VCF Operations node size
+            <select id="vvfOpsSize">{opt(OPTIONS.vvfOpsSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">Use the <a href={withBase('tools/ops-logs-sizing/')}>Ops &amp; Logs sizer</a> or Broadcom's estimator for the right size. <strong>Not sure?</strong> Medium (the Installer default).</p>
+          <label>Cloud Proxy
+            <select id="vvfCollectorSize">{opt(OPTIONS.vvfCollectorSize).map((v) => <option>{v}</option>)}</select>
+          </label>
+          <p class="sizer__hint">TechDocs lists the Cloud Proxy as optional for VVF. <strong>Not sure?</strong> Small.</p>
+          <p class="sizer__hint">The <strong>License Server</strong> (2 vCPU / 4 GB / 12 GB) is always counted: every VCF Operations instance that manages licences needs one.</p>
+        </fieldset>
+
+        <fieldset data-only="vcf" id="fsVcfSoftware">
+          <legend><span data-num></span>VCF management software</legend>
           <label>VCF Operations
             <select id="vcfOps">{opt(OPTIONS.vcfOps).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -163,8 +216,8 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">Network monitoring and traffic-flow analysis (formerly Aria Operations for Networks / vRNI). <strong>Not sure?</strong> Excluded.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>5. Optional services</legend>
+        <fieldset id="fsServices">
+          <legend><span data-num></span>Optional services</legend>
           <p class="sizer__hint">These run inside VCF's own management platform (the <em>services runtime</em>), so they do not add separate appliances — they add capacity to it. The result below shows how many runtime nodes that comes to.</p>
           <label>Log Management size
             <select id="logsSize">{opt(OPTIONS.logsSize).map((v) => <option>{v}</option>)}</select>
@@ -174,16 +227,17 @@ const opt = (values: readonly string[]) => values;
             <input id="logsReplicas" type="number" min="1" step="1" />
             <span class="sizer__hint">Copies for capacity and availability — at least Small 1 / Medium 3 / Large 6, at most 19. <strong>Not sure?</strong> The minimum.</span>
           </label>
-          <label class="sizer__check"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
-          <p class="sizer__hint">High-frequency (real-time) performance data in VCF Operations. <strong>Not sure?</strong> Leave off.</p>
-          <label class="sizer__check"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
-          <label class="sizer__check"><input id="vcfIdb" type="checkbox" /> Identity Broker (additional instance)</label>
-          <p class="sizer__hint">Only on an <strong>additional instance</strong>: a local copy of the VCF software repository, and a local sign-in (single sign-on) service. The first instance already has both.</p>
+          <p class="sizer__hint" id="logsNeedsServices" hidden>Log Management requires the <strong>VCF Management Services</strong>. Set them to <em>Include</em> in section 1 to size it.</p>
+          <label class="sizer__check" data-only="vcf"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
+          <p class="sizer__hint" data-only="vcf">High-frequency (real-time) performance data in VCF Operations. <strong>Not sure?</strong> Leave off.</p>
+          <label class="sizer__check" data-only="vcf"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
+          <label class="sizer__check" data-only="vcf"><input id="vcfIdb" type="checkbox" /> Identity Broker (additional instance)</label>
+          <p class="sizer__hint" data-only="vcf">Only on an <strong>additional instance</strong>: a local copy of the VCF software repository, and a local sign-in (single sign-on) service. The first instance already has both.</p>
           <p class="sizer__hint" id="workerOut"></p>
         </fieldset>
 
-        <fieldset>
-          <legend>6. Disaster recovery</legend>
+        <fieldset data-only="vcf" id="fsDr">
+          <legend><span data-num></span>Disaster recovery</legend>
           <label>Site Protection &amp; Disaster Recovery
             <select id="spr">{opt(OPTIONS.spr).map((v) => <option>{v}</option>)}</select>
           </label>
@@ -192,16 +246,16 @@ const opt = (values: readonly string[]) => values;
           <p class="sizer__hint">An isolated recovery environment for ransomware incidents. Only when that add-on is planned.</p>
         </fieldset>
 
-        <fieldset>
-          <legend>7. Workload domains
+        <fieldset data-only="vcf" id="fsWld">
+          <legend><span data-num></span>Workload domains
             <button type="button" id="addWld" class="sizer__add">+ Add workload domain</button>
           </legend>
           <p class="sizer__hint">A <strong>workload domain</strong> is a separate vCenter + NSX environment where the customer's own workloads run. Its management VMs (vCenter, NSX Managers, and any Avi / vDefend controllers) live in <em>this</em> management cluster, so add one row per planned workload domain. <strong>NSX model</strong>: <em>Shared</em> reuses an existing NSX, <em>Dedicated</em> gets its own (HA Cluster = 3 managers).</p>
           <div id="wldList"></div>
         </fieldset>
 
-        <fieldset>
-          <legend>8. Advanced: override sizes <span class="sizer__tag">experts</span></legend>
+        <fieldset data-only="vcf" id="fsAdvanced">
+          <legend><span data-num></span>Advanced: override sizes <span class="sizer__tag">experts</span></legend>
           <label class="sizer__check"><input id="advanced" type="checkbox" /> Override the profile-derived sizes</label>
           <p class="sizer__hint">Leave this off unless a design document specifies sizes that differ from the profile. It is the workbook's <em>Advanced Management Domain Sizing</em>.</p>
           <div id="advancedFields" hidden>
@@ -252,6 +306,11 @@ const opt = (values: readonly string[]) => values;
         <h2>Fleet requirement</h2>
         <dl class="sizer__stats" id="stats"></dl>
 
+        <h2>Licensing (these hosts)</h2>
+        <dl class="sizer__stats" id="licStats"></dl>
+        <p class="sizer__hint" id="licHint"></p>
+        <p class="sizer__warn" id="licWarn" hidden></p>
+
         <details class="sizer__detail">
           <summary>Component footprint (<span id="compCount">0</span> line items)</summary>
           <table class="sizer__table" id="compTable">
@@ -271,12 +330,14 @@ const opt = (values: readonly string[]) => values;
       Figures transcribed from <code>reference/vcf-9.1.1-planning-and-preparation-workbook.xlsx</code>
       ({WORKBOOK_REVISION}), sheet <em>Management Domain Sizing</em>. This is a planning aid;
       always confirm the final numbers against the official workbook for your revision.
+      The VVF profile has no workbook sheet to check against: its component list comes from
+      Broadcom TechDocs 9.1 and the licence count from KB 313548 (<a href={`${docHref('04-sizing')}#vvf--standalone-profile`}>sources</a>).
     </p>
   </article>
 </BaseLayout>
 
 <script>
-  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, migrateState, deploymentSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, supervisorEdgeWarning, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
+  import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, licensing, migrateState, deploymentSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, supervisorEdgeWarning, VVF_SERVICES_PROFILE, VSAN_TIB_PER_CORE, LICENSE_MIN_CORES_PER_CPU, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const state: SizingState = defaultState();
@@ -285,20 +346,27 @@ const opt = (values: readonly string[]) => values;
     values.map((v) => `<option${v === selected ? ' selected' : ''}>${v}</option>`).join('');
 
   // ---- bind top-level inputs to state ----
-  const numIds = ['proposedHosts', 'coresPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
-  const selIds = ['deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'supervisorMode', 'supervisorSize', 'aviSize', 'ssp', 'vcfOps', 'opsNetSize', 'logsSize', 'vcfAutomationSize', 'spr', 'advVcenterSize', 'advVcenterStorage', 'advNsxModel', 'advNsxSize', 'advVcfOpsModel', 'advVcfOpsSize', 'advCollectorSize', 'advVcfaSize'] as const;
+  const numIds = ['proposedHosts', 'coresPerHost', 'socketsPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
+  const selIds = ['platform', 'deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'supervisorMode', 'supervisorSize', 'aviSize', 'ssp', 'vcfOps', 'opsNetSize', 'logsSize', 'vcfAutomationSize', 'spr', 'advVcenterSize', 'advVcenterStorage', 'advNsxModel', 'advNsxSize', 'advVcfOpsModel', 'advVcfOpsSize', 'advCollectorSize', 'advVcfaSize', 'vvfVcenterSize', 'vvfVcenterStorage', 'vvfOpsModel', 'vvfOpsSize', 'vvfCollectorSize'] as const;
   const chkIds = ['licenseHub', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'vcfIdb', 'rwr', 'advanced'] as const;
 
   function hydrate() {
     for (const id of numIds) ($(id) as HTMLInputElement).value = String((state as any)[id]);
     for (const id of selIds) ($(id) as HTMLSelectElement).value = String((state as any)[id]);
     for (const id of chkIds) ($(id) as HTMLInputElement).checked = Boolean((state as any)[id]);
+    ($('vvfMgmtServicesSel') as HTMLSelectElement).value = state.vvfMgmtServices ? 'Include' : 'Exclude';
   }
 
   function readInputs() {
     for (const id of numIds) (state as any)[id] = parseFloat(($(id) as HTMLInputElement).value) || 0;
     for (const id of selIds) (state as any)[id] = ($(id) as HTMLSelectElement).value;
     for (const id of chkIds) (state as any)[id] = ($(id) as HTMLInputElement).checked;
+    state.vvfMgmtServices = ($('vvfMgmtServicesSel') as HTMLSelectElement).value !== 'Exclude';
+    // VVF: Log Management requires the management services
+    if (state.platform === 'VVF' && !state.vvfMgmtServices && state.logsSize !== 'Exclude') {
+      state.logsSize = 'Exclude';
+      ($('logsSize') as HTMLSelectElement).value = 'Exclude';
+    }
   }
 
   // ---- workload domain repeater ----
@@ -414,6 +482,28 @@ const opt = (values: readonly string[]) => values;
     state.logsReplicas = v;
   }
 
+  // ---- section order: in VVF the add-ons (Supervisor / Avi / License Hub)
+  // go last, as most VVF environments do not use them. Legends are numbered
+  // by visible position.
+  const SECTION_ORDER = {
+    vcf: ['fsPlatform', 'fsHosts', 'fsInfra', 'fsVcfSoftware', 'fsServices', 'fsDr', 'fsWld', 'fsAdvanced', 'fsVvf'],
+    vvf: ['fsPlatform', 'fsHosts', 'fsVvf', 'fsServices', 'fsInfra', 'fsVcfSoftware', 'fsDr', 'fsWld', 'fsAdvanced'],
+  };
+  let lastOrder = '';
+  function orderSections(vvf: boolean) {
+    const key = vvf ? 'vvf' : 'vcf';
+    if (key === lastOrder) return;
+    lastOrder = key;
+    const host = $('fsPlatform').parentElement!;
+    for (const id of SECTION_ORDER[key]) host.appendChild($(id));
+    let n = 0;
+    for (const id of SECTION_ORDER[key]) {
+      const fs = $(id);
+      if (fs.hidden) continue;
+      fs.querySelector<HTMLElement>('[data-num]')!.textContent = `${++n}. `;
+    }
+  }
+
   // ---- rendering ----
   const gb = (n: number) => n.toLocaleString('en-US');
   const pct = (n: number) => (n === Infinity ? 'n/a' : `${n >= 0 ? '+' : ''}${n.toFixed(0)}%`);
@@ -441,6 +531,18 @@ const opt = (values: readonly string[]) => values;
     }
     readInputs();
     const r = compute(state);
+    const vvf = state.platform === 'VVF';
+
+    // platform: show only the inputs that apply
+    document.querySelectorAll<HTMLElement>('[data-only]').forEach((el) => { el.hidden = el.dataset.only !== (vvf ? 'vvf' : 'vcf'); });
+    $('platformWord').textContent = vvf ? 'vSphere Foundation' : 'VCF fleet';
+    orderSections(vvf);
+    const servicesOff = vvf && !state.vvfMgmtServices;
+    document.querySelectorAll<HTMLElement>('[data-group="services"]').forEach((el) => { el.hidden = servicesOff; });
+    if (servicesOff) $('servicesProfileHint').hidden = true;
+    ($('logsSize') as HTMLSelectElement).disabled = servicesOff;
+    ($('logsNeedsServices') as HTMLElement).hidden = !servicesOff;
+    ($('servicesManualWarn') as HTMLElement).hidden = !servicesOff;
 
     // verdict banner
     const v = $('verdict');
@@ -469,11 +571,18 @@ const opt = (values: readonly string[]) => values;
       ['Total vCPU', gb(r.totals.cpu)],
       ['Total RAM', `${gb(r.totals.ram)} GB`],
       ['Total VM disk', `${gb(r.totals.disk)} GB`],
-      ['Minimum hosts', r.requiredHosts > r.workbookHosts ? `${r.requiredHosts} (workbook ${r.workbookHosts})` : `${r.requiredHosts}`],
+      ['Minimum hosts', r.requiredHosts > r.workbookHosts && !vvf ? `${r.requiredHosts} (workbook ${r.workbookHosts})` : `${r.requiredHosts}`],
       ['vCPU / host (N-1)', r.perHostN1 ? gb(r.perHostN1.cpu) : 'n/a'],
       ['RAM / host (N-1)', r.perHostN1 ? `${gb(r.perHostN1.ram)} GB` : 'n/a'],
       ['Storage / host (N-1)', !isVsanType(state.storageType) ? 'n/a (shared datastore)' : r.perHostN1 ? `${gb(r.perHostN1.storage)} GB` : 'n/a'],
+      // VVF: the management VMs usually share the cluster with the workloads
+      ...(vvf ? [
+        ['Left for workloads, vCPU (N-1)', gb(Math.max(0, r.fit.cpu.available - r.fit.cpu.required))],
+        ['Left for workloads, RAM (N-1)', `${gb(Math.max(0, r.fit.ram.available - r.fit.ram.required))} GB`],
+      ] : []),
     ].map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
+
+    renderLicensing();
 
     // component table
     $('compCount').textContent = String(r.components.length);
@@ -505,7 +614,9 @@ const opt = (values: readonly string[]) => values;
     ($('vcfSd') as HTMLInputElement).disabled = state.instanceModel !== 'Additional Instance';
     ($('vcfIdb') as HTMLInputElement).disabled = state.instanceModel !== 'Additional Instance';
     // Services-runtime worker readout
-    $('workerOut').innerHTML = `Services runtime: <strong>${r.workers.nodes} worker nodes</strong> × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB.`;
+    $('workerOut').innerHTML = servicesOff
+      ? 'No services runtime: VCF Management Services are left out.'
+      : `Services runtime: <strong>${r.workers.nodes} worker nodes</strong> × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB.`;
 
     // Oversubscription guardrail — the workbook caps the recommendation at 2:1
     const over = Math.max(state.cpuOver, state.ramOver);
@@ -519,7 +630,7 @@ const opt = (values: readonly string[]) => values;
     // vSphere Supervisor needs its Edge cluster at Large form factor minimum —
     // management domain, then each workload domain.
     const edgeWarnEl = $('edgeWarn') as HTMLElement;
-    const ew = supervisorEdgeWarning(state.supervisorMode !== 'Excluded', state.nsxEdgeSize);
+    const ew = vvf ? null : supervisorEdgeWarning(state.supervisorMode !== 'Excluded', state.nsxEdgeSize);
     edgeWarnEl.hidden = !ew;
     if (ew) edgeWarnEl.innerHTML = `⚠ ${ew}`;
     renderWldWarnings();
@@ -563,11 +674,40 @@ const opt = (values: readonly string[]) => values;
     $('vsanTable').innerHTML = breakdown.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
   }
 
+  // ---- licensing panel (KB 313548) ----
+  const tib = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 });
+  function renderLicensing() {
+    const L = licensing(state);
+    const perCore = VSAN_TIB_PER_CORE[L.platform];
+    const rows: Array<[string, string]> = [
+      ['Physical cores', gb(L.physicalCores)],
+      [`${L.platform} cores to license`, gb(L.licensedCores)],
+      ['Per host', `${L.sockets} × ${gb(Math.max(LICENSE_MIN_CORES_PER_CPU, Math.ceil(L.coresPerCpu)))} = ${gb(L.licensedCoresPerHost)}`],
+      ['vSAN TiB included', `${gb(L.entitledTiB)} TiB`],
+      ['vSAN raw capacity', L.vsan ? `${tib(L.rawTiB)} TiB` : 'n/a (no vSAN)'],
+      ['vSAN add-on to buy', L.vsan ? `${gb(L.addOnTiB)} TiB` : 'n/a (no vSAN)'],
+    ];
+    $('licStats').innerHTML = rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('');
+    $('licHint').innerHTML = `Physical cores only (no hyperthreads), at least <strong>${LICENSE_MIN_CORES_PER_CPU} per CPU</strong>. ` +
+      `${L.platform} includes <strong>${perCore} TiB of vSAN per licensed core</strong>${L.platform === 'VVF' ? ' (rounded up)' : ''}; ` +
+      'vSAN is licensed on the <strong>raw</strong> capacity the hosts contribute, not the usable datastore size. Counts only the hosts above: ' +
+      'license every other host too. Source: <a href="https://knowledge.broadcom.com/external/article/313548" rel="noopener">KB 313548</a>.';
+    const warn = $('licWarn') as HTMLElement;
+    warn.hidden = L.evenSplit;
+    if (!L.evenSplit) warn.innerHTML = `⚠ ${gb(state.coresPerHost)} cores do not divide evenly over ${L.sockets} CPUs. The count assumes ${tib(L.coresPerCpu)} per CPU, rounded up; check the host's real per-CPU core count.`;
+  }
+
   // ---- export / import / share ----
   // Enum-valued top-level fields get the same allow-list validation as the
   // per-WLD fields — a crafted import / share hash must not produce undefined
   // table lookups (NaN totals) or select values that don't exist.
   const TOP_ENUMS: Partial<Record<keyof SizingState, readonly string[]>> = {
+    platform: OPTIONS.platform,
+    vvfVcenterSize: OPTIONS.vcenterSize,
+    vvfVcenterStorage: OPTIONS.vcenterStorage,
+    vvfOpsModel: OPTIONS.vvfOpsModel,
+    vvfOpsSize: OPTIONS.vvfOpsSize,
+    vvfCollectorSize: OPTIONS.vvfCollectorSize,
     deploymentModel: OPTIONS.deploymentModel,
     deploymentSize: OPTIONS.deploymentSize,
     instanceModel: OPTIONS.instanceModel,
@@ -673,13 +813,21 @@ const opt = (values: readonly string[]) => values;
       if (wmsg) supLines.push(`- ⚠ ${label}: ${wmsg}`);
       else if (w.supervisorPlanned) supLines.push(`- ${label}: Supervisor planned; NSX Edge form factor meets the Large minimum (Edge runs on WLD hosts, not counted here).`);
     });
+    const vvf = s.platform === 'VVF';
+    const lic = licensing(s);
+    const profileLine = vvf
+      ? `**Platform:** vSphere Foundation (VVF), ${s.storageType}; VCF Management Services ${s.vvfMgmtServices ? `${s.deploymentModel} / ${s.deploymentSize}` : 'not deployed'}`
+      : `**Profile:** ${s.deploymentModel} / ${s.deploymentSize}, ${s.instanceModel}, ${s.storageType}`;
+    const sizesLine = vvf
+      ? `**VVF components:** vCenter ${s.vvfVcenterSize} (${s.vvfVcenterStorage} storage), VCF Operations ${s.vvfOpsModel} ${s.vvfOpsSize}, Cloud Proxy ${s.vvfCollectorSize}`
+      : `**${s.advanced ? 'Advanced sizing' : 'Profile-fixed'}:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}${r.derived.nsxHaCluster ? ' ×3' : ' ×1'}`;
     const L = [
-      '# VCF 9.1 Management Domain Sizing',
+      vvf ? '# VVF 9.1 Management Sizing' : '# VCF 9.1 Management Domain Sizing',
       '',
-      `**Profile:** ${s.deploymentModel} / ${s.deploymentSize}, ${s.instanceModel}, ${s.storageType}`,
+      profileLine,
       `**Cluster:** ${s.clusterType}, ${s.proposedHosts} hosts × ${s.coresPerHost} cores / ${gb(s.ramPerHost)} GB RAM / ${store}`,
       `**Assumptions:** CPU ${s.cpuOver}:1, RAM ${s.ramOver}:1, ${isVsanType(s.storageType) ? `vSAN reserve ${s.reservePct}%` : 'vSAN reserve n/a (NFS / FC)'}, growth ${s.growthPct}%`,
-      `**${s.advanced ? 'Advanced sizing' : 'Profile-fixed'}:** vCenter ${r.derived.vcenterSize} (${r.derived.vcenterStorage} storage), NSX Local Manager ${r.derived.nsxManagerSize}${r.derived.nsxHaCluster ? ' ×3' : ' ×1'}`,
+      sizesLine,
       ...(supLines.length ? ['', '## vSphere Supervisor / Edge', ...supLines] : []),
       '',
       `## Fit: ${r.fit.overall ? '✅ FITS' : '❌ DOES NOT FIT'} (tightest: ${r.fit.binding}, basis: ${r.survivorBasis})`,
@@ -693,15 +841,23 @@ const opt = (values: readonly string[]) => values;
       '',
       '## Fleet requirement',
       `- Totals: ${gb(r.totals.nodes)} nodes, ${gb(r.totals.cpu)} vCPU, ${gb(r.totals.ram)} GB RAM, ${gb(r.totals.disk)} GB disk`,
-      `- Minimum hosts: ${r.requiredHosts}${r.requiredHosts > r.workbookHosts ? ` (workbook ${r.workbookHosts})` : ''}`,
-      `- Services runtime: ${r.workers.nodes} workers × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB`,
+      `- Minimum hosts: ${r.requiredHosts}${r.requiredHosts > r.workbookHosts && !vvf ? ` (workbook ${r.workbookHosts})` : ''}`,
+      ...(vvf && !s.vvfMgmtServices ? [] : [`- Services runtime: ${r.workers.nodes} workers × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB`]),
       ...(r.perHostN1 ? [`- Per host (N-1): ${gb(r.perHostN1.cpu)} vCPU, ${gb(r.perHostN1.ram)} GB RAM, ${gb(r.perHostN1.storage)} GB`] : []),
       `- ${isVsanType(s.storageType) ? 'vSAN raw' : 'Datastore capacity'} required: ${gb(r.vsan.raw)} GB`,
       '',
       '## Components',
       ...r.components.map((c) => `- ${c.name}: ${c.nodes} node${c.nodes === 1 ? '' : 's'}, ${gb(c.cpu)} vCPU, ${gb(c.ram)} GB, ${gb(c.disk)} GB`),
       '',
-      `_Generated with the ITQ VCF 9.1 Management Domain sizing tool (workbook ${WORKBOOK_REVISION})._`,
+      '## Licensing (these hosts, KB 313548)',
+      `- ${lic.platform} cores to license: ${gb(lic.licensedCores)} (${gb(lic.physicalCores)} physical; ${lic.sockets} CPUs per host, 16-core minimum per CPU)`,
+      lic.vsan
+        ? `- vSAN: ${tib(lic.rawTiB)} TiB raw, ${gb(lic.entitledTiB)} TiB included, ${gb(lic.addOnTiB)} TiB add-on to buy`
+        : `- vSAN: not used (${gb(lic.entitledTiB)} TiB entitlement unused)`,
+      '',
+      vvf
+        ? `_Generated with the ITQ VCF 9.1 sizing tool, VVF profile (TechDocs-based; appliance sizes from workbook ${WORKBOOK_REVISION})._`
+        : `_Generated with the ITQ VCF 9.1 Management Domain sizing tool (workbook ${WORKBOOK_REVISION})._`,
     ];
     return L.join('\n');
   }
@@ -768,7 +924,16 @@ const opt = (values: readonly string[]) => values;
     try { loadState(JSON.parse(b64dec(m[1]))); return true; } catch { return false; }
   }
 
-  for (const id of [...numIds, ...selIds, ...chkIds]) $(id).addEventListener('input', recalc);
+  // Switching platform resets the profile fields to that platform's default:
+  // VVF sizes the management services at the Installer's Simple / Small.
+  // Registered before the generic listener so recalc sees the new values.
+  $('platform').addEventListener('input', () => {
+    const prof = ($('platform') as HTMLSelectElement).value === 'VVF' ? VVF_SERVICES_PROFILE : defaultState();
+    ($('deploymentModel') as HTMLSelectElement).value = prof.deploymentModel;
+    ($('deploymentSize') as HTMLSelectElement).innerHTML = selOptions([...OPTIONS.deploymentSize], prof.deploymentSize);
+    lastModel = '';
+  });
+  for (const id of [...numIds, ...selIds, ...chkIds, 'vvfMgmtServicesSel']) $(id).addEventListener('input', recalc);
   // Guard the Log Management replica field: clamp to the per-size min..19 on
   // commit (blur / enter / spinner) so an out-of-range typed value can't stick.
   $('logsReplicas').addEventListener('change', () => { syncLogsReplicas(); recalc(); });
@@ -781,6 +946,8 @@ const opt = (values: readonly string[]) => values;
 
 <style is:global>
   .sizer { max-width: 1100px; }
+  /* author display rules (e.g. .sizer label) would otherwise beat the hidden attribute */
+  .sizer [hidden] { display: none !important; }
   .sizer__head h1 { margin: 0.2rem 0 0.6rem; }
   .sizer__lede { color: var(--text-muted); max-width: 70ch; }
   .sizer__profile { margin: -0.3rem 0 0.9rem; padding: 0.55rem 0.75rem; border-left: 3px solid var(--itq-orange); border-radius: var(--radius-sm); background: var(--surface-card); font-size: 0.8rem; color: var(--text-body); }

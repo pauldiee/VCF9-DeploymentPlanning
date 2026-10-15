@@ -1,5 +1,49 @@
 # Changelog
 
+## v5.9.6 — 2026-10-15
+- **Dead License Server links fixed (#406).** TechDocs moved
+  `licensing/register-vcf-operations/add-license-server.html` (now 404).
+  `docs/06` Story 5.4 now links
+  [License Server Overview](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/license-server-overview.html),
+  and `docs/27` links
+  [Register an Additional License Server with the VCF Business Services Console](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/licensing/register-vcf-operations/register-an-additional-license-server-with-the-vcf-business-services-console.html)
+  at its new address.
+- **`docs/04`: size check notes (#405).** No figures changed. The Cloud Proxy
+  sizes are the Unified Cloud Proxy figures in
+  [KB 397782](https://knowledge.broadcom.com/external/article/397782). The
+  License Server has no official figure beyond the workbook. The 9.1 Supervisor
+  page lists 32 GB storage and no XLarge where the workbook uses 48 GB and has
+  an XLarge. A dated table records Broadcom's conflicting Simple worker counts
+  (2 vs 3; 9.1.1 removed one) and that
+  [KB 455842](https://knowledge.broadcom.com/external/article/455842) excludes VVF.
+
+## v5.9.5 — 2026-10-15
+- **Sizer: VVF / Standalone profile and a licensing panel (#405).** The
+  management sizer gets a **Platform** switch. *VMware vSphere Foundation (VVF)*
+  counts vCenter, VCF Operations (single node or HA), an optional Cloud Proxy,
+  the License Server, and **VCF Management Services as an option** (on by
+  default, as the VCF Installer deploys them). The *Include / Leave out*
+  choice sits right under the platform switch, and *Leave out* warns that the
+  VCF Installer doesn't offer it (manual build only). Log Management requires
+  the management services: with them left out it is set to *Exclude* and
+  locked. VVF mode shows no VCF-only selections, and lists Supervisor / Avi /
+  License Hub last as *Add-ons*, since most VVF environments use none of them.
+  Optional extras: Supervisor, Avi and License Hub. There is no SDDC Manager,
+  NSX, workload domains or VCF Automation. Defaults follow the Installer's VVF
+  wizard (Medium vCenter, Medium VCF Operations, Small management services). The
+  workbook has no VVF sheet, so the component list is sourced from the TechDocs
+  9.1 VVF deployment and FQDN pages, linked in `docs/04`. The management
+  services' worker count reuses the VCF formula with only the VVF service set.
+  VVF also shows the vCPU / RAM left for workloads at N-1.
+  A new **Licensing** panel (VCF and VVF) counts cores to license (16-core
+  minimum per CPU, from a new *CPUs per host* input), the vSAN TiB included
+  (VCF 1, VVF 0.25 per core, rounded up) and the add-on still to buy, per
+  [KB 313548](https://knowledge.broadcom.com/external/article/313548).
+  `verify-sizer.mjs` now also checks the panel against all six KB examples for
+  both platforms (12/12); the 157 workbook scenarios are unchanged. Also fixes
+  a page bug: `.sizer label { display: block }` overrode the `hidden`
+  attribute, so the toggled fields (e.g. *Supervisor size*) never actually hid.
+
 ## v5.9.4 — 2026-10-15
 - **`CLAUDE.md`: the GitLab sync is manual (#404).** The Git remotes
   section said "Run that after a `pushall`" about

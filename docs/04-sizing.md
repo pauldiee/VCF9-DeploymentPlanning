@@ -23,6 +23,12 @@ you intend to build and it shows whether the fleet fits **at N-1** (surviving on
 host failure), the headroom on each dimension, and the binding constraint.
 Everything runs in the browser — no data leaves the page.
 
+For **vSphere Foundation (VVF)** the tool has a second platform setting: the
+workbook has no VVF sheet, so that profile is built from Broadcom TechDocs (see
+[VVF / Standalone profile](#vvf--standalone-profile)). Both platforms also get a
+**licence count**: cores and vSAN TiB, per KB 313548 (see
+[Licensing: counting cores](#licensing-counting-cores)).
+
 > **Two workbook revisions in `reference/`.** The sizer follows the 9.1.1
 > workbook (`vcf-9.1.1-planning-and-preparation-workbook.xlsx`, `v1.9.1.102`).
 > The rest of the repo's cell mapping (intake, deployment plan,
@@ -192,6 +198,24 @@ sources (2026-10-01):
 - **Security Services Platform** (Medium 64 vCPU / 222 GB / 3.26 TB) matches the
   9.1 [SSP sizing and reservations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/security-modernization/vdefend-lateral-security/security-services-platform-for-vmware-cloud-foundation/security-services-platform-detailed-design/security-services-platform-for-vcf-sizing-and-reservations.html)
   total.
+- **Cloud Proxy** — Small 4 / 16, Standard 8 / 48 — are the **Unified** Cloud
+  Proxy figures in [KB 397782](https://knowledge.broadcom.com/external/article/397782)
+  (VCF Operations 9.0 sizing). VCF 9 deploys the unified configuration (see
+  [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md));
+  the plain Cloud Proxy in the same KB is smaller (2 / 8, 4 / 32), so the tool
+  errs on the large side.
+- **License Server** (2 vCPU / 4 GB / 12 GB) is a workbook figure. TechDocs
+  sends you to the workbook's *Management Domain Sizing* tab for its
+  requirements rather than listing them, so there is no separate official
+  figure to check it against (checked 2026-10-15, as are the Cloud Proxy and
+  Supervisor entries).
+- **Supervisor control plane: storage differs.** The 9.1
+  [Change the Control Plane Size of a Supervisor](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/configuring-and-managing-a-supervisor-cluster/change-the-control-plane-size-on-a-supervisor-cluster.html)
+  page matches the workbook's vCPU / RAM (Tiny 2 / 8, Small 4 / 16, Medium
+  8 / 24, Large 16 / 32), but lists **32 GB** storage per VM where the workbook
+  uses **48 GB**, and has **no XLarge** (the workbook's 32 / 64). The tool keeps
+  the workbook figures so it still matches the workbook exactly; the difference
+  is 16 GB per control-plane VM, on the safe side.
 - **Log Management** per replica (8/16, 16/32, 32/64) matches Configuration
   Maximums; the 9.1 *Deploy Log Management* page lists Medium as 24 / 48 — an
   inconsistency on Broadcom's side.
@@ -240,7 +264,108 @@ totals. Figures come from the pinned workbook and match the
 > workload domain's Edge cluster runs on that domain's hosts, so it is advisory
 > only there — not added to the management-domain totals.
 
+## VVF / Standalone profile
+
+Set **Platform** to *VMware vSphere Foundation (VVF) / standalone* to size a
+VVF 9.1 management footprint. VVF has no SDDC Manager, NSX, workload domains or
+VCF Automation, and **VCF Management Services are optional**. In VVF the
+management VMs usually run on the same cluster as your workloads, so the tool
+also shows the vCPU and RAM **left for workloads at N-1**.
+
+**Not workbook-verified.** The P&P workbook (9.1.1, `v1.9.1.102`) has no VVF
+sizing sheet, so nothing in Broadcom's own tooling can be used to check this
+profile against. The component list is taken from TechDocs 9.1 (pages *Last
+Updated October 15, 2026*, read 2026-10-15). The appliance sizes come from the
+same workbook tables as the VCF profile.
+
+| Component | Counted | Source |
+| --------- | ------- | ------ |
+| vCenter | Always; size + storage selectable, default **Medium** | [vSphere Foundation FQDNs and IP Addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/vsphere-foundation-platform-fqdns-and-ip-addresses.html); Installer default from [Start a New vSphere Foundation Deployment by Using the VCF Installer Deployment Wizard](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-vmware-vsphere-foundation-using-the-deployment-wizard.html): *"medium vCenter, medium VCF Operations, and small VCF management services"* |
+| VCF Operations | Always; Single Node (Installer default), HA - 2 nodes (primary + replica) or HA - 3 nodes (+ data node); default **Medium** | Same pages; HA build in [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md) |
+| Cloud Proxy | Optional (TechDocs: *"Cloud Proxy (Optional)"*), Small / Standard, default Small | FQDN page above |
+| License Server | Always (2 vCPU / 4 GB / 12 GB): *"You must add at least one license server to each VCF Operations instance that you use for license management."* | Wizard page above |
+| VCF Management Services | **Include** (default) or **Leave out**, chosen right under the platform switch; sized by the deployment model + size (Installer: Simple / Small). *Leave out* warns that the VCF Installer doesn't offer it: it is a manual build | See below |
+| Log Management | Requires the management services: with them left out, Log Management is set to *Exclude* and locked | [`31-log-management.md`](31-log-management.md) §1 |
+| Supervisor control plane, Avi controllers, License Hub (Avi) | Optional, same sizes as VCF. Listed last in VVF mode (*Add-ons*), as most VVF environments use none of them | Avi is listed under *Add-ons* on the FQDN page |
+
+**VCF Management Services.** The VCF Installer *"deploys vSphere Foundation only
+with VCF management services"*. A manual build without them is
+[a supported model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-vmware-vsphere-foundation-using-the-deployment-wizard/deploying-vmware-vsphere-foundation-9-1-without-vcf-management-services.html),
+but it has no Log Management, no software depot and no integrated lifecycle of
+VCF Operations. For VVF the management services are
+[*"VCF services runtime, Fleet lifecycle, SDDC lifecycle, Software depot, Telemetry"*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-your-vsphere-foundation-to-9-1/install-vcf-management-services-to-vsphere-foundation-environment.html).
+That list has **no Identity Broker and no Salt**, which a VCF first instance
+does run. The worker count uses the VCF first-instance formula (1.2× RAM, 1.09×
+CPU, +1 node; see [How the numbers are derived](#how-the-numbers-are-derived)),
+fed with only those four services plus Log Management. At Simple / Small that
+gives **1 control node + 2 workers**, the same node count as VCF's Simple
+profile. This is the tool's own model, not a Broadcom figure.
+
+> **Broadcom's own sources disagree on the Simple worker count** (all three
+> pages *Last Updated October 15, 2026*, read 2026-10-15):
+>
+> | Source | Simple model |
+> | ------ | ------------ |
+> | [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html) and the 9.1.1 workbook | 1 control node + **2** workers |
+> | [VCF Management Services Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-management-services-models.html), [Simple VCF Management Services Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-management-services-availabilty-detailed-design/vcf-management-services-simple-deployment-model.html) | 1 control node + **3** workers |
+>
+> [William Lam (September 2026)](https://williamlam.com/2026/09/vcf-9-1-1-adopting-the-reduced-vcf-management-services-vcfms-footprint-after-an-upgrade.html)
+> explains the gap: VCF 9.1.1 removed one worker from new Simple deployments,
+> so 3 is the 9.1.0 layout and the design pages haven't caught up. The VVF
+> wizard needs Installer 9.1.1 anyway, so the tool uses 2. One caveat:
+> [KB 455842](https://knowledge.broadcom.com/external/article/455842), the
+> procedure for shrinking the workers after an upgrade, says it *"is not
+> applicable to a VMware vSphere Foundation … Environment"*, so VVF's runtime
+> may be sized differently from VCF's. No source gives VVF's worker count; a
+> deployed VVF 9.1.1 shows it under *Build > Lifecycle > VCF Management >
+> Components > VCF Services Runtime*.
+
+**Defaults** (Installer layout, vSAN-ESA): vCenter Medium, 1 × VCF Operations
+Medium, Cloud Proxy Small, License Server, management services Simple / Small =
+**7 VMs, 50 vCPU, 140 GB RAM, 4,483 GB disk**. Without the management services:
+4 VMs, 22 vCPU, 82 GB RAM, 1,483 GB disk.
+
+**Minimum hosts (VVF).** There is no workbook cell to follow here. The minimum is
+the highest of three counts: enough hosts for the cores (CPU oversubscription
+applied), enough for the RAM (RAM oversubscription applied) plus one host for
+N-1, and a floor of 3 hosts on vSAN or 2 otherwise. vSAN capacity and stretched
+clusters raise it the same way as for VCF.
+
+**Only VVF inputs are shown.** In VVF mode the tool hides every VCF-only
+selection (instance model, NSX Edges / Global Manager, SSP, VCF Automation,
+Operations for Networks, Real-time Metrics, additional-instance services, DR,
+workload domains, advanced overrides). The engine ignores any values still
+stored for them.
+
+**Not modelled for VVF:** Real-time Metrics, VCF Operations for Networks and VMware
+Live Recovery, which are not confirmed for VVF 9.1 in the sources above. Avi
+Service Engines and the Foundation Load Balancer are left out, as they are for VCF.
+
 ## Licensing: counting cores
+
+The tool's **Licensing** panel counts what the hosts you entered need: the
+cores to license, the vSAN TiB the subscription includes, and the vSAN add-on
+capacity still to buy. It counts only those hosts, so license every other host
+in the environment as well. It follows Broadcom
+[KB 313548](https://knowledge.broadcom.com/external/article/313548), and the
+build checks it against all six worked examples in that KB, for both VCF and
+VVF (12/12 match, `npm run verify:sizer`).
+
+| Rule | VCF | VVF |
+| ---- | --- | --- |
+| Cores to license | Physical cores, at least **16 per CPU** | Same |
+| vSAN included | **1 TiB** per licensed core | **0.25 TiB** per licensed core, *"rounded up to the next TiB"* |
+| vSAN measured on | **Raw** physical capacity the hosts contribute (not the usable datastore) | Same |
+| Add-on to buy | Raw TiB − included TiB, rounded up; 0 if the entitlement covers it | Same |
+
+The tool takes raw capacity as devices per host × device size. Device sizes
+are entered in **decimal GB**, as drives are sold, and converted to TiB
+(1 TiB = 1,099.5 GB), so a 3.84 TB NVMe device counts as 3.49 TiB. Per the KB,
+the vSAN Capacity view in the vSphere Client shows usable datastore capacity, not
+raw. For counts from an existing environment, use the KB's PowerCLI tool
+(`Get-FoundationCoreAndTiBUsage -DeploymentType VVF`). The KB's *Environment*
+list still names VCF 4.5 / 5.1 and vSphere 8. It is Broadcom's current
+core-counting article, and nothing in the 9.1 TechDocs contradicts it.
 
 **"Per-host cores" in the sizing tool above is a capacity input — how much
 CPU the cluster has to work with. It is not the same question as how many
@@ -253,10 +378,10 @@ KB 313548 ("Counting Cores for VMware Cloud Foundation and vSphere
 Foundation and TiBs for vSAN"), verbatim example: a host with **2 CPUs × 8
 cores** licenses as **2 × 16 = 32 cores**, not 16.
 
-> When sizing hardware against this tool's per-host core input, remember the
-> license quantity you'll actually buy can be **higher** than the physical
-> core count on a low-core-count CPU — factor the 16-core-per-CPU floor into
-> the licensing budget, separately from the vCPU/RAM/storage fit check above.
+> On a low-core-count CPU the licence quantity is **higher** than the physical
+> core count. The Licensing panel applies the 16-core-per-CPU floor from the
+> **CPUs (sockets) per host** input, separately from the vCPU / RAM / storage
+> fit check.
 
 ## Source
 
