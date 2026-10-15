@@ -266,8 +266,8 @@ same workbook tables as the VCF profile.
 | VCF Operations | Always; Single Node (Installer default), HA - 2 nodes (primary + replica) or HA - 3 nodes (+ data node); default **Medium** | Same pages; HA build in [`27-vcf-operations-ha-cloud-proxy-vvf.md`](27-vcf-operations-ha-cloud-proxy-vvf.md) |
 | Cloud Proxy | Optional (TechDocs: *"Cloud Proxy (Optional)"*), Small / Standard, default Small | FQDN page above |
 | License Server | Always (2 vCPU / 4 GB / 12 GB): *"You must add at least one license server to each VCF Operations instance that you use for license management."* | Wizard page above |
-| VCF Management Services | Optional, **on by default**; sized by the deployment model + size (Installer: Simple / Small) | See below |
-| Log Management | Only with the management services | [`31-log-management.md`](31-log-management.md) §1 |
+| VCF Management Services | **Include** (default) or **Leave out**, chosen right under the platform switch; sized by the deployment model + size (Installer: Simple / Small). *Leave out* warns that the VCF Installer doesn't offer it: it is a manual build | See below |
+| Log Management | Requires the management services: with them left out, Log Management is set to *Exclude* and locked | [`31-log-management.md`](31-log-management.md) §1 |
 | Supervisor control plane, Avi controllers, License Hub (Avi) | Optional, same sizes as VCF | Avi is listed under *Add-ons* on the FQDN page |
 
 **VCF Management Services.** The VCF Installer *"deploys vSphere Foundation only
@@ -293,6 +293,12 @@ the highest of three counts: enough hosts for the cores (CPU oversubscription
 applied), enough for the RAM (RAM oversubscription applied) plus one host for
 N-1, and a floor of 3 hosts on vSAN or 2 otherwise. vSAN capacity and stretched
 clusters raise it the same way as for VCF.
+
+**Only VVF inputs are shown.** In VVF mode the tool hides every VCF-only
+selection (instance model, NSX Edges / Global Manager, SSP, VCF Automation,
+Operations for Networks, Real-time Metrics, additional-instance services, DR,
+workload domains, advanced overrides). The engine ignores any values still
+stored for them.
 
 **Not modelled for VVF:** Real-time Metrics, VCF Operations for Networks and VMware
 Live Recovery, which are not confirmed for VVF 9.1 in the sources above. Avi

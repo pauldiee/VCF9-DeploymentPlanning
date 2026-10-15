@@ -5,7 +5,11 @@
   management sizer gets a **Platform** switch. *VMware vSphere Foundation (VVF)*
   counts vCenter, VCF Operations (single node or HA), an optional Cloud Proxy,
   the License Server, and **VCF Management Services as an option** (on by
-  default, as the VCF Installer deploys them; Log Management needs them).
+  default, as the VCF Installer deploys them). The *Include / Leave out*
+  choice sits right under the platform switch, and *Leave out* warns that the
+  VCF Installer doesn't offer it (manual build only). Log Management requires
+  the management services: with them left out it is set to *Exclude* and
+  locked. VVF mode shows no VCF-only selections.
   Optional extras: Supervisor, Avi and License Hub. There is no SDDC Manager,
   NSX, workload domains or VCF Automation. Defaults follow the Installer's VVF
   wizard (Medium vCenter, Medium VCF Operations, Small management services). The

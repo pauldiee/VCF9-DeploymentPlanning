@@ -54,6 +54,14 @@ const opt = (values: readonly string[]) => values;
             <p class="sizer__profile-head"><strong>vSphere Foundation profile</strong><span>not in the workbook</span></p>
             <p>Built from the TechDocs 9.1 VVF deployment pages, with appliance sizes from the workbook tables. The VCF Installer deploys VVF with a Medium vCenter, a Medium VCF Operations node and Small management services; a manual build can leave the management services out. <a href={`${docHref('04-sizing')}#vvf--standalone-profile`}>What it counts and why</a></p>
           </div>
+          <label data-only="vvf">VCF Management Services
+            <select id="vvfMgmtServicesSel">
+              <option value="Include">Include (VCF Installer deployment)</option>
+              <option value="Exclude">Leave out (manual deployment only)</option>
+            </select>
+          </label>
+          <p class="sizer__hint" data-only="vvf">The services runtime with fleet and SDDC lifecycle, the software depot and telemetry. <strong>Not sure?</strong> Include.</p>
+          <p class="sizer__warn" data-only="vvf" id="servicesManualWarn" hidden>Leaving the management services out is <strong>not offered by the VCF Installer</strong>: it deploys VVF only with them. You deploy vCenter, VCF Operations and the License Server by hand instead (<a href={docHref('27-vcf-operations-ha-cloud-proxy-vvf')}>guide</a>). There is then no Log Management and no software depot; the services can be added later with VCF Installer 9.1.1 or later.</p>
           <p class="sizer__hint" data-only="vvf" id="servicesProfileHint">The two fields below size the <strong>VCF Management Services</strong> (services runtime) only. The Installer uses <strong>Simple / Small</strong>; a JSON spec can change it.</p>
           <label for="deploymentModel" data-group="services">Deployment model
             <select id="deploymentModel">{opt(OPTIONS.deploymentModel).map((v) => <option>{v}</option>)}</select>
@@ -185,8 +193,6 @@ const opt = (values: readonly string[]) => values;
           </label>
           <p class="sizer__hint">TechDocs lists the Cloud Proxy as optional for VVF. <strong>Not sure?</strong> Small.</p>
           <p class="sizer__hint">The <strong>License Server</strong> (2 vCPU / 4 GB / 12 GB) is always counted: every VCF Operations instance that manages licences needs one.</p>
-          <label class="sizer__check"><input id="vvfMgmtServices" type="checkbox" /> VCF Management Services</label>
-          <p class="sizer__hint">The services runtime with fleet and SDDC lifecycle, the software depot and telemetry. The VCF Installer always deploys it with VVF; a manual build can leave it out, but then there is <strong>no Log Management</strong> and no software depot. It can be added later with VCF Installer 9.1.1+. Sized by the deployment model and size in section 1.</p>
         </fieldset>
 
         <fieldset data-only="vcf">
@@ -220,7 +226,7 @@ const opt = (values: readonly string[]) => values;
             <input id="logsReplicas" type="number" min="1" step="1" />
             <span class="sizer__hint">Copies for capacity and availability — at least Small 1 / Medium 3 / Large 6, at most 19. <strong>Not sure?</strong> The minimum.</span>
           </label>
-          <p class="sizer__warn" id="logsNeedsServices" hidden>Log Management runs on the VCF Management Services. Tick <strong>VCF Management Services</strong> in section 4 to include it.</p>
+          <p class="sizer__hint" id="logsNeedsServices" hidden>Log Management requires the <strong>VCF Management Services</strong>. Set them to <em>Include</em> in section 1 to size it.</p>
           <label class="sizer__check" data-only="vcf"><input id="vcfRtm" type="checkbox" /> Real-time Metrics</label>
           <p class="sizer__hint" data-only="vcf">High-frequency (real-time) performance data in VCF Operations. <strong>Not sure?</strong> Leave off.</p>
           <label class="sizer__check" data-only="vcf"><input id="vcfSd" type="checkbox" /> Software Depot (additional instance)</label>
@@ -341,18 +347,25 @@ const opt = (values: readonly string[]) => values;
   // ---- bind top-level inputs to state ----
   const numIds = ['proposedHosts', 'coresPerHost', 'socketsPerHost', 'ramPerHost', 'capacityDisksPerHost', 'capacityDiskSizeGb', 'externalStorageGb', 'cpuOver', 'ramOver', 'reservePct', 'growthPct', 'logsReplicas'] as const;
   const selIds = ['platform', 'deploymentModel', 'deploymentSize', 'instanceModel', 'storageType', 'clusterType', 'nsxGmSize', 'nsxEdgeSize', 'supervisorMode', 'supervisorSize', 'aviSize', 'ssp', 'vcfOps', 'opsNetSize', 'logsSize', 'vcfAutomationSize', 'spr', 'advVcenterSize', 'advVcenterStorage', 'advNsxModel', 'advNsxSize', 'advVcfOpsModel', 'advVcfOpsSize', 'advCollectorSize', 'advVcfaSize', 'vvfVcenterSize', 'vvfVcenterStorage', 'vvfOpsModel', 'vvfOpsSize', 'vvfCollectorSize'] as const;
-  const chkIds = ['licenseHub', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'vcfIdb', 'rwr', 'advanced', 'vvfMgmtServices'] as const;
+  const chkIds = ['licenseHub', 'vcfOpsCollector', 'vcfAutomation', 'vcfRtm', 'vcfSd', 'vcfIdb', 'rwr', 'advanced'] as const;
 
   function hydrate() {
     for (const id of numIds) ($(id) as HTMLInputElement).value = String((state as any)[id]);
     for (const id of selIds) ($(id) as HTMLSelectElement).value = String((state as any)[id]);
     for (const id of chkIds) ($(id) as HTMLInputElement).checked = Boolean((state as any)[id]);
+    ($('vvfMgmtServicesSel') as HTMLSelectElement).value = state.vvfMgmtServices ? 'Include' : 'Exclude';
   }
 
   function readInputs() {
     for (const id of numIds) (state as any)[id] = parseFloat(($(id) as HTMLInputElement).value) || 0;
     for (const id of selIds) (state as any)[id] = ($(id) as HTMLSelectElement).value;
     for (const id of chkIds) (state as any)[id] = ($(id) as HTMLInputElement).checked;
+    state.vvfMgmtServices = ($('vvfMgmtServicesSel') as HTMLSelectElement).value !== 'Exclude';
+    // VVF: Log Management requires the management services
+    if (state.platform === 'VVF' && !state.vvfMgmtServices && state.logsSize !== 'Exclude') {
+      state.logsSize = 'Exclude';
+      ($('logsSize') as HTMLSelectElement).value = 'Exclude';
+    }
   }
 
   // ---- workload domain repeater ----
@@ -504,7 +517,8 @@ const opt = (values: readonly string[]) => values;
     document.querySelectorAll<HTMLElement>('[data-group="services"]').forEach((el) => { el.hidden = servicesOff; });
     if (servicesOff) $('servicesProfileHint').hidden = true;
     ($('logsSize') as HTMLSelectElement).disabled = servicesOff;
-    ($('logsNeedsServices') as HTMLElement).hidden = !(servicesOff && state.logsSize !== 'Exclude');
+    ($('logsNeedsServices') as HTMLElement).hidden = !servicesOff;
+    ($('servicesManualWarn') as HTMLElement).hidden = !servicesOff;
 
     // verdict banner
     const v = $('verdict');
@@ -895,7 +909,7 @@ const opt = (values: readonly string[]) => values;
     ($('deploymentSize') as HTMLSelectElement).innerHTML = selOptions([...OPTIONS.deploymentSize], prof.deploymentSize);
     lastModel = '';
   });
-  for (const id of [...numIds, ...selIds, ...chkIds]) $(id).addEventListener('input', recalc);
+  for (const id of [...numIds, ...selIds, ...chkIds, 'vvfMgmtServicesSel']) $(id).addEventListener('input', recalc);
   // Guard the Log Management replica field: clamp to the per-size min..19 on
   // commit (blur / enter / spinner) so an out-of-range typed value can't stick.
   $('logsReplicas').addEventListener('change', () => { syncLogsReplicas(); recalc(); });
