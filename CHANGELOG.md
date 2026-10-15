@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.9.4 — 2026-10-15
+- **`CLAUDE.md`: the GitLab sync is manual (#404).** The Git remotes
+  section said "Run that after a `pushall`" about
+  `Sync-VCFReposToGitLab.ps1`, and Claude read it as an instruction. It
+  now says Paul runs the sync manually and Claude never runs it. The
+  script path is corrected to `..\PRIVATE\`.
+
 ## v5.9.3 — 2026-10-15
 - **`docs/10`: Supervisor control-plane backup and restore (#403).** New
   section, from the 8.0 U3 / 9.0 / 9.1 TechDocs *Backing Up and Restoring

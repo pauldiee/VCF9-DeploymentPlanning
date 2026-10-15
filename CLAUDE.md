@@ -235,7 +235,7 @@ git pushall   # equivalent to: git push origin && git push gitlab
 
 Regular `git push` only goes to `origin` (GitHub). Use `git pushall` for any commit you want mirrored to the ITQ GitLab too.
 
-Issues and releases are mirrored separately by `..\Sync-VCFReposToGitLab.ps1` (the multi-repo sync script in the parent GitHub directory). Run that after a `pushall` to keep issues/releases in sync.
+Issues and releases are mirrored separately by `..\PRIVATE\Sync-VCFReposToGitLab.ps1` (the multi-repo GitHub → GitLab sync script). **Paul runs it manually, when he chooses. Claude never runs it**, not after a `pushall`, not after closing issues, and doesn't offer to. At most, mention that GitLab issues update on his next sync.
 
 ## CI / Pages deploys
 
