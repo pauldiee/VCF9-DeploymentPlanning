@@ -46,6 +46,8 @@ export interface Wld {
   connectivity: NsxConnectivity;
   supervisor: boolean;
   supervisorLb: SupervisorLb;
+  /** NVIDIA GPU hosts (vGPU or passthrough) in this domain (intake H13, #407). */
+  gpu: boolean;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 'vpc';
@@ -182,7 +184,7 @@ export function defaultSelection(): Selection {
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
     aviLicensing: 'hub',
-    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin' }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: false }],
   };
 }
 
@@ -250,6 +252,10 @@ const AVI_LB_URL =
 // Authoritative Broadcom TechDocs pages referenced from the generated stories
 // (all liveness-verified — issue #76; keep in sync with docs/06-deployment-plan.md).
 const TECHDOCS = {
+  vlcmImport:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/lifecycle-management-of-vcf-components/managing-vsphere-lifecycle-manager-images-for-vmware-cloud-foundation/import-a-vsphere-lifecycle-manager-image-to-a-vcf-instance.html',
+  gpuHosts:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/configure-nvidia-vgpu-or-gpu-passthrough-on-the-esx-hosts.html',
   hostPrep:
     'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation.html',
   installer:
@@ -722,6 +728,16 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
   const connectivity = w.connectivity;
   const distributed = connectivity === 'distributed';
   const hostPrep = `see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly`;
+  // GPU hosts (#407): the NVIDIA host driver has to be in a vLCM image that is
+  // already imported into the VCF Instance when the domain is created, so that
+  // part rides on the host story; the per-host GPU configuration gets its own
+  // story once the domain exists.
+  const gpuPrep = w.gpu
+    ? [
+        `GPU hosts (32-gpu-hosts.md): confirm each GPU on BOTH the Broadcom Compatibility Guide (ESXi 9.1, in the chosen mode) and NVIDIA's vGPU support matrix (a release with a VCF 9.1 package); enable SR-IOV in the BIOS for vGPU; build a vSphere Lifecycle Manager image with the NVIDIA host driver as a component in vCenter and import it into the VCF Instance (VCF Operations → Build → Lifecycle → Image Management → Import Image) BEFORE the domain is deployed, then select it there. TechDocs: ${TECHDOCS.vlcmImport}`,
+      ]
+    : [];
+  const gpuPrepAccept = w.gpu ? ' GPU image (NVIDIA host driver component) imported into the VCF Instance.' : '';
   // North-south connectivity is this domain's own choice (intake H4) and — when
   // Supervisor is enabled — a hard prerequisite for activation, so the story
   // spells out the concrete build rather than naming the model.
@@ -760,8 +776,9 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
           tasks: [
             'Create the AZ2 network pool (vMotion + vSAN VMkernel networks) before commissioning — the commission call binds each host to a pool by ID.',
             `Image the WLD hosts in both AZs with the supported ESXi ISO (${hostPrep}); configure the per-AZ management networks, DNS, NTP; then commission them into SDDC Manager, into the AZ2 network pool.`,
+            ...gpuPrep,
           ],
-          acceptance: 'AZ2 network pool created; WLD hosts in both AZs reachable, matched ESXi build, commissioned into that pool in SDDC Manager.',
+          acceptance: `AZ2 network pool created; WLD hosts in both AZs reachable, matched ESXi build, commissioned into that pool in SDDC Manager.${gpuPrepAccept}`,
         },
         { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
         {
@@ -785,17 +802,33 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
         {
           id: '9.2',
           title: 'Prepare & commission the WLD hosts',
-          tasks: [`Image the WLD hosts with the supported ESXi ISO (${hostPrep}); configure the management network, DNS, NTP; then commission them into SDDC Manager.`],
-          acceptance: 'WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.',
+          tasks: [`Image the WLD hosts with the supported ESXi ISO (${hostPrep}); configure the management network, DNS, NTP; then commission them into SDDC Manager.`, ...gpuPrep],
+          acceptance: `WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.${gpuPrepAccept}`,
         },
         { id: '9.3', title: 'Deploy the WLD', tasks: ['vCenter + NSX (shared or dedicated) + first cluster.'], acceptance: 'WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.' },
         connStory('9.4'),
       ];
 
+  // The connectivity story is the last one built above — name it now, before
+  // the optional GPU / Supervisor stories are appended, so the Supervisor
+  // stories point at the exact prerequisite in this epic.
+  const connStoryId = `9.${stories.length}`;
+
+  if (w.gpu) {
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'GPU hosts: configure vGPU / passthrough',
+      tasks: [
+        `Per GPU host, in the vSphere Client of this domain's vCenter (maintenance mode + restart per host): vGPU → Configure → Hardware → Graphics → set each GPU to Shared Direct; passthrough → Configure → Hardware → DirectPath → Fixed/Dynamic DirectPath. Enable MIG per host if the plan uses it (MIG can't serve NVIDIA NIMs). TechDocs: ${TECHDOCS.gpuHosts}`,
+        "vGPU: set vgpu.hotmigrate.enabled on this domain's vCenter (Configure → Advanced Settings) so vGPU VMs can vMotion.",
+        'vGPU: stand up the NVIDIA License System instance and get the client configuration token into the guest templates — an unlicensed vGPU is degraded after 20 minutes. Guest drivers come from the SAME vGPU release as the host driver; passthrough guests use the public NVIDIA data center driver.',
+        'If Private AI Foundation is in scope: assign its add-on licence to this workload domain (VCF Operations → Licensing → Licenses & Registration).',
+      ],
+      acceptance: 'Every GPU host compliant with the GPU image; nvidia-smi lists all GPUs; the devices are in the planned mode (Shared Direct / DirectPath, MIG as planned); a test vGPU VM powers on, gets an NVIDIA licence, and vMotions between two GPU hosts.',
+    });
+  }
+
   if (w.supervisor) {
-    // The connectivity story is the last one built above — name it, so the
-    // Supervisor stories point at the exact prerequisite in this epic.
-    const connStoryId = `9.${stories.length}`;
     const connPrereq = distributed
       ? `Distributed — the Distributed Transit Gateway + VNA cluster from story ${connStoryId}, plus the VPC external IP block and the /16 private transit-gateway block`
       : `Centralized — the Edge cluster + Tier-0 gateway from story ${connStoryId}, plus the Supervisor ingress/egress CIDRs`;
@@ -843,7 +876,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
 
   return {
     id,
-    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
+    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${w.gpu ? ' + GPU hosts' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     stories,
   };
@@ -917,6 +950,11 @@ const GD = {
   wldNet: guide('WLD runbook: network prep', '23-workload-domain-creation', '1-manual--network-prep'),
   wldHosts: guide('WLD runbook: commission the hosts', '23-workload-domain-creation', '2-manual--commission-the-hosts'),
   wldDeploy: guide('WLD runbook: create the domain', '23-workload-domain-creation', '4-create-the-domain--wizard-primary-path'),
+  gpu: guide('GPU hosts (NVIDIA vGPU / passthrough)', '32-gpu-hosts'),
+  gpuImage: guide('GPU hosts: host driver in the cluster image', '32-gpu-hosts', '6-put-the-host-driver-into-the-cluster-image'),
+  gpuDevices: guide('GPU hosts: configure the GPU devices', '32-gpu-hosts', '7-configure-the-gpu-devices-on-each-host'),
+  gpuLicensing: guide('GPU hosts: NVIDIA licensing for the guests', '32-gpu-hosts', '8-nvidia-licensing-for-the-guests'),
+  prereqGpu: guide('Prerequisites: GPU hosts', 'prerequisites', 'gpu-hosts-only-if-in-scope'),
   supervisor: guide('vSphere Supervisor enablement', '10-supervisor-enablement'),
   supervisorAvi: guide('Supervisor: Avi load balancer', '10-supervisor-enablement', '4-avi-load-balancer-only-if-used'),
   registry: guide('Supervisor / VKS image registry connectivity', '20-supervisor-image-registry'),
@@ -969,6 +1007,10 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E9', guides: () => [GD.intakeWld, GD.wldCreate] },
   { epic: 'E9', story: /^WLD network prep/, guides: () => [GD.wldNet] },
   { epic: 'E9', story: /commission the WLD hosts/i, guides: () => [GD.wldHosts] },
+  // The GPU image itself is a task in the host story (it must exist before the
+  // domain is deployed); its links live on the GPU story, since a rule sees the
+  // whole selection and can't tell which WLD has GPUs.
+  { epic: 'E9', story: /^GPU hosts/, guides: () => [GD.gpu, GD.prereqGpu, GD.gpuImage, GD.gpuDevices, GD.gpuLicensing] },
   { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
   { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
   { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
@@ -1086,6 +1128,7 @@ export function coerceSelection(data: unknown): Selection | null {
           connectivity: oneOf<NsxConnectivity>(w.connectivity, NSX_CONNECTIVITY.map((c) => c.value), conn),
           supervisor: bool(w.supervisor, false),
           supervisorLb: oneOf<SupervisorLb>(w.supervisorLb, SUPERVISOR_LBS.map((l) => l.value), 'builtin'),
+          gpu: bool(w.gpu, false),
         }))
     : base.wlds;
   return normalizeSelection({

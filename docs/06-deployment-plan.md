@@ -240,6 +240,32 @@ Transit Gateway + VNA cluster) — and is chosen **independently of the
 management domain's** model, so the export tool asks it per WLD. It drives the
 WLD connectivity story (9.4 / 9.6 below).
 
+**GPU hosts (optional, per WLD):** tick *GPU hosts* in the
+[export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
+for a domain whose hosts carry NVIDIA GPUs (vGPU or passthrough, intake
+`H13`). Two things change:
+
+- The **host story (9.2)** gains a task: confirm each GPU on **both** the
+  Broadcom Compatibility Guide (ESXi 9.1, in the chosen mode) and NVIDIA's vGPU
+  support matrix (a release with a *VCF 9.1* package), enable **SR-IOV** in the
+  BIOS for vGPU, and build a **vSphere Lifecycle Manager image with the NVIDIA
+  host driver** in vCenter and **import it into the VCF Instance** (VCF
+  Operations → Build → Lifecycle → Image Management → Import Image) **before**
+  the domain is deployed (9.3), so the image can be selected there.
+- A **GPU hosts: configure vGPU / passthrough** story is appended after the
+  connectivity story (and ahead of any Supervisor stories): set each GPU to
+  **Shared Direct** (vGPU) or **Fixed / Dynamic DirectPath** (passthrough) per
+  host, enable MIG if planned, set **`vgpu.hotmigrate.enabled`** on the domain's
+  vCenter, stand up the **NVIDIA License System** and the guests' client
+  token, and — if Private AI Foundation is in scope — assign its add-on licence
+  to the domain. *Acceptance:* every GPU host compliant with the GPU image,
+  `nvidia-smi` lists all GPUs, devices in the planned mode, and a test vGPU VM
+  powers on, gets an NVIDIA licence and vMotions between two GPU hosts.
+
+Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
+[`prerequisites.md` → GPU hosts](prerequisites.md#gpu-hosts-only-if-in-scope).
+Like the Avi stories below, the GPU story is **numbered by selection**.
+
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
 to add an *Enable vSphere Supervisor* story to that WLD. Activation

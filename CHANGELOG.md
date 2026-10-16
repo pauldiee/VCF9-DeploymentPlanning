@@ -1,5 +1,34 @@
 # Changelog
 
+## v5.9.7 — 2026-10-16
+- **New build guide: GPU hosts (#407).**
+  [`docs/32-gpu-hosts.md`](docs/32-gpu-hosts.md) gets NVIDIA GPUs in ESX hosts
+  ready on VCF 9.1, in order: choose passthrough, vGPU time-slicing or MIG; the
+  licence layers (VCF, the Private AI Foundation add-on only for its features,
+  NVAIE for vGPU, none for passthrough); check the card on **both** the
+  [Broadcom Compatibility Guide](https://compatibilityguide.broadcom.com/)
+  (by PCI VID / DID / SVID / SSID) **and** NVIDIA's
+  [vGPU support matrix](https://docs.nvidia.com/vgpu/latest/product-support-matrix/vmware-vsphere.html).
+  The two disagree: on 2026-10-16 Broadcom still listed the Tesla M10 and V100
+  for ESXi 9.1 vGPU, which NVIDIA's current 20.x branch dropped. Then: pick a
+  vGPU release with a *VCF 9.1* package (19.4+ or 20.x), download from the
+  NVIDIA Licensing Portal or NGC, enable SR-IOV, put the host driver into a
+  vLCM image and import it via VCF Operations *before* the domain is created,
+  and configure Shared Direct / DirectPath / MIG, `vgpu.hotmigrate.enabled` and
+  NVIDIA guest licensing. The
+  [Private AI Foundation 9.1 requirements](https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/pdf/vmware/private-ai/private-ai-nvidia/vmware-private-ai-foundation-with-nvidia-9-1.pdf)
+  still say the image must be "available in SDDC Manager"; the guide follows the
+  [9.1 lifecycle page](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/lifecycle-management-of-vcf-components/managing-vsphere-lifecycle-manager-images-for-vmware-cloud-foundation/import-a-vsphere-lifecycle-manager-image-to-a-vcf-instance.html)
+  (VCF Operations) and records the conflict with dates. TechDocs- and
+  vendor-doc-sourced, not lab- or field-verified.
+- **Wired into the planning flow.** A *GPU hosts* gate in `prerequisites.md`;
+  intake `H13` (per cluster) with its `workbook-cell-mapping.md` rows. The
+  visible workbook sheets have no GPU fields; the 9.1 workbook's hidden, legacy
+  *Private AI Ready Infrastructure* sheet is noted as not to be used. In the
+  deployment-plan tool, a per-WLD **GPU hosts** checkbox adds the GPU image task
+  to the host story and a *GPU hosts: configure vGPU / passthrough* story after
+  the connectivity story, with guide links; `docs/06` describes both.
+
 ## v5.9.6 — 2026-10-15
 - **Dead License Server links fixed (#406).** TechDocs moved
   `licensing/register-vcf-operations/add-license-server.html` (now 404).

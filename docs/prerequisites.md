@@ -20,7 +20,7 @@ both places so a filled template can be checked straight against this doc:
 | **Bring-up**               | Must be true **before the VCF Installer runs**. A miss here stops the deployment.            |
 | **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the NFS VMkernel or FC datastore when that is principal storage; the public URLs when anything is online). |
 | **Day-N**                  | Needed **after** bring-up, when you configure or deploy that piece. Collect the inputs early anyway — a missing value doesn't stop bring-up, it stops the day you need it. |
-| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, Memory Tiering, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
+| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, Memory Tiering, GPU hosts, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
 
 **The bring-up gate, at a glance** — the subset that must be green before the
 Installer starts:
@@ -528,6 +528,47 @@ after the cluster exists; the full guide is
 > [Capacity Planning Considerations](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-resource-management/memory-tiering-over-nvme/capacity-planning-considerations.html).
 > The official P&P workbook has no Memory Tiering fields. TechDocs-sourced —
 > not yet field-verified in this repo.
+
+## GPU hosts (only if in scope)
+
+*When needed: **Day-N (if in scope)** — but the GPUs are ordered with the
+hosts, and the GPU image must exist **before** the workload domain or cluster
+is created.* NVIDIA GPUs for vGPU or passthrough; the full guide is
+[`32-gpu-hosts.md`](32-gpu-hosts.md).
+
+- [ ] **GPU mode chosen** per cluster: passthrough (Fixed / Dynamic
+      DirectPath), vGPU time-slicing, or vGPU MIG. MIG can't serve NVIDIA
+      NIMs.
+- [ ] **Card supported on both lists**, matched on its PCI VID / DID / SVID /
+      SSID: the [Broadcom Compatibility Guide](https://compatibilityguide.broadcom.com/)
+      for **ESXi 9.1** in that mode, **and** (vGPU) NVIDIA's
+      [vGPU support matrix](https://docs.nvidia.com/vgpu/latest/product-support-matrix/vmware-vsphere.html)
+      for a release with a **VCF 9.1** package (19.4+ or 20.x). The two lists
+      disagree on older cards — see
+      [`32-gpu-hosts.md` §3.4](32-gpu-hosts.md#34-the-two-lists-disagree).
+- [ ] **Licences owned:** **NVAIE** (or another NVIDIA vGPU licence) for vGPU
+      — passthrough doesn't need one; the **Private AI Foundation add-on**
+      only if its features are used. NVIDIA entitlements can take
+      **24 business hours** to appear in the portal.
+- [ ] **NVIDIA Enterprise account** with download access, and the vGPU host
+      driver **offline bundle (ZIP)** downloaded for the chosen release.
+- [ ] **SR-IOV enabled in the BIOS** of every vGPU host.
+- [ ] **A vSphere Lifecycle Manager image with the NVIDIA host driver**
+      built in vCenter and **imported into the VCF Instance** (VCF Operations
+      → Build → Lifecycle → Image Management) before the domain or cluster is
+      created.
+- [ ] **NVIDIA License System** instance planned (vGPU): owner, placement,
+      and how guests receive the client configuration token.
+- [ ] **At least 3 GPU hosts** in the initial cluster if it's for Private AI
+      Foundation.
+
+> TechDocs: [VMware Private AI Foundation with NVIDIA 9.1 (PDF)](https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/pdf/vmware/private-ai/private-ai-nvidia/vmware-private-ai-foundation-with-nvidia-9-1.pdf)
+> (requirements) and
+> [Import a vSphere Lifecycle Manager Image to a VCF Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/lifecycle-management-of-vcf-components/managing-vsphere-lifecycle-manager-images-for-vmware-cloud-foundation/import-a-vsphere-lifecycle-manager-image-to-a-vcf-instance.html).
+> The visible sheets of the official P&P workbook have no GPU fields (the 9.1
+> workbook keeps a **hidden**, legacy *Private AI Ready Infrastructure* sheet;
+> the 9.1.1 workbook has none). TechDocs-sourced — not yet field-verified in
+> this repo.
 
 ## Network
 
