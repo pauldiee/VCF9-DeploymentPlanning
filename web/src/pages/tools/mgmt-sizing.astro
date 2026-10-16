@@ -338,6 +338,7 @@ const opt = (values: readonly string[]) => values;
 
 <script>
   import { OPTIONS, WORKBOOK_REVISION, defaultState, compute, licensing, migrateState, deploymentSizeOptions, logsReplicaMin, LOGS_REPLICA_MAX, supervisorEdgeWarning, VVF_SERVICES_PROFILE, VSAN_TIB_PER_CORE, LICENSE_MIN_CORES_PER_CPU, type SizingState, type WorkloadDomain } from '../../lib/mgmt-sizing';
+  import { docHref } from '../../lib/path';
 
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const state: SizingState = defaultState();
@@ -616,7 +617,10 @@ const opt = (values: readonly string[]) => values;
     // Services-runtime worker readout
     $('workerOut').innerHTML = servicesOff
       ? 'No services runtime: VCF Management Services are left out.'
-      : `Services runtime: <strong>${r.workers.nodes} worker nodes</strong> × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB.`;
+      : `Services runtime: <strong>${r.workers.nodes} worker nodes</strong> × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB (workbook formula). ` +
+        // Broadcom's VCF blog of 2026-10-13 charts one worker fewer per profile (the
+        // workbook's +1 spare node). Kept on the workbook formula; review in #410.
+        `Broadcom's <a href="https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/" target="_blank" rel="noopener">9.1.1 blog (2026-10-13)</a> shows one worker fewer per profile before Day-N services; this tool keeps the workbook's spare node. <a href="${docHref('04-sizing')}#validation-against-broadcom-techdocs">Details</a>.`;
 
     // Oversubscription guardrail — the workbook caps the recommendation at 2:1
     const over = Math.max(state.cpuOver, state.ramOver);
@@ -842,7 +846,7 @@ const opt = (values: readonly string[]) => values;
       '## Fleet requirement',
       `- Totals: ${gb(r.totals.nodes)} nodes, ${gb(r.totals.cpu)} vCPU, ${gb(r.totals.ram)} GB RAM, ${gb(r.totals.disk)} GB disk`,
       `- Minimum hosts: ${r.requiredHosts}${r.requiredHosts > r.workbookHosts && !vvf ? ` (workbook ${r.workbookHosts})` : ''}`,
-      ...(vvf && !s.vvfMgmtServices ? [] : [`- Services runtime: ${r.workers.nodes} workers × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB`]),
+      ...(vvf && !s.vvfMgmtServices ? [] : [`- Services runtime: ${r.workers.nodes} workers × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB (workbook formula; Broadcom's 9.1.1 blog of 2026-10-13 shows one worker fewer per profile before Day-N services)`]),
       ...(r.perHostN1 ? [`- Per host (N-1): ${gb(r.perHostN1.cpu)} vCPU, ${gb(r.perHostN1.ram)} GB RAM, ${gb(r.perHostN1.storage)} GB`] : []),
       `- ${isVsanType(s.storageType) ? 'vSAN raw' : 'Datastore capacity'} required: ${gb(r.vsan.raw)} GB`,
       '',

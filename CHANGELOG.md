@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.0.0 — 2026-10-16
+- **Sizer: a note pointing to Broadcom's 9.1.1 worker figures (#410).** The
+  services-runtime readout and the plan export now say the count comes from
+  the workbook formula. Broadcom's
+  [VCF blog of 2026-10-13](https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/)
+  shows one worker fewer per profile before Day-N services, which is the
+  workbook's spare node. The readout links to `docs/04`.
+- The sizing is unchanged: it stays on the 9.1.1 workbook formula. A review
+  is planned around 2026-10-23 (#410).
+
 ## v5.9.9 — 2026-10-16
 - **VCF 9.1.1 management-services footprint, from Broadcom's blog (#409).**
   [Customer Favorite Capabilities: Accelerating Your Path to VCF 9.1.1](https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/)
