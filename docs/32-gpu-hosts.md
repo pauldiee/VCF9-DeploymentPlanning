@@ -96,7 +96,10 @@ Foundation** implementation adds, on top of plain GPUs for VMs
   Identity Broker** (fleet SSO);
 - **at least 3 GPU hosts** in the initial cluster;
 - its own setup workflow for what runs on top (deep learning VMs, VKS
-  clusters with GPUs, Private AI Services, VCF Automation catalog items).
+  clusters with GPUs, Private AI Services, VCF Automation catalog items),
+  which on a disconnected (dark) site means staging every artifact locally.
+  That part isn't covered in this repo yet (tracked in
+  [#408](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/408)).
 
 Plain vGPU or passthrough for ordinary VMs needs none of that: VCF plus, for
 vGPU, the NVIDIA licence.

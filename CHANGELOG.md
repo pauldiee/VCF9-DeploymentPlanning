@@ -32,7 +32,8 @@
   AI Foundation* also adds the 3-GPU-host minimum and a *licence, SSO and
   vCenter Linking* story (from the PAIF 9.1 workload-domain workflow). Plain
   GPUs for VMs don't get those steps. `docs/06` and `docs/32` describe the
-  difference.
+  difference. The Private AI Foundation setup above the hosts (incl. the
+  disconnected / dark-site path) is not covered yet; tracked in #408.
 
 ## v5.9.6 — 2026-10-15
 - **Dead License Server links fixed (#406).** TechDocs moved

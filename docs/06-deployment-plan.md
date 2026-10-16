@@ -271,8 +271,12 @@ Identity Broker, add its vCenter to the management vCenter's **vCenter
 Linking** group (the add-on licence capacity is only allocated once they're
 linked), and **assign the add-on licence** to the domain (to the management
 domain too only for the guided vSphere Client workflow). What runs on top —
-deep learning VMs, VKS GPU clusters, Private AI Services — follows the
-Private AI Foundation setup workflow, outside this plan. *Acceptance:* the
+deep learning VMs, VKS GPU clusters, Private AI Services, the local Harbor
+registry and content libraries — is **not yet in this plan**: it is substantial
+work, much more so on a disconnected (dark) site, and its stories are being
+researched in [#408](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/408).
+Until then, plan it from the
+[Private AI Foundation documentation](https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x.html). *Acceptance:* the
 domain's vCenter + NSX on fleet SSO, vCenter linked, add-on licence assigned.
 
 Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
