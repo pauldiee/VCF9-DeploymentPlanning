@@ -46,8 +46,12 @@ export interface Wld {
   connectivity: NsxConnectivity;
   supervisor: boolean;
   supervisorLb: SupervisorLb;
-  /** NVIDIA GPU hosts (vGPU or passthrough) in this domain (intake H13, #407). */
-  gpu: boolean;
+  /**
+   * NVIDIA GPU hosts in this domain (intake H13, #407): none, GPUs for VMs
+   * (plain vGPU / passthrough), or a Private AI Foundation implementation, which
+   * adds its own licence, vCenter Linking and SSO steps and a 3-host minimum.
+   */
+  gpu: GpuUse;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 'vpc';
@@ -63,6 +67,7 @@ export type AutomationModel = 'small' | 'medium' | 'large';
 export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type SupervisorLb = 'builtin' | 'flb' | 'avi';
+export type GpuUse = 'none' | 'vms' | 'paif';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
 /**
  * How the Avi controllers are licensed (#374): through an on-prem License Hub,
@@ -184,7 +189,7 @@ export function defaultSelection(): Selection {
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
     aviLicensing: 'hub',
-    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: false }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none' }],
   };
 }
 
@@ -213,6 +218,13 @@ export const SUPERVISOR_LBS: { value: SupervisorLb; label: string }[] = [
   { value: 'builtin', label: 'Built-in NSX/VPC LB' },
   { value: 'flb', label: 'Foundation Load Balancer' },
   { value: 'avi', label: 'Avi Load Balancer' },
+];
+
+/** GPU use per workload domain (#407). */
+export const GPU_USES: { value: GpuUse; label: string }[] = [
+  { value: 'none', label: 'No GPUs' },
+  { value: 'vms', label: 'GPU for VMs (vGPU / passthrough)' },
+  { value: 'paif', label: 'Private AI Foundation' },
 ];
 
 /** Principal storage types (mirrors the workbook's Storage Type). */
@@ -254,6 +266,8 @@ const AVI_LB_URL =
 const TECHDOCS = {
   vlcmImport:
     'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/lifecycle-management-of-vcf-components/managing-vsphere-lifecycle-manager-images-for-vmware-cloud-foundation/import-a-vsphere-lifecycle-manager-image-to-a-vcf-instance.html',
+  paifWld:
+    'https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/deploy-a-vi-workload-domain-in-vmware-cloud-foundation.html',
   gpuHosts:
     'https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/configure-nvidia-vgpu-or-gpu-passthrough-on-the-esx-hosts.html',
   hostPrep:
@@ -732,12 +746,17 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
   // already imported into the VCF Instance when the domain is created, so that
   // part rides on the host story; the per-host GPU configuration gets its own
   // story once the domain exists.
-  const gpuPrep = w.gpu
+  const gpu = w.gpu !== 'none';
+  const paif = w.gpu === 'paif';
+  const gpuPrep = gpu
     ? [
         `GPU hosts (32-gpu-hosts.md): confirm each GPU on BOTH the Broadcom Compatibility Guide (ESXi 9.1, in the chosen mode) and NVIDIA's vGPU support matrix (a release with a VCF 9.1 package); enable SR-IOV in the BIOS for vGPU; build a vSphere Lifecycle Manager image with the NVIDIA host driver as a component in vCenter and import it into the VCF Instance (VCF Operations → Build → Lifecycle → Image Management → Import Image) BEFORE the domain is deployed, then select it there. TechDocs: ${TECHDOCS.vlcmImport}`,
+        ...(paif
+          ? ['Private AI Foundation: at least 3 GPU-enabled hosts in the initial cluster of the workload domain; for vGPU, select hosts whose NVIDIA vGPU state is Ready when you deploy.']
+          : []),
       ]
     : [];
-  const gpuPrepAccept = w.gpu ? ' GPU image (NVIDIA host driver component) imported into the VCF Instance.' : '';
+  const gpuPrepAccept = gpu ? ` GPU image (NVIDIA host driver component) imported into the VCF Instance${paif ? '; at least 3 GPU hosts commissioned' : ''}.` : '';
   // North-south connectivity is this domain's own choice (intake H4) and — when
   // Supervisor is enabled — a hard prerequisite for activation, so the story
   // spells out the concrete build rather than naming the model.
@@ -814,7 +833,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
   // stories point at the exact prerequisite in this epic.
   const connStoryId = `9.${stories.length}`;
 
-  if (w.gpu) {
+  if (gpu) {
     stories.push({
       id: `9.${stories.length + 1}`,
       title: 'GPU hosts: configure vGPU / passthrough',
@@ -822,9 +841,25 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
         `Per GPU host, in the vSphere Client of this domain's vCenter (maintenance mode + restart per host): vGPU → Configure → Hardware → Graphics → set each GPU to Shared Direct; passthrough → Configure → Hardware → DirectPath → Fixed/Dynamic DirectPath. Enable MIG per host if the plan uses it (MIG can't serve NVIDIA NIMs). TechDocs: ${TECHDOCS.gpuHosts}`,
         "vGPU: set vgpu.hotmigrate.enabled on this domain's vCenter (Configure → Advanced Settings) so vGPU VMs can vMotion.",
         'vGPU: stand up the NVIDIA License System instance and get the client configuration token into the guest templates — an unlicensed vGPU is degraded after 20 minutes. Guest drivers come from the SAME vGPU release as the host driver; passthrough guests use the public NVIDIA data center driver.',
-        'If Private AI Foundation is in scope: assign its add-on licence to this workload domain (VCF Operations → Licensing → Licenses & Registration).',
+        ...(paif
+          ? []
+          : ['VMs: add the vGPU profile (or the DirectPath device) to the VM templates the workloads are built from; install the matching guest driver in them.']),
       ],
       acceptance: 'Every GPU host compliant with the GPU image; nvidia-smi lists all GPUs; the devices are in the planned mode (Shared Direct / DirectPath, MIG as planned); a test vGPU VM powers on, gets an NVIDIA licence, and vMotions between two GPU hosts.',
+    });
+  }
+
+  if (paif) {
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Private AI Foundation: licence, SSO and vCenter Linking',
+      tasks: [
+        `Connect this domain's vCenter and NSX Manager to the VCF Identity Broker of the VCF Instance (VCF Operations → Manage → Identity & Access → the instance → Component Configuration → Configure component). TechDocs: ${TECHDOCS.paifWld}`,
+        "Add this domain's vCenter to the management vCenter's group in vCenter Linking (VCF Operations → Operate → Administration → Configurations → vCenter Linking) — the Private AI Foundation licence capacity is only allocated once they are linked.",
+        "Assign the VMware Private AI Foundation with NVIDIA add-on licence to this domain's vCenter (VCF Operations → Manage → Licensing → Licenses & Registration → Version 9+ → Assign Add-on License). Assign it to the management domain as well only if you use the guided deployment workflow in the vSphere Client.",
+        'Then follow the Private AI Foundation setup workflow for what runs on top (deep learning VMs, VKS clusters with GPUs, Private AI Services, VCF Automation catalog items) — outside this plan; see the Private AI Foundation documentation.',
+      ],
+      acceptance: "This domain's vCenter + NSX on fleet SSO; its vCenter linked with the management vCenter; the Private AI Foundation add-on licence assigned to the domain.",
     });
   }
 
@@ -876,7 +911,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
 
   return {
     id,
-    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${w.gpu ? ' + GPU hosts' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
+    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     stories,
   };
@@ -954,6 +989,7 @@ const GD = {
   gpuImage: guide('GPU hosts: host driver in the cluster image', '32-gpu-hosts', '6-put-the-host-driver-into-the-cluster-image'),
   gpuDevices: guide('GPU hosts: configure the GPU devices', '32-gpu-hosts', '7-configure-the-gpu-devices-on-each-host'),
   gpuLicensing: guide('GPU hosts: NVIDIA licensing for the guests', '32-gpu-hosts', '8-nvidia-licensing-for-the-guests'),
+  gpuLicences: guide('GPU hosts: licence layers', '32-gpu-hosts', '2-line-up-the-licences'),
   prereqGpu: guide('Prerequisites: GPU hosts', 'prerequisites', 'gpu-hosts-only-if-in-scope'),
   supervisor: guide('vSphere Supervisor enablement', '10-supervisor-enablement'),
   supervisorAvi: guide('Supervisor: Avi load balancer', '10-supervisor-enablement', '4-avi-load-balancer-only-if-used'),
@@ -1011,6 +1047,7 @@ const GUIDE_RULES: GuideRule[] = [
   // domain is deployed); its links live on the GPU story, since a rule sees the
   // whole selection and can't tell which WLD has GPUs.
   { epic: 'E9', story: /^GPU hosts/, guides: () => [GD.gpu, GD.prereqGpu, GD.gpuImage, GD.gpuDevices, GD.gpuLicensing] },
+  { epic: 'E9', story: /^Private AI Foundation/, guides: () => [GD.gpuLicences, GD.sso] },
   { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
   { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
   { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
@@ -1128,7 +1165,8 @@ export function coerceSelection(data: unknown): Selection | null {
           connectivity: oneOf<NsxConnectivity>(w.connectivity, NSX_CONNECTIVITY.map((c) => c.value), conn),
           supervisor: bool(w.supervisor, false),
           supervisorLb: oneOf<SupervisorLb>(w.supervisorLb, SUPERVISOR_LBS.map((l) => l.value), 'builtin'),
-          gpu: bool(w.gpu, false),
+          // Scopes saved while this was a plain checkbox carry true / false.
+          gpu: w.gpu === true ? 'vms' : oneOf<GpuUse>(w.gpu, GPU_USES.map((g) => g.value), 'none'),
         }))
     : base.wlds;
   return normalizeSelection({

@@ -25,9 +25,14 @@
   intake `H13` (per cluster) with its `workbook-cell-mapping.md` rows. The
   visible workbook sheets have no GPU fields; the 9.1 workbook's hidden, legacy
   *Private AI Ready Infrastructure* sheet is noted as not to be used. In the
-  deployment-plan tool, a per-WLD **GPU hosts** checkbox adds the GPU image task
-  to the host story and a *GPU hosts: configure vGPU / passthrough* story after
-  the connectivity story, with guide links; `docs/06` describes both.
+  deployment-plan tool, each workload domain gets a **GPU** choice: *No GPUs*,
+  *GPU for VMs* (plain vGPU / passthrough) or *Private AI Foundation*. Either
+  GPU choice adds the GPU image task to the host story and a *GPU hosts:
+  configure vGPU / passthrough* story after the connectivity story. *Private
+  AI Foundation* also adds the 3-GPU-host minimum and a *licence, SSO and
+  vCenter Linking* story (from the PAIF 9.1 workload-domain workflow). Plain
+  GPUs for VMs don't get those steps. `docs/06` and `docs/32` describe the
+  difference.
 
 ## v5.9.6 — 2026-10-15
 - **Dead License Server links fixed (#406).** TechDocs moved

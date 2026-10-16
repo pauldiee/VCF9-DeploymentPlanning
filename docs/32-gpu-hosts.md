@@ -83,6 +83,24 @@ hardware arrives.
   and the 90 days start when the activation key is redeemed in the NVIDIA
   Licensing Portal. NVIDIA's pages disagree on the concurrent-user cap (128 vs
   500), so check the evaluation page when you register.
+### GPUs for VMs, or Private AI Foundation?
+
+Steps 3–10 of this guide are the same either way. A **Private AI
+Foundation** implementation adds, on top of plain GPUs for VMs
+([PAIF 9.1][paif-pdf], *Deploy a Workload Domain*):
+
+- the **add-on licence**, assigned to the GPU workload domain's vCenter —
+  which only works once that vCenter is in a **vCenter Linking** group with the
+  management vCenter;
+- the workload domain's vCenter and NSX Manager connected to the **VCF
+  Identity Broker** (fleet SSO);
+- **at least 3 GPU hosts** in the initial cluster;
+- its own setup workflow for what runs on top (deep learning VMs, VKS
+  clusters with GPUs, Private AI Services, VCF Automation catalog items).
+
+Plain vGPU or passthrough for ordinary VMs needs none of that: VCF plus, for
+vGPU, the NVIDIA licence.
+
 - **Entitlement lag.** A new entitlement *"might not appear on the NVIDIA
   Licensing Portal dashboard page until 24 business hours"* after you first set
   your password ([NVIDIA quick start][nv-get]). Register early, not on build day.

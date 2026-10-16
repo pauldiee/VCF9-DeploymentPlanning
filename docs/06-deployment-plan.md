@@ -240,10 +240,10 @@ Transit Gateway + VNA cluster) — and is chosen **independently of the
 management domain's** model, so the export tool asks it per WLD. It drives the
 WLD connectivity story (9.4 / 9.6 below).
 
-**GPU hosts (optional, per WLD):** tick *GPU hosts* in the
+**GPU hosts (optional, per WLD):** pick the domain's GPU use in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
-for a domain whose hosts carry NVIDIA GPUs (vGPU or passthrough, intake
-`H13`). Two things change:
+(intake `H13`): **No GPUs**, **GPU for VMs** (plain vGPU or passthrough), or
+**Private AI Foundation**. Either GPU choice changes two things:
 
 - The **host story (9.2)** gains a task: confirm each GPU on **both** the
   Broadcom Compatibility Guide (ESXi 9.1, in the chosen mode) and NVIDIA's vGPU
@@ -261,10 +261,23 @@ for a domain whose hosts carry NVIDIA GPUs (vGPU or passthrough, intake
   to the domain. *Acceptance:* every GPU host compliant with the GPU image,
   `nvidia-smi` lists all GPUs, devices in the planned mode, and a test vGPU VM
   powers on, gets an NVIDIA licence and vMotions between two GPU hosts.
+  With **GPU for VMs** it also adds the vGPU profile / DirectPath device and
+  the guest driver to the VM templates.
+
+**Private AI Foundation** additionally puts the **3-GPU-host minimum** on the
+host story and appends a **Private AI Foundation: licence, SSO and vCenter
+Linking** story: connect the domain's vCenter and NSX Manager to the VCF
+Identity Broker, add its vCenter to the management vCenter's **vCenter
+Linking** group (the add-on licence capacity is only allocated once they're
+linked), and **assign the add-on licence** to the domain (to the management
+domain too only for the guided vSphere Client workflow). What runs on top —
+deep learning VMs, VKS GPU clusters, Private AI Services — follows the
+Private AI Foundation setup workflow, outside this plan. *Acceptance:* the
+domain's vCenter + NSX on fleet SSO, vCenter linked, add-on licence assigned.
 
 Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
 [`prerequisites.md` → GPU hosts](prerequisites.md#gpu-hosts-only-if-in-scope).
-Like the Avi stories below, the GPU story is **numbered by selection**.
+Like the Avi stories below, the GPU stories are **numbered by selection**.
 
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
