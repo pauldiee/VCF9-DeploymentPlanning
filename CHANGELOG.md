@@ -1,5 +1,17 @@
 # Changelog
 
+## v6.0.4 — 2026-10-16
+- **`docs/01` §C: no `.local` DNS domain for the fleet services (#413).** A
+  new callout plus a checklist item. TechDocs 9.1
+  ([*Deploy VCF Management Services and License Server for vSphere Foundation*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-your-vsphere-foundation-to-9-1/install-vcf-management-services-to-vsphere-foundation-environment.html))
+  rejects `.local` for the management-services FQDNs. The Broadcom blog
+  [*Bridging the (.Local) Gap*](https://blogs.vmware.com/cloud-foundation/2026/04/17/bridging-the-local-gap-a-split-domain-design-for-vmware-cloud-foundation-deployment/)
+  (2026-04-17) adds the Identity Broker, VCF Automation and vSphere
+  Supervisor. VCF Operations, vCenter, NSX and SDDC Manager still accept
+  `.local` "for now". The callout summarises the blog's split-domain design
+  (forest trust or DNS forwarding, both zones in the search domains, an IdP
+  that recognises both) and notes that the blog validated it on 9.0 only.
+
 ## v6.0.3 — 2026-10-16
 - **`docs/27` Step 4: check you have the right Cloud Proxy OVA (#412).** Seen
   on 9.1.1.0100. The Cloud Proxy (collector) OVA's *Configuration* page
