@@ -203,10 +203,23 @@ notice).
    OVF Template**, point it at the downloaded OVA.
 4. **Deploy in the Unified Cloud Proxy configuration** — sizing (Unified
    Small: up to 16,000 VMs, 4 vCPU/16GB; Unified Standard: 16,000-80,000
-   VMs, 8 vCPU/48GB, per
-   [KB 324340](https://knowledge.broadcom.com/external/article/324340) for
-   current numbers). **Don't deploy
+   VMs, 8 vCPU/48GB). For current numbers,
+   [KB 324340](https://knowledge.broadcom.com/external/article/324340) — the
+   link in the wizard's own description — now points to VMware
+   Configuration Maximums for 9.1.x. **Don't deploy
    Classic Cloud Proxy unless support explicitly tells you to.**
+
+   > **Check you have the right OVA at this step.** The Cloud Proxy
+   > (collector) OVA's *Configuration* page lists exactly **four** options:
+   > *Classic Small Cloud Proxy*, *Classic Standard Cloud Proxy*, *Unified
+   > Small Cloud Proxy* and *Unified Standard Cloud Proxy*. If you see
+   > **Extra Small / Small / Medium / Large / Extra Large / Witness**
+   > instead (Medium: *"between 10000 and 30000 VMs … 8 vCPUs and 32GB"*),
+   > you picked the **VCF Operations analytics-node OVA** — the two sit
+   > next to each other on the Support Portal. Cancel and fetch the
+   > collector OVA from the link on the *Install Cloud Proxy* page. Seen on
+   > 9.1.1.0100 (2026-10); an analytics-node deploy would never ask for the
+   > registration key in the next step.
 5. When the wizard prompts for **Unique Registration Key**, go back to
    the **Install Cloud Proxy** page in VCF Operations, optionally activate
    **Data Persistence** (buffers data through connectivity issues), then

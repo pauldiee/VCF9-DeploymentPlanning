@@ -1,5 +1,14 @@
 # Changelog
 
+## v6.0.3 — 2026-10-16
+- **`docs/27` Step 4: check you have the right Cloud Proxy OVA (#412).** Seen
+  on 9.1.1.0100. The Cloud Proxy (collector) OVA's *Configuration* page
+  lists exactly four options: Classic / Unified × Small / Standard. The VCF
+  Operations analytics-node OVA, which is easy to mix up on the Support
+  Portal, shows Extra Small … Extra Large plus Witness. Also noted:
+  KB 324340, linked from the wizard, now points to Configuration Maximums
+  for 9.1.x.
+
 ## v6.0.2 — 2026-10-16
 - **`docs/26`: patching the License Server replaces its certificate (#411).**
   Field-reported: VCF Operations, the Cloud Proxies and the License Server
