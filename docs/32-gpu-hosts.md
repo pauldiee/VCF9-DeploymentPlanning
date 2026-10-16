@@ -98,8 +98,7 @@ Foundation** implementation adds, on top of plain GPUs for VMs
 - its own setup workflow for what runs on top (deep learning VMs, VKS
   clusters with GPUs, Private AI Services, VCF Automation catalog items),
   which on a disconnected (dark) site means staging every artifact locally.
-  That part isn't covered in this repo yet (tracked in
-  [#408](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/408)).
+  That part is [`33-private-ai-foundation.md`](33-private-ai-foundation.md).
 
 Plain vGPU or passthrough for ordinary VMs needs none of that: VCF plus, for
 vGPU, the NVIDIA licence.
@@ -366,6 +365,12 @@ the virtual GPU or physical GPU is degraded if the VM fails to obtain a license
 within 20 minutes"*, and it degrades further after 24 hours
 ([NVIDIA licensing intro][nv-lic-intro]).
 
+- **Which service instance:** a cloud-hosted **License Service instance** on
+  the NVIDIA Licensing Portal when the guests can reach it, or the on-premises
+  **Delegated License Service (DLS)** virtual appliance on a **disconnected
+  (dark) site** — *"you host the NVIDIA licenses locally on a Delegated License
+  Service (DLS) appliance"*, deployable *"in the same workload domain as the AI
+  workloads or in the management domain"* ([PAIF 9.1][paif-pdf]).
 - The licence server software is downloaded from the same Licensing Portal
   ([§4.2](#42-where-to-download)).
 - Each guest gets a **client configuration token** in the default folder
@@ -418,8 +423,8 @@ owner: it is a new piece of infrastructure, with its own backups and renewals.
 - **Device groups** (NVLink / NVSwitch GPUs presented as one unit) and HGX
   platforms.
 - Everything above the hosts: VM classes, deep learning VMs, VKS GPU clusters,
-  Private AI Services, VCF Automation catalog items — see the
-  [Private AI Foundation docs][paif].
+  Private AI Services, VCF Automation catalog items, and the dark-site staging
+  — see [`33-private-ai-foundation.md`](33-private-ai-foundation.md).
 
 ---
 

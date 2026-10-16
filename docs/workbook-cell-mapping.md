@@ -147,6 +147,7 @@ before wiring a generator.
 | H10 | `input_wld_az1_host_overlay_{vlan,mtu,cidr,gateway_ip,pool_start_ip,pool_end_ip,uplink_profile_name}` |
 | H11 | `wld_stretched_cluster_chosen`; per-AZ twins `input_wld_az2_*`; witness `input_wld_witness_{fqdn,ip,cluster,dns1_ip,dns2_ip}` |
 | H13 | — (no named ranges; see the *Deploy Cluster* table) |
+| H14 | — (no named ranges; see the *Deploy Cluster* table) |
 | H12 | `input_wld_bf_vc_root_password`, `input_wld_administrator_vsphere_local_password`, `input_wld_esx_root_password`, `input_wld_bf_nsxt_{admin,audit,root}_password`, `input_wld_nsxt_en_{admin,root}_password` |
 
 **Not mapped (out of scope for a core WLD):** optional-solution prefixes —
@@ -262,6 +263,7 @@ Repeat per additional cluster. New VLANs/subnets per cluster come from
 | H10    | Transport Zones / Transport Node Profile | Host Overlay TEP VLAN / Static IP Pool CIDR + range / Uplink Profile |
 | H11    | Stretched Cluster                      | Witness host + VMkernel; AZ2 host networks; fault-domain mapping (see `03-multi-az-prep.md`) |
 | H13    | —                                      | — (**no visible workbook fields**: GPU hosts are captured in the intake and `32-gpu-hosts.md`. The 9.1 workbook keeps a **hidden**, legacy *Private AI Ready Infrastructure* sheet (TKG-era GPU VM class / GPU Operator rows) — don't transfer to it; the 9.1.1 workbook has no GPU fields) |
+| H14    | —                                      | — (**no visible workbook fields**: Private AI Foundation is captured in the intake and `33-private-ai-foundation.md`; same note on the hidden legacy *Private AI Ready Infrastructure* sheet as `H13`) |
 
 ## Sheet: Deploy Fleet Management Day-N
 

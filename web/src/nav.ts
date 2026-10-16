@@ -166,6 +166,14 @@ export const NAV: NavItem[] = [
     blurb: "NVIDIA GPUs for vGPU or passthrough: picking the mode, the licences it pulls in, checking the card on both Broadcom's and NVIDIA's lists, the host driver in the vLCM image, and per-host GPU configuration.",
   },
   {
+    slug: '33-private-ai-foundation',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Private AI Foundation',
+    icon: 'brain',
+    blurb: 'Private AI Foundation above the GPU hosts, connected or on a dark site: NVIDIA licensing (DLS), VM classes, content libraries, the VCF Automation org, Harbor, the artifacts to stage, the Quickstart and Private AI Services.',
+  },
+  {
     slug: '29-single-pnic-build',
     step: 'Build & expand',
     band: 'Build & expand',

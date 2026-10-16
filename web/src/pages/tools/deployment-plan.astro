@@ -173,6 +173,7 @@ const epics = selectedEpics(sel);
     SELECTION_STORE_KEY,
     SUPERVISOR_LBS,
     GPU_USES,
+    PAIF_CONNECTIVITY,
     NSX_CONNECTIVITY,
     type Selection,
     type Wld,
@@ -180,6 +181,7 @@ const epics = selectedEpics(sel);
     type AutomationModel,
     type NsxConnectivity,
     type GpuUse,
+    type PaifConnectivity,
     type SupervisorSize,
     type SupervisorLb,
     type AviLicensing,
@@ -291,6 +293,9 @@ const epics = selectedEpics(sel);
           <select class="planx__wldgpu" aria-label="GPU hosts in this workload domain" title="NVIDIA GPU hosts: plain vGPU / passthrough for VMs, or a Private AI Foundation implementation">
             ${GPU_USES.map((g) => `<option value="${g.value}"${w.gpu === g.value ? ' selected' : ''}>${g.label}</option>`).join('')}
           </select>
+          <select class="planx__wldpaifconn" aria-label="Private AI Foundation connectivity" title="Private AI Foundation: connected, or a disconnected (dark) site that stages every artifact locally"${w.gpu === 'paif' ? '' : ' disabled'}>
+            ${PAIF_CONNECTIVITY.map((c) => `<option value="${c.value}"${w.paifConnectivity === c.value ? ' selected' : ''}>${c.label}</option>`).join('')}
+          </select>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain">×</button>
         </div>`
       )
@@ -363,6 +368,7 @@ const epics = selectedEpics(sel);
       supervisor: false,
       supervisorLb: 'builtin',
       gpu: 'none',
+      paifConnectivity: 'connected',
     });
     renderWlds();
     render();
@@ -384,11 +390,22 @@ const epics = selectedEpics(sel);
       wlds[i].connectivity = (<HTMLSelectElement>t).value as NsxConnectivity;
     } else if (t.classList.contains('planx__wldsuper')) {
       wlds[i].supervisor = (<HTMLInputElement>t).checked;
+      if (!wlds[i].supervisor && wlds[i].gpu === 'paif') {
+        wlds[i].supervisor = true;
+        toolbarMsg('Supervisor stays on: Private AI Foundation runs on it');
+      }
       renderWlds(); // refresh the row so the LB select follows the Supervisor toggle
     } else if (t.classList.contains('planx__wldsuperlb')) {
       wlds[i].supervisorLb = (<HTMLSelectElement>t).value as SupervisorLb;
     } else if (t.classList.contains('planx__wldgpu')) {
       wlds[i].gpu = (<HTMLSelectElement>t).value as GpuUse;
+      if (wlds[i].gpu === 'paif' && !wlds[i].supervisor) {
+        wlds[i].supervisor = true;
+        toolbarMsg('Supervisor added: Private AI Foundation runs on it');
+      }
+      renderWlds(); // enable the PAIF connectivity select, refresh the Supervisor box
+    } else if (t.classList.contains('planx__wldpaifconn')) {
+      wlds[i].paifConnectivity = (<HTMLSelectElement>t).value as PaifConnectivity;
     }
     render();
   });

@@ -1,5 +1,47 @@
 # Changelog
 
+## v5.9.8 — 2026-10-16
+- **New guide: Private AI Foundation, connected and dark site (#408).**
+  [`docs/33-private-ai-foundation.md`](docs/33-private-ai-foundation.md) covers
+  VMware Private AI Foundation with NVIDIA 9.1 / 9.1.1 above the GPU hosts. It
+  starts with the scope decisions (deep learning VMs / VKS / Private AI
+  Services 2.1 or 3.0, connected or disconnected; the Quickstart needs both
+  deep learning VMs and VKS prepared). Then: NVIDIA licensing (a cloud License
+  Service, or the on-site **DLS** appliance on a dark site), VM classes and GPU
+  reservations, and the dark-site path. That path covers the bastion and admin
+  hosts, a table of every artifact with its source, staging location and
+  method, the Ubuntu mirror (≥ 800 GB) and driver web server, and mirroring
+  into Harbor ([KB 388470](https://knowledge.broadcom.com/external/article/388470)).
+  It also covers the VKr and deep learning VM content libraries, the VCF
+  Automation organization (All Apps, VPC, region quota, reserved VM classes),
+  the platform Harbor, and the Quickstart (the 9.1.1 `deep-learning-container`
+  swap, and the GPU Operator v25.3.1 → v26.3.1 update in
+  [KB 439984](https://knowledge.broadcom.com/external/article/439984)).
+  Private AI Services is the last part: Data Services Manager, an OIDC
+  provider (not VCF SSO), and the install source. Sourced from the
+  [PAIF 9.1 PDF](https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/pdf/vmware/private-ai/private-ai-nvidia/vmware-private-ai-foundation-with-nvidia-9-1.pdf);
+  not lab- or field-verified.
+- **Deployment-plan tool:** a Private AI Foundation workload domain now asks
+  *connected / disconnected (dark site)*, switches Supervisor on, and gets
+  six stories (eight on a dark site) after the Supervisor stories, each linked
+  to its section of `docs/33`. This replaces the "not yet in this plan"
+  placeholder. `docs/06` describes them.
+- **Planning flow:** a *Private AI Foundation* gate in `prerequisites.md`
+  (always + dark-site checklists), intake `H14` and its
+  `workbook-cell-mapping.md` rows.
+- **`docs/32` §8:** names the licence service type: the cloud License Service
+  instance, or the **DLS** appliance on a dark site.
+- **Dark site: the outside staging (§4.2a).** A field note: getting the
+  images inside is the hard part, because everything is prepared and hosted
+  outside first and it is a lot of data. Then how to plan the staging
+  storage and transfer, and how to reduce and move the data: trim the set
+  (Ubuntu release / arch, partial mirror, pinned BOM, deliberate models),
+  replicate registry to registry per layer instead of per-image tars,
+  deduplicate before writing to media, reuse the VCF depot pipeline, and
+  make refresh a scheduled job. Marked as general practice, not tested on
+  PAIF here. Also a prerequisites item and the first task of the dark-site
+  story.
+
 ## v5.9.7 — 2026-10-16
 - **New build guide: GPU hosts (#407).**
   [`docs/32-gpu-hosts.md`](docs/32-gpu-hosts.md) gets NVIDIA GPUs in ESX hosts

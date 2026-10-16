@@ -20,7 +20,7 @@ both places so a filled template can be checked straight against this doc:
 | **Bring-up**               | Must be true **before the VCF Installer runs**. A miss here stops the deployment.            |
 | **Bring-up (if in scope)** | Same gate, but only when you chose that option (BGP + the uplink VLANs under Centralized connectivity; the AZ2 networks when multi-AZ; the NFS VMkernel or FC datastore when that is principal storage; the public URLs when anything is online). |
 | **Day-N**                  | Needed **after** bring-up, when you configure or deploy that piece. Collect the inputs early anyway — a missing value doesn't stop bring-up, it stops the day you need it. |
-| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, Memory Tiering, GPU hosts, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
+| **Day-N (if in scope)**    | Only when that optional component is actually deployed — Avi, vSphere Supervisor, VCF Automation, Log Management, an external LB in front of VCF Operations, Memory Tiering, GPU hosts, Private AI Foundation, and the **NSX Edge cluster** and **vSAN witness**, both of which are built *after* bring-up (deployment plan E6 / E7). |
 
 **The bring-up gate, at a glance** — the subset that must be green before the
 Installer starts:
@@ -569,6 +569,69 @@ is created.* NVIDIA GPUs for vGPU or passthrough; the full guide is
 > workbook keeps a **hidden**, legacy *Private AI Ready Infrastructure* sheet;
 > the 9.1.1 workbook has none). TechDocs-sourced — not yet field-verified in
 > this repo.
+
+## Private AI Foundation (only if in scope)
+
+*When needed: **Day-N (if in scope)** — after the GPU hosts above; the
+dark-site items below take the longest, so start them with the hardware
+order.* The full guide is
+[`33-private-ai-foundation.md`](33-private-ai-foundation.md).
+
+**Always:**
+
+- [ ] **Scope decided:** deep learning VMs / VKS with GPU / Private AI
+      Services; connected or disconnected; Private AI Services **2.1 or 3.0**.
+      The Quickstart needs **both** deep learning VMs and VKS prepared.
+- [ ] **VCF Automation** deployed (catalog path; Private AI Services 2.1 UI),
+      with an **All Apps** organization on **VPC networking** (public, transit
+      gateway and VPC private IP ranges) — see
+      [`17-vcfa-tenant-config.md`](17-vcfa-tenant-config.md).
+- [ ] **Supervisor** on the GPU workload domain; **storage classes with the
+      same names** on every vCenter in the VCF Automation region.
+- [ ] **NVIDIA:** client configuration token and an **NGC API key** (vGPU).
+- [ ] **Harbor** capacity planned — model galleries (Private AI Services),
+      and on 9.1.1 a **public project** for `deep-learning-container`.
+- [ ] **Private AI Services only:** **Data Services Manager** in the
+      management domain (always for 2.1; for 3.0 with knowledge bases and
+      agents), an **OIDC provider** (**not** VCF SSO — different networks),
+      and a **Broadcom registry token** if installing from Broadcom's registry.
+- [ ] **GPU capacity left unreserved** for one host's failover.
+
+**Disconnected (dark site) additionally:**
+
+- [ ] **Bastion host** (internet side: Docker, Helm, VCF Consumption CLI) and
+      **admin host** (inside: Docker, VCF Consumption CLI, kubectl, ORAS),
+      same Linux image — or one combined DMZ host — and a way to carry `.tar`
+      bundles across.
+- [ ] **NVIDIA DLS appliance** (workload domain or management domain),
+      registered on the NVIDIA Licensing Portal: IP, FQDN, owner, backup.
+- [ ] **Platform Harbor** (VCF Automation's Harbor service on 9.1; otherwise
+      the Harbor Supervisor Service), with projects and a robot account, and
+      ~40 GB for Private AI Services on top of the GPU Operator, DL
+      containers and models.
+- [ ] **Web server** reachable from the VKS clusters: an **Ubuntu package
+      mirror (≥ 800 GB)** and the **vGPU guest / data center drivers** with an
+      index file.
+- [ ] **VCF software depot** holding the Ubuntu **VKr** images (VCF Download
+      Tool) — see [`09-binary-depot.md`](09-binary-depot.md).
+- [ ] **Deep learning VM `.ova`** downloaded from the Broadcom Support Portal.
+- [ ] **Bastion allowlist:** at least the endpoints the Private AI Services
+      artifact mirroring tool pulls from — `pais-docker.packages.broadcom.com`,
+      `packages.broadcom.com`, `helm.ngc.nvidia.com`, `nvcr.io`,
+      `archive.ubuntu.com` — plus the NGC catalog, the Broadcom Support Portal
+      and the NVIDIA Licensing Portal for the manual downloads.
+- [ ] **Outside staging storage and a transfer path, sized and tested.** Getting
+      the images inside is the hard part: everything is prepared and hosted
+      outside first, and it's a lot of data (Ubuntu mirror ≥ 800 GB alone).
+      Measure the full set on the bastion and time a test transfer — see
+      [`33-private-ai-foundation.md` §4.2a](33-private-ai-foundation.md#42a-plan-the-outside-staging-first--it-is-the-hard-part).
+- [ ] **An owner and refresh routine per artifact** — nothing updates by
+      itself on a dark site.
+
+> TechDocs: [VMware Private AI Foundation with NVIDIA 9.1 (PDF)](https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/pdf/vmware/private-ai/private-ai-nvidia/vmware-private-ai-foundation-with-nvidia-9-1.pdf)
+> (setup workflows, deployment artifacts for disconnected environments). The
+> P&P workbook has no visible PAIF fields. TechDocs-sourced — not yet
+> field-verified in this repo.
 
 ## Network
 
