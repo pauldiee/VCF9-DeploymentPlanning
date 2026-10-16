@@ -1,5 +1,24 @@
 # Changelog
 
+## v5.9.9 — 2026-10-16
+- **VCF 9.1.1 management-services footprint, from Broadcom's blog (#409).**
+  [Customer Favorite Capabilities: Accelerating Your Path to VCF 9.1.1](https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/)
+  (2026-10-13), read word for word including its charts. `docs/04` adds the 9.1.0
+  → 9.1.1 baseline table:
+  - Simple: 1 control + 1 worker, 16 vCPU / 34 GiB.
+  - **Small HA, new in 9.1.1:** 3 control + 2 workers, 32 / 62.
+  - Medium HA: 3 + 2, 36 / 78.
+  - Large HA: 3 + 3, 56 / 106.
+
+  The blog's Small HA row labels its workers "Control Plane", which is a typo.
+  Worker sizes match the workbook. Counts are **one lower than the sizer's in
+  every profile**, which is the workbook's per-profile +1 node. The tool keeps
+  the workbook formula (one worker on the safe side), and the dated
+  Simple-worker conflict table now reads 3 → 2 → 1. HA-Small is marked
+  9.1.1-only; the 9.1.0 workbook has no such profile.
+- **`prerequisites.md`:** the VCF Installer 9.1.1 UI's single-ESX-host
+  deployment, for lab / PoC only; production keeps the host minimums.
+
 ## v5.9.8 — 2026-10-16
 - **New guide: Private AI Foundation, connected and dark site (#408).**
   [`docs/33-private-ai-foundation.md`](docs/33-private-ai-foundation.md) covers
