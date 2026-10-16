@@ -226,6 +226,48 @@ same shape.
 > is case-insensitive but the appliances are not always — the practical rule:
 > create **every** VCF FQDN lowercase.
 
+> **No `.local` domain for the fleet-services family.** `.local` is reserved for
+> multicast DNS (RFC 6762), and VCF 9.x is tightening up on it. Settle this
+> **before** you request any records, because a `.local` AD/DNS domain is the
+> kind of thing you only find out about at the deploy wizard.
+>
+> - **TechDocs 9.1** — [*Deploy VCF Management Services and License Server for vSphere Foundation*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-your-vsphere-foundation-to-9-1/install-vcf-management-services-to-vsphere-foundation-environment.html),
+>   verbatim: *"the FQDN validation relies on RFC1034 and RFC1123, and only top
+>   level domains of the internet are validated. The .local domain is not
+>   supported"*. The **fleet components**, **instance components** and **VCF
+>   services runtime** FQDN fields each add *"Do not use a .local FQDN."*
+> - **Broadcom VCF blog, 2026-04-17** — [*Bridging the (.Local) Gap: A Split-Domain Design for VMware Cloud Foundation Deployment*](https://blogs.vmware.com/cloud-foundation/2026/04/17/bridging-the-local-gap-a-split-domain-design-for-vmware-cloud-foundation-deployment/):
+>   **VCF Identity Broker, VCF Automation and vSphere Supervisor** no longer
+>   accept `.local`; **VCF Operations, vCenter, NSX and SDDC Manager** still
+>   do, *"for now"*.
+>
+> Put together, the management services, Identity Broker, VCF Automation and
+> the Supervisor need FQDNs in a real, Internet-style top-level domain
+> (`sfo.example.io`, or an internal zone such as `vcf.internal`). Neither source
+> names Log Management or real-time metrics, but they run on the same services
+> runtime, so plan them the same way. The older
+> appliances can stay on `.local` for now, but treat that as a transition state,
+> not a design choice.
+>
+> **If the existing domain is `.local` and renaming it isn't realistic**, the
+> blog's **split-domain design** is the way out:
+>
+> 1. Leave vCenter, NSX, VCF Operations and SDDC Manager on the `.local` zone.
+> 2. Create a new RFC-compliant DNS zone and give the Identity Broker, VCF
+>    Automation, the Supervisor and the services-runtime components their FQDNs
+>    in it.
+> 3. Make sure the DNS servers the appliances use resolve **both** zones. The
+>    blog gives two ways to link them: a **two-way forest trust** between the
+>    two domains, or **separate domains with DNS forwarding** between them.
+> 4. Put **both** domains in the DNS **search domain** list of the components
+>    you deploy (the blog's example: VKS has to find the `.local` vCenter it
+>    depends on).
+> 5. Configure the identity provider so it recognises users from **both**
+>    domains.
+>
+> The blog says this design was validated on **VCF 9.0**. On 9.1, check the
+> current TechDocs before you rely on it.
+
 > **Two "VCF services runtime" FQDNs — not one.** The TechDocs FQDN/IP list
 > carries the row *"VCF services runtime — 1 FQDN"* **twice**: once under **VCF
 > Automation** and once under **VCF Management Services**. The workbook repeats
@@ -320,6 +362,7 @@ same shape.
 - [ ] Every FQDN unique; every PTR present
 - [ ] No CNAME for any VCF appliance hostname (must be A)
 - [ ] All FQDNs **lowercase** (required for the fleet-services family; recommended everywhere)
+- [ ] **No `.local`** for the fleet-services family, Identity Broker, VCF Automation or the Supervisor. If the existing domain is `.local`, use the split-domain design above: a second RFC-compliant zone, both zones resolvable, both in the search domains
 
 ---
 
