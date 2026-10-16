@@ -1,5 +1,14 @@
 # Changelog
 
+## v6.0.2 — 2026-10-16
+- **`docs/26`: patching the License Server replaces its certificate (#411).**
+  Field-reported: VCF Operations, the Cloud Proxies and the License Server
+  were patched from 9.1.1 GA to the 9.1.1.0100 Express Patch. The License
+  Server came back with a new self-signed certificate, and the manual
+  trusted-root import had to be repeated. The workaround now says to
+  re-import on each vCenter after every License Server update. Step 2 notes
+  that the field case imported the self-signed certificate directly.
+
 ## v6.0.1 — 2026-10-16
 - **`docs/26`: License Server certificate trust — the flow, and a manual
   workaround (#411).** A new section explains how vCenter comes to trust the

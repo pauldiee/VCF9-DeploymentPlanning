@@ -718,10 +718,10 @@ checklist; it bypasses the automatic push without fixing whatever blocked it.
      -ext basicConstraints,keyUsage
    ```
 
-   Import the one showing `CA:TRUE` and `Certificate Sign` — a self-signed
-   License Server certificate if it carries those bits, otherwise the issuing
-   CA at the top of the chain. A plain server certificate (`CA:FALSE`) will be
-   refused.
+   Import the one showing `CA:TRUE` and `Certificate Sign`. In the field
+   case the License Server's certificate was **self-signed** and was imported
+   directly. If yours is CA-signed instead, import the issuing CA at the top
+   of the chain; a plain server certificate (`CA:FALSE`) will be refused.
 3. **Add it to vCenter** ([TechDocs, vSphere 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-authentication/vsphere-security-certificates/managing-certificates-with-the-web-interface/set-up-your-system-to-use-custom-certificates-from-the-platform-services-controller/add-a-trusted-root-certificate-to-vsphere-certificate-manager.html)): log in to the
    vSphere Client as `administrator@vsphere.local` (or another SSO
    administrator) → **Administration → Certificates → Certificate
@@ -732,10 +732,17 @@ checklist; it bypasses the automatic push without fixing whatever blocked it.
 
 **Know what you've signed up for:**
 
-- **Nothing re-pushes it.** If the License Server's certificate is replaced
-  later and the automatic push is still broken, licensing breaks again —
-  repeat the import, and keep looking for the cause (privileges, proxy, a
-  certificate change).
+- **Patching the License Server replaces its certificate.** Field-reported:
+  after VCF Operations, the Cloud Proxies and the License Server were patched
+  from **9.1.1 GA to the 9.1.1.0100 Express Patch**, the License Server came
+  back with a **new self-signed certificate**, and it had to be imported
+  again. With a manual import, treat every License Server update as a
+  certificate change: re-import on each vCenter right after the patch, then
+  check that license assignment and the License Server status are still
+  green.
+- **Nothing re-pushes it for you.** While the automatic push is broken, any
+  certificate change breaks licensing again — keep looking for the cause
+  (privileges, proxy) so the push can take over.
 - **Every vCenter licensed by this License Server** needs the same trust; do
   each one that fails.
 - **Raise a support case anyway**, referencing KB 424533 and 443480, so the
