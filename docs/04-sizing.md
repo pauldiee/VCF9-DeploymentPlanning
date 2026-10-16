@@ -45,7 +45,7 @@ how many of each management appliance are deployed and at which size:
 | Profile | What it deploys | Fits | Reference fleet* |
 | ------- | --------------- | ---- | ---------------- |
 | **Simple** (Small) | Single NSX Manager, 1 services-runtime control node + workers (12 vCPU / 24 GB each), single-node VCF Operations; VCF Automation (optional) single-node — no management-plane HA | Labs, edge and small sites | 76 vCPU / 251 GB / 7,448 GB |
-| **HA-Small** | 3 NSX Managers, 3 control nodes + **smaller** workers (10 vCPU / 16 GB each), a **2-node** VCF Operations cluster (primary + replica); VCF Automation (optional) single-node — the HA layout on the small appliance sizes | The cheapest HA: no single points of failure in the core management plane | 106 vCPU / 335 GB / 8,422 GB |
+| **HA-Small** (**new in 9.1.1**) | 3 NSX Managers, 3 control nodes + **smaller** workers (10 vCPU / 16 GB each), a **2-node** VCF Operations cluster (primary + replica); VCF Automation (optional) single-node — the HA layout on the small appliance sizes | The cheapest HA: no single points of failure in the core management plane | 106 vCPU / 335 GB / 8,422 GB |
 | **HA-Medium** | Medium vCenter, 3 NSX Managers, 3 control nodes + workers (12 vCPU / 24 GB each), 3-node VCF Operations; VCF Automation (optional) 3-node | Typical production fleet | 184 vCPU / 656 GB / 11,445 GB |
 | **HA-Large** | Large vCenter (XLarge storage) and NSX Managers, 3 larger control nodes + workers (16 vCPU / 32 GB each), 3-node VCF Operations; VCF Automation (optional) 3-node on Large | Large fleets, many workload domains | 298 vCPU / 949 GB / 15,357 GB |
 
@@ -228,6 +228,28 @@ sources (2026-10-01):
   reservation equal to configured RAM — a worst case. vSAN's default policy and
   NFS are thin in practice; Broadcom only requires thick for some appliances (Avi
   controllers: *Thick provision – Lazy Zeroed*).
+- **VCF management services: Broadcom's 9.1.0 → 9.1.1 figures are one worker
+  below the workbook's.** Broadcom's
+  [VCF blog of 2026-10-13](https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/) (Brandon Hahn) gives the
+  baseline footprint per profile (management services only, no Day-N services),
+  read from its charts:
+
+  | Profile | 9.1.0 | 9.1.1 | 9.1.1 total |
+  | --- | --- | --- | --- |
+  | Simple (Small) | 1 control (4 / 10) + **3** workers (12 / 24) | 1 control + **1** worker (12 / 24) | 16 vCPU / 34 GiB (−43 % CPU, −41 % RAM) |
+  | **Small HA** | not available | 3 control (4 / 10) + **2** workers (10 / 16) | 32 vCPU / 62 GiB |
+  | Medium HA | 3 control (4 / 10) + 3 workers (24 / 48) | 3 control + **2** workers (12 / 24) | 36 vCPU / 78 GiB (−40 % / −38 %) |
+  | Large HA | 3 control (8 / 14) + 3 workers (24 / 48) | 3 control + **3** workers (16 / 32) | 56 vCPU / 106 GiB (−42 % / −43 %) |
+
+  The blog's Small HA row labels the workers "2 x Control Plane (10 vCPU /
+  16GiB)" — a typo: only workers make its total add up. The worker **sizes**
+  match the workbook exactly; the **counts** are one lower than the sizer's
+  baseline in every profile (sizer: Simple 2, HA-Small 3, HA-Medium 3, HA-Large
+  4), which is the workbook's per-profile **+1 node**. The blog is the newest
+  official source; the tool keeps the workbook formula so it stays verified
+  against the workbook, which puts it one worker on the safe side. KB 455842
+  ([below](#vvf--standalone-profile)) shrinks a 9.1.0 deployment to the 9.1.1
+  footprint after an upgrade.
 - **VCF Automation is sized on its own size.** The sizer keeps a separate
   Small / Medium / Large selector that also fixes the node count (Small = 1,
   Medium / Large = 3, #193); the workbook uses the fleet profile size. Setting it
@@ -308,11 +330,16 @@ profile. This is the tool's own model, not a Broadcom figure.
 > | ------ | ------------ |
 > | [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html) and the 9.1.1 workbook | 1 control node + **2** workers |
 > | [VCF Management Services Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-management-services-models.html), [Simple VCF Management Services Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-management-services-availabilty-detailed-design/vcf-management-services-simple-deployment-model.html) | 1 control node + **3** workers |
+> | [VCF blog, 2026-10-13](https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/) (newest; read 2026-10-16) | 9.1.0: 1 + 3; **9.1.1: 1 control node + 1 worker** |
 >
 > [William Lam (September 2026)](https://williamlam.com/2026/09/vcf-9-1-1-adopting-the-reduced-vcf-management-services-vcfms-footprint-after-an-upgrade.html)
 > explains the gap: VCF 9.1.1 removed one worker from new Simple deployments,
-> so 3 is the 9.1.0 layout and the design pages haven't caught up. The VVF
-> wizard needs Installer 9.1.1 anyway, so the tool uses 2. One caveat:
+> so 3 is the 9.1.0 layout and the design pages haven't caught up. The blog
+> confirms 3 for 9.1.0 but gives **1** for 9.1.1 — one below the Fleet Sizing
+> Models and the workbook, the same +1 gap as every other profile (see
+> [Validation](#validation-against-broadcom-techdocs)). The VVF wizard needs
+> Installer 9.1.1 anyway, so the tool uses 2: the workbook's count, one worker
+> on the safe side of the blog. One caveat:
 > [KB 455842](https://knowledge.broadcom.com/external/article/455842), the
 > procedure for shrinking the workers after an upgrade, says it *"is not
 > applicable to a VMware vSphere Foundation … Environment"*, so VVF's runtime
