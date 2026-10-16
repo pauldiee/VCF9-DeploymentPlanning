@@ -280,7 +280,10 @@ stories, in this order (guide:
 - **Private AI Foundation: NVIDIA licensing and access** — a cloud License
   Service instance (connected) or the on-site **DLS appliance** (dark site),
   the client configuration token, an NGC API key.
-- *Dark site only —* **dark-site staging infrastructure**: bastion + admin
+- *Dark site only —* **dark-site staging infrastructure**: first the
+  **outside staging** (the hard part in the field: every image is prepared and
+  hosted outside before it crosses the gap, and it's a lot of data — size the
+  storage and time a test transfer early), then bastion + admin
   hosts, a web server with the **Ubuntu mirror (≥ 800 GB)** and the guest
   drivers with their index files, the bastion allowlist, an owner and refresh
   routine per artifact.

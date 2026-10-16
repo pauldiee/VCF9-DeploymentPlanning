@@ -155,6 +155,35 @@ Put an **owner** against each row, and a **refresh routine**: guest drivers,
 GPU Operator versions, DL containers and the Ubuntu mirror all move on their
 own schedules, and on a dark site nothing updates by itself.
 
+### 4.2a Plan the outside staging first — it is the hard part
+
+> **Field note:** on dark-site builds, the hardest part wasn't any one
+> install step. It was **getting the images inside**. Everything has to be
+> prepared **outside** first, so you need somewhere to **host it** there, and
+> it is **a lot of data**.
+
+Broadcom's docs say *what* to stage, but not how big it gets or where it sits
+before it crosses the gap. Plan that as its own work item, before the build
+starts:
+
+- **An outside staging location with real capacity.** The bastion (or a file
+  server next to it) has to hold everything in the table above **at the same
+  time**: the Ubuntu mirror alone is **≥ 800 GB**, the Private AI Services
+  artifacts **~40 GB** ([PAIF 9.1][paif-pdf]), plus the GPU Operator and NGC
+  DL workload containers, the deep learning VM `.ova`, the VKr images and any
+  models. Broadcom gives no totals for the containers and models, so measure
+  your own set on the bastion. Add headroom for the next refresh, which you
+  download while the current set is still in use.
+- **The same capacity again inside:** Harbor, the web server (Ubuntu mirror,
+  drivers) and the content libraries each hold their copy.
+- **A transfer path sized for the volume:** removable media, a data diode, or
+  a temporary firewall opening to a DMZ host. Time a test transfer early: at
+  hundreds of GB, this sets the schedule.
+- **Download early, from the outside.** Licences, NGC keys, Support Portal and
+  registry tokens all need to work on the bastion before the window opens.
+- **Treat it as recurring.** Every driver, GPU Operator, container or Ubuntu
+  update repeats the download → carry → push cycle.
+
 ### 4.3 Ubuntu package mirror
 
 *"A local Ubuntu repository is required for compiling the vGPU or GPU data

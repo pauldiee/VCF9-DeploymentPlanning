@@ -620,6 +620,11 @@ order.* The full guide is
       `packages.broadcom.com`, `helm.ngc.nvidia.com`, `nvcr.io`,
       `archive.ubuntu.com` — plus the NGC catalog, the Broadcom Support Portal
       and the NVIDIA Licensing Portal for the manual downloads.
+- [ ] **Outside staging storage and a transfer path, sized and tested.** Getting
+      the images inside is the hard part: everything is prepared and hosted
+      outside first, and it's a lot of data (Ubuntu mirror ≥ 800 GB alone).
+      Measure the full set on the bastion and time a test transfer — see
+      [`33-private-ai-foundation.md` §4.2a](33-private-ai-foundation.md#42a-plan-the-outside-staging-first--it-is-the-hard-part).
 - [ ] **An owner and refresh routine per artifact** — nothing updates by
       itself on a dark site.
 
