@@ -264,24 +264,48 @@ WLD connectivity story (9.4 / 9.6 below).
   With **GPU for VMs** it also adds the vGPU profile / DirectPath device and
   the guest driver to the VM templates.
 
-**Private AI Foundation** additionally puts the **3-GPU-host minimum** on the
-host story and appends a **Private AI Foundation: licence, SSO and vCenter
-Linking** story: connect the domain's vCenter and NSX Manager to the VCF
-Identity Broker, add its vCenter to the management vCenter's **vCenter
-Linking** group (the add-on licence capacity is only allocated once they're
-linked), and **assign the add-on licence** to the domain (to the management
-domain too only for the guided vSphere Client workflow). What runs on top —
-deep learning VMs, VKS GPU clusters, Private AI Services, the local Harbor
-registry and content libraries — is **not yet in this plan**: it is substantial
-work, much more so on a disconnected (dark) site, and its stories are being
-researched in [#408](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/408).
-Until then, plan it from the
-[Private AI Foundation documentation](https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x.html). *Acceptance:* the
-domain's vCenter + NSX on fleet SSO, vCenter linked, add-on licence assigned.
+**Private AI Foundation** puts the **3-GPU-host minimum** on the host story,
+**switches Supervisor on** for that domain (PAIF runs on it), and asks
+**connected or disconnected (dark site)**. Its stories follow the Supervisor
+stories, in this order (guide:
+[`33-private-ai-foundation.md`](33-private-ai-foundation.md)):
+
+- **Private AI Foundation: licence, SSO and vCenter Linking** — connect the
+  domain's vCenter and NSX Manager to the VCF Identity Broker, add its vCenter
+  to the management vCenter's **vCenter Linking** group (the add-on licence
+  capacity is only allocated once they're linked), and **assign the add-on
+  licence** to the domain (to the management domain too only for the guided
+  vSphere Client workflow). *Acceptance:* the domain's vCenter + NSX on fleet
+  SSO, vCenter linked, add-on licence assigned.
+- **Private AI Foundation: NVIDIA licensing and access** — a cloud License
+  Service instance (connected) or the on-site **DLS appliance** (dark site),
+  the client configuration token, an NGC API key.
+- *Dark site only —* **dark-site staging infrastructure**: bastion + admin
+  hosts, a web server with the **Ubuntu mirror (≥ 800 GB)** and the guest
+  drivers with their index files, the bastion allowlist, an owner and refresh
+  routine per artifact.
+- **VM classes and GPU reservations** — DirectPath profiles, VM classes,
+  reserved VM classes per zone, one host of GPU capacity left free.
+- **Harbor and content libraries** — the platform Harbor (VCF Automation's
+  Harbor service, or the Harbor Supervisor Service) with its projects and robot
+  account; the Ubuntu **VKr** library (dark site: subscribed to your own
+  depot) and the deep learning VM library (dark site: local, from the `.ova`).
+- *Dark site only —* **mirror the artifacts** — the resource mirroring utility
+  ([KB 388470](https://knowledge.broadcom.com/external/article/388470)) for the
+  GPU Operator and DL containers, and the Ubuntu index file into Harbor.
+- **VCF Automation organization and catalog items** — All Apps org on VPC
+  networking, region + region quota with the reserved VM classes, project +
+  namespace, then the **Private AI Foundation Quickstart** (9.1.1 blueprint
+  swap to `deep-learning-container`; GPU Operator v25.3.1 → v26.3.1,
+  [KB 439984](https://knowledge.broadcom.com/external/article/439984)).
+- **Private AI Services (if used)** — Data Services Manager, an OIDC provider
+  (not VCF SSO), the install source (dark site: separately distributed package
+  through the artifact mirroring tool), install on the Supervisor, activate per
+  namespace.
 
 Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
 [`prerequisites.md` → GPU hosts](prerequisites.md#gpu-hosts-only-if-in-scope).
-Like the Avi stories below, the GPU stories are **numbered by selection**.
+Like the Avi stories below, the GPU and Private AI Foundation stories are **numbered by selection**.
 
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)

@@ -52,6 +52,8 @@ export interface Wld {
    * adds its own licence, vCenter Linking and SSO steps and a 3-host minimum.
    */
   gpu: GpuUse;
+  /** Private AI Foundation only: connected, or disconnected (dark site) with local artifact staging (#408). */
+  paifConnectivity: PaifConnectivity;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 'vpc';
@@ -68,6 +70,7 @@ export type NsxConnectivity = 'centralized' | 'distributed';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type SupervisorLb = 'builtin' | 'flb' | 'avi';
 export type GpuUse = 'none' | 'vms' | 'paif';
+export type PaifConnectivity = 'connected' | 'disconnected';
 export type StorageType = 'vsan-esa' | 'vsan-osa' | 'nfs' | 'fc';
 /**
  * How the Avi controllers are licensed (#374): through an on-prem License Hub,
@@ -164,6 +167,12 @@ export function isVsanStorage(storage: StorageType): boolean {
  * (and any hand-built Selection) consistent before epics are generated.
  */
 export function normalizeSelection(sel: Selection): Selection {
+  // Private AI Foundation runs on a Supervisor (its workload-domain workflow
+  // makes it mandatory; VM classes, namespaces and Private AI Services live on
+  // it), so a PAIF domain pulls Supervisor in (#408).
+  if (sel.wlds.some((w) => w.gpu === 'paif' && !w.supervisor)) {
+    sel = { ...sel, wlds: sel.wlds.map((w) => (w.gpu === 'paif' ? { ...w, supervisor: true } : w)) };
+  }
   if (!isVsanStorage(sel.storage)) {
     if (sel.mgmtStretched || sel.wlds.some((w) => w.stretched)) {
       return { ...sel, mgmtStretched: false, wlds: sel.wlds.map((w) => ({ ...w, stretched: false })) };
@@ -189,7 +198,7 @@ export function defaultSelection(): Selection {
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
     aviLicensing: 'hub',
-    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none' }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none', paifConnectivity: 'connected' }],
   };
 }
 
@@ -225,6 +234,12 @@ export const GPU_USES: { value: GpuUse; label: string }[] = [
   { value: 'none', label: 'No GPUs' },
   { value: 'vms', label: 'GPU for VMs (vGPU / passthrough)' },
   { value: 'paif', label: 'Private AI Foundation' },
+];
+
+/** Private AI Foundation connectivity per workload domain (#408). */
+export const PAIF_CONNECTIVITY: { value: PaifConnectivity; label: string }[] = [
+  { value: 'connected', label: 'PAIF: connected' },
+  { value: 'disconnected', label: 'PAIF: disconnected (dark site)' },
 ];
 
 /** Principal storage types (mirrors the workbook's Storage Type). */
@@ -266,6 +281,8 @@ const AVI_LB_URL =
 const TECHDOCS = {
   vlcmImport:
     'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/lifecycle-management/lifecycle-management-of-vcf-components/managing-vsphere-lifecycle-manager-images-for-vmware-cloud-foundation/import-a-vsphere-lifecycle-manager-image-to-a-vcf-instance.html',
+  paifPdf:
+    'https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/pdf/vmware/private-ai/private-ai-nvidia/vmware-private-ai-foundation-with-nvidia-9-1.pdf',
   paifWld:
     'https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/deploy-a-vi-workload-domain-in-vmware-cloud-foundation.html',
   gpuHosts:
@@ -849,20 +866,6 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
     });
   }
 
-  if (paif) {
-    stories.push({
-      id: `9.${stories.length + 1}`,
-      title: 'Private AI Foundation: licence, SSO and vCenter Linking',
-      tasks: [
-        `Connect this domain's vCenter and NSX Manager to the VCF Identity Broker of the VCF Instance (VCF Operations → Manage → Identity & Access → the instance → Component Configuration → Configure component). TechDocs: ${TECHDOCS.paifWld}`,
-        "Add this domain's vCenter to the management vCenter's group in vCenter Linking (VCF Operations → Operate → Administration → Configurations → vCenter Linking) — the Private AI Foundation licence capacity is only allocated once they are linked.",
-        "Assign the VMware Private AI Foundation with NVIDIA add-on licence to this domain's vCenter (VCF Operations → Manage → Licensing → Licenses & Registration → Version 9+ → Assign Add-on License). Assign it to the management domain as well only if you use the guided deployment workflow in the vSphere Client.",
-        'NOT YET IN THIS PLAN: the Private AI Foundation setup above the hosts (deep learning VMs, VKS clusters with GPUs, Private AI Services, VCF Automation catalog items, the local Harbor registry and content libraries) is substantial work, and much more so on a disconnected (dark) site, which has to stage every artifact locally. Plan it from the Private AI Foundation documentation for now; these stories are being researched in https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/408.',
-      ],
-      acceptance: "This domain's vCenter + NSX on fleet SSO; its vCenter linked with the management vCenter; the Private AI Foundation add-on licence assigned to the domain.",
-    });
-  }
-
   if (w.supervisor) {
     const connPrereq = distributed
       ? `Distributed — the Distributed Transit Gateway + VNA cluster from story ${connStoryId}, plus the VPC external IP block and the /16 private transit-gateway block`
@@ -906,6 +909,95 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
       acceptance: 'Supervisor enabled and Ready; the control plane is reachable on its VIP; namespaces can be created.',
+    });
+  }
+
+  if (paif) {
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Private AI Foundation: licence, SSO and vCenter Linking',
+      tasks: [
+        `Connect this domain's vCenter and NSX Manager to the VCF Identity Broker of the VCF Instance (VCF Operations → Manage → Identity & Access → the instance → Component Configuration → Configure component). TechDocs: ${TECHDOCS.paifWld}`,
+        "Add this domain's vCenter to the management vCenter's group in vCenter Linking (VCF Operations → Operate → Administration → Configurations → vCenter Linking) — the Private AI Foundation licence capacity is only allocated once they are linked.",
+        "Assign the VMware Private AI Foundation with NVIDIA add-on licence to this domain's vCenter (VCF Operations → Manage → Licensing → Licenses & Registration → Version 9+ → Assign Add-on License). Assign it to the management domain as well only if you use the guided deployment workflow in the vSphere Client.",
+      ],
+      acceptance: "This domain's vCenter + NSX on fleet SSO; its vCenter linked with the management vCenter; the Private AI Foundation add-on licence assigned to the domain.",
+    });
+    const dark = w.paifConnectivity === 'disconnected';
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: `Private AI Foundation: NVIDIA licensing and access${dark ? ' (DLS)' : ''}`,
+      tasks: [
+        dark
+          ? 'Deploy the NVIDIA Delegated License Service (DLS) appliance (in this workload domain or the management domain), register it on the NVIDIA Licensing Portal, bind and install a licence server on it, and generate the client configuration token. Give it an IP/FQDN, an owner and a backup: every vGPU workload on the dark site depends on it.'
+          : 'Configure a License Service instance on the NVIDIA Licensing Portal and generate the client configuration token (vGPU).',
+        `Generate an NGC API key for pulling NVIDIA AI Enterprise containers${dark ? ' (used on the bastion host)' : ''}. TechDocs: ${TECHDOCS.paifPdf}`,
+      ],
+      acceptance: `${dark ? 'DLS appliance running and registered; ' : ''}client configuration token and NGC API key in hand, stored in the secret store.`,
+    });
+    if (dark) {
+      stories.push({
+        id: `9.${stories.length + 1}`,
+        title: 'Private AI Foundation: dark-site staging infrastructure',
+        tasks: [
+          'Bastion host (internet side: Docker, Helm, VCF Consumption CLI) and admin host (inside the air gap, reaching the workload domain vCenter, the Supervisor and the local registry: Docker, VCF Consumption CLI, kubectl, ORAS), same Linux image, or one combined DMZ host; agree how .tar bundles cross the gap. Reuse the hosts from the Supervisor air-gapped build if they exist (20-supervisor-image-registry.md).',
+          'Web server reachable from the VKS clusters: an Ubuntu package mirror (at least 800 GB; a partial mirror is allowed for passthrough-only) with its custom-repo.list index file, and the vGPU guest drivers (.run/.zip, with an index file) / data center drivers (.run) for deep learning VMs.',
+          'Bastion allowlist: pais-docker.packages.broadcom.com, packages.broadcom.com, helm.ngc.nvidia.com, nvcr.io, archive.ubuntu.com, plus the NGC catalog, the Broadcom Support Portal and the NVIDIA Licensing Portal. Name an owner and a refresh routine per artifact: nothing updates by itself on a dark site.',
+        ],
+        acceptance: 'Bastion and admin hosts working; web server serving the Ubuntu mirror and the guest drivers with their index files; transfer path across the gap tested.',
+      });
+    }
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Private AI Foundation: VM classes and GPU reservations',
+      tasks: [
+        'DirectPath Profile per GPU device (for classes with GPU reservation), then the VM classes with the vGPU or passthrough profile (Private AI Foundation > Set Up Environment); same non-zero reservation and limit for CPU and memory, full memory reservation; 64-bit MMIO settings for passthrough GPUs mapping more than 16 GB.',
+        'Reserve VM classes per Supervisor zone. Keep one host worth of GPU capacity unreserved for failover, and group GPUs of the same type per cluster (a reserved namespace needs one GPU type on one cluster).',
+      ],
+      acceptance: 'VM classes for every planned GPU profile exist; reservations set per zone with failover capacity left free.',
+    });
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Private AI Foundation: Harbor and content libraries',
+      tasks: [
+        `Platform Harbor registry: the Harbor service in VCF Automation (9.1), otherwise the Harbor Supervisor Service. Projects for the PAIF artifacts and Private AI Services, a robot account for model galleries, and on 9.1.1 a public project for deep-learning-container. Size it for ${dark ? 'the mirrored containers and GPU Operator, ~40 GB for Private AI Services, and the models' : 'the models in the Private AI Services model galleries'}.`,
+        dark
+          ? 'VKr content library (Ubuntu edition): subscribed to your own software depot (https://depot-fqdn/depot-service/content-gateway/PROD/COMP/VKR/lib.json), filled with the VCF Download Tool (09-binary-depot.md). Deep learning VM library: local, with the .ova from the Broadcom Support Portal.'
+          : 'VKr content library with the Ubuntu edition of the Kubernetes releases. Deep learning VM library subscribed to https://dl.broadcom.com/<download_token>/PROD/COMP/DLVM/<version>/lib.json.',
+      ],
+      acceptance: 'Harbor up with its projects and robot account, its CA trusted by the Supervisor; Ubuntu VKr and deep learning VM images visible in their content libraries.',
+    });
+    if (dark) {
+      stories.push({
+        id: `9.${stories.length + 1}`,
+        title: 'Private AI Foundation: mirror the artifacts into the dark site',
+        tasks: [
+          'On the bastion, run the resource mirroring utility (Broadcom KB 388470) for the NVIDIA GPU Operator and the deep learning VM workload containers; carry the .tar files across and push them into the Harbor project from the admin host.',
+          'Push the Ubuntu custom-repo.list index into the Harbor project (oras push .../resources/custom-repo.list:1.0) so VCF Automation deployments find the mirror.',
+        ],
+        acceptance: 'GPU Operator chart and images, DL workload containers and the Ubuntu index file present in Harbor; a test pull from the admin host succeeds.',
+      });
+    }
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Private AI Foundation: VCF Automation organization and catalog items',
+      tasks: [
+        'VCF Automation org (17-vcfa-tenant-config.md for the base setup): All Apps organization on VPC networking (public, transit gateway and VPC private IP ranges); region with storage classes named the same on every vCenter; region quota on the GPU zone with finite limits, the VM classes and the reserved VM classes; a project + namespace (a namespace class holds non-reserved OR reserved GPU VM classes, not both); the deep learning VM content library.',
+        'Run the Private AI Foundation Quickstart (prepare both deep learning VMs and VKS, even if only one is used): project and namespace, the NVIDIA client configuration token, optionally Data Services Manager. On 9.1.1 swap tkg-gpu-console for deep-learning-container in the AI Kubernetes Cluster blueprint; update its GPU Operator from the end-of-life v25.3.1 to v26.3.1 (Broadcom KB 439984).',
+      ],
+      acceptance: 'AI Workstation, Triton Inference Server, AI Kubernetes Cluster (and DSM Database) catalog items deploy successfully, each getting a GPU and an NVIDIA licence.',
+    });
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Private AI Foundation: Private AI Services (if used)',
+      tasks: [
+        'Skip if Private AI Services is not in scope. Choose 2.1 or 3.0. Data Services Manager in the management domain (always for 2.1; for 3.0 with knowledge bases and agents) with its Consumption Operator and an infrastructure policy; an OIDC provider (external or VCF Automation; NOT VCF SSO, which sits on a different network).',
+        dark
+          ? 'Dark site: use the separately distributed Private AI Services package; mirror it, the inference engines and its GPU Operator package into Harbor with the artifact mirroring tool (AMT), passing the Ubuntu index file. Set Harbor as the Supervisor default registry.'
+          : 'Install source: 3.0 from the VCF software depot via the regional Harbor (9.1.1), or from pais-docker.packages.broadcom.com with a Broadcom registry token added to the Supervisor (2.1 always from there).',
+        'Install the Private AI Services Supervisor Service on the GPU workload domain Supervisors, then activate it per organization namespace.',
+      ],
+      acceptance: 'Private AI Services installed and activated in a namespace; a model endpoint serves requests; users sign in through the OIDC provider.',
     });
   }
 
@@ -990,6 +1082,18 @@ const GD = {
   gpuDevices: guide('GPU hosts: configure the GPU devices', '32-gpu-hosts', '7-configure-the-gpu-devices-on-each-host'),
   gpuLicensing: guide('GPU hosts: NVIDIA licensing for the guests', '32-gpu-hosts', '8-nvidia-licensing-for-the-guests'),
   gpuLicences: guide('GPU hosts: licence layers', '32-gpu-hosts', '2-line-up-the-licences'),
+  paif: guide('Private AI Foundation setup (connected and dark site)', '33-private-ai-foundation'),
+  paifNvidia: guide('PAIF: NVIDIA licensing and access', '33-private-ai-foundation', '2-nvidia-licensing-and-access'),
+  paifVmClasses: guide('PAIF: workload domain, hosts and VM classes', '33-private-ai-foundation', '3-the-workload-domain-hosts-and-vm-classes'),
+  paifDarkHosts: guide('PAIF: bastion and admin hosts', '33-private-ai-foundation', '41-bastion-and-admin-hosts'),
+  paifDarkArtifacts: guide('PAIF: what has to be staged, and where', '33-private-ai-foundation', '42-what-has-to-be-staged-and-where'),
+  paifMirror: guide('PAIF: mirror into Harbor', '33-private-ai-foundation', '45-mirror-into-harbor'),
+  paifLibraries: guide('PAIF: content libraries', '33-private-ai-foundation', '5-content-libraries'),
+  paifVcfa: guide('PAIF: VCF Automation organization', '33-private-ai-foundation', '6-vcf-automation-organization'),
+  paifHarbor: guide('PAIF: platform Harbor registry', '33-private-ai-foundation', '7-platform-harbor-registry'),
+  paifQuickstart: guide('PAIF: catalog items (Quickstart)', '33-private-ai-foundation', '8-catalog-items-the-private-ai-foundation-quickstart'),
+  paifServices: guide('PAIF: Private AI Services', '33-private-ai-foundation', '9-private-ai-services'),
+  prereqPaif: guide('Prerequisites: Private AI Foundation', 'prerequisites', 'private-ai-foundation-only-if-in-scope'),
   prereqGpu: guide('Prerequisites: GPU hosts', 'prerequisites', 'gpu-hosts-only-if-in-scope'),
   supervisor: guide('vSphere Supervisor enablement', '10-supervisor-enablement'),
   supervisorAvi: guide('Supervisor: Avi load balancer', '10-supervisor-enablement', '4-avi-load-balancer-only-if-used'),
@@ -1047,7 +1151,14 @@ const GUIDE_RULES: GuideRule[] = [
   // domain is deployed); its links live on the GPU story, since a rule sees the
   // whole selection and can't tell which WLD has GPUs.
   { epic: 'E9', story: /^GPU hosts/, guides: () => [GD.gpu, GD.prereqGpu, GD.gpuImage, GD.gpuDevices, GD.gpuLicensing] },
-  { epic: 'E9', story: /^Private AI Foundation/, guides: () => [GD.gpuLicences, GD.sso] },
+  { epic: 'E9', story: /^Private AI Foundation: licence, SSO/, guides: () => [GD.paif, GD.prereqPaif, GD.gpuLicences, GD.sso] },
+  { epic: 'E9', story: /^Private AI Foundation: NVIDIA licensing/, guides: () => [GD.paifNvidia, GD.gpuLicensing] },
+  { epic: 'E9', story: /^Private AI Foundation: dark-site staging/, guides: () => [GD.paifDarkHosts, GD.paifDarkArtifacts, GD.registry] },
+  { epic: 'E9', story: /^Private AI Foundation: VM classes/, guides: () => [GD.paifVmClasses] },
+  { epic: 'E9', story: /^Private AI Foundation: Harbor and content libraries/, guides: () => [GD.paifHarbor, GD.paifLibraries, GD.depot] },
+  { epic: 'E9', story: /^Private AI Foundation: mirror the artifacts/, guides: () => [GD.paifMirror, GD.paifDarkArtifacts] },
+  { epic: 'E9', story: /^Private AI Foundation: VCF Automation organization/, guides: () => [GD.paifVcfa, GD.paifQuickstart, GD.vcfaTenant] },
+  { epic: 'E9', story: /^Private AI Foundation: Private AI Services/, guides: () => [GD.paifServices] },
   { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
   { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
   { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
@@ -1167,6 +1278,7 @@ export function coerceSelection(data: unknown): Selection | null {
           supervisorLb: oneOf<SupervisorLb>(w.supervisorLb, SUPERVISOR_LBS.map((l) => l.value), 'builtin'),
           // Scopes saved while this was a plain checkbox carry true / false.
           gpu: w.gpu === true ? 'vms' : oneOf<GpuUse>(w.gpu, GPU_USES.map((g) => g.value), 'none'),
+          paifConnectivity: oneOf<PaifConnectivity>(w.paifConnectivity, PAIF_CONNECTIVITY.map((c) => c.value), 'connected'),
         }))
     : base.wlds;
   return normalizeSelection({
