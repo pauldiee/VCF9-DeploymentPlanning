@@ -213,7 +213,7 @@ avoid `<` `>` `&` `'` `"`, which some appliance fields reject.
 ## H. Workload Domain / Cluster
 
 > Owner: VMware / platform engineer. **Repeat the whole block per VI Workload
-> Domain**, and the cluster rows (H7–H11) **per additional cluster**. Skip
+> Domain**, and the cluster rows (H7–H11, H13) **per additional cluster**. Skip
 > entirely if the deployment is management-domain-only at GA. New VLANs/subnets
 > per WLD come from Step 1 (`01-network-dns-plan.md`).
 
@@ -253,6 +253,7 @@ Cluster-level (repeat per cluster):
 |H9 | vDS layout: one vDS for all traffic, or separate secondary/tertiary vDS (e.g. dedicated vSAN / overlay). MTU 9000, 2 uplinks, LACP? | `[CLU]` |
 |H10| NSX host overlay: TEP VLAN + static IP-pool CIDR/range, uplink profile, transport zones    | `[CLU]` |
 |H11| **Stretched cluster?** If multi-AZ, work `03-multi-az-prep.md` — witness, AZ2 host networks, fault-domain mapping, per-AZ overlay | `[CLU]` |
+|H13| **GPU hosts?** If yes: GPU model **and its PCI IDs** (VID / DID / SVID / SSID — from the server vendor before the hosts exist), GPUs per host, and the mode — **passthrough** (Fixed / Dynamic DirectPath) / **vGPU time-slicing** / **vGPU MIG** (MIG can't serve NVIDIA NIMs). For vGPU: the **vGPU release** (needs a *VCF 9.1* package: 19.4+ or 20.x), who holds the **NVIDIA Enterprise account + NVAIE entitlement**, and where the **NVIDIA License System** runs. Private AI Foundation add-on in scope? (≥3 GPU hosts in the initial cluster). The GPU vLCM image must be imported **before** the domain / cluster is created → `32-gpu-hosts.md`, `prerequisites.md` | `[CLU]` |
 |H12| WLD password owners: WLD vCenter SSO / root, NSX `admin` / `audit` / `root`                | `[WLD]` |
 
 ---

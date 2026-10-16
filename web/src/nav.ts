@@ -158,6 +158,14 @@ export const NAV: NavItem[] = [
     blurb: 'Use a local NVMe device as a second memory tier: is it a fit, picking and sizing the drive, keeping it out of vSAN, enabling it per cluster or host, mirroring, encryption, monitoring and failure behaviour.',
   },
   {
+    slug: '32-gpu-hosts',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'GPU Hosts',
+    icon: 'microchip',
+    blurb: "NVIDIA GPUs for vGPU or passthrough: picking the mode, the licences it pulls in, checking the card on both Broadcom's and NVIDIA's lists, the host driver in the vLCM image, and per-host GPU configuration.",
+  },
+  {
     slug: '29-single-pnic-build',
     step: 'Build & expand',
     band: 'Build & expand',

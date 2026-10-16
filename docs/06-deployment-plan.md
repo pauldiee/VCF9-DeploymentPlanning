@@ -240,6 +240,49 @@ Transit Gateway + VNA cluster) — and is chosen **independently of the
 management domain's** model, so the export tool asks it per WLD. It drives the
 WLD connectivity story (9.4 / 9.6 below).
 
+**GPU hosts (optional, per WLD):** pick the domain's GPU use in the
+[export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
+(intake `H13`): **No GPUs**, **GPU for VMs** (plain vGPU or passthrough), or
+**Private AI Foundation**. Either GPU choice changes two things:
+
+- The **host story (9.2)** gains a task: confirm each GPU on **both** the
+  Broadcom Compatibility Guide (ESXi 9.1, in the chosen mode) and NVIDIA's vGPU
+  support matrix (a release with a *VCF 9.1* package), enable **SR-IOV** in the
+  BIOS for vGPU, and build a **vSphere Lifecycle Manager image with the NVIDIA
+  host driver** in vCenter and **import it into the VCF Instance** (VCF
+  Operations → Build → Lifecycle → Image Management → Import Image) **before**
+  the domain is deployed (9.3), so the image can be selected there.
+- A **GPU hosts: configure vGPU / passthrough** story is appended after the
+  connectivity story (and ahead of any Supervisor stories): set each GPU to
+  **Shared Direct** (vGPU) or **Fixed / Dynamic DirectPath** (passthrough) per
+  host, enable MIG if planned, set **`vgpu.hotmigrate.enabled`** on the domain's
+  vCenter, stand up the **NVIDIA License System** and the guests' client
+  token, and — if Private AI Foundation is in scope — assign its add-on licence
+  to the domain. *Acceptance:* every GPU host compliant with the GPU image,
+  `nvidia-smi` lists all GPUs, devices in the planned mode, and a test vGPU VM
+  powers on, gets an NVIDIA licence and vMotions between two GPU hosts.
+  With **GPU for VMs** it also adds the vGPU profile / DirectPath device and
+  the guest driver to the VM templates.
+
+**Private AI Foundation** additionally puts the **3-GPU-host minimum** on the
+host story and appends a **Private AI Foundation: licence, SSO and vCenter
+Linking** story: connect the domain's vCenter and NSX Manager to the VCF
+Identity Broker, add its vCenter to the management vCenter's **vCenter
+Linking** group (the add-on licence capacity is only allocated once they're
+linked), and **assign the add-on licence** to the domain (to the management
+domain too only for the guided vSphere Client workflow). What runs on top —
+deep learning VMs, VKS GPU clusters, Private AI Services, the local Harbor
+registry and content libraries — is **not yet in this plan**: it is substantial
+work, much more so on a disconnected (dark) site, and its stories are being
+researched in [#408](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/408).
+Until then, plan it from the
+[Private AI Foundation documentation](https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x.html). *Acceptance:* the
+domain's vCenter + NSX on fleet SSO, vCenter linked, add-on licence assigned.
+
+Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
+[`prerequisites.md` → GPU hosts](prerequisites.md#gpu-hosts-only-if-in-scope).
+Like the Avi stories below, the GPU stories are **numbered by selection**.
+
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
 to add an *Enable vSphere Supervisor* story to that WLD. Activation

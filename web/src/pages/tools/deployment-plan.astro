@@ -172,12 +172,14 @@ const epics = selectedEpics(sel);
     coerceSelection,
     SELECTION_STORE_KEY,
     SUPERVISOR_LBS,
+    GPU_USES,
     NSX_CONNECTIVITY,
     type Selection,
     type Wld,
     type AutomationPlacement,
     type AutomationModel,
     type NsxConnectivity,
+    type GpuUse,
     type SupervisorSize,
     type SupervisorLb,
     type AviLicensing,
@@ -286,6 +288,9 @@ const epics = selectedEpics(sel);
           <select class="planx__wldsuperlb" aria-label="Supervisor load balancer" title="Supervisor load balancer"${w.supervisor ? '' : ' disabled'}>
             ${SUPERVISOR_LBS.map((l) => `<option value="${l.value}"${w.supervisorLb === l.value ? ' selected' : ''}>${l.label}</option>`).join('')}
           </select>
+          <select class="planx__wldgpu" aria-label="GPU hosts in this workload domain" title="NVIDIA GPU hosts: plain vGPU / passthrough for VMs, or a Private AI Foundation implementation">
+            ${GPU_USES.map((g) => `<option value="${g.value}"${w.gpu === g.value ? ' selected' : ''}>${g.label}</option>`).join('')}
+          </select>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain">×</button>
         </div>`
       )
@@ -357,6 +362,7 @@ const epics = selectedEpics(sel);
       connectivity: (<HTMLSelectElement>$('selConnectivity')).value as NsxConnectivity,
       supervisor: false,
       supervisorLb: 'builtin',
+      gpu: 'none',
     });
     renderWlds();
     render();
@@ -381,6 +387,8 @@ const epics = selectedEpics(sel);
       renderWlds(); // refresh the row so the LB select follows the Supervisor toggle
     } else if (t.classList.contains('planx__wldsuperlb')) {
       wlds[i].supervisorLb = (<HTMLSelectElement>t).value as SupervisorLb;
+    } else if (t.classList.contains('planx__wldgpu')) {
+      wlds[i].gpu = (<HTMLSelectElement>t).value as GpuUse;
     }
     render();
   });

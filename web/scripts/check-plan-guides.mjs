@@ -38,7 +38,7 @@ function selections() {
         s.aviLicensing = lic;
         s.automation = { deploy: true, model: 'medium', placement: 'overlay', aviLb: true };
         s.day2Components = { logs: true, networks: true, identityBroker: stretched };
-        s.wlds = [{ name: 'w1', stretched, connectivity: conn, supervisor: true, supervisorLb: 'avi' }];
+        s.wlds = [{ name: 'w1', stretched, connectivity: conn, supervisor: true, supervisorLb: 'avi', gpu: lic === 'hub' ? 'paif' : 'vms' }];
         out.push(s);
       }
     }
