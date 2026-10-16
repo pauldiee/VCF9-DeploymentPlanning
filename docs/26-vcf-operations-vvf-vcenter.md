@@ -27,8 +27,9 @@ fleet-deployment equivalents are the VCF Operations B.x topics in
 | 4 | [Step 4 — Add the vCenter adapter in VCF Operations](#step-4--add-the-vcenter-adapter-in-vcf-operations) | Connecting VCF Operations to vCenter |
 | 5 | [Renaming a node hostname](#renaming-a-node-hostname) | Fixing a wrong hostname baked in at deploy time — VVF/standalone only |
 | 6 | [Configuring an AD/LDAP authentication source](#configuring-an-adldap-authentication-source) | Letting AD users log into VCF Operations without an Identity Broker |
-| 7 | [Field notes](#field-notes) | One account vs. two, verification |
-| 8 | [References](#references) | TechDocs/KB behind the above |
+| 7 | [Field notes](#field-notes) | One account vs. two, verification, licensing troubleshooting table |
+| 8 | [License Server certificate trust](#license-server-certificate-trust--how-it-works-and-a-manual-workaround) | How vCenter comes to trust the License Server, KB 424533's checklist, and the manual import workaround |
+| 9 | [References](#references) | TechDocs/KB behind the above |
 
 ---
 
@@ -598,6 +599,8 @@ Groups) same as you would a local account.
   | Assignment fails: *"The license server SSL certificates are not trusted by the vCenter instance"*, with `Failure to propagate LS Cert to VC` / `Insufficient privileges` in the log | Account lacks the certificate privilege, so VCF Operations can't add the License Server's root certificate to vCenter's trusted roots ([KB 443480](https://knowledge.broadcom.com/external/article/443480)) | Add `CertificateManagement.Manage` (Step 1), re-validate the credentials, assign again |
   | Same *"…SSL certificates are not trusted…"* message, but it still fails with `administrator@vsphere.local` | **vCenter 9.x sends its License Server traffic through its outbound proxy.** Field-verified 2026-09-29: from the vCenter shell, `curl -v https://<license-server-fqdn>/` shows `CONNECT` via `localhost:1082` and `CONNECT tunnel failed, response 502` | Disabling the proxy for the assignment fixed it. The lasting fix is to exclude the License Server (or the internal management domain) from vCenter's proxy, preferably in VAMI (not yet verified end-to-end). Hand-editing vCenter 9.x's proxy `config.json` broke its proxy service in the same engagement. See [vCenter proxy configuration (VCFUpgradeGuide)](https://docs.hollebollevsan.nl/docs/16-vcenter-proxy-configuration/#internal-vcf-components-must-bypass-the-proxy) |
 
+  | Same message, privileges and proxy both ruled out | The automatic certificate push still didn't land (cause not identified in the field case) | **Workaround:** add the License Server's certificate to vCenter's trusted roots by hand — see [License Server certificate trust](#license-server-certificate-trust--how-it-works-and-a-manual-workaround) |
+
   Two traps here. **Row 2:** time drift *also* logs the Global.Licenses
   error, so check for a SAML error first, before changing roles that are
   already correct. **The last row:** the error mentions certificates, but
@@ -605,8 +608,145 @@ Groups) same as you would a local account.
   `administrator@vsphere.local` fails the same way, check the proxy before
   opening a support case.
 
+## License Server certificate trust — how it works, and a manual workaround
+
+### How the trust is set up
+
+Broadcom doesn't document this flow in one place. Pieced together from the
+log lines and API names in three KBs (read 2026-10-16), there are two separate
+steps:
+
+1. **VCF Operations installs the trust.** During license assignment, VCF
+   Operations calls vCenter's certificate-management API
+   (`trusted_root_chains.create`) **with the vCenter adapter account** and adds
+   the License Server's certificate to vCenter's trusted roots.
+   [KB 443480](https://knowledge.broadcom.com/external/article/443480) shows
+   both ends of that call when it fails:
+   - VCF Operations, `ManagementAdapter.log`:
+     `LicenseServerCertificateTaskHandler.updateLicenseServerCertificate -
+     Failure to propagate LS Cert to VC` … `Insufficient privileges`
+   - vCenter, `/var/log/vmware/certificatemanagement/certificatemanagement-svcs.log`:
+     the account *"has no required privileges [CertificateManagement.Manage,
+     CertificateManagement.Administer] to invoke API
+     com.vmware.vcenter.certificate_management.vcenter.trusted_root_chains.create"*
+
+   That is why the adapter account needs the certificate privileges
+   ([Step 1](#powercli--add-the-licensing-privileges-needed-for-license-management)).
+   vCenter doesn't fetch and trust the License Server's certificate on its own.
+2. **vCenter then talks to the License Server itself.** With the trust in
+   place, vCenter is the client: it connects to the License Server on **443**
+   to fetch entitlements. Its failures show up in vCenter's
+   `/var/log/vmware/cis-license/license.log` (*"Failed to get Entitlements …
+   from License Server"* —
+   [KB 424533](https://knowledge.broadcom.com/external/article/424533),
+   [KB 443714](https://knowledge.broadcom.com/external/article/443714)).
+
+Not documented: where VCF Operations gets the License Server's certificate
+from (most likely the License Server's registration with VCF Operations).
+
+**The error message is a catch-all.** *"The license server SSL certificates are
+not trusted by the vCenter instance"* has shown up for:
+
+- a failed push in step 1 — privileges ([KB 443480](https://knowledge.broadcom.com/external/article/443480));
+- a failed connection in step 2 — vCenter 9.x sending the traffic through its
+  outbound proxy (field-verified, see the table above);
+- the trust simply not being there, for no cause anyone found (the workaround
+  below).
+
+A related one with a different message:
+[KB 443714](https://knowledge.broadcom.com/external/article/443714) — a
+`526 Invalid SSL Certificate` from the License Server after a vCenter was
+licensed on 9.0, rolled back to 8.0 and upgraded to 9.1 again. Its fix is to
+reclaim the used capacity and reactivate management, not a certificate
+import.
+
+### KB 424533's checklist, in short
+
+[KB 424533](https://knowledge.broadcom.com/external/article/424533) is
+Broadcom's main article for *"Licenses could not be assigned to vCenters"* on
+VCF / VVF 9.1 (VCF Operations 9.1.0.x and 9.1.1.x). It covers connectivity,
+not certificates:
+
+- License Server VM **deployed and powered on**.
+- **Time:** more than 30 seconds of drift between the License Server, vCenter
+  and VCF Operations breaks authentication — same NTP everywhere. The License
+  Server takes its time from its **ESX host**; before VCF Operations
+  9.1.0.0400 it wrongly tried external NTP servers.
+- **vCenter → License Server on 443** (`curl -v -k https://<license-server>`
+  or `openssl s_client -connect <license-server>:443` from the vCenter
+  shell), plus forward and reverse DNS from vCenter's DNS server.
+- **The License Server's FQDN on its console** — a doubled domain suffix
+  (`host.domain.net.domain`) means the vApp *Hostname* holds the FQDN instead
+  of the short name; fix it in **vApp Options** and power-cycle.
+- **License Server → VCF Operations on 443**, and VCF Operations' DNS record
+  from the License Server's DNS server. VCF Operations can show the License
+  Server as connected even when its DNS records are wrong.
+- **VCF Operations → vCenter on 443** and DNS.
+- **Uppercase `instanceUuid`** in `/etc/vmware-vpx/instance.cfg` on a vCenter
+  upgraded from 5.x — convert it to lowercase.
+- **License Server health** (*License Server Health* dashboard): reset it if CPU
+  / memory stay above 90 %; grow the disk if a partition is full.
+- The vCenter adapter account must be in **`LicenseService.Administrators`**
+  ([Step 2](#add-the-account-to-licenseserviceadministrators)).
+
+### Workaround: add the License Server's certificate to vCenter's trusted roots by hand
+
+**Field-reported (real deployment, 2026):** license assignment kept failing
+on the certificate trust, and was fixed by fetching the License Server's
+certificate manually and adding it to vCenter's trusted roots — doing step 1
+by hand. Use it only after the
+[troubleshooting table](#field-notes) (privileges, proxy) and KB 424533's
+checklist; it bypasses the automatic push without fixing whatever blocked it.
+
+1. **Fetch the certificate chain** from the vCenter shell (or any machine that
+   reaches the License Server):
+
+   ```shell
+   openssl s_client -connect <license-server-fqdn>:443 \
+     -servername <license-server-fqdn> -showcerts </dev/null
+   ```
+
+   Copy each `-----BEGIN CERTIFICATE-----` … `-----END CERTIFICATE-----`
+   block into its own `.pem` file.
+2. **Pick the certificate vCenter will accept.** The 9.1 docs: *"vSphere
+   accepts only valid CA certificates for import. To be valid, a CA
+   certificate must have the CA bit and the keyCertSign bit set"*
+   ([Add a Trusted Root Certificate](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-authentication/vsphere-security-certificates/managing-certificates-with-the-web-interface/set-up-your-system-to-use-custom-certificates-from-the-platform-services-controller/add-a-trusted-root-certificate-to-vsphere-certificate-manager.html)). Check each file:
+
+   ```shell
+   openssl x509 -in ls-cert.pem -noout -subject -issuer \
+     -ext basicConstraints,keyUsage
+   ```
+
+   Import the one showing `CA:TRUE` and `Certificate Sign` — a self-signed
+   License Server certificate if it carries those bits, otherwise the issuing
+   CA at the top of the chain. A plain server certificate (`CA:FALSE`) will be
+   refused.
+3. **Add it to vCenter** ([TechDocs, vSphere 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-authentication/vsphere-security-certificates/managing-certificates-with-the-web-interface/set-up-your-system-to-use-custom-certificates-from-the-platform-services-controller/add-a-trusted-root-certificate-to-vsphere-certificate-manager.html)): log in to the
+   vSphere Client as `administrator@vsphere.local` (or another SSO
+   administrator) → **Administration → Certificates → Certificate
+   Management** → **Trusted Root** tab → **Add Trusted Root Certificate** →
+   browse to the `.pem` (CER, PEM or CRT) → **Add**.
+4. **Retry the assignment** in VCF Operations (*Manage → Licensing → Licenses &
+   Registration*) and check the License Server shows as connected.
+
+**Know what you've signed up for:**
+
+- **Nothing re-pushes it.** If the License Server's certificate is replaced
+  later and the automatic push is still broken, licensing breaks again —
+  repeat the import, and keep looking for the cause (privileges, proxy, a
+  certificate change).
+- **Every vCenter licensed by this License Server** needs the same trust; do
+  each one that fails.
+- **Raise a support case anyway**, referencing KB 424533 and 443480, so the
+  root cause gets found.
+
 ## References
 
+- [Error: "Licenses could not be assigned to vCenters" (Broadcom KB 424533)](https://knowledge.broadcom.com/external/article/424533) — Broadcom's connectivity / time / DNS / FQDN / uppercase-UUID / disk checklist
+- [Error assigning license after upgrading to VCF 9.1 (Broadcom KB 443480)](https://knowledge.broadcom.com/external/article/443480) — `Failure to propagate LS Cert to VC`; the certificate-management privileges
+- [License assignment fails after upgrading vCenter to 9.1 (Broadcom KB 443714)](https://knowledge.broadcom.com/external/article/443714) — `526 Invalid SSL Certificate` after a 9.0 → 8.0 → 9.1 path; reclaim capacity, reactivate management
+- [Add a Trusted Root Certificate to the Certificate Store Using the vSphere Client (vSphere 9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-authentication/vsphere-security-certificates/managing-certificates-with-the-web-interface/set-up-your-system-to-use-custom-certificates-from-the-platform-services-controller/add-a-trusted-root-certificate-to-vsphere-certificate-manager.html) — the manual import; CA-bit requirement
 - [vCenter missing from License Management in VCF Operations (Broadcom KB 436471)](https://knowledge.broadcom.com/external/article/436471) — missing Global.Licenses → monitoring-only; Activate Management
 - [vCenter not displayed in the vCenter Systems table on the License page (Broadcom KB 407724)](https://knowledge.broadcom.com/external/article/407724) — time drift masquerading as a Global.Licenses error
 - [vCenter instances not connected to a license server after upgrade to 9.1 (Broadcom KB 440471)](https://knowledge.broadcom.com/external/article/440471) — "not eligible for activating management" without a License Server

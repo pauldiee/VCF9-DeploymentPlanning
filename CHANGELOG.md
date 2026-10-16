@@ -1,5 +1,31 @@
 # Changelog
 
+## v6.0.1 — 2026-10-16
+- **`docs/26`: License Server certificate trust — the flow, and a manual
+  workaround (#411).** A new section explains how vCenter comes to trust the
+  License Server, pieced together from the KBs' log lines and API names
+  (Broadcom doesn't document it in one place).
+  - **VCF Operations installs the trust.** It pushes the License Server's
+    certificate into vCenter's trusted roots with the vCenter adapter
+    account, via `trusted_root_chains.create`. [KB 443480](https://knowledge.broadcom.com/external/article/443480)
+    shows *"Failure to propagate LS Cert to VC"* when that fails.
+  - **Then vCenter contacts the License Server itself** on 443 for
+    entitlements.
+  - **The "SSL certificates are not trusted" message is a catch-all.**
+    Privileges, vCenter's proxy and simply missing trust all produce it.
+  - [KB 424533](https://knowledge.broadcom.com/external/article/424533)'s
+    checklist (time, DNS, FQDN, uppercase UUID, disk) is summarised, and
+    [KB 443714](https://knowledge.broadcom.com/external/article/443714)'s
+    526 case is noted.
+  - **New workaround, field-reported:** fetch the certificate with
+    `openssl s_client` and import it in the vSphere Client under
+    *Administration → Certificates → Certificate Management → Trusted Root*.
+    Import the CA-flagged certificate, because vSphere accepts only CA
+    certificates, per the 9.1 TechDocs. Caveats: nothing re-pushes it on a
+    certificate change, every failing vCenter needs it, and a support case
+    is still advised.
+  - The troubleshooting table gets a matching row.
+
 ## v6.0.0 — 2026-10-16
 - **Sizer: a note pointing to Broadcom's 9.1.1 worker figures (#410).** The
   services-runtime readout and the plan export now say the count comes from
