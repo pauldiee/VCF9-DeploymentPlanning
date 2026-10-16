@@ -31,6 +31,16 @@
   `workbook-cell-mapping.md` rows.
 - **`docs/32` §8:** names the licence service type: the cloud License Service
   instance, or the **DLS** appliance on a dark site.
+- **Dark site: the outside staging (§4.2a).** A field note: getting the
+  images inside is the hard part, because everything is prepared and hosted
+  outside first and it is a lot of data. Then how to plan the staging
+  storage and transfer, and how to reduce and move the data: trim the set
+  (Ubuntu release / arch, partial mirror, pinned BOM, deliberate models),
+  replicate registry to registry per layer instead of per-image tars,
+  deduplicate before writing to media, reuse the VCF depot pipeline, and
+  make refresh a scheduled job. Marked as general practice, not tested on
+  PAIF here. Also a prerequisites item and the first task of the dark-site
+  story.
 
 ## v5.9.7 — 2026-10-16
 - **New build guide: GPU hosts (#407).**

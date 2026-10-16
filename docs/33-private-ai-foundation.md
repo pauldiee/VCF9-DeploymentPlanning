@@ -184,6 +184,51 @@ starts:
 - **Treat it as recurring.** Every driver, GPU Operator, container or Ubuntu
   update repeats the download → carry → push cycle.
 
+#### How to reduce and move the data
+
+> **General air-gap practice**, not from Broadcom's PAIF documentation (except
+> where a source is linked) and **not tested on a PAIF build in this repo**.
+
+1. **Stage less — trim the set first.** Usually the biggest saving.
+   - **Ubuntu mirror:** the ≥ 800 GB figure is a full mirror. It only exists to
+     compile the NVIDIA guest driver: mirror **one release** (the one your VKr
+     uses: `jammy` or `noble`), **`amd64` only**, no source packages. For GPU
+     passthrough a partial mirror is explicitly allowed ([PAIF 9.1][paif-pdf]).
+     For vGPU, a partial mirror (kernel headers + build tools for the VKr's
+     kernel) is worth trying but **test it first**: headers that don't match
+     the node kernel break the driver build.
+   - **Images:** only the GPU Operator variant you use (vGPU **or**
+     passthrough), only the deep learning VM workloads you'll offer, only
+     pinned versions. Write the list (a BOM) first, then fetch exactly that.
+   - **Models:** often the largest single item (a 70B-parameter model in FP16
+     is roughly 140 GB on its own). Choose models and quantisations
+     deliberately.
+2. **Move registry to registry, not tar to tar.**
+   - Run a **staging Harbor outside** (DMZ or bastion side) and fill it from NGC
+     and Broadcom (Harbor proxy cache / replication, or `skopeo sync`).
+   - **Replicate it to the inside Harbor** over an outside → inside opening, or
+     one opened only for the transfer window. Replication works per layer, so
+     layers shared across images (most NGC images share large CUDA base
+     layers) cross **once**, and a refresh moves **only changed layers**.
+   - Per-image `.tar` files each carry every layer of their image, which is
+     what makes the volume explode.
+3. **On physical media, deduplicate before writing.**
+   - Copy into **one** OCI layout directory (`skopeo copy … oci:/stage/…` or
+     `skopeo sync`) so shared layers are stored once, then `rsync` only the
+     changes onto the drive per refresh.
+   - Purpose-built air-gap packagers exist (e.g. **Hauler**, **Zarf**) — worth
+     evaluating if you do this often; not tested with PAIF here.
+   - Write **SHA-256 checksums** next to every file and verify them inside
+     before pushing.
+4. **Reuse the pipelines you already have.** VKr images (and on 9.1.1 the
+   Private AI Services package) come through the **VCF software depot** — if it
+   is already fed by the VCF Download Tool
+   ([`09-binary-depot.md`](09-binary-depot.md)), they ride that path, and only
+   the NVIDIA, Ubuntu and model data needs the new route.
+5. **Make refresh a scheduled job, not a project.** Keep the image list (with
+   digests) under version control; each refresh diffs the new list against the
+   old, fetches the difference, carries it in, and records what moved.
+
 ### 4.3 Ubuntu package mirror
 
 *"A local Ubuntu repository is required for compiling the vGPU or GPU data
