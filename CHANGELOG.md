@@ -1,5 +1,25 @@
 # Changelog
 
+## v6.0.5 — 2026-10-19
+- **`docs/10` §9.3: vDS + Foundation Load Balancer walkthrough (#414).** The
+  three-line stub is now a full section for the path VVF (no NSX) takes:
+  what the FLB is (built into vCenter, Layer 4, zero-touch lifecycle,
+  one VM or an active-passive pair with only a *soft host* anti-affinity
+  rule, so not site-aware on a stretched cluster); the two-arm, one-arm and
+  one-arm one-NIC topologies; a fully separated layout and a minimal
+  two-port-group layout for proofs of concept, with its fallback; FLB and
+  control plane sizing; the firewall flows from
+  [KB 438769](https://knowledge.broadcom.com/external/article/438769/vsphere-foundation-load-balancer-flb-arc.html);
+  pre-wizard checks (a vSphere Zone is needed even for a single-cluster
+  Supervisor); the activation wizard screen by screen; a `LoadBalancer`
+  smoke test; and known issues. Sourced from the 9.1 TechDocs pages
+  [*Architecture*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/architecture-of-vsphere-supervisor-with-foundation-load-balancer.html),
+  [*Requirements*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/requirements-for-deploying-vsphere-supervisor-with-foundation-load-balancer.html)
+  and [*Deploy a Supervisor with Foundation Load Balancer and VDS Networking*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/deploy-a-supervisor-with-foundation-load-balancer-and-vds-networking.html)
+  (all last updated 2026-10-15) and the
+  [`VsphereFoundationConfig`](https://developer.broadcom.com/xapis/vsphere-automation-api/9.1/data-structures/Vcenter%20NamespaceManagement%20Networks%20Edges%20VsphereFoundationConfig/)
+  API reference. Marked TechDocs-sourced, not yet field-verified.
+
 ## v6.0.4 — 2026-10-16
 - **`docs/01` §C: no `.local` DNS domain for the fleet services (#413).** A
   new callout plus a checklist item. TechDocs 9.1

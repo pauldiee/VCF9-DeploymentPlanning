@@ -75,7 +75,7 @@ sidebar mirrors these bands.
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
-| `docs/10-supervisor-enablement.md`  | Build guide for enabling a vSphere Supervisor on a workload domain (end-to-end walkthrough, Centralized Transit Gateway + Avi, VKS planning, validation, field notes; combined 9.0/9.1 prep template) |
+| `docs/10-supervisor-enablement.md`  | Build guide for enabling a vSphere Supervisor on a workload domain (end-to-end walkthrough, Centralized Transit Gateway + Avi, vDS + Foundation Load Balancer walkthrough for VVF / no NSX, VKS planning, validation, field notes; combined 9.0/9.1 prep template) |
 | `docs/20-supervisor-image-registry.md` | Supervisor / VKS **runtime container image** connectivity — direct, the proxy walkthrough (Supervisor + `TkgServiceConfiguration` + the no-proxy list), and the fully air-gapped walkthrough (the VCF Software Depot OCI registry, `imgpkg` relocation, the depot image proxy, Harbor for user images) |
 
 **VCF Automation:**

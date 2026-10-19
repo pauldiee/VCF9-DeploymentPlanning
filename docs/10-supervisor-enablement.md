@@ -50,7 +50,7 @@ firewall matrix). Pick the edition that matches the target build:
 | 8 | [Field notes](#8-field-notes) | Known failure signatures and their causes |
 | — | [Break-glass access to the Supervisor control plane](#break-glass-access-to-the-supervisor-control-plane) | Get a `root` shell / cluster-admin `kubectl` on a CP VM when something upstream says the Supervisor is unreachable |
 | — | [Supervisor control-plane backup and restore](#supervisor-control-plane-backup-and-restore) | Turn on the VAMI option, what it does and doesn't cover, when **not** to restore, the restore workflow — and the backup to take before a vCenter upgrade |
-| 9 | [The other networking paths](#9-the-other-networking-paths) | Distributed TGW, classic NSX segment, vDS |
+| 9 | [The other networking paths](#9-the-other-networking-paths) | Distributed TGW, classic NSX segment, and the **vDS + Foundation Load Balancer** walkthrough (VVF / no NSX) |
 | 10 | [References](#10-references) | The TechDocs and KBs behind the above |
 
 > **Sourcing convention on this page.** Statements are marked **[documented]**
@@ -83,9 +83,9 @@ no Edge cluster at all. Load balancer: Avi, or the built-in VPC/VNA one.
 Needs an Edge cluster and Tier-0, plus pod / ingress / egress CIDRs. Load
 balancer: Avi, or the NSX Edge load balancer.
 
-**4. vDS networking** — UI-driven. See [§9.3](#93-vds-networking).
+**4. vDS networking** — UI-driven. Walkthrough in [§9.3](#93-vds-networking).
 No NSX; distributed port groups instead. Load balancer: the **Foundation Load
-Balancer**, or Avi.
+Balancer**, or Avi. The path for VVF.
 
 The **Simplified ("Easy") flow** ([§9.4](#94-simplified-easy-supervisor)) is a
 *deployment flow*, not a fifth networking path — it cuts the starting
@@ -1764,9 +1764,218 @@ redundancy **[documented, 9.0 sources]**.
 
 ### 9.3 vDS networking
 
-No NSX. Requires the **Foundation Load Balancer** or Avi, and workload port
-groups on a different subnet from the Supervisor management network. See
-[prerequisites.md](prerequisites.md#vsphere-supervisor-only-if-in-scope).
+No NSX: the Supervisor runs on **distributed port groups**, and the load
+balancer is the **Foundation Load Balancer (FLB)** or Avi. This is the path for
+**VVF** (which has no NSX) and for VCF environments that don't want NSX
+networking for Kubernetes. The planning-time gate is in
+[prerequisites.md](prerequisites.md#vsphere-supervisor-only-if-in-scope); the
+content libraries ([§5](#5-content-libraries-for-supervisor-and-vks-images)),
+image registry connectivity, validation ([§7](#7-validate)) and field notes
+([§8](#8-field-notes)) apply unchanged. §1–§4 and the VPC parts of §6 don't.
+
+> **Status: TechDocs-sourced, not yet field-verified.** Built from the 9.1
+> FLB pages (last updated 15 October 2026), [KB 438769][kb438769] and the
+> vSphere Automation API. The minimal two-network layout in
+> [§9.3.2](#932-network-layouts) is derived from those sources, not a
+> documented topology name.
+
+#### 9.3.1 What the Foundation Load Balancer is
+
+- **Built in, Layer 4 only** **[documented]**: *"Foundation Load Balancer is a
+  light-weight load balancer that is embedded in vCenter and provides layer 4
+  services."* Included in both VVF and VCF. For HTTP routing, run an ingress
+  controller inside the VKS cluster behind one FLB VIP.
+- **Zero-touch lifecycle** **[documented]**: vCenter deploys the FLB VMs during
+  activation and upgrades them with vCenter and the Supervisor. They are
+  *"locked, system-managed appliances that should not be manually modified"*
+  ([KB 438769][kb438769]).
+- **Placement** **[documented]**: on a Management Zone of the Supervisor, in the
+  same folder (*Namespaces > &lt;Supervisor name&gt;*) and resource pool as the
+  control plane VMs, with disks on the control plane storage policy
+  ([architecture][flb-arch]).
+- **Availability** **[documented]**: one VM (DRS places it), or two VMs
+  active-passive with a **soft host anti-affinity** rule in the same cluster.
+  *"The leader election and failover process is performed without vCenter
+  involvement."*
+
+> **On a stretched cluster** the anti-affinity rule is host-level and soft, not
+> site-aware, so both FLB VMs can land on the same site. A site failure then
+> means a vSphere HA restart of the FLB on the other site, with an outage of the
+> VIPs until it is back. (Inference from the documented rule; not tested.)
+
+#### 9.3.2 Network layouts
+
+**Topologies** **[documented]** ([architecture][flb-arch]):
+
+| Topology | FLB interfaces | Use |
+| -------- | -------------- | --- |
+| **Two-arm** | Management + Virtual Server + Transit (3) | VIPs and forwarded traffic on separate networks |
+| **One-arm** | Management + combined Virtual Server/Transit (2) | *"the Virtual Server Network is used both for incoming application traffic and then for forwarded application traffic to the Workload Networks"* |
+| **One-arm one-NIC** | One interface for everything | *"only supported in a Simplified Supervisor deployment"* ([§9.4](#94-simplified-easy-supervisor)) |
+
+**Hard rules** **[documented]** ([requirements][flb-req]):
+
+- *"The Management Network and the Workload Network must be on different
+  subnets."*
+- Workload networks need *"routability between any Workload Network with the
+  network that Foundation Load Balancer uses for virtual IP allocation"*.
+- The FLB management interface *"must be routable to and from Supervisor
+  Management Floating IP"*.
+- MTU *"1600 or greater on any distributed port group"*. MTU is set on the vDS,
+  so check the switch.
+- All hosts of the cluster(s) on one vDS. Host names in **lower case**, or
+  activation might fail.
+
+**Layout A — fully separated** (production):
+
+| Network | Port group | Addresses |
+| ------- | ---------- | --------- |
+| Supervisor management | Existing management port group | Static block of **5** (3 control plane VMs, floating IP, 1 spare for replacement) **[documented]** |
+| FLB management | Own port group, or the management port group | Static range for the FLB VMs |
+| Virtual Server (VIPs) | Own port group | VIP range for the Supervisor API, every VKS control plane and every `LoadBalancer` service |
+| Transit (two-arm only) | Own port group | Range for forwarded traffic |
+| Workload | Own port group(s), different subnet from management | Range for VKS nodes; no overlap across workload networks |
+| Kubernetes services | — | Private CIDR (/16), internal only, unique per Supervisor |
+
+**Layout B — minimal, two existing port groups** (proof of concept, labs):
+
+| Network | Port group | Carries |
+| ------- | ---------- | ------- |
+| Management | The existing management port group | Supervisor management (block of 5) + FLB management |
+| Workload | One existing VM port group on a different subnet | Supervisor workload network, VKS nodes, and the one-arm Virtual Server/Transit interface with the VIP range |
+
+Why it should work: the one-arm topology needs only management plus one
+dataplane network, and when no interfaces are customised the API attaches the
+FLB *"to the Supervisor's management and workload networks"*. With two
+networks, interface 2 carries the workload and frontend personas on the
+workload network ([`VsphereFoundationConfig`, vSphere Automation API 9.1][flb-api]).
+VIPs in the workload subnet then need no extra routing. Reserve one block in
+that subnet outside any DHCP scope and split it between VKS nodes and VIPs.
+**Fallback** if activation stalls at the load-balancer step: give the Virtual
+Server network its own port group (Layout A without transit).
+
+Trade-off: VKS nodes and VIPs share a broadcast domain with the other VMs on
+that VLAN, and there is no separate VIP network to firewall. Fine for a test;
+use Layout A for production.
+
+#### 9.3.3 Sizing
+
+**FLB** **[documented]** — per VM; two VMs double it:
+
+| Size | vCPU | Memory | Storage | Use |
+| ---- | ---- | ------ | ------- | --- |
+| Small | 2 | 4 GB | 8 GB | *"Use the Small size only for POC environments"* |
+| Medium | 4 | 8 GB | 8 GB | Production |
+| Large | 8 | 12 GB | 8 GB | Production, more traffic / VIPs |
+| Extra Large | 16 | 16 GB | 8 GB | Production, highest throughput |
+
+**Supervisor control plane** **[documented]** — Tiny (2 CPU / 8 GB), Small
+(4 / 16), Medium (8 / 16), Large (16 / 32), 32 GB storage each. *"Once you
+select a control plane size, you can only scale up."*
+
+#### 9.3.4 Firewall flows
+
+From [KB 438769][kb438769] **[documented]**:
+
+| From | To | Port | Purpose |
+| ---- | -- | ---- | ------- |
+| Clients / corporate network | FLB VIPs | TCP 6443 | Supervisor and Kubernetes API |
+| Clients / corporate network | FLB VIPs | TCP 80 / 443 | Applications |
+| FLB VMs | Supervisor control plane VMs | TCP 6443 | API traffic to the Supervisor |
+| FLB VMs | VKS worker nodes | TCP 30000–32767 | `LoadBalancer` VIPs map to NodePorts — the one most often missed |
+| vCenter | ESX hosts / FLB management network | TCP 443 | Provisioning, health, updates |
+
+Add the content library and container registry egress
+([Container image registry connectivity](#container-image-registry-connectivity)).
+
+#### 9.3.5 Before the wizard
+
+1. **A vSphere Zone exists**, even for a single-cluster Supervisor: the
+   *Cluster Deployment* option asks you to *"select a compatible vSphere Zone"*
+   **[documented]**. Create it in vCenter first.
+2. **Supervisor Images content library** assigned ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first)).
+3. **Storage policy** for control plane, ephemeral disks and image cache.
+4. **DNS** A + PTR for the Supervisor API FQDN (pointed at the API VIP once
+   known — [§7.1](#71-followable-validation-runbook)).
+5. **IP ranges reserved** and excluded from DHCP; vDS MTU checked.
+6. **Proxy** details if egress is proxied, including the proxy root CA if it
+   intercepts TLS ([docs/20 §3](20-supervisor-image-registry.md)).
+
+#### 9.3.6 The activation wizard, screen by screen
+
+From [Deploy a Supervisor with Foundation Load Balancer and VDS Networking][flb-deploy]
+**[documented]**. *Supervisor Management* → **Get Started**:
+
+1. **vCenter Server and Network** — select the vCenter, **vSphere Distributed
+   Switch**, and *Foundation Load Balancer* as load balancer type. Tick *Enable
+   control plane high-availability* for three control plane VMs (one VM can be
+   scaled to three later).
+2. **Supervisor location** — *Cluster Deployment* (one Management Zone, host-level
+   HA) or *vSphere Zones Deployment* (three zones). Name the Supervisor, pick the
+   data center and zone(s).
+3. **Storage** — control plane, ephemeral disks and image cache storage
+   policies (same or different).
+4. **Management Network** — port group; **static** block of 5 IPs, subnet mask,
+   gateway, DNS servers, search domains, NTP. With DHCP the server must support
+   client identifiers. *"Changing the IPs of control plane VMs and floating IPs
+   is not supported."*
+5. **Workload Network** — port group (the primary workload network), the
+   *Internal Network for Kubernetes Services* CIDR, mask, gateway, DNS, NTP.
+   Prefer **static**: *"If you select using a DHCP server to provide the
+   networking settings for Workload Networks, you will not be able to create any
+   new Workload Networks once you complete the Supervisor configuration."*
+6. **Load Balancer** — name; **topology** (one-arm or two-arm); **size**;
+   **high availability** (one or two VMs). Then assign:
+   - *Management Network*: port group, IP range, mask, gateway, DNS, NTP,
+     optional syslog server and certificate.
+   - *Virtual Server Network*: port group and the **VIP range(s)** — *"Must be
+     on the same subnet as the gateway."*
+   - *Transit Network* (two-arm only): port group and IP range.
+7. **Advanced Settings** — control plane size (scale-up only); **API Server DNS
+   Names** — always fill in the FQDN, it goes into the generated certificate and
+   the 9.1 VCF CLI login by FQDN depends on it ([§7](#7-validate)); **Export
+   Configuration** — save the JSON, it makes a redeploy a re-import instead of a
+   re-type.
+8. **Ready to complete** → **Finish**.
+
+Watch the FLB state on the [monitor page][flb-monitor] alongside the Supervisor
+config status.
+
+#### 9.3.7 Smoke test after activation
+
+Run [§7.1](#71-followable-validation-runbook) first. Then prove the load
+balancer end to end:
+
+1. **Namespace** — *Supervisor Management → Namespaces → New Namespace*; add
+   permissions (an AD group), a storage policy and at least one VM class.
+2. **VKS cluster** — apply a `Cluster` manifest on the built-in ClusterClass
+   with a `vmClass` and `storageClass` from the namespace (variables reference:
+   [VKS cluster configuration variables][vks-vars]). Its control plane gets a VIP
+   from the FLB range.
+3. **`LoadBalancer` service** — on the VKS cluster:
+
+   ```
+   kubectl create deployment web --image=<an nginx image your nodes can pull>
+   kubectl expose deployment web --port=80 --type=LoadBalancer
+   kubectl get svc web          # EXTERNAL-IP from the VIP range
+   curl http://<EXTERNAL-IP>/   # from a client network
+   ```
+
+   A `<pending>` external IP points at the FLB or the VIP range; a VIP that
+   doesn't answer points at routing or the NodePort flow (30000–32767).
+4. **Optional: ingress** — install an ingress controller package (for example
+   Contour) and route two hostnames through its single VIP.
+
+#### 9.3.8 Known issues
+
+- **More than one Supervisor in a vCenter**: activation can stall at *"Timed out
+  waiting for LB service update"* from an FLB naming conflict (KB 405115; see
+  [§8](#8-field-notes)).
+- **DHCP on the workload network** locks out new workload networks later (step
+  5 above).
+- **Control plane IPs are fixed** for the life of the Supervisor (step 4).
+
+*Sources: [FLB architecture][flb-arch] · [FLB requirements][flb-req] · [Deploy a Supervisor with FLB and VDS networking][flb-deploy] · [Monitor FLB][flb-monitor] · [KB 438769][kb438769] · [`VsphereFoundationConfig` (API 9.1)][flb-api] · [VKS cluster variables][vks-vars]*
 
 ### 9.4 Simplified ("Easy") Supervisor
 
@@ -1845,6 +2054,13 @@ one combined fillable CSV whose sections mirror this guide.
 [ctgw]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/configure-the-centralized-gateway.html
 [deploy-vpc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/deploy-a-supervisor-with-nsx-vpc.html
 [dtgw]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/supervisor-networking-with-virtual-private-clouds/nsx-vpc-workflow-for-supervisor/configure-the-distributed-transit-gateway.html
+[flb-api]: https://developer.broadcom.com/xapis/vsphere-automation-api/9.1/data-structures/Vcenter%20NamespaceManagement%20Networks%20Edges%20VsphereFoundationConfig/
+[flb-arch]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/architecture-of-vsphere-supervisor-with-foundation-load-balancer.html
+[flb-deploy]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/deploy-a-supervisor-with-foundation-load-balancer-and-vds-networking.html
+[flb-monitor]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/monitor-the-state-of-foundation-load-balancer.html
+[flb-req]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-vsphere-supervisor-with-foundation-load-balancer/requirements-for-deploying-vsphere-supervisor-with-foundation-load-balancer.html
+[kb438769]: https://knowledge.broadcom.com/external/article/438769/vsphere-foundation-load-balancer-flb-arc.html
+[vks-vars]: https://developer.broadcom.com/xapis/vmware-vsphere-kubernetes-service/3.6.0/variable-docs.html
 [easy]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor.html
 [easy-req]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/vsphere-supervisor-installation-and-configuration/deploying-easy-supervisor/requirements-for-simplified-supervisor-deployment.html
 [kb406786]: https://knowledge.broadcom.com/external/article/406786/vks-supervisor-enablement-stuck-at-confi.html
