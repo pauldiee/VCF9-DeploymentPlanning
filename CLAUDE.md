@@ -41,7 +41,7 @@ GitHub: `https://github.com/pauldiee/VCF9-DeploymentPlanning` (public)
 | `docs/07-firewall-ports.md`      | Curated firewall flows by zone + links to the authoritative Ports & Protocols tools |
 | `docs/08-backup-target.md`       | Build guide — SFTP backup target (build, verify, field-notes gotchas) |
 | `docs/09-binary-depot.md`        | Build guide — offline depot / VCF Download Tool (feed the depot, connect VCF, fleet proxy) |
-| `docs/10-supervisor-enablement.md` | Build guide — enable a vSphere Supervisor on a WLD (CTGW + Avi, content library, validation, field notes) |
+| `docs/10-supervisor-enablement.md` | Build guide — enable a vSphere Supervisor on a WLD (CTGW + Avi, vDS + Foundation LB in §9.3, content library, validation, field notes) |
 | `docs/11-esx-coredump.md`        | Build guide — ESXi network Dump Collector (enable on vCenter, point hosts at it, verify) |
 | `docs/12-sso-configuration.md`   | Build guide — fleet SSO via the VCF Identity Broker (IdP, per-product federation, role mapping) |
 | `docs/13-shutdown-startup.md`    | Ordered fleet shutdown / startup runbook (11-step mgmt sequence, fleet-level VCF Ops rule, shared NSX, infra VMs last) |
