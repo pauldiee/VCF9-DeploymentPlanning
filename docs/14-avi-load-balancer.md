@@ -552,6 +552,19 @@ and none of it is done for you beyond what VCF Operations already handles
 > starting, rather than building it in Basic and discovering the fields
 > aren't there.
 
+> **Build order on a fresh install: passthrough first [documented].** Since
+> its 2026-10-19 revision, Broadcom's
+> [Securing VCF Automation Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+> design page creates this virtual service **before** VCF Automation is
+> installed, configured *"to allow L4 passthrough on port 443 to allow for VCF
+> Automation installation."* Post install, it is reconfigured *"to support
+> HTTP/HTTPS with SSL offloading leveraging either the self-signed certificate
+> created at VCF Automation install or a custom certificate (also applied to VCF
+> Automation)."* The table below is that post-install HTTP/HTTPS state. When
+> VCFA is already running behind its internal VIP, as in the walkthrough below,
+> you build the HTTP/HTTPS virtual service directly. The full order is in
+> [`19-securing-vcf-automation.md`](19-securing-vcf-automation.md#the-full-sequence-start-to-finish).
+
 **[field-reported]**, field values from Fojta's guide:
 
 | Object | Settings |

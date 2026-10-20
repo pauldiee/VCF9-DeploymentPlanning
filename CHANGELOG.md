@@ -1,5 +1,34 @@
 # Changelog
 
+## v6.0.6 — 2026-10-20
+- **`docs/19`: aligned with the 2026-10-19 revision of Broadcom's
+  [*Securing VCF Automation Deployment*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+  design page (#415).**
+  - **TGW `policy-vcfa`:** seven new rows. The health and synthetic checks
+    (TCP 22462, 30005-30006, 30136), the second `allow-web`,
+    `allow-vcf-management` (VCFA to vCenter, NSX, VCF Operations and SDDC
+    Manager, missing until now) and SSH / ICMP from jump hosts. New groups and
+    services to match, and the design's renamed rules (`VCFA-to-Orchestrator`,
+    `VCFA-to-Supervisor`).
+  - **Ports caveat:** [Ports and Protocols](https://ports.broadcom.com/)
+    (queried 2026-10-20) sources 30005-30006 from the fleet manager, not `Any`,
+    does not list 22462 / 30136, and adds TCP 30000-30001 for lifecycle.
+  - **Second `allow-web` caveat:** from `Any`, it bypasses the Avi WAF and the
+    portal locking.
+  - **`policy-mgmt-access`:** narrowed to SSH to the Service Engines, now that
+    the design itself covers SSH and ICMP to VCFA.
+  - **Build order:** the design's new order of operations (dedicated NSX
+    Project, virtual service as L4 passthrough before the VCFA install, SEs on
+    the exclusion list first).
+  - **IP origin:** which IP comes from the public subnet and which from the
+    external IP block.
+  - **Exclusion list:** a note on the design page's own contradiction about
+    removing the VCF management components from it.
+- **`docs/05` §D:** the `configSpec.ingress.vcfa` block (three ingress IPs) from
+  the same design page.
+- **`docs/14`:** the passthrough-first build order for the VCFA virtual service.
+- **`docs/07`:** a pointer to the Pattern 3 flows in `docs/19`.
+
 ## v6.0.5 — 2026-10-19
 - **`docs/10` §9.3: vDS + Foundation Load Balancer walkthrough (#414).** The
   three-line stub is now a full section for the path VVF (no NSX) takes:

@@ -59,6 +59,23 @@ The two gateway-firewall layers (1 and 5) are **staged as Allow + Logging first*
 and only switched to deny once the log is clean
 ([Reading the gateway-firewall log](#reading-the-gateway-firewall-log)).
 
+**Before the layers: the design page's build order.** Since its 2026-10-19
+revision, the design page opens with an *Order of Operations Summary* for the
+build itself. The parts that shape what follows **[documented]**:
+
+- **A dedicated NSX Project** for the VCF Automation DMZ VPC, with an external
+  IP block of at least `/27` and a public subnet of at least `/28` (see
+  [IP addressing for the DMZ VPC](#ip-addressing-for-the-dmz-vpc)).
+- **The Avi virtual service exists *before* VCF Automation is installed**, as
+  **L4 passthrough on port 443** for the VCFA FQDN. Only **after** the install
+  is it reconfigured to HTTP/HTTPS with SSL offload (the self-signed certificate
+  from the install, or a custom one also applied to VCFA), and only then does
+  the WAF go on. [`14-avi-load-balancer.md`](14-avi-load-balancer.md#building-the-virtual-service)
+  builds the HTTP/HTTPS virtual service directly; on a fresh build, follow the
+  design's passthrough-first order.
+- **The Service Engines go on the DFW exclusion list before VCFA is deployed**
+  (see [the exclusion-list sequence](#the-dfw-exclusion-list-sequence)).
+
 1. **Settle the licensing gates.** Layers 1 and 5 are *stateful* gateway
    firewalls and need **vDefend** licensing; the WAF (layer 4) and parts of
    layer 2 have their own gates — see
@@ -181,6 +198,18 @@ Plus the block sizing: assign the NSX Project an **external IP block of at least
 `/27`** (32 IPs), and from it a **public subnet of at least `/28`** (16 IPs) —
 *"all the IPs used will be public IPs."*
 
+**Which IP comes from where** (2026-10-19 revision of the design page):
+
+- The **node pool, the ingress IPs and the platform (services runtime) FQDN** all
+  come from the **VPC public subnet**.
+- The **VCF Automation FQDN** — the Avi virtual-service VIP — is set statically
+  in Avi from the **external IP block**, and is *"not an address within the VPC
+  public subnet."* The design's example: block `172.16.49.0/24`, public subnet
+  `172.16.49.32/28`, VIP `172.16.49.200`.
+- The **three ingress IPs** are the `configSpec.ingress.vcfa.vips.ipv4` list in
+  the Fleet LCM deployment spec — see
+  [`05-day2-deployments.md`](05-day2-deployments.md#step-2--the-fields-that-declare-the-network).
+
 ---
 
 ## Segregating tenant traffic at the Transit Gateway (Pattern 3 TGW gateway firewall)
@@ -242,7 +271,9 @@ applied yet — fix that first.
 | **`grp-orchestrator`** | the VCF Automation **Orchestrator** endpoint (workflow engine; embedded or external) |
 | **`grp-vsphere-supervisor`** | the Supervisor **control-plane VIP(s)** — WCP authentication on **443** and the Kubernetes API on **6443** |
 | **`grp-esx-hosts`** | the management-domain **ESXi hosts** (for the VM web console) |
-| **`grp-mgmt-admin`** | the management / jump-host networks operators connect from — *only for the optional `policy-mgmt-access`* |
+| **`grp-vcf-mgmt`** | the **VCF management components** VCFA calls into — vCenter, NSX Manager, VCF Operations, SDDC Manager, the fleet services. The design page splits this into `grp-vcenters`, `grp-nsx-managers` and `grp-vcf-fleet`; one group (or those three nested) works the same |
+| **`grp-mgmt-admin`** | the **bastion / jump-host** networks operators connect from (the design's *Bastion; Jumphosts*) — for `allow-ssh` / `allow-icmp`, and the optional `policy-mgmt-access` |
+| **`ext-<tenant>`** | one group per external tenant client range (design example: `ext-tenant-one`) — *only for `allow-icmp`* |
 
 `Inventory > Services` — the custom L4 services the rules need (NSX has no
 predefined entry for these ports):
@@ -251,19 +282,26 @@ predefined entry for these ports):
 | ------- | --------------- | ----------- |
 | **`svc-vsphere-supervisor`** | TCP 6443 | `svc-vsphere-supervisor` (the Supervisor **kube API**; the WCP auth on **443** uses the predefined **HTTPS** service — see the note under step 3) |
 | **`svc-vcfa-health`** | TCP 8008 | *(design uses the raw port)* |
+| **`svc-vcfa-gw-config`** | TCP 22462 | *(design: raw port, rule `Node Health Check - GW Config`)* |
+| **`svc-vcfa-synthetic`** | TCP 30005-30006 | *(design: raw ports, rule `Synthetic Checkers`)* |
+| **`svc-vcfa-vmsp-gw`** | TCP 30136 | *(design: raw port, rule `Node Health Check - VMSP GW`)* |
 | **`svc-vc-webconsole`** | TCP 902 **and** TCP 443 | `svc-vc-webconsole` (TCP 902) — see [§ VM web console ports](#vm-web-console-ports-443-vs-902) |
 
 **How step 3 uses them.** Every rule is one source group → one destination
 group, so a system with more than one address gets one group per address:
 
 - **As a source** (traffic originating) — `grp-vcfa` for outbound reconcile
-  (`allow-vcfa-orchestrator`, `allow-vcfa-supervisor`); `grp-vcfa-mgmt` for the
-  VM-console proxy to `grp-esx-hosts`; `grp-mgmt-admin` for the optional
-  `allow-mgmt-ssh`.
+  (`allow-vcfa-orchestrator`, `allow-vcfa-supervisor`); `grp-vcfa-vip` +
+  `grp-vcfa-mgmt` for `allow-vcf-management`; `grp-vcfa-mgmt` for the
+  VM-console proxy to `grp-esx-hosts`; `grp-mgmt-admin` for `allow-ssh`,
+  `allow-icmp` and the optional `allow-mgmt-ssh`; `ext-<tenant>` for
+  `allow-icmp`.
 - **As a destination** (traffic terminating) — `grp-dns-servers` /
   `grp-ldap-servers`; `grp-avi-se` (`allow-web`, 80/443); `grp-vcfa-vip`
-  (external 443 + `allow-gw-health-check` 8008); `grp-orchestrator`;
-  `grp-vsphere-supervisor`; `grp-esx-hosts`.
+  (external 443, the health / synthetic checks 8008, 22462, 30005-30006,
+  30136, ICMP); `grp-vcfa-mgmt` (SSH, ICMP, `allow-web-vcfa`);
+  `grp-orchestrator`; `grp-vsphere-supervisor`; `grp-vcf-mgmt`;
+  `grp-esx-hosts`.
 
 > **The three VCFA groups are one system, three addresses.** `grp-vcfa` is the
 > box **outbound** on its app interface; `grp-vcfa-mgmt` is its **management
@@ -298,11 +336,64 @@ top-down; keep this order.
 
 | Rule | Source | Destination | Service | Action | Design name |
 | ---- | ------ | ----------- | ------- | ------ | ----------- |
-| `allow-vcfa-orchestrator` | `grp-vcfa` | `grp-orchestrator` | **HTTPS** | Allow | `allow-vcfa-orchestrator` |
-| `allow-vcfa-supervisor` | `grp-vcfa` | `grp-vsphere-supervisor` | **`svc-vsphere-supervisor`** (6443) **+ HTTPS** (443) | Allow | `allow-vcfa-supervisor` |
+| `allow-vcfa-orchestrator` | `grp-vcfa` | `grp-orchestrator` | **HTTPS** | Allow | `VCFA-to-Orchestrator` |
+| `allow-vcfa-supervisor` | `grp-vcfa` | `grp-vsphere-supervisor` | **`svc-vsphere-supervisor`** (6443) **+ HTTPS** (443) | Allow | `VCFA-to-Supervisor` |
 | `allow-api-server` | Any | `grp-vsphere-supervisor` | **`svc-vsphere-supervisor`** (6443) | Allow | `api-server` |
 | `allow-gw-health-check` | Any | `grp-vcfa-vip` | **`svc-vcfa-health`** (8008) | Allow | `gw-health-check` |
+| `allow-node-health-gw-config` | Any | `grp-vcfa-vip` | **`svc-vcfa-gw-config`** (22462) | Allow | `Node Health Check - GW Config` |
+| `allow-synthetic-checkers` | Any | `grp-vcfa-vip` | **`svc-vcfa-synthetic`** (30005-30006) | Allow | `Synthetic Checkers` |
+| `allow-node-health-vmsp-gw` | Any | `grp-vcfa-vip` | **`svc-vcfa-vmsp-gw`** (30136) | Allow | `Node Health Check - VMSP GW` |
+| `allow-web-vcfa` | Any *(see note)* | `grp-vcfa-vip`, `grp-vcfa-mgmt` | **HTTP** + **HTTPS** | Allow | `allow-web` (second row) |
+| `allow-vcf-management` | `grp-vcfa-vip`, `grp-vcfa-mgmt` | `grp-vcf-mgmt` | **HTTPS** | Allow | `VCF Management` |
 | `allow-vc-webconsole` | `grp-vcfa-mgmt` | `grp-esx-hosts` | **`svc-vc-webconsole`** (902 + 443) | Allow | `VC Webconsole` |
+| `allow-ssh` | `grp-mgmt-admin` | `grp-vcfa-mgmt` | **SSH** (TCP 22) | Allow | `SSH` |
+| `allow-icmp` | `grp-mgmt-admin`, `ext-<tenant>` | `grp-vcfa-vip`, `grp-vcfa-mgmt` | **ICMP** (echo) | Allow | `ICMP Pings` |
+
+> **Seven rows came in with the 2026-10-19 revision of the design page
+> (#415):** the three health / synthetic-check rows (22462, 30005-30006,
+> 30136), the second `allow-web`, `VCF Management`, `SSH` and `ICMP Pings`. The
+> same revision renamed the two reconcile rules to `VCFA-to-Orchestrator` and
+> `VCFA-to-Supervisor` (this guide keeps its `allow-*` rule names; the last
+> column maps them).
+
+> **`allow-vcf-management` is the row not to miss.** VCF Automation sits in the
+> DMZ VPC; vCenter, NSX Manager, VCF Operations and SDDC Manager sit on the
+> management network on the other side of the TGW. The design page's own
+> management-traffic section says the TGW firewall *"explicitly allows those
+> communication channels"* — this is that rule. Without it, `default-deny`
+> drops VCFA's calls into the management components.
+
+> **The health / synthetic-check rows: narrow `Any` once you know the source
+> [field caveat].** The design page opens TCP 22462, 30005-30006 and 30136
+> from `Any` to the VCFA VIP. Broadcom's
+> [Ports and Protocols](https://ports.broadcom.com/) data for VCF Automation
+> 9.1.0 (queried 2026-10-20) lists **30005** and **30006** with source
+> *"VCF Operations Fleet Manager Management IP address"*, destination
+> *"VCF Management Services Platform IP addresses"*: *"Validates the Platform
+> runtime is healthy prior to invoking lifecycle changes"* and *"Webhooks
+> called by Fleet Manager to trigger Day-2 operations on the Platform
+> runtime"*. So the initiator is the fleet manager, not a tenant. **22462** and
+> **30136** are not listed there at all. Keep the design's `Any` while
+> `default-deny` is staged, read the actual sources from the log
+> ([Reading the gateway-firewall log](#reading-the-gateway-firewall-log)), and
+> narrow each rule to those sources before enforcing.
+>
+> The same Ports and Protocols listing has two more fleet-manager flows the
+> design page leaves out: **TCP 30000** and **30001**, *"Container images and
+> Helm charts pushed to the OCI registry"* on the Platform nodes. If the fleet
+> manager reaches the VCFA platform across this TGW, a VCFA upgrade needs them;
+> expect them in the log during the first lifecycle operation after
+> `default-deny` is enforced.
+
+> **The second `allow-web` row opens HTTP/HTTPS straight to the VCFA VIP and
+> the management IPs [field caveat].** The design table gives it the
+> description *"SSH from Bastion/Jump hosts"*, which does not match its HTTP/HTTPS
+> service; read the service as authoritative. From `Any`, it lets a client
+> reach VCF Automation **without passing the Avi virtual service**, so around
+> the [IP-based portal locking](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration)
+> and the [WAF](#web-application-firewall-on-the-vcfa-virtual-service). Scope its
+> source to `grp-mgmt-admin` (operators) unless you deliberately want tenants
+> on that path; tenant traffic belongs on `allow-web` to `grp-avi-se`.
 
 > **`allow-api-server`** is in the design page's TGW rules table (`api-server` —
 > `Any → vSphere Supervisor : TCP 6443`) and lets tenant / `kubectl` traffic
@@ -326,18 +417,18 @@ top-down; keep this order.
 
 | Rule | Source | Destination | Service | Action |
 | ---- | ------ | ----------- | ------- | ------ |
-| `allow-mgmt-ssh` | `grp-mgmt-admin` | `grp-vcfa`, `grp-avi-se` | **SSH** (TCP 22) | Allow |
+| `allow-mgmt-ssh` | `grp-mgmt-admin` | `grp-avi-se` | **SSH** (TCP 22) | Allow |
 
-> **`policy-mgmt-access` is optional and not prescribed by the Broadcom design
-> page.** The design page's rule set is tenant / reconcile traffic only — it
-> assumes operator access to the DMZ VPC is either via a bastion *inside* the
-> segment or out of scope. Once `default-deny` is enforcing, an admin on the
-> management network can no longer SSH to the VCFA nodes or the Service Engines
-> across the TGW. Add this policy **only if** operators connect to those nodes
-> directly, place it **above `default-deny`**, and scope `grp-mgmt-admin` to the
-> jump-host subnets. Web / UI access to the provider portal is a **separate
-> matter** — it already traverses `allow-web` (`Any → grp-avi-se` :80/443) and
-> is restricted to management networks at **L7 by the Avi HTTP policy**
+> **`policy-mgmt-access` now only covers the Service Engines.** Since its
+> 2026-10-19 revision, the design page itself allows **SSH** and **ICMP** from
+> bastion / jump hosts to VCF Automation (`allow-ssh` / `allow-icmp` in
+> `policy-vcfa` above). It still has no operator path to the **Service
+> Engines'** data interfaces across the TGW. Add this policy **only if**
+> operators SSH to the SEs directly, place it **above `default-deny`**, and
+> scope `grp-mgmt-admin` to the jump-host subnets. Web / UI access to the
+> provider portal is a **separate matter** — it traverses `allow-web`
+> (`Any → grp-avi-se` :80/443) and is restricted to management networks at
+> **L7 by the Avi HTTP policy**
 > ([Locking the portals to known client IPs](#locking-the-portals-to-known-client-ips-pattern-3-avi-http-configuration)),
 > not here.
 
@@ -354,9 +445,11 @@ return traffic is automatic.
 
 Set `default-deny` to **Allow + Logging** first. Exercise the full tenant path
 — reach the VIP, log in, browse the catalog, deploy a workload, open a VM web
-console — and, if you added `policy-mgmt-access`, SSH from a management station
-to a VCFA node and an SE. Then read the log (below) for anything the allowlist
-missed before switching the rule to **Deny**.
+console — then SSH and ping a VCFA node from a jump host, and, if you added
+`policy-mgmt-access`, SSH to an SE. Leave it staged long enough to catch the
+fleet manager's health and lifecycle checks too (30005-30006, and 30000-30001
+during an upgrade). Then read the log (below) for anything the allowlist missed
+before switching the rule to **Deny**.
 
 #### Reading the gateway-firewall log
 
@@ -413,13 +506,21 @@ Logging is **per rule** (the `Logging` toggle you set on each staged rule).
   `allow-vcfa-supervisor` (443 + 6443) carry the reconcile.
 - A VM **web console** opens from the VCFA UI (`grp-vcfa-mgmt` →
   `grp-esx-hosts`, 902 / 443).
-- If you added `policy-mgmt-access`: `ssh` from `grp-mgmt-admin` to a VCFA node and
-  an SE still works after `default-deny` is set to **Deny**; the same SSH from
-  any other source is dropped.
+- `allow-vcf-management`: VCFA reaches vCenter, NSX Manager and VCF Operations —
+  provider-portal views that read from them (regions, zones, networks) load,
+  and the TGW log shows no drops from `grp-vcfa-vip` / `grp-vcfa-mgmt` to
+  `grp-vcf-mgmt`.
+- The health / synthetic-check rules (22462, 30005-30006, 30136) show hits, and
+  VCF Operations reports the VCFA component healthy.
+- `ssh` and `ping` from `grp-mgmt-admin` to a VCFA node still work after
+  `default-deny` is set to **Deny**; the same SSH from any other source is
+  dropped. If you added `policy-mgmt-access`, SSH to an SE works as well.
 - `default-deny` hit counter catches only noise.
 
 > **The port list is the design's example, not a validated superset [field
-> caveat].** `TCP 8008` is VCFA's built-in-LB health port; the Supervisor path
+> caveat].** `TCP 8008` is VCFA's built-in-LB health port; 22462, 30005-30006
+> and 30136 are the design's health / synthetic checks (see the note under step
+> 3 for what Ports and Protocols says about their source); the Supervisor path
 > is **443** (WCP auth) **and 6443** (kube API) — see the KB 449287 note under
 > step 3. Cross-check the live set against
 > [`07-firewall-ports.md`](07-firewall-ports.md) and the VCFA / Supervisor
@@ -521,6 +622,19 @@ Then, in order:
    [Protecting the Avi management plane](#protecting-the-avi-management-plane-pattern-3-gateway-firewall)).
 4. **Re-validate** — SEs still Connected, VS still green, tenant path still works
    with the DFW now enforcing.
+
+> **The design page contradicts itself on what leaves the exclusion list.** Its
+> 2026-10-19 *Order of Operations Summary* ends with *"Remove VCF Management
+> Components from the distributed firewall exclusion list."* Its own
+> *Protecting VCF Automation Management Traffic* section still describes those
+> components as staying in `VCF-Created-Virtual-Machines`, excluded from every
+> DFW rule, with the TGW firewall carrying VCFA's path to them. This guide
+> follows the second reading: take the **SEs** out after install (step 3), and
+> take the **VCF management components** out only as part of a planned
+> [vDefend lateral security](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/security-modernization/vdefend-lateral-security.html)
+> rollout. Removing them without DFW rules for the management plane in place
+> puts vCenter, NSX Manager and SDDC Manager behind whatever the DFW default
+> rule is.
 
 ### Licensing gates — all before you start
 
@@ -967,7 +1081,11 @@ check end to end — it exercises every layer at once:
 ## References
 
 - **Design page** — [Securing VCF Automation Deployment (Pattern 3) with vDefend and Avi](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
-  — the blueprint this guide implements.
+  — the blueprint this guide implements. Last aligned with its revision of
+  2026-10-19 (#415).
+- [Broadcom Ports and Protocols](https://ports.broadcom.com/) — VCF Automation
+  and VCF Management Services 9.1 rows, for the sources of the health-check and
+  lifecycle ports in [layer 1](#segregating-tenant-traffic-at-the-transit-gateway-pattern-3-tgw-gateway-firewall).
 - [Lateral Security for VMware Cloud Foundation with vDefend](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vvs/9-X/lateral-security-for-vmware-cloud-foundation-with-vmware-vdefend.html)
   — granular east-west segmentation for the VCF management components.
 - [Manage a Firewall Exclusion List](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/vdefend-firewall/9-0/vdefend-distributed-firewall/configuring-distributed-firewall/about-firewall-rules/manage-a-firewall-exclusion-list.html)
