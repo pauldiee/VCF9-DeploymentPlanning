@@ -688,6 +688,24 @@ In `vspClusterSpec`:
 | `gatewayCidrIpv4` | The **gateway address with prefix**, e.g. `172.30.70.1/24` — not the network address |
 | `ipv4Pool.addresses` | **Exactly 5** explicit IP addresses — minimum 5, maximum 5, no CIDR |
 
+**With an external load balancer in front (Pattern 3)**, Broadcom's
+[Securing VCF Automation Deployment](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)
+design page (revision of 2026-10-19) adds an `ingress` block to the component's
+`configSpec`:
+
+| Field | Meaning |
+| --- | --- |
+| `configSpec.ingress.vcfa.fqdn` | The VCF Automation FQDN — the same name as the component's `fqdn` |
+| `configSpec.ingress.vcfa.vips.ipv4` | **Three** addresses, one per node (*"virtual service IP Pool Address for Node 1/2/3"*), from the same subnet as `ipv4Pool`. The Avi virtual service uses them as its pool members |
+
+The design page counts **10 IPs** for this pattern: 5 node-pool, 3 ingress, 1
+platform FQDN, and 1 for the VCF Automation FQDN itself. That last one is the
+Avi VIP, set in Avi from the external IP block and *"not an address within the
+VPC public subnet"* — so it is not in the spec at all. The full IP layout is in
+[`19-securing-vcf-automation.md`](19-securing-vcf-automation.md#ip-addressing-for-the-dmz-vpc).
+The design page does not say whether a deployment **without** an external load
+balancer needs the `ingress` block.
+
 **The APIs involved** — note the **two different hosts**:
 
 | Call | Purpose |

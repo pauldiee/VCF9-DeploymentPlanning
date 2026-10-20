@@ -172,3 +172,9 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 - For anything not listed here, generate the exact ports from Coscia's Ports &
   Protocols matrix or the Broadcom portal above — **do not** treat this page as
   the complete list.
+- **Day-N, external-facing VCF Automation (Pattern 3):** the Transit Gateway
+  firewall rules into the DMZ VPC live in
+  [`19-securing-vcf-automation.md`](19-securing-vcf-automation.md#segregating-tenant-traffic-at-the-transit-gateway-pattern-3-tgw-gateway-firewall).
+  They include VCFA's health and synthetic-check ports (TCP 8008, 22462,
+  30005-30006, 30136) and the fleet manager's TCP 30000-30001 for upgrades,
+  which matter once the TGW `default-deny` is enforced.
