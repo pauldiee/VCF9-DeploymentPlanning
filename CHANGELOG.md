@@ -1,5 +1,27 @@
 # Changelog
 
+## v6.1.1 — 2026-10-21
+- **Every component FQDN resolves to an IP outside the services-runtime pool
+  (#419, follow-up to #418).** TechDocs
+  [First VCF Instance FQDNs and IP addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html)
+  (Last Updated 2026-10-15): *"Each FQDN must resolve to a unique, currently
+  unassigned IP address, and those IP addresses must not overlap with any IP
+  ranges already reserved for VCF services runtime nodes or VCF Automation
+  nodes."* The pool holds only Log Management and real-time metrics worker
+  IPs.
+  - **`docs/01`:** the Identity Broker and VCF services runtime (VCF
+    Management Services) DNS rows no longer say "services-runtime block".
+  - **IP plan:** the old "Identity Broker, no extra VM Mgmt IP" row is
+    replaced by a *VCF Management Services FQDNs* row: fleet components,
+    instance components, services runtime and Identity Broker, 4 discrete
+    IPs. The total goes from ~32–50 to ~36–54.
+  - **Replica IPs:** a dated note on the source conflict. The design page
+    (2026-10-19) says 1 IP per Small/Medium replica and 2 per Large; the FQDN
+    page (2026-10-15) says 2 per additional replica.
+  - **Elsewhere:** same fix in the `docs/05` Identity Broker row,
+    `prerequisites.md`, the Rainpole sample (Identity Broker `.24`, Log
+    Management VIP `.25`) and the IP/DNS CSV template (`.35` / `.36`).
+
 ## v6.1.0 — 2026-10-21
 - **`docs/01`: the Log Management VIP resolves to an IP outside the
   services-runtime pool (#418).**

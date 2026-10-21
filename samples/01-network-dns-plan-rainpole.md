@@ -49,9 +49,10 @@ Site code `sfo`, instance `m01`, rack `r01`.
 | NSX Manager                     | `.71` (VIP), `.72–.74` | VIP + 3 nodes                          |
 | NSX Edge node mgmt              | `.75`, `.76`         | `sfo-m01-en01` / `en02`                  |
 | VCF Operations for Networks     | `.77`, `.78`         | Day-2, optional — platform + collector (a **Large** platform is a 3-node cluster: reserve 2 more) |
-| Log Management                  | — (runtime block)    | Day-2, optional — 1 FQDN + 6 IPs (+1 per Small/Medium replica, +2 per Large), **allocated from the services-runtime block**; needs the `/27` variant of the block above |
+| Log Management VIP              | `.25`                | Day-2, optional — the VIP FQDN's IP, **outside** the services-runtime block |
+| Log Management workers          | — (runtime block)    | Day-2, optional — 6 IPs (+1 per Small/Medium replica, +2 per Large), **allocated from the services-runtime block**; needs the `/27` variant of the block above |
 | Real-time metrics               | — (runtime block)    | Day-2, optional — 6 IPs, also from the services-runtime block |
-| Identity Broker                 | —                    | FQDN only — IP served from the services-runtime block (`.32–.47`) |
+| Identity Broker                 | `.24`                | Discrete IP **outside** the services-runtime block — like every FQDN, per TechDocs |
 
 Host-facing ranges: ESX Mgmt hosts `10.11.11.101–.116`, vMotion `10.11.12.101–.116`,
 vSAN `10.11.13.101–.116`, Host Overlay TEP pool `10.11.14.101–.132`, Edge Overlay
@@ -89,11 +90,11 @@ TEP `10.11.19.2–.5`.
 | License Server     | `flt-ls01.rainpole.io`               | `10.11.10.14` |
 | VCF Automation     | `flt-auto01.rainpole.io`             | `10.11.10.22` — **outside** the `/29` |
 | VCF services runtime (VCF Automation) | `flt-vcfa-sr01.rainpole.io` | `10.11.10.23` — **outside** the `/29`; Automation's **own** runtime, intake `E10` (naming follows Broadcom's own Rainpole example in the services-runtime redeploy API docs) |
-| Identity Broker    | `flt-idb01.rainpole.io`              | (services runtime block) |
+| Identity Broker    | `flt-idb01.rainpole.io`              | `10.11.10.24` — outside the services-runtime block |
 | VCF services runtime (VCF Management Services) | `sfo-sr01.sfo.rainpole.io` | `10.11.10.10` — the **fleet** runtime, intake `E14` |
 | Fleet components   | `flt-fc01.rainpole.io`               | `10.11.10.20` |
 | Instance components | `sfo-ic01.sfo.rainpole.io`          | `10.11.10.11` |
-| Log Management VIP | `flt-logs01.rainpole.io`             | (VM Mgmt subnet, a discrete IP **outside** the services-runtime block; Day-2, optional — integrated LB answers on it; the worker nodes come from the runtime block and need IPs only) |
+| Log Management VIP | `flt-logs01.rainpole.io`             | `10.11.10.25` — outside the services-runtime block; Day-2, optional — integrated LB answers on it; the worker nodes come from the runtime block and need IPs only |
 | NSX Edge 1 / 2     | `sfo-m01-en0{1,2}.sfo.rainpole.io`   | `10.11.10.75` / `.76` |
 
 DNS search domains: `sfo.rainpole.io`, `rainpole.io`. Every FQDN needs both an A
