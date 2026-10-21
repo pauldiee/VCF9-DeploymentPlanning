@@ -1,5 +1,21 @@
 # Changelog
 
+## v6.0.7 — 2026-10-21
+- **`docs/12` Step 2: On-Demand Lookup and LDAPS certificates (#416).**
+  - **On-Demand Lookup (VCF 9.1.1+):** new subsection on the wizard's *Enable
+    on-demand lookup for user and group provisioning* checkbox. With it on,
+    the broker reads group membership from the directory at each login. With
+    it off, it uses a pre-provisioned copy refreshed by the weekly sync. Adds
+    a comparison table and when to pick which, plus the availability
+    trade-off. Source:
+    [VCF blog, 9.1.1 On-Demand Lookup](https://blogs.vmware.com/cloud-foundation/?p=34595).
+  - **LDAPS how-to:** test whether the DCs serve LDAPS on 636/3269 (Windows
+    PowerShell 5.1 snippet), what certificate a DC needs
+    ([Microsoft: Enable LDAP over SSL](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/enable-ldap-over-ssl-3rd-certification-authority)),
+    and three ways to get the root CA in PEM for the *Encrypted Connection*
+    field: `certutil`, MMC Base-64 export, or chain export from the TLS
+    session. Also covers CA changes and renewal.
+
 ## v6.0.6 — 2026-10-20
 - **`docs/19`: aligned with the 2026-10-19 revision of Broadcom's
   [*Securing VCF Automation Deployment*](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/application-modernization/multi-tenat-design-for-a-modern-private-cloud/implementation-of-self-service-multi-tenant-private-cloud/securing-vcf-automation.html)

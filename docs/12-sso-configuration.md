@@ -36,7 +36,7 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 | - | ------- | ----------- |
 | 1 | [Overview — what federates and what doesn't](#1-overview--what-federates-and-what-doesnt) | Deciding what this page will actually change for each product |
 | 2 | [Step 1 — Deployment mode](#step-1--deployment-mode) | Embedded vs. appliance-mode broker |
-| 3 | [Step 2 — Configure the identity provider](#step-2--configure-the-identity-provider) | Pointing the broker at AD/LDAP |
+| 3 | [Step 2 — Configure the identity provider](#step-2--configure-the-identity-provider) | Pointing the broker at AD/LDAP; [on-demand lookup (9.1.1+)](#pre-provisioning-or-on-demand-lookup-911) and [getting the LDAPS certificate](#ldaps--the-domain-controller-certificate-and-the-pem-root-ca) |
 | 4 | [Step 3 — Federate vCenter and NSX](#step-3--federate-vcenter-and-nsx) | Both need an explicit click — neither auto-configures |
 | 5 | [Step 4 — Federate VCF Operations and VCF Automation](#step-4--federate-vcf-operations-and-vcf-automation) | Both need an explicit connect step |
 | 6 | [Step 5 — Federate everything else](#step-5--federate-everything-else) | Supervisor, Log Management, and the unsettled VCF Operations for Networks question |
@@ -126,13 +126,132 @@ wizard that consumes everything you prepared in
 2. **Configure User and Group Provisioning** — attribute mappings, then a
    **Group Provisioning** screen (**Base Group DN**, and a **Sync Nested
    Groups** toggle — turn it on if admin membership comes via nested groups),
-   then a **User Provisioning** screen (**Base User DN**).
-3. **Review → Finish.** Sync starts immediately, then runs **weekly** by
-   default — a bind-account password expiry quietly stops group updates from
-   here on, same caveat as in the prerequisites page.
+   then a **User Provisioning** screen (**Base User DN**). On **9.1.1 and
+   later** the wizard also shows **On-demand lookup** (*Enable on-demand
+   lookup for user and group provisioning*) — see
+   [Pre-provisioning or on-demand lookup](#pre-provisioning-or-on-demand-lookup-911)
+   below before you tick it.
+3. **Review → Finish.** With pre-provisioning (the default), sync starts
+   immediately, then runs **weekly** by default — a bind-account password
+   expiry quietly stops group updates from here on, same caveat as in the
+   prerequisites page.
 
 This step only connects the **directory** to the broker. It does not yet
 touch vCenter, NSX, or anything else — that's Steps 3–5.
+
+### Pre-provisioning or on-demand lookup (9.1.1+)
+
+Up to 9.1.0 there is only one model for AD and OpenLDAP: **pre-provisioning**.
+The broker copies the users and groups under the Base User DN / Base Group DN
+into its own store and authorizes against that copy, which is refreshed by the
+(weekly) sync or a manual one. VCF 9.1.1 adds **On-Demand Lookup**: the broker
+does not keep a copy, it queries the directory when the user logs in. Per
+Broadcom's [9.1.1 announcement](https://blogs.vmware.com/cloud-foundation/?p=34595),
+*"authorization is based upon a user's current group membership in the
+directory at the time of login."*
+
+| | Pre-provisioning (checkbox off) | On-demand lookup (checkbox on) |
+| --- | --- | --- |
+| Where group membership is read | The broker's local copy | The directory, at each login |
+| An AD group change takes effect | After the next sync (weekly default, or a manual sync) | At the user's next login |
+| Fits | Stable admin groups that rarely change | Temporary or frequently changing access (contractors, auditors, cross-team work) |
+
+Broadcom also allows mixing the two: the setting is per directory, so you can
+run one directory with on-demand lookup and another pre-provisioned.
+
+Our reading of the trade-off (not tested in a lab yet): with on-demand lookup,
+every login depends on a reachable domain controller and a working bind
+account. A bind-account password expiry or an expired DC certificate then
+breaks logins at once, instead of quietly freezing the group copy as with
+pre-provisioning. Pick primary + secondary DCs (or DNS Server Location) and
+watch the bind account and the DC certificates accordingly.
+
+### LDAPS — the domain controller certificate and the PEM root CA
+
+Ticking **Encrypted Connection** turns on LDAPS *"for all the connections to
+this directory"*, and the wizard then asks for *"the root certificate(s)
+required to access the domain controllers over SSL"*, in **PEM** with the
+`BEGIN CERTIFICATE` / `END CERTIFICATE` lines
+([Configure Active Directory as an Identity Provider Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)).
+With DNS Server Location, one field takes all root certificates (they're merged
+into `{directory-name}-concatenated.pem`). With a primary/secondary DC, each DC
+has its own certificate field. Two things have to be true: the DCs actually
+serve LDAPS, and you paste the CA that signed their certificates.
+
+**1. Check whether the DCs already serve LDAPS.** Windows has no switch for
+LDAPS. A DC listens on **TCP 636** (and **3269** for the Global Catalog) as
+soon as it has a suitable certificate
+([Microsoft: Enable LDAP over SSL](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/enable-ldap-over-ssl-3rd-certification-authority)).
+Domains with an AD CS **enterprise** CA usually have one already through
+domain controller auto-enrollment. Test from a jump host that can reach the DC
+(runs on Windows PowerShell 5.1):
+
+```powershell
+$dc  = 'dc01.sfo.example.io'
+$tcp = New-Object Net.Sockets.TcpClient($dc, 636)
+$ssl = New-Object Net.Security.SslStream($tcp.GetStream(), $false, ({ $true }))
+$ssl.AuthenticateAsClient($dc)
+$crt = New-Object Security.Cryptography.X509Certificates.X509Certificate2($ssl.RemoteCertificate)
+$crt | Format-List Subject, Issuer, NotAfter, DnsNameList
+$ssl.Dispose(); $tcp.Close()
+```
+
+A connection refused or a TLS failure means the DC has no usable LDAPS
+certificate: go to step 2. A certificate back: check that **DnsNameList**
+contains the DC's FQDN and that **NotAfter** is not close, then go to step 3.
+Repeat for every DC the broker can reach (with DNS Server Location that's every
+DC the SRV records return), and for port 3269 if you use the Global Catalog.
+
+**2. If a DC has no LDAPS certificate**, issue one. Microsoft's requirements
+(same article):
+
+- in the DC's **Local Computer → Personal** store (or the NTDS service store,
+  which wins if both have one), with its **private key** present;
+- **Enhanced Key Usage** includes **Server Authentication**
+  (`1.3.6.1.5.5.7.3.1`);
+- the DC's **FQDN** (e.g. `dc01.sfo.example.io`) in the Subject CN or as a DNS
+  name in the **Subject Alternative Name**.
+
+With an enterprise CA, enroll the DC from a template with Server Authentication
+(the built-in *Kerberos Authentication* / *Domain Controller Authentication*
+templates qualify, ideally via auto-enrollment so renewal is automatic). With
+another CA, follow Microsoft's `certreq` / `Request.inf` procedure in the
+article. Then repeat the step 1 test.
+
+**3. Get the root CA in PEM.** Paste the **CA certificate**, not the DC's own
+certificate. Either of these gives you a PEM file:
+
+- **From the CA** (AD CS): `certutil -ca.cert root-ca.cer` on the CA, then
+  `certutil -encode root-ca.cer root-ca.pem`. Or export the root from any
+  domain member's *Trusted Root Certification Authorities* store in the
+  Certificates MMC as **Base-64 encoded X.509 (.CER)**. That format is PEM;
+  only the extension differs.
+- **From the step 1 session**, on a machine that trusts the domain's CA (any
+  domain member), build the chain and export the top of it:
+
+  ```powershell
+  $chain = New-Object Security.Cryptography.X509Certificates.X509Chain
+  [void]$chain.Build($crt)
+  $root = $chain.ChainElements[$chain.ChainElements.Count - 1].Certificate
+  "-----BEGIN CERTIFICATE-----`r`n" +
+    [Convert]::ToBase64String($root.RawData, 'InsertLineBreaks') +
+    "`r`n-----END CERTIFICATE-----" | Set-Content root-ca.pem -Encoding Ascii
+  $root | Format-List Subject, Thumbprint, NotAfter
+  ```
+
+Check that the root's **Subject** matches the top of the DC certificate's
+issuer chain, then paste the file's whole contents (both marker lines included)
+into the wizard. With a **two-tier PKI** (offline root + issuing CA), the
+field asks for the root. If the connection still fails, add the issuing CA as
+a second certificate. This is our suggestion and not lab-tested; the field
+accepts more than one certificate.
+
+**Afterwards:** DC certificates renewed by the same CA need no change on the
+broker. If the DCs move to a different CA, or the root itself is renewed with
+a new key, update the certificate in the directory configuration **before**
+the DCs switch. Otherwise every AD login fails at once (see
+[§8](#8-verification--troubleshooting)). Firewall: management → DCs on TCP 636
+and, with Global Catalog, 3269 ([`07-firewall-ports.md`](07-firewall-ports.md)).
 
 ---
 
@@ -415,7 +534,11 @@ table; not yet exercised end-to-end in this repo.
 - Broadcom KBs (VCF Operations for Networks' own separate LDAP path):
   [Aria/VCF Operations for Networks LDAP authentication troubleshooting (KB 306857)](https://knowledge.broadcom.com/external/article/306857/aria-operations-for-networks-ldap-authen.html),
   [Configuring LDAP/LDAPS in Aria/VCF Operations for Networks (KB 368979)](https://knowledge.broadcom.com/external/article/368979/configuring-ldapldaps-in-aria-operation.html).
+- Microsoft (LDAPS on the domain controllers):
+  [Enable LDAP over SSL with a third-party certification authority](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/enable-ldap-over-ssl-3rd-certification-authority)
+  — certificate requirements, ports 636/3269, the `certreq` procedure.
 - VMware Cloud Foundation blog:
+  [On-Demand Lookup for Active Directory and OpenLDAP in VCF 9.1.1](https://blogs.vmware.com/cloud-foundation/?p=34595),
   [Streamline Administrative Access with VMware Cloud Foundation Single Sign-On](https://blogs.vmware.com/cloud-foundation/2025/06/19/streamline-administrative-access-with-vcf-single-sign-on/),
   [Bringing "Out-of-the-Box" Modern Identity to Your Infrastructure with VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2026/02/18/bringing-out-of-the-box-modern-identity-to-your-infrastructure-with-vmware-cloud-foundation-9-0/).
 - Community walkthroughs (Supervisor federation is not in Broadcom's own
