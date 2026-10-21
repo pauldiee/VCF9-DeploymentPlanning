@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.0.8 — 2026-10-21
+- **`docs/12` LDAPS step 3: get the DC chain from the vCenter appliance
+  (#416).** It is now the first option, using the `openssl s_client -showcerts`
+  command from
+  [KB 316596](https://knowledge.broadcom.com/external/article/316596).
+  Explains how to spot the root in the output (subject equals issuer), and why
+  Windows DCs often don't send the root at all
+  ([KB 380859](https://knowledge.broadcom.com/external/article/380859/adding-a-vcenter-server-single-signon-ac.html)).
+  Also covers running it per DC, the expiry check
+  ([KB 445065](https://knowledge.broadcom.com/external/article/445065/an-expired-domain-controller-certificate.html))
+  and the *"Could not read certificate from stdin"* error
+  ([KB 441900](https://knowledge.broadcom.com/external/article/441900/error-could-not-read-certificate-from-st.html)).
+
 ## v6.0.7 — 2026-10-21
 - **`docs/12` Step 2: On-Demand Lookup and LDAPS certificates (#416).**
   - **On-Demand Lookup (VCF 9.1.1+):** new subsection on the wizard's *Enable

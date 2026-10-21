@@ -219,8 +219,37 @@ another CA, follow Microsoft's `certreq` / `Request.inf` procedure in the
 article. Then repeat the step 1 test.
 
 **3. Get the root CA in PEM.** Paste the **CA certificate**, not the DC's own
-certificate. Either of these gives you a PEM file:
+certificate. Any of these gives you a PEM file:
 
+- **From the vCenter appliance (the quickest).** The VCSA includes `openssl`.
+  SSH in as root and save the chain the DC sends. This is Broadcom's own
+  method for vCenter LDAPS identity sources
+  ([KB 316596](https://knowledge.broadcom.com/external/article/316596)).
+  Any Linux shell with `openssl` and a path to the DC on 636 works the same
+  way:
+
+  ```bash
+  openssl s_client -showcerts -connect dc01.sfo.example.io:636 </dev/null 2>/dev/null \
+    | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > dc01.cer
+  ```
+
+  The file holds the **whole chain**, in PEM, with the DC's own certificate
+  first ([KB 380859](https://knowledge.broadcom.com/external/article/380859/adding-a-vcenter-server-single-signon-ac.html)).
+  Don't paste all of it. Run the command without `2>/dev/null` and the `sed`
+  filter to see each certificate's `s:` (subject) and `i:` (issuer) lines:
+  - The **last** certificate has the **same subject and issuer**: that's the
+    root. Paste only that `BEGIN`…`END` block.
+  - The last certificate's issuer is a **different** name: the DC didn't send
+    the root, which is common on Windows (KB 380859's own sample chain stops
+    at the issuing CA). Take the root from the CA as in the next bullet.
+
+  Run it once per DC; one DC with a bad certificate is enough to cause
+  intermittent failures (KB 380859). Append
+  `| openssl x509 -noout -enddate` to see the DC certificate's expiry
+  ([KB 445065](https://knowledge.broadcom.com/external/article/445065/an-expired-domain-controller-certificate.html)).
+  *"Could not read certificate from stdin"* means the DC sent no usable
+  certificate, so go back to step 2
+  ([KB 441900](https://knowledge.broadcom.com/external/article/441900/error-could-not-read-certificate-from-st.html)).
 - **From the CA** (AD CS): `certutil -ca.cert root-ca.cer` on the CA, then
   `certutil -encode root-ca.cer root-ca.pem`. Or export the root from any
   domain member's *Trusted Root Certification Authorities* store in the
