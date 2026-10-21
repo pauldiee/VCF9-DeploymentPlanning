@@ -1,5 +1,20 @@
 # Changelog
 
+## v6.0.9 — 2026-10-21
+- **`docs/31` §7: forwarding logs out to a SIEM or syslog server (#417).**
+  Taken from
+  [Configuring Log Forwarding (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/log-analysis/configuring-log-forwarding.html).
+  - **Click-path:** VCF Operations → Operate → Administration →
+    Configurations → Log Forwarding.
+  - **Fields:** every field explained. Covers Syslog vs Raw (Raw for
+    third-party SIEMs; both report Log Management as the source), SSL with a
+    valid SAN, and filters.
+  - **Limits:** 10 rules, filtering beats forwarding, no loops, size the
+    receiver, and re-enabling forwarders after an import.
+  - **Firewall:** which flow to open, with the sending IP marked as an
+    assumption.
+  - README and CLAUDE.md file-table rows updated.
+
 ## v6.0.8 — 2026-10-21
 - **`docs/12` LDAPS step 3: get the DC chain from the vCenter appliance
   (#416).** It is now the first option, using the `openssl s_client -showcerts`

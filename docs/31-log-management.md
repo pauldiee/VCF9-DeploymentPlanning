@@ -3,7 +3,8 @@
 How to get logs into **Log Management** (formerly *VCF Operations for Logs*,
 renamed in 9.1) on **VCF 9.1** and **vSphere Foundation (VVF) 9.1**: whether
 your platform can run it at all, how it's deployed, which sources start sending
-on their own, which ones need manual work, and the firewall flows.
+on their own, which ones need manual work, and the firewall flows. §7 covers
+the other direction: forwarding logs out to a SIEM or syslog server.
 
 This guide stands on its own. In a VCF build it's also the detail behind
 deployment plan Story 8.4 ([`06-deployment-plan.md`](06-deployment-plan.md)).
@@ -284,9 +285,75 @@ The portal still labels the product *VCF Operations for Logs* in some rows.
 
 ---
 
+## 7. Forwarding logs out (SIEM, syslog)
+
+Log Management can pass incoming events on to another destination: a SIEM, a
+central syslog server, or another Log Management instance. TechDocs names
+SIEM integration and consolidating logs *"over different networks such as DMZ
+or WAN"* as the use cases. The forwarding instance still stores and indexes
+everything itself. Source:
+[Configuring Log Forwarding (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/log-analysis/configuring-log-forwarding.html),
+*Last Updated October 19, 2026*, read 2026-10-21.
+
+**Where:** in VCF Operations, **Operate → Administration → Configurations →
+*Log Forwarding* card → ADD**. You configure it there, not on the Log
+Management appliance.
+
+| Field | What to enter |
+| --- | --- |
+| Name | A unique name for the destination |
+| Enable Configuration | On or off. Lets you stage a rule without sending yet |
+| Host | IP address or FQDN of the receiver |
+| Protocol | **Syslog** or **Raw**, see below |
+| Use SSL to secure your connection | Optional. An untrusted destination certificate can be accepted when you test or save. The certificate *"must... include a valid SAN"* |
+| Custom Fields | Tags (key-value pairs) added to each forwarded event, e.g. `site=sfo` for the SIEM to filter on |
+| Forward Complementary fields | Also send the fields beyond the core syslog header, as structured data |
+| Transport Protocol | UDP or TCP |
+
+Then optionally **Add Filter** to forward only part of the stream (contains /
+starts with / matches regex / exists, and their negations), **VALIDATE
+CONNECTION** (sends test events to the destination), and **CREATE**.
+
+**Syslog or Raw.** Both lose the original source. TechDocs: *"For syslog and
+RAW, the source is the Log Forwarder's Log Management instance IP address."*
+The difference is the header:
+
+- **Syslog** wraps each event in Log Management's own syslog header.
+- **Raw** forwards each event *"exactly the way it is received"*, without that
+  header. Broadcom recommends it for third-party destinations, *"because they
+  expect syslog events in their original form"*. That makes Raw the usual
+  choice for a SIEM.
+
+Either way, check that the SIEM takes the host from the message itself and
+not from the sending IP. Otherwise every event shows up as coming from Log
+Management.
+
+**Limits and gotchas** (same page):
+
+- **10 forwarding rules** at most.
+- *"Log filtering takes precedence over log forwarding."* Events that match a
+  filtering rule (the ones you drop at ingestion) are never forwarded.
+- **No loops.** Two instances forwarding to each other, directly or through a
+  third, copy every event indefinitely.
+- **Size the receiver.** If it is much smaller than the forwarder, events can
+  be dropped. Bandwidth and destination availability also affect reliability.
+- **After an import from 8.18 or 9.0**, forwarders come across but are
+  **inactive**: re-enable them, and repoint any that sent to the old cluster
+  ([Deploy Log Management](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/installing-vcf-logs.html),
+  and §2 above).
+
+**Firewall:** Log Management → the destination, on the port the destination
+listens on. The Ports and Protocols portal only lists TCP 1514 (syslog over
+TLS) as the forwarding flow (§6). For plain syslog or UDP, open what you
+configured, from the Log Management worker nodes (services-runtime IP pool).
+That last point is our assumption, not documented: confirm the sending IP with
+**VALIDATE CONNECTION** and the destination's own logs.
+
+---
+
 ## Sources
 
-All read 2026-10-14.
+All read 2026-10-14, except *Configuring Log Forwarding* (2026-10-21).
 
 - [Deploy Log Management (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/installing-vcf-logs.html)
 - [Deploying VMware vSphere Foundation 9.1 Without VCF Management Services](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-vmware-vsphere-foundation-using-the-deployment-wizard/deploying-vmware-vsphere-foundation-9-1-without-vcf-management-services.html)
@@ -297,5 +364,6 @@ All read 2026-10-14.
 - [Configuring Agents](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/log-analysis/overview-of-log-management-agents/configure-agents.html)
 - [Agent Authentication for Log Ingestion](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/log-analysis/overview-of-log-management-agents/agent-authentication-for-log-ingestion.html)
 - [Deploying the VCF Operations for logs Appliance for VMware vSphere Foundation (9.0 only)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/vcf-operations-for-logs-for-vvf-clients.html)
+- [Configuring Log Forwarding (9.1)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/infrastructure-operations/log-analysis/configuring-log-forwarding.html)
 - [KB 396643: Deploy and configure the logs agent in SDDC Manager](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html)
 - [Broadcom Ports and Protocols portal](https://ports.broadcom.com/view/): product *Log Management*, releases 9.1.0 and 9.1.1
