@@ -1,5 +1,32 @@
 # Changelog
 
+## v6.1.2 — 2026-10-21
+- **Backups: firewall flows, retention fields and NSX retention (#420).**
+  - **`docs/07` §F (new):** TCP 22 to the SFTP target, per source.
+    - The **whole VCF Management Services runtime pool**, field-observed in
+      `docs/08` §5.
+    - SDDC Manager, and every NSX Manager node.
+    - The VCF Automation `/29` (inference, not verified).
+    - vCenter, when its VAMI backup uses the same target.
+    - The
+      [Ports and Protocols portal](https://ports.broadcom.com/) (queried
+      2026-10-21) lists no SFTP backup flow for SDDC Manager, NSX, VCF
+      Management Services, Identity Broker, VCF Automation or VCF Operations.
+      Only vCenter's appear.
+  - **Firewall-request CSV template:** the backup row now names those
+    sources.
+  - **`docs/08` §1, retention fields:** the three SDDC Manager retention
+    fields, from the
+    [BackupRetentionPolicy schema](https://developer.broadcom.com/xapis/sddc-manager-api/9.0/data-structures/BackupRetentionPolicy/).
+    Covers the ranges, the rule that a backup is kept if any rule matches,
+    the default 10/2/15, what 14/0/0 means at daily vs hourly frequency, and
+    how state-change backups shorten the window.
+  - **`docs/08` §1, NSX retention:**
+    [KB 442696](https://knowledge.broadcom.com/external/article/442696/nsx-backup-retention-settings-in-sddc-ma.html).
+    NSX retention is not applied in 9.0/9.1 and backups are never deleted.
+    The NSX row no longer implies a 7-day retention. The section covers the
+    daily-cadence workaround and manual cleanup.
+
 ## v6.1.1 — 2026-10-21
 - **Every component FQDN resolves to an IP outside the services-runtime pool
   (#419, follow-up to #418).** TechDocs

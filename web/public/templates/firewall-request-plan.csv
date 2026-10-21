@@ -12,7 +12,7 @@ ESX-Management (AZ1 & AZ2),Witness site,vSAN witness traffic,TCP,Bidirectional,v
 AZ1 networks,AZ2 networks,vSAN / vMotion / overlay,-,Bidirectional,Stretched cluster data + overlay,Bring-up (if in scope),,Stretched only; routed between AZs
 Management subnets,Certificate Authority,443,TCP,Outbound,Certificate enrollment / signing,Day-N,,CA-signed replacement is Day-2; the prereq gate still checks reachability before bring-up. Plus CA-specific RPC for Microsoft CA
 Management subnets,SMTP relay,25 / 587,TCP,Outbound,VCF Operations alert notifications,Day-N,,Configured in VCF Operations after bring-up
-Management subnets + fleet components,SFTP backup target,22,TCP,Outbound,File-based backups,Day-N,,Configured in VCF Operations right after bring-up (E6 6.3)
+Whole VCF Management Services runtime pool + SDDC Manager + every NSX Manager node (+ VCF Automation /29 and vCenter if in scope),SFTP backup target,22,TCP,Outbound,File-based backups,Day-N,,Configured in VCF Operations right after bring-up (E6 6.3). Fleet backups come from changing addresses across the whole runtime pool - allow the range not named hosts. Not listed in the Ports and Protocols portal - see docs/07 section F
 Cloud Proxy / collected endpoints,VCF Operations,"443, 4505, 4506",TCP,Bidirectional,Operations collection; Telegraf monitoring,Bring-up,,9.1 - Cloud Proxy is deployed at bring-up
 Management components,vCenter (syslog),1514,TCP,Outbound,Syslog (TLS),Day-N,,9.1 change: 514 blocked - use 1514
 Fleet appliances,VCF Operations / License Server,443,TCP,Bidirectional,Fleet management / licensing,Bring-up,,License Server FQDN/IP outside services-runtime range
