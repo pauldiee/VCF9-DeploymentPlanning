@@ -1,5 +1,21 @@
 # Changelog
 
+## v6.1.0 — 2026-10-21
+- **`docs/01`: the Log Management VIP resolves to an IP outside the
+  services-runtime pool (#418).**
+  - The DNS table row said "services-runtime block". Now: VM Mgmt subnet, a
+    discrete IP **outside** the pool, with A + PTR created before the deploy.
+  - The IP-plan row now separates the worker-node IPs (from the pool) from
+    the VIP's own IP (outside it).
+  - Backed by
+    [Deploy Log Management](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/manual-deployment-of-components-to-complete-your-vcf-platform/installing-vcf-logs.html):
+    the wizard takes only an FQDN, which *"should not point to any IP
+    addresses already assigned to VCF services runtime nodes"*.
+  - Same fix in the IP-plan total note, the Rainpole sample
+    (`samples/01-network-dns-plan-rainpole.md`) and the IP/DNS CSV template.
+    The template also dropped the old "+2 per extra replica" rule for the
+    current one (#401).
+
 ## v6.0.9 — 2026-10-21
 - **`docs/31` §7: forwarding logs out to a SIEM or syslog server (#417).**
   Taken from
