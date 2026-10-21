@@ -993,7 +993,7 @@ day isn't spent chasing AD.
 
 VCF 9 federates fleet-wide SSO through the **VCF Identity Broker**. The broker
 itself is **deployed at bring-up** with the VCF Management Services (no opt-in;
-its FQDN + services-runtime IP are part of the Step 1 plan) — what happens
+its FQDN, on its own IP outside the services-runtime pool, is part of the Step 1 plan) — what happens
 Day-2 is its **configuration** (deployment plan **E8**, story **8.5** fleet
 SSO). Prepare the AD-over-LDAP
 identity source up front; it has specific inputs and well-known gotchas.
