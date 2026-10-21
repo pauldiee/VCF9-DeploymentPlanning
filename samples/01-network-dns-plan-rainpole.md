@@ -93,7 +93,7 @@ TEP `10.11.19.2–.5`.
 | VCF services runtime (VCF Management Services) | `sfo-sr01.sfo.rainpole.io` | `10.11.10.10` — the **fleet** runtime, intake `E14` |
 | Fleet components   | `flt-fc01.rainpole.io`               | `10.11.10.20` |
 | Instance components | `sfo-ic01.sfo.rainpole.io`          | `10.11.10.11` |
-| Log Management VIP | `flt-logs01.rainpole.io`             | (services-runtime block; Day-2, optional — integrated LB, worker nodes need IPs only) |
+| Log Management VIP | `flt-logs01.rainpole.io`             | (VM Mgmt subnet, a discrete IP **outside** the services-runtime block; Day-2, optional — integrated LB answers on it; the worker nodes come from the runtime block and need IPs only) |
 | NSX Edge 1 / 2     | `sfo-m01-en0{1,2}.sfo.rainpole.io`   | `10.11.10.75` / `.76` |
 
 DNS search domains: `sfo.rainpole.io`, `rainpole.io`. Every FQDN needs both an A
