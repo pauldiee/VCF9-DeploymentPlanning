@@ -1,5 +1,26 @@
 # Changelog
 
+## v6.1.7 — 2026-10-22
+- **`docs/15` restructured: less wall of text (#428).** No facts were dropped,
+  and the page went from 738 to ~600 lines, with half as many callout lines.
+  - **New at the top:** an *At a glance: 2.0 or 5.1.2* comparison table (shape,
+    download, footprint, IPs, FQDNs, internal CIDR, passwords, immutables,
+    upgrades) and a contents list.
+  - **New order:** 2.0 → **Register the hub (both versions)** → Licensing vDefend
+    endpoints → 5.1.2 (legacy) → References. The shared registration content
+    (connected vs disconnected, the Cloud Console URL, the account holder, proxy,
+    the disconnected loop) used to sit inside the 5.1.2 section, which the 2.0
+    section had to point down into. It's now its own section.
+  - **H3 subheadings throughout.** Long bullets are now tables: 2.0 addresses/DNS,
+    the two UIs, endpoint-onboarding fields, feature enablement, 5.1.2 pools and
+    one-way doors.
+  - The 5.1.2 → 2.0 migration steps moved into the 5.1.2 section as *Moving from
+    5.1.2 to 2.0*. The 2.0 internal-CIDR detail now links to `docs/34`.
+  - **Anchors:** the three H2 anchors other pages use are unchanged
+    (`license-hub-20-standalone-ova`, `license-hub-512-ssp-installer-flow`,
+    `licensing-vdefend-endpoints`). `docs/18`'s link to the 5.1.2 wizard table
+    now points at the new `#instance-deploy-wizard`.
+
 ## v6.1.6 — 2026-10-22
 - **`docs/15`: splitting a vDefend / Avi licence across License Hubs (#427).**
   New callout in *Licensing vDefend endpoints*. You split the key in the
