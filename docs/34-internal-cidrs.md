@@ -29,7 +29,7 @@ can pick, where the value is set, and whether you can change it later.
 | - | --------- | ------- | ------------ | -------------- | ------------- |
 | 1 | **VCF services runtime** (VCF Management Services, VCF and VVF) | `198.18.0.0/15` | `240.0.0.0/15` or `250.0.0.0/15`, **fixed list**. IPv6: `fd00::/111` in the API sample | **9.1.0:** JSON spec / SDDC Manager API only (`internalClusterCidrIpv4`). **9.1.1+:** VCF Installer UI, *Internal cluster CIDR IPv4* | Not documented; treat it as fixed at deploy |
 | 2 | **VCF Automation** services runtime | `198.18.0.0/15` | `240.0.0.0/15` or `250.0.0.0/15`. **May share** row 1's block | **9.1.0:** fleet lifecycle API only. **9.1.1+:** VCF Operations UI | Not documented; treat it as fixed at deploy |
-| 3 | **License Hub 2.0** *Internal Cluster Network* | `10.10.0.0/16` | Any unused non-routable block, **≥512 addresses (`/23` or larger)** | OVA deploy, *Customize template* | Not documented; FQDNs and IPs are immutable, so assume this is too |
+| 3 | **License Hub 2.0** *Internal Cluster Network* | `10.10.0.0/16` | **No fixed list from Broadcom**, only a rule: unused, non-routable, **≥512 addresses (`/23` or larger)**. Suggested: `10.255.0.0/16`, `192.168.254.0/23` (see §2.2) | OVA deploy, *Customize template* | Not documented; FQDNs and IPs are immutable, so assume this is too |
 | 4 | **vDefend SSP** pod CIDR (SSP Installer flow) | Not stated by Broadcom | Any unused block, e.g. `10.27.0.0/16` (KB example) | `secop_capi_pod_cidr` in `/config/clusterctl/settings.json` on the SSP Installer appliance, **before** deploying | **No.** Changing it afterwards *"will not affect existing cluster"* |
 | 5 | **Cloud Proxy** Docker subnet | Docker's own: `172.17.0.0/16` (bridge), then `172.18.0.0/16`, … | **Set it explicitly**, `/27` or larger | OVA deploy, *Docker Subnet* field | **No.** Only by deleting and recreating the Docker networks |
 | 6 | **Supervisor** Service CIDR | Pre-filled by the wizard; no default documented | Any private block; this repo's example is `10.96.0.0/23`. VDS networking: `/16`. Classic NSX: `/16` minimum | Supervisor activation wizard / API (`default_service_cidr` in the 9.1 API) | Not without redeploying the Supervisor |
@@ -106,11 +106,30 @@ leave this at the default value."* ([License Hub Appliance System
 Requirements][td-lichub-req]).
 
 `10.10.0.0/16` sits in RFC 1918 space, so it collides more often than the
-services-runtime defaults. Check it against your IP plan. If it is in use,
-pick any other unused block of `/23` or larger. Avoid `198.18.0.0/15` here if
-the services runtime already uses it: Broadcom only allows sharing between
-services-runtime instances, not with License Hub. See
-[`15-license-hub.md`](15-license-hub.md).
+services-runtime defaults. Check it against your IP plan.
+
+**Alternatives.** Unlike the services runtime, License Hub has **no fixed
+pick-list**: the tooltip above is the only guidance. Neither the [system
+requirements page][td-lichub-req] nor the API reference lists allowed values.
+The options below are **this repo's suggestions, not a Broadcom list**. Try
+them in this order:
+
+| Option | Block | Notes |
+| ------ | ----- | ----- |
+| 1. Keep the default | `10.10.0.0/16` | Broadcom's own advice, if nothing in your estate uses it |
+| 2. Another unused RFC 1918 block | e.g. `10.255.0.0/16`, or a `/23` such as `192.168.254.0/23` | The top of `10.0.0.0/8` is rarely allocated. A `/23` is the minimum and is enough: you only need room for the appliance's own pods and services |
+| 3. A smaller unused slice you reserve in IPAM | any free `/23`–`/16` | Register it in IPAM as "License Hub internal, do not route" so nobody allocates it later |
+
+Avoid these:
+- **`198.18.0.0/15`, `240.0.0.0/15`, `250.0.0.0/15`** (the services-runtime
+  list). Broadcom only allows sharing between services-runtime instances, not
+  with License Hub, and it hasn't been verified whether the License Hub OVA
+  accepts the class E blocks (`240/250.x`).
+- **`172.17.0.0/16`–`172.31.0.0/16`.** These are Docker's default pools (row 5).
+  Keep them free so container-based appliances don't collide with them.
+
+Broadcom doesn't document changing it after deployment, so decide it up front
+and record it in the Step 1 plan. See [`15-license-hub.md`](15-license-hub.md).
 
 ### 2.3 vDefend SSP (row 4)
 
