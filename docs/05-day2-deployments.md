@@ -38,7 +38,7 @@ networking, DNS, and IP prep is ready *before* the deployment runs — the same
 |D1 | Which fleet components are deployed at bring-up vs. Day-N?           | **VCF Operations, VCF Management Services (incl. the Identity Broker), the Cloud Proxy and the License Server are bring-up** — the Installer deploys them automatically, no opt-in (or defers Operations + Automation + cloud proxy + license server as a set for **custom network placement** — see C). VCF Automation can be deferred indefinitely; Log Management & Operations for Networks are often Day-N. The Identity Broker's Day-2 part is **configuration only** (AD binding / fleet SSO) plus any additional instance |
 |D2 | Reuse an existing VCF Operations (fleet already has one)?           | VCF Operations itself is deployed **at bring-up** (deployment-plan epic E5, `06-deployment-plan.md`). `useExistingDeployment` connects an **additional** VCF instance to the fleet's existing Ops — no new appliances |
 |D3 | Deployment **method** for VCF Automation?                           | Via **SDDC Manager API**, or via **VCF Operations** — see D            |
-|D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment / **NSX VPC subnet**? | Five options — see C. NSX Overlay needs an Edge cluster + transit gateway; **NSX VPC is not on the sheet and is API-only**. At Day-N *every* non-shared placement is API-only |
+|D4 | Network placement: Shared Mgmt / Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment / **NSX VPC subnet**? | Five options — see C. NSX Overlay needs an Edge cluster + transit gateway; **NSX VPC is not on the sheet**. At Day-N on **9.1.0** *every* non-shared placement is API-only; **9.1.1** adds a network picker to the *Add VCF Automation* wizard (C, D) |
 |D5 | Every Day-2 appliance has forward + reverse DNS and a reserved IP?  | Fleet Day-2 workflows run a synthetic check that must pass             |
 |D6 | **Is vDefend or Avi in scope?**                                     | If so there can be **two more Day-N appliance sets**, and **neither comes from the Day-N sheet** — the **Avi Load Balancer** (via VCF Operations) and **License Hub** (its own standalone OVA in 2.0, or via the SSP Installer on 5.1.2 — outside VCF entirely either way). License Hub is needed for vDefend, and for Avi only on on-prem licensing — Avi can use **Cloud Licensing** straight to the Avi Cloud Console instead (disconnected sites need the hub). See **B.3**; full detail in [`prerequisites.md`](prerequisites.md). Easy to miss precisely because the fleet tooling never mentions them |
 
@@ -423,13 +423,23 @@ region failover (no DNS repoint); see the design library's
 The point of the non-shared options is to **separate user-facing networks from
 management networks** for regulatory / security requirements.
 
-> **At Day-N, every non-shared placement is API-only.** Field-verified
-> 2026-07-21: the Day-N *Add VCF Automation* wizard (Fleet LCM, via VCF
-> Operations) has **no network picker at all** — it asks only for the services
-> runtime nodes CIDR and the FQDNs, and always uses the management network. So
-> **Dedicated Management Network, NSX Overlay Segment, NSX VLAN Segment and NSX
-> VPC alike** have to be deployed through the **Fleet LCM API** once the fleet is
-> up. Section D has the procedure; it applies to all four, not just the VPC.
+> **At Day-N: API-only on 9.1.0, a UI network picker from 9.1.1.**
+>
+> | Date | Source | Day-N *Add VCF Automation* wizard |
+> | --- | --- | --- |
+> | 2026-06 | [William Lam (9.1.0)](https://williamlam.com/2026/06/vcf-9-1-deploying-vcf-automation-vcfa-to-non-management-network.html) | Non-management placement *"requires using the VCF APIs"* |
+> | 2026-07-21 | This repo, field-verified on 9.1.0 | **No network picker at all** — asks only for the services runtime nodes CIDR and the FQDNs, always uses the management network |
+> | 2026-10-19 | [William Lam (9.1.1)](https://williamlam.com/2026/10/vcf-9-1-1-new-ui-support-for-deploying-vcf-management-services-vcfms-vcf-automation-vcfa-on-non-management-networks.html) | New **Port group for VCF management traffic** field with *SELECT NETWORK*; the node IP pool takes a **CIDR or individual IPs** |
+>
+> So on **9.1.0**, **Dedicated Management Network, NSX Overlay Segment, NSX VLAN
+> Segment and NSX VPC alike** have to be deployed through the **Fleet LCM API**
+> once the fleet is up (section D has the procedure; it applies to all four). On
+> **9.1.1 and later**, pick the target port group in the wizard instead; the API
+> stays a valid fallback. The 9.1.1 behaviour comes from Lam's screenshots and is
+> **not yet verified in this repo**: the post doesn't show which network types the
+> picker lists. The field label says *port group*, so an NSX segment or VPC
+> subnet presumably has to be realised in vCenter as one first, as with the API
+> (#425).
 >
 > **The exception is the deferred-components path.** The **VCF Installer**'s
 > third deployment path — *Deploy deferred components*, unlocked by the
@@ -447,7 +457,8 @@ deployment wizard** offer. They are not the limit of what the platform supports:
 Broadcom's own design library builds patterns on exactly that.
 
 A VPC is not a special case mechanically — per the callout above, **all** the
-non-shared placements go through the same Fleet LCM API at Day-N. What makes the
+non-shared placements go through the same route at Day-N (the Fleet LCM API on
+9.1.0, the wizard's network picker or the API on 9.1.1+). What makes the
 VPC worth its own section is that it is the one placement the sheet does not
 list at all, so there is nowhere else to record the decision.
 
@@ -606,13 +617,24 @@ network placement (section C) together.
 > FQDNs each need their **own discrete VM Mgmt IP on top of it**. Budget
 > **`/29` + 2**, and see `01-network-dns-plan.md`.
 
-### Deploying VCF Automation to a non-management network — API only
+### Deploying VCF Automation to a non-management network — UI (9.1.1+) or API
 
-**The Fleet LCM UI can only place VCF Automation on the management network.**
-It also only accepts a **CIDR** for the node addresses, so the smallest legal
-input is a `/29` — 8 addresses for a component that needs 5. Placing VCFA on
-anything else (a VLAN portgroup, an NSX overlay segment, an **NSX VPC subnet**)
-is **API-only**, and the API additionally accepts an explicit list of 5 IPs.
+**9.1.1 and later: use the wizard.** *Add VCF Automation* → **Parameters**
+now has a **Port group for VCF management traffic** field (*SELECT NETWORK*),
+and the *VCF services runtime nodes IP pool* takes a **CIDR or Individual IPs**
+(minimum 5), per the screenshots in William Lam's
+[VCF 9.1.1 post](https://williamlam.com/2026/10/vcf-9-1-1-new-ui-support-for-deploying-vcf-management-services-vcfms-vcf-automation-vcfa-on-non-management-networks.html).
+Step 0 below (the target network must exist and be visible in vCenter) and the
+FQDN rules still apply; Steps 1–2 and the script are what the picker replaces.
+Not yet verified in this repo (#425).
+
+**9.1.0: API only.** The Fleet LCM UI can only place VCF Automation on the
+management network. It also only accepts a **CIDR** for the node addresses, so
+the smallest legal input is a `/29` — 8 addresses for a component that needs 5.
+Placing VCFA on anything else (a VLAN portgroup, an NSX overlay segment, an
+**NSX VPC subnet**) is **API-only**, and the API additionally accepts an
+explicit list of 5 IPs. The rest of this section is the 9.1.0 procedure, and
+the fallback on 9.1.1+.
 
 > **Credit.** The API approach, endpoints and payload shape below are William
 > Lam's, from [VCF 9.1 — Deploying VCF Automation (VCFA) to non-Management

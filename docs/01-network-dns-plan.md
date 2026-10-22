@@ -301,6 +301,15 @@ same shape.
 > observed in-product. Do not plan scattered addresses for a new deployment on
 > the strength of an upgrade page.
 >
+> **9.1.1 update (screenshot, not yet field-verified here).** William Lam's
+> [VCF 9.1.1 post](https://williamlam.com/2026/10/vcf-9-1-1-new-ui-support-for-deploying-vcf-management-services-vcfms-vcf-automation-vcfa-on-non-management-networks.html)
+> (2026-10-19) shows the Day-N *Add VCF Automation* → Parameters page with the
+> renamed field *VCF services runtime nodes **IP pool*** and a **CIDR / Individual
+> IPs** choice (plus *Exclude IP addresses*), hinting *"Minimum 5 IPs are
+> required"*. So on 9.1.1 a fresh Day-N deployment can take 5 individual
+> addresses from the UI too. A contiguous `/29` remains the safe plan on every
+> version (#425).
+>
 > **Mind the digits — the real build numbers carry four.** Broadcom's patch
 > release notes, the Version Overview and the product itself all use a
 > **four-digit** patch component: `9.1.0.0100`, `9.1.0.0200`, **`9.1.0.0400`**.

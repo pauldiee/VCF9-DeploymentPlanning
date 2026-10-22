@@ -1,5 +1,25 @@
 # Changelog
 
+## v6.1.4 — 2026-10-22
+- **VCF 9.1.1: UI network picker for VCF Automation (Day-N) and VCF Management
+  Services (upgrade) (#425).** Source:
+  [William Lam, 2026-10-19](https://williamlam.com/2026/10/vcf-9-1-1-new-ui-support-for-deploying-vcf-management-services-vcfms-vcf-automation-vcfa-on-non-management-networks.html),
+  from the post's screenshots. Not yet verified in this repo, and the post doesn't
+  show which network types the picker lists.
+  - **`docs/05`:** the D4 row and the "every non-shared placement is API-only"
+    callout are now version-aware, with a dated timeline. 9.1.0 is API-only
+    (field-verified). On 9.1.1+ the wizard has a *Port group for VCF management
+    traffic* picker, and the API stays the fallback. The §D section is renamed
+    *"— UI (9.1.1+) or API"*; the `docs/16` link to it is updated.
+  - **`docs/01`:** the VCF Automation contiguity callout notes that the 9.1.1
+    Day-N wizard's *VCF services runtime nodes IP pool* takes a CIDR or
+    individual IPs (minimum 5).
+  - **`docs/06` + export tool:** stories 8.1 / 8.2 give the 9.1.1 wizard route
+    and the 9.1.0 API route. Story 5.4 notes the VCF Management Services picker
+    on the upgrade path.
+  - The VCF Management Services IP minimums in the screenshot (12, or 30 for
+    expansion) already match `docs/01` (`/28`–`/27`).
+
 ## v6.1.3 — 2026-10-22
 - **Deployment plan / tracker / test plan: a "None" NSX connectivity option
   (#421).** Besides Centralized and Distributed, the management domain and each

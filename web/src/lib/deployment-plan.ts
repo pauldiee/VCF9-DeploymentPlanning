@@ -466,7 +466,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '5.4',
         title: 'Verify VCF Management Services, License Server & Cloud Proxy',
         tasks: [
-          'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, identity broker, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only.)',
+          'These ARE part of the automatic bring-up in VCF 9.1 — the Installer deploys VCF Management Services (VCF services runtime, identity broker, fleet and SDDC lifecycle, software depot, telemetry) with the instance, a unified Cloud Proxy is "configured by default by the VCF Installer", and a License Server is "automatically deployed as part of the installation". Plan their FQDNs/IPs BEFORE bring-up, and after bring-up verify them in VCF Operations. (The manual "deploy VCF Management Services and License Server" TechDocs procedure applies to the 9.0 -> 9.1 upgrade path only; on 9.1.1 its Components Installation dialog adds a Deployment network picker, where 9.1.0 needed the SDDC Manager API for a non-management network.)',
           'The License Server needs a unique FQDN resolving to an IP outside the VCF services-runtime range (IPv4 only). The Cloud Proxy stays on the VM-Management network and needs ports 443 / 4505 / 4506 to VCF Operations (see 07-firewall-ports.md). Licenses are applied fleet-wide later (E8 8.5) — within the 90-day evaluation period that starts at bring-up.',
         ],
         acceptance: 'VCF Management Services + License Server up and healthy after bring-up; the License Server FQDN resolves to an IP outside the services-runtime range; the Cloud Proxy is collecting.',
@@ -604,22 +604,23 @@ function day2Epic(sel: Selection): Epic {
       ? `${a.model} size — ${sizeInfo.nodes}-node ${sizeInfo.model} cluster behind the cluster VIP of VCF Automation's built-in load balancer (no external load balancer required). Size is what selects this: medium/large deploy 3 nodes, small deploys 1`
       : `${a.model} size — single node (${sizeInfo.model} model, no load balancer needed). Resizing to medium or large later automatically scales out to 3 nodes`;
     const vpc = a.placement === 'vpc';
-    // Every non-shared placement is API-only at Day-N: the Add VCF Automation
-    // wizard has no network picker and always uses the management network.
-    // (The VCF Installer's "deploy deferred components" path can place on a
-    // prepared vDS/NSX segment from a UI, but that happens at bring-up.)
+    // Non-shared placements at Day-N: on 9.1.0 the Add VCF Automation wizard
+    // has no network picker, so they are API-only; 9.1.1 adds a port-group
+    // picker and individual IPs to the wizard (#425). (The VCF Installer's
+    // "deploy deferred components" path can place on a prepared vDS/NSX segment
+    // from a UI, but that happens at bring-up.)
     const nonMgmt = a.placement !== 'shared';
     const tasks = nonMgmt ? [
       vpc
         ? `Create the NSX VPC and its subnet FIRST, and confirm it has realised in vCenter as a distributed portgroup — it has no MoRef until it appears there. Note the subnet's gateway address with prefix.`
         : `Build the ${p.label} FIRST — ${p.text} — and confirm it is visible in vCenter as a portgroup; it has no MoRef until it appears there. Note its gateway address with prefix.`,
-      `Deploy as a ${modelText} via the FLEET LCM API. The Day-N Add VCF Automation wizard has NO network picker — it always uses the management network — so any non-management placement must go through the API, which also accepts an explicit 5-IP list instead of a CIDR. POST /fleet-lcm/v1/components/validations, then POST /fleet-lcm/v1/components. See 05-day2-deployments.md section D.`,
+      `Deploy as a ${modelText}. The route depends on the version. VCF 9.1.1 and later: in the Day-N Add VCF Automation wizard (VCF Operations), Parameters → "Port group for VCF management traffic" → SELECT NETWORK and pick the target port group; the "VCF services runtime nodes IP pool" takes a CIDR or 5 individual IPs (per William Lam's 9.1.1 screenshots — https://williamlam.com/2026/10/vcf-9-1-1-new-ui-support-for-deploying-vcf-management-services-vcfms-vcf-automation-vcfa-on-non-management-networks.html — not yet verified in this repo). VCF 9.1.0: the wizard has NO network picker and always uses the management network, so go through the FLEET LCM API (also the fallback on 9.1.1+): POST /fleet-lcm/v1/components/validations, then POST /fleet-lcm/v1/components. See 05-day2-deployments.md section D.`,
       `If this placement was known before bring-up, the VCF Installer's "deploy deferred components" path could have placed it from the UI instead (Management Components Custom Networking toggle) — worth checking which route applies before scripting anything.`,
-      `Capture networkMoId (Get-VDPortgroup one-liner), gatewayCidrIpv4 (gateway address WITH prefix), and exactly 5 IP addresses for ipv4Pool.addresses — no CIDR.`,
+      `API route only: capture networkMoId (Get-VDPortgroup one-liner), gatewayCidrIpv4 (gateway address WITH prefix), and exactly 5 IP addresses for ipv4Pool.addresses — no CIDR.`,
       `Create A + PTR for BOTH Automation FQDNs (appliance + its own services runtime) on the target network and OUTSIDE the 5-address pool — pre-validation resolves them, so they must exist before you start.`,
       `Confirm the return path from the target network to SDDC Manager, vCenter, VCF Operations, the identity broker, DNS and NTP. Pre-validation does NOT test this.`,
       `Confirm the Fleet Depot Service has synced the VCFA binaries INCLUDING the VCD Migration Engine component, or the deployment fails on missing binaries.`,
-      `Watch the task under SDDC lifecycle (Build > Tasks > VCF Instances > <instance>), NOT Fleet lifecycle where wizard-driven tasks appear.`,
+      `API route: watch the task under SDDC lifecycle (Build > Tasks > VCF Instances > <instance>), NOT Fleet lifecycle where wizard-driven tasks appear.`,
     ] : [
       `Deploy via SDDC Manager API or via VCF Operations as a ${modelText}. Network placement: ${p.label} — ${p.text} (see 05-day2-deployments.md section C). Set the services-runtime cluster CIDR.`,
       'Have BOTH VCF Automation FQDNs resolving before you start: the Automation appliance FQDN AND Automation\'s own "VCF services runtime" FQDN (lowercase, A + PTR). This is a second, separate FQDN from the fleet VCF Management Services runtime created at bring-up — TechDocs and the workbook use the identical label for both.',
@@ -660,7 +661,7 @@ function day2Epic(sel: Selection): Epic {
     compNames.length > 1 ? `${compNames.slice(0, -1).join(', ')} & ${compNames[compNames.length - 1]}` : compNames[0];
 
   const stories: Story[] = [
-    { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment / NSX VPC subnet for the Day-2 components; build the network if non-shared. Note that at Day-N every non-shared placement is API-only — the Add VCF Automation wizard has no network picker (see 05-day2-deployments.md section C). TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN/VPC subnet is visible in vCenter, reachable, and the fleet FQDNs resolve.' },
+    { id: '8.1', title: 'Network placement', tasks: [`Decide Shared / Dedicated / NSX Overlay / NSX VLAN Segment / NSX VPC subnet for the Day-2 components; build the network if non-shared. Note that at Day-N on VCF 9.1.0 every non-shared placement is API-only (the Add VCF Automation wizard has no network picker); 9.1.1 adds a port-group picker to the wizard (see 05-day2-deployments.md section C). TechDocs: design models — ${TECHDOCS.fleetNetDesign} ; deployment guidance — ${TECHDOCS.customNetworking}`], acceptance: 'Chosen placement built (or the shared network confirmed); the segment/VLAN/VPC subnet is visible in vCenter, reachable, and the fleet FQDNs resolve.' },
     automationStory,
   ];
   // Ordering (#213): the hub must exist and hold licences BEFORE any Avi
