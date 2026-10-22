@@ -172,6 +172,9 @@ export function isVsanStorage(storage: StorageType): boolean {
  * (and any hand-built Selection) consistent before epics are generated.
  */
 export function normalizeSelection(sel: Selection): Selection {
+  // vDefend always brings an on-prem License Hub, so Avi is licensed through it
+  // too; Cloud Licensing is only a choice without vDefend (#422).
+  if (sel.vdefend && sel.aviLicensing !== 'hub') sel = { ...sel, aviLicensing: 'hub' };
   // Private AI Foundation runs on a Supervisor (its workload-domain workflow
   // makes it mandatory; VM classes, namespaces and Private AI Services live on
   // it), so a PAIF domain pulls Supervisor in (#408).
@@ -722,10 +725,8 @@ function licenseHubDeployStory(id: string, sel: Selection): Story {
   const hubAvi = aviOnHub(sel);
   const why = sel.vdefend
     ? hubAvi
-      ? 'vDefend is in scope (vDefend is always licensed through the on-prem License Hub) and Avi is licensed on-prem through it too'
-      : aviOnCloudLicensing(sel)
-        ? 'vDefend is in scope, and vDefend is always licensed through the on-prem License Hub, even though Avi here uses Cloud Licensing'
-        : 'vDefend is in scope, and vDefend is always licensed through the on-prem License Hub (there is no cloud-licensing route for vDefend), with or without Avi'
+      ? 'vDefend is in scope (vDefend is always licensed through the on-prem License Hub), and Avi is licensed through the same hub'
+      : 'vDefend is in scope, and vDefend is always licensed through the on-prem License Hub (there is no cloud-licensing route for vDefend)'
     : 'Avi is licensed on-prem through the hub (not Cloud Licensing)';
   return {
     id,

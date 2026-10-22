@@ -20,8 +20,10 @@
 - **Deployment plan: vDefend always needs the on-prem License Hub (#422).**
   The *Security add-on & licensing* section now says this plainly. vDefend has
   no cloud-licensing route, so ticking it adds License Hub with or without Avi.
-  The *Avi licensing* choice applies to Avi only. The License Hub story's reason
-  text and `prerequisites.md` (License Hub) say the same.
+  The *Avi licensing* box now appears only when Avi is in scope, and with
+  vDefend ticked it is fixed to License Hub (Cloud Licensing can't be picked,
+  because the hub is there anyway). The License Hub story's reason text and
+  `prerequisites.md` (License Hub) say the same.
 
 ## v6.1.2 — 2026-10-21
 - **Backups: firewall flows, retention fields and NSX retention (#420).**
