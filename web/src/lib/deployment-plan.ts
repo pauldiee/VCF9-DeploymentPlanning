@@ -66,7 +66,12 @@ export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 
  * carries only `size` for exactly this reason. (#193)
  */
 export type AutomationModel = 'small' | 'medium' | 'large';
-export type NsxConnectivity = 'centralized' | 'distributed';
+/**
+ * NSX north-south model per domain. 'none' (#421): no Edge cluster / Tier-0 and
+ * no Transit Gateway / VNA is built — NSX Manager is still deployed with the
+ * domain, but its networks stay VLAN-backed and routed by the physical fabric.
+ */
+export type NsxConnectivity = 'centralized' | 'distributed' | 'none';
 export type SupervisorSize = 'Small' | 'Medium' | 'Large';
 export type SupervisorLb = 'builtin' | 'flb' | 'avi';
 export type GpuUse = 'none' | 'vms' | 'paif';
@@ -167,11 +172,32 @@ export function isVsanStorage(storage: StorageType): boolean {
  * (and any hand-built Selection) consistent before epics are generated.
  */
 export function normalizeSelection(sel: Selection): Selection {
+  // vDefend always brings an on-prem License Hub, so Avi is licensed through it
+  // too; Cloud Licensing is only a choice without vDefend (#422).
+  if (sel.vdefend && sel.aviLicensing !== 'hub') sel = { ...sel, aviLicensing: 'hub' };
   // Private AI Foundation runs on a Supervisor (its workload-domain workflow
   // makes it mandatory; VM classes, namespaces and Private AI Services live on
   // it), so a PAIF domain pulls Supervisor in (#408).
   if (sel.wlds.some((w) => w.gpu === 'paif' && !w.supervisor)) {
     sel = { ...sel, wlds: sel.wlds.map((w) => (w.gpu === 'paif' ? { ...w, supervisor: true } : w)) };
+  }
+  // A domain without NSX north-south (#421): Private AI Foundation's VCF
+  // Automation org runs on VPC networking, so a PAIF domain falls back to
+  // Centralized; a Supervisor there runs on VDS networking, where the built-in
+  // NSX/VPC load balancer doesn't exist, so it falls back to the Foundation LB.
+  if (sel.wlds.some((w) => w.connectivity === 'none' && (w.gpu === 'paif' || (w.supervisor && w.supervisorLb === 'builtin')))) {
+    sel = {
+      ...sel,
+      wlds: sel.wlds.map((w): Wld =>
+        w.connectivity !== 'none'
+          ? w
+          : w.gpu === 'paif'
+            ? { ...w, connectivity: 'centralized' }
+            : w.supervisor && w.supervisorLb === 'builtin'
+              ? { ...w, supervisorLb: 'flb' }
+              : w,
+      ),
+    };
   }
   if (!isVsanStorage(sel.storage)) {
     if (sel.mgmtStretched || sel.wlds.some((w) => w.stretched)) {
@@ -206,7 +232,13 @@ export function defaultSelection(): Selection {
 export const NSX_CONNECTIVITY: { value: NsxConnectivity; label: string }[] = [
   { value: 'centralized', label: 'Centralized (Edge cluster + BGP)' },
   { value: 'distributed', label: 'Distributed (VNA cluster)' },
+  { value: 'none', label: 'None (no NSX north-south, VLAN-backed only)' },
 ];
+
+/** Short name of a connectivity model, for story and epic titles. */
+export function connectivityName(c: NsxConnectivity): string {
+  return c === 'distributed' ? 'Distributed' : c === 'none' ? 'no NSX north-south' : 'Centralized';
+}
 
 /** vSphere Supervisor control-plane sizes. */
 export const SUPERVISOR_SIZES: SupervisorSize[] = ['Small', 'Medium', 'Large'];
@@ -318,6 +350,7 @@ const TECHDOCS = {
 
 function coreEpics(sel: Selection): Epic[] {
   const distributed = sel.connectivity === 'distributed';
+  const noNs = sel.connectivity === 'none';
   const storage = STORAGE_TYPES.find((s) => s.value === sel.storage) ?? STORAGE_TYPES[0];
   return [
   {
@@ -326,7 +359,9 @@ function coreEpics(sel: Selection): Epic[] {
     owner: 'Network + AD/DNS/NTP',
     stories: [
       { id: '1.1', title: 'VLAN / subnet plan', tasks: ['Lock every management VLAN, subnet, MTU, gateway, and the IP carve-out.'], acceptance: 'One-page plan signed by the network owner; every VLAN/subnet/gateway/MTU recorded and no overlapping subnets.' },
-      distributed
+      noNs
+        ? { id: '1.2', title: 'North-south plan (none: no NSX north-south)', tasks: ['No NSX north-south is built for the management domain: no Edge cluster, Tier-0 or BGP, and no Distributed Transit Gateway or VNA cluster. NSX Manager is still deployed at bring-up (it is part of every VCF instance), but every management network stays a VLAN-backed port group routed by the physical fabric.', 'Record what that rules out until north-south is added later: the NSX Overlay Segment and NSX VPC placements for the Day-2 fleet, and overlay networking for anything else in the management domain.'], acceptance: 'The no-north-south decision for the management domain is recorded and agreed by the architect and the network owner; every management network is VLAN-backed and routed by the physical fabric.' }
+        : distributed
         ? { id: '1.2', title: 'Distributed Transit Gateway plan', tasks: ['No BGP and no Edge uplinks. Plan the external VLAN — every ESX host in the domain must attach to it — and its gateway CIDR, routed by the physical fabric.', 'Plan the routable external IP block for north-south (NAT/SNAT addresses and load-balancer VIPs), advertised upstream by the fabric.', 'Plan the private transit-gateway block. In 9.1 this must be a /16 — a /24 worked in 9.0 and never completes in 9.1.', 'Plan the VNA appliance FQDNs + static IPs (2 minimum for HA, on the ESX Management subnet) and whether default outbound NAT is enabled. A VNA cluster gives the Distributed Transit Gateway its stateful services (NAT/SNAT) — it is not a small Edge cluster, and no Tier-0 or Tier-1 runs on it.'], acceptance: 'External VLAN + gateway CIDR, external IP block, private transit block (/16), and the VNA FQDNs/IPs agreed with the fabric team — with written confirmation that the physical network routes the external VLAN and advertises the external IP block. Because there is no Tier-0, the fabric does the routing NSX would otherwise do: this is the same hard gate BGP gets under Centralized connectivity.' }
         : { id: '1.2', title: 'BGP plan', tasks: ['Edge AS, ToR AS, peer IPs, BFD, advertised/received routes — plus an optional MD5 password only if you enable BGP authentication.'], acceptance: 'Edge AS, ToR AS, peer IPs, BFD, and advertised/received routes agreed and documented with the fabric team. (BGP MD5 is optional — capture a password only if authentication is enabled; VCF/NSX requires just the neighbor IP + remote AS.)' },
       { id: '1.3', title: 'DNS & NTP records', tasks: ['All A + PTR records created; NTP sources confirmed.'], acceptance: 'Forward (A) + reverse (PTR) records created for every planned appliance FQDN and resolving both ways; NTP sources reachable and serving.' },
@@ -367,11 +402,15 @@ function coreEpics(sel: Selection): Epic[] {
         title: 'Physical network ready',
         tasks: [
           'Trunk the required VLANs to host uplinks; set MTU 9000 on jumbo networks.',
-          distributed
+          noNs
+            ? 'No NSX north-south fabric work: no BGP peering for Edge nodes and no external VLAN for a Transit Gateway. Configure the gateway SVIs for the VLAN-backed management networks on the ToRs.'
+            : distributed
             ? 'Trunk the external VLAN to EVERY ESX host in the domain (not just to an edge pair — there are no Edge VMs), configure its gateway SVI on the ToRs, and advertise the external IP block upstream. Because there is no Tier-0, the physical fabric performs the routing NSX would otherwise do — so this is a hard gate, not a follow-up.'
             : 'Configure the ToR BGP fabric (AS numbers, peer IPs) for the NSX edges.',
         ],
-        acceptance: distributed
+        acceptance: noNs
+          ? 'Required VLANs trunked with MTU 9000 on the jumbo networks and routed by the ToRs; all verified against the network plan (E1).'
+          : distributed
           ? 'Required VLANs trunked with MTU 9000 on the jumbo networks; the external VLAN reaches every host in the domain, its gateway answers, and the external IP block is reachable from upstream; all verified against the network plan (E1).'
           : 'Required VLANs trunked with MTU 9000 on the jumbo networks; ToR BGP fabric up; all verified against the network plan (E1).',
       },
@@ -379,7 +418,7 @@ function coreEpics(sel: Selection): Epic[] {
         id: '4.3',
         title: 'Core services ready',
         tasks: ['AD, DNS, NTP, CA, depot reachable (open the firewall flows — see 07-firewall-ports.md).'],
-        acceptance: `Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, ${distributed ? 'the VNA appliances (2+, on the ESX Management subnet — Distributed connectivity has no Edge nodes)' : 'NSX Edge nodes'}, VCF Operations nodes (+ optional external LB VIP), Cloud Proxy, License Server, and the VCF Management Services FQDNs (fleet components, instance components, identity broker, services runtime — all deployed at bring-up), and any Day-2 fleet appliances (Automation, Log Management; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.`,
+        acceptance: `Forward (A) and reverse (PTR) DNS resolves both ways for every management/fleet FQDN — ESXi hosts, vCenter, SDDC Manager, NSX Manager VIP + the 3 nodes, ${noNs ? 'no Edge nodes or VNA appliances (no NSX north-south in the management domain)' : distributed ? 'the VNA appliances (2+, on the ESX Management subnet — Distributed connectivity has no Edge nodes)' : 'NSX Edge nodes'}, VCF Operations nodes (+ optional external LB VIP), Cloud Proxy, License Server, and the VCF Management Services FQDNs (fleet components, instance components, identity broker, services runtime — all deployed at bring-up), and any Day-2 fleet appliances (Automation, Log Management; plus the Avi controller nodes + VIP if the Avi LB is in scope); NTP in sync; CA reachable; depot/binaries staged.`,
       },
       {
         id: '4.4',
@@ -439,7 +478,12 @@ function coreEpics(sel: Selection): Epic[] {
     title: 'Management domain configuration',
     owner: 'Platform + Network + Security',
     stories: [
-      distributed
+      noNs
+        ? { id: '6.1', title: 'NSX north-south (none: not configured)', tasks: [
+            'No north-south is built for the management domain in this scope: skip the Edge cluster + Tier-0 (Centralized) and the Distributed Transit Gateway + VNA cluster (Distributed). NSX Manager from bring-up stays in place; it is part of every VCF instance.',
+            `If a later need appears (an NSX Overlay Segment or NSX VPC placement for the Day-2 fleet, or overlay networking in the management domain), add Centralized or Distributed connectivity then. TechDocs: ${TECHDOCS.centralized} ; ${TECHDOCS.distributed}`,
+          ], acceptance: 'Management networking confirmed VLAN-backed and routed by the physical fabric; no Edge cluster, Tier-0, Transit Gateway or VNA cluster expected in the as-built.' }
+        : distributed
         ? { id: '6.1', title: 'NSX north-south (Distributed connectivity)', tasks: [
             'The Distributed Transit Gateway (DTGW) distributes routing to the hypervisors — no centralized Edge cluster, no Tier-0, no BGP.',
             'Attach the DTGW to the external VLAN planned in story 1.2 — the VLAN every ESX host in the domain reaches — with its gateway CIDR routed by the physical fabric and the routable external IP block advertised upstream.',
@@ -584,6 +628,9 @@ function day2Epic(sel: Selection): Epic {
     if (a.placement === 'overlay' && sel.connectivity === 'distributed') {
       tasks.push('This fleet uses Distributed connectivity (no centralized Edge cluster), but the NSX Overlay Segment placement needs an NSX Edge cluster + Tier-0 + Tier-1 for the fleet segment — deploy that Edge cluster first, or pick the Dedicated Management / NSX VLAN Segment placement instead (see 05-day2-deployments.md section C).');
     }
+    if ((a.placement === 'overlay' || a.placement === 'vpc') && sel.connectivity === 'none') {
+      tasks.push(`The management domain has no NSX north-south in this scope, but the ${p.label} placement needs it to route to the management components — add Centralized or Distributed connectivity first (E6 6.1), or pick the Shared / Dedicated Management or NSX VLAN Segment placement instead (see 05-day2-deployments.md section C).`);
+    }
     automationStory = {
       id: '8.2',
       title: `VCF Automation (${p.label}, ${a.model}${ha ? ' — HA, 3 nodes' : ' — 1 node'})`,
@@ -677,7 +724,9 @@ function day2Epic(sel: Selection): Epic {
 function licenseHubDeployStory(id: string, sel: Selection): Story {
   const hubAvi = aviOnHub(sel);
   const why = sel.vdefend
-    ? hubAvi ? 'vDefend is in scope and Avi is licensed on-prem' : 'vDefend is in scope'
+    ? hubAvi
+      ? 'vDefend is in scope (vDefend is always licensed through the on-prem License Hub), and Avi is licensed through the same hub'
+      : 'vDefend is in scope, and vDefend is always licensed through the on-prem License Hub (there is no cloud-licensing route for vDefend)'
     : 'Avi is licensed on-prem through the hub (not Cloud Licensing)';
   return {
     id,
@@ -758,6 +807,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
   const id = wldEpicId(index);
   const connectivity = w.connectivity;
   const distributed = connectivity === 'distributed';
+  const noNs = connectivity === 'none';
   const hostPrep = `see the VCFHostPreparation repo — ${HOST_PREP_REPO} — to prep + commission hosts quickly`;
   // GPU hosts (#407): the NVIDIA host driver has to be in a vLCM image that is
   // already imported into the VCF Instance when the domain is created, so that
@@ -777,7 +827,17 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
   // North-south connectivity is this domain's own choice (intake H4) and — when
   // Supervisor is enabled — a hard prerequisite for activation, so the story
   // spells out the concrete build rather than naming the model.
-  const connStory = (sid: string): Story => ({
+  const connStory = (sid: string): Story => noNs ? {
+    id: sid,
+    title: 'WLD connectivity (none: no NSX north-south)',
+    tasks: [
+      'No NSX north-south for this domain: no Edge cluster, Tier-0 or BGP, and no Distributed Transit Gateway or VNA cluster. Its NSX Manager (shared or dedicated) is still deployed with the domain, but workload networks are VLAN-backed port groups routed by the physical fabric: trunk those VLANs and configure their gateways on the ToRs.',
+      ...(w.supervisor
+        ? ['This story is a prerequisite for vSphere Supervisor, which here runs on vSphere Distributed Switch (VDS) networking: plan the Supervisor management network and the workload networks as routed VLAN port groups, and use the Foundation Load Balancer or Avi (the built-in NSX/VPC load balancer needs NSX networking). See prerequisites.md, vSphere Supervisor.']
+        : []),
+    ],
+    acceptance: `WLD healthy in SDDC Manager; workload VLANs trunked and routed by the fabric; workloads can be placed on VLAN-backed port groups${w.supervisor ? ' — and the VDS networking prerequisites for the Supervisor from this story are met' : ''}.`,
+  } : {
     id: sid,
     title: `WLD connectivity (${distributed ? 'Distributed' : 'Centralized'})`,
     tasks: [
@@ -801,7 +861,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
         : []),
     ],
     acceptance: `WLD healthy in SDDC Manager; north-south reachable — ${distributed ? 'DTGW up on the external VLAN, fabric routing confirmed, VNA cluster healthy on 2+ nodes, NAT/SNAT working' : 'Tier-0 + BGP routes advertised and reachable'}; workloads can be placed${w.supervisor ? ' — and the Supervisor prerequisites from this story are met' : ''}.`,
-  });
+  };
 
   const stories: Story[] = w.stretched
     ? [
@@ -867,14 +927,18 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
   }
 
   if (w.supervisor) {
-    const connPrereq = distributed
+    const connPrereq = noNs
+      ? `no NSX north-south here, so VDS networking — the routed VLAN port groups for the Supervisor management and workload networks from story ${connStoryId}`
+      : distributed
       ? `Distributed — the Distributed Transit Gateway + VNA cluster from story ${connStoryId}, plus the VPC external IP block and the /16 private transit-gateway block`
       : `Centralized — the Edge cluster + Tier-0 gateway from story ${connStoryId}, plus the Supervisor ingress/egress CIDRs`;
     // Supervisor activation requires a load balancer; which one is a per-WLD
     // choice. Avi must be fully deployed BEFORE activation (Avi-for-VCF 9.1
     // requirements), so it gets its own story ahead of the enablement story.
     if (w.supervisorLb === 'avi') {
-      const cloudText = distributed
+      const cloudText = noNs
+        ? 'create a vCenter cloud (the Supervisor uses VDS networking; this domain has no NSX north-south) — Service Engine management on a dedicated VLAN port group (DHCP or a static IP pool in the controller); VIP/data network on a routed VLAN + IPAM profile'
+        : distributed
         ? 'create the NSX Cloud connector with VPC mode enabled — Service Engine management on an overlay segment behind a Tier-1 with DHCP; VIPs come from the VPC external IP blocks'
         : 'create the cloud connector (NSX Cloud; a vCenter cloud if the Supervisor uses VDS networking) — Service Engine management on a dedicated VLAN or overlay segment (DHCP or a static IP pool in the controller); VIP/data network + IPAM profile';
       stories.push({
@@ -904,7 +968,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
       id: `9.${stories.length + 1}`,
       title: 'Enable vSphere Supervisor',
       tasks: [
-        `Prerequisites first: this WLD's north-south connectivity must already be in place (${connPrereq}) and a load balancer is available — Supervisor activation requires both. Load balancer chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
+        `Prerequisites first: this WLD's ${noNs ? 'networks' : 'north-south connectivity'} must already be in place (${connPrereq}) and a load balancer is available — Supervisor activation requires both. Load balancer chosen here: ${lbPrereq}. Full prerequisite checklist (5 consecutive control-plane IPs, API FQDN + DNS, per-networking-path IP blocks — in 9.1 the VPC transit-gateway block must be a /16 — DRS/HA, storage policies, Kubernetes content): see prerequisites.md, vSphere Supervisor.`,
         `Create the vSphere Zones in vCenter (vCenter → vSphere Zones → Add New vSphere Zone), one cluster per zone: three zones for a multi-zone Supervisor, one compatible cluster for single-zone. Do this before activation — the wizard selects zones, it does not create them, and the single- vs multi-zone choice cannot be reversed afterwards. All clusters in a zone must be on the same vDS.`,
         `Enable vSphere Supervisor with a ${supervisorSize} control plane; provide the Supervisor management network, API-server FQDN(s), and the workload / service CIDRs. TechDocs: ${TECHDOCS.supervisor}`,
       ],
@@ -1004,7 +1068,7 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
 
   return {
     id,
-    title: `Workload domain: ${name} — ${distributed ? 'Distributed' : 'Centralized'}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
+    title: `Workload domain: ${name} — ${connectivityName(connectivity)}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     stories,
   };
@@ -1112,7 +1176,7 @@ interface GuideRule {
 const GUIDE_RULES: GuideRule[] = [
   { epic: 'E1', guides: () => [GD.netPlan] },
   { epic: 'E1', story: /^VLAN/, guides: () => [GD.netVlan] },
-  { epic: 'E1', story: /^(BGP|Distributed Transit Gateway) plan/, guides: () => [GD.netNs] },
+  { epic: 'E1', story: /^(BGP|Distributed Transit Gateway|North-south) plan/, guides: () => [GD.netNs] },
   { epic: 'E1', story: /^DNS & NTP/, guides: () => [GD.netDns, GD.netNtp] },
   { epic: 'E1', story: /^Certificates/, guides: () => [GD.netCerts, GD.prereqCa] },
   { epic: 'E2', guides: () => [GD.intake, GD.sizing] },

@@ -1,5 +1,30 @@
 # Changelog
 
+## v6.1.3 — 2026-10-22
+- **Deployment plan / tracker / test plan: a "None" NSX connectivity option
+  (#421).** Besides Centralized and Distributed, the management domain and each
+  workload domain can now be set to **None (no NSX north-south, VLAN-backed
+  only)**. NSX Manager is still deployed, but no Edge cluster / Tier-0 and no
+  Transit Gateway / VNA cluster is built.
+  - **Management domain:** E1 1.2, E4 4.2 / 4.3 and E6 6.1 switch to the
+    no-north-south wording. An NSX Overlay Segment or NSX VPC placement for VCF
+    Automation gets a warning task saying north-south has to be added first.
+  - **Workload domain:** the connectivity story (9.4 / 9.6) keeps its number so
+    saved tracker progress stays valid. A Supervisor on such a domain runs on
+    VDS networking, so the built-in NSX/VPC LB is replaced by the Foundation LB
+    (Avi stays available, on a vCenter cloud). A Private AI Foundation domain
+    can't be set to None, because its VCF Automation org runs on VPC networking.
+  - **Test plan:** TP-505 / TP-506 drop out for such a domain, and TP-510 gets a
+    VDS-networking check.
+  - `docs/06-deployment-plan.md` is updated to match.
+- **Deployment plan: vDefend always needs the on-prem License Hub (#422).**
+  The *Security add-on & licensing* section now says this plainly. vDefend has
+  no cloud-licensing route, so ticking it adds License Hub with or without Avi.
+  The *Avi licensing* box now appears only when Avi is in scope, and with
+  vDefend ticked it is fixed to License Hub (Cloud Licensing can't be picked,
+  because the hub is there anyway). The License Hub story's reason text and
+  `prerequisites.md` (License Hub) say the same.
+
 ## v6.1.2 — 2026-10-21
 - **Backups: firewall flows, retention fields and NSX retention (#420).**
   - **`docs/07` §F (new):** TCP 22 to the SFTP target, per source.
