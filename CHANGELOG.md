@@ -1,5 +1,31 @@
 # Changelog
 
+## v6.1.5 — 2026-10-22
+- **New `docs/34-internal-cidrs.md`: every internal, non-routed CIDR in one
+  table (#426).** Covers the services runtime and VCF Automation, License Hub
+  2.0, vDefend SSP pods, the Cloud Proxy Docker subnet, Supervisor / VKS and the
+  NSX transit ranges. Each row has the default, the alternatives, where it's set,
+  and whether it can change later. Sources, each linked in the doc and quoted
+  verbatim: TechDocs
+  ([Deploy VCF Management Services … Upgrade to 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation/deploy-vcf-management-services.html),
+  [First VCF Instance FQDNs and IP addresses](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/planning-and-preparation/vcf-components-fqdns-and-ip-addresses/first-vcf-instance-fqdns-and-ip-addresses.html),
+  [VKS 3.5.0 ClusterClass](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vsphere-supervisor-services-and-standalone-components/latest/managing-vsphere-kuberenetes-service-clusters-and-workloads/provisioning-tkg-service-clusters/using-the-cluster-v1beta1-api/using-the-versioned-clusterclass/using-builtin-generic-v350-cluster-class-with-vks-350-and-later.html)),
+  KBs [388890](https://knowledge.broadcom.com/external/article/388890/overriding-default-ssp-pod-cidr.html),
+  [392302](https://knowledge.broadcom.com/external/article/392302/connectivity-issues-between-cloud-proxy.html) and
+  [428847](https://knowledge.broadcom.com/external/article/428847/modifying-tier0-gateway-fails-with-error.html),
+  and the [NSX 9.1.1 Tier0 API schema](https://developer.broadcom.com/xapis/nsx-t-data-center-rest-api/latest/schemas_Tier0.html).
+  The page is in the site's Reference menu.
+  - **New fact: sharing is allowed.** TechDocs says the services runtime
+    instances for VCF Management Services and VCF Automation can use the same
+    internal block. `docs/01` used to say no two blocks may overlap; it now
+    names this exception and links the new page.
+  - **`docs/05` §C correction:** the VCF Automation internal cluster CIDR is
+    API-only on **9.1.0** only. From **9.1.1** it can be set in the VCF
+    Operations UI (TechDocs, quoted).
+  - **Example-value trap flagged:** Broadcom's VKS guest-cluster service
+    example `10.96.0.0/12` contains the Supervisor Service CIDR example
+    `10.96.0.0/23`.
+
 ## v6.1.4 — 2026-10-22
 - **VCF 9.1.1: UI network picker for VCF Automation (Day-N) and VCF Management
   Services (upgrade) (#425).** Source:

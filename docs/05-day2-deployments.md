@@ -534,7 +534,7 @@ and asks for:
 | subnet mask   | `255.255.255.0`                                    | Segment subnet                                    |
 | gateway       | `10.11.40.1`                                       | Segment gateway                                   |
 | IP pool       | `10.11.40.11 – .20` (5+)                           | Node IP pool (5+ addresses)                       |
-| internal cluster CIDR | `198.18.0.0/15` (default; or `240.0.0.0/15` / `250.0.0.0/15`) | VCF Automation **internal** services-runtime node network — `internalClusterCidrIpv4`, set via the **fleet lifecycle API / JSON spec only** (not a wizard field) |
+| internal cluster CIDR | `198.18.0.0/15` (default; or `240.0.0.0/15` / `250.0.0.0/15`) | VCF Automation **internal** services-runtime node network — `internalClusterCidrIpv4`. **9.1.0:** fleet lifecycle API / JSON spec only. **9.1.1+:** also in the VCF Operations UI. May share the VCF Management Services block ([`34-internal-cidrs.md`](34-internal-cidrs.md)) |
 | nodes CIDR / IPs | `/29` (5 IPs) on **VM Management** — see the note below | Routable node addresses; the wizard's *VCF services runtime nodes CIDR*. **Must not overlap** the VCF management-services runtime range |
 | DNS (A + PTR) | `sfo-vcfa01.sfo.example.io`                        | Forward + reverse for every appliance             |
 
@@ -543,16 +543,21 @@ and asks for:
 > and keep it distinct from every routed subnet in the Step 1 plan.
 
 > **Two different CIDRs — don't confuse them (#190).** VCF Automation has
-> **both**, and only one of them appears in the *Add VCF Automation* wizard:
+> **both**; on 9.1.0 only one of them appears in the *Add VCF Automation* wizard:
 >
 > | | What | Where you set it |
 > | --- | --- | --- |
 > | **Nodes CIDR** (routable) | A dedicated block on the **VM Management** subnet for the Automation nodes — the wizard's **VCF services runtime nodes CIDR** field. Both Automation FQDNs resolve **outside** it | *Add VCF Automation* wizard |
-> | **Internal cluster CIDR** | `198.18.0.0/15` (or `240.0.0.0/15` / `250.0.0.0/15`) — platform-internal, never routed | **API / JSON spec only** — `internalClusterCidrIpv4` via the **fleet lifecycle API**. Not exposed in the wizard |
+> | **Internal cluster CIDR** | `198.18.0.0/15` (or `240.0.0.0/15` / `250.0.0.0/15`) — platform-internal, never routed | **9.1.0:** API / JSON spec only — `internalClusterCidrIpv4` via the **fleet lifecycle API**. **9.1.1+:** also in the VCF Operations UI |
 >
-> The wizard showing no internal-CIDR field is expected — it defaults. Override
-> it only when `198.18.0.0/15` clashes with something you actually route, and
-> then you must do it through the API.
+> On 9.1.0, the wizard showing no internal-CIDR field is expected — it defaults.
+> Override it only when `198.18.0.0/15` clashes with something you actually
+> route, and on 9.1.0 you must then do it through the API. TechDocs, verbatim:
+> *"With the VCF 9.1.0.x UI, you cannot change the default internal network.
+> With VCF 9.1.1 and later, you can change the default internal network"*
+> ([Deploy VCF Management Services … as Part of VCF Upgrade to 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation/deploy-vcf-management-services.html)).
+> The same page allows VCF Automation and VCF Management Services to **share**
+> one internal block. All internal CIDRs: [`34-internal-cidrs.md`](34-internal-cidrs.md).
 
 ---
 

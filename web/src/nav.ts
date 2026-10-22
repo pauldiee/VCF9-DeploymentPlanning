@@ -314,6 +314,14 @@ export const NAV: NavItem[] = [
     blurb: 'Deployment-critical firewall flows by zone, the 9.1 port gotchas, and links to the authoritative Ports & Protocols tools.',
   },
   {
+    slug: '34-internal-cidrs',
+    step: 'Reference data',
+    band: 'Reference data',
+    label: 'Internal CIDRs',
+    icon: 'network-wired',
+    blurb: 'Every internal, non-routed address block in one table: default, alternatives, where it is set and whether it can change later. Services runtime, VCF Automation, License Hub, SSP, Cloud Proxy, Supervisor, VKS and NSX transit.',
+  },
+  {
     slug: 'workbook-cell-mapping',
     step: 'Reference data',
     band: 'Reference data',
