@@ -72,14 +72,14 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Security add-on &amp; licensing</legend>
-        <p class="planx__hint">Tick <em>vDefend</em> if the security add-on is in scope. It matters here because <strong>License Hub</strong> licenses vDefend, and Avi when Avi is licensed on-prem. License Hub sits <strong>outside VCF fleet management</strong>: one manual ~11&nbsp;GB OVA download (License Hub 2.0, not depot-fed), and the hub must exist and hold licences <strong>before</strong> an Avi controller that uses it is built. This box is deliberately <em>not</em> under Day-2 fleet — a Supervisor Avi load balancer on hub licensing needs License Hub even with no Day-2 work selected.</p>
-        <label class="planx__check"><input type="checkbox" id="optVdefend" /> vDefend in scope <span class="planx__tag">E8</span></label>
-        <label class="planx__sublabel">Avi licensing (only used when Avi is in scope)
+        <p class="planx__hint"><strong>vDefend always needs the on-prem License Hub.</strong> There is no cloud-licensing route for vDefend, so ticking it adds License Hub to the plan, with or without Avi and whatever the Avi licensing choice below says. <strong>Avi</strong> is different: it can use the same hub, or Cloud Licensing instead. License Hub sits <strong>outside VCF fleet management</strong>: one manual ~11&nbsp;GB OVA download (License Hub 2.0, not depot-fed), and the hub must exist and hold licences <strong>before</strong> an Avi controller that uses it is built. This box is deliberately <em>not</em> under Day-2 fleet — a Supervisor Avi load balancer on hub licensing needs License Hub even with no Day-2 work selected.</p>
+        <label class="planx__check"><input type="checkbox" id="optVdefend" /> vDefend in scope (always adds the on-prem License Hub) <span class="planx__tag">E8</span></label>
+        <label class="planx__sublabel">Avi licensing (Avi only; vDefend always uses the License Hub)
           <select id="selAviLicensing">
             {AVI_LICENSING.map((l) => <option value={l.value}>{l.label}</option>)}
           </select>
         </label>
-        <p class="planx__hint"><strong>Cloud Licensing</strong> needs no License Hub: each Avi controller registers straight with the Avi Cloud Console (outbound 443 to <code>portal.pulse.broadcom.com</code>). Disconnected / air-gapped sites must use the <strong>License Hub</strong>. <strong>Not sure?</strong> License Hub (works in both cases).</p>
+        <p class="planx__hint"><strong>Cloud Licensing</strong> needs no License Hub: each Avi controller registers straight with the Avi Cloud Console (outbound 443 to <code>portal.pulse.broadcom.com</code>). Disconnected / air-gapped sites must use the <strong>License Hub</strong>. <strong>Not sure?</strong> License Hub (works in both cases). If vDefend is ticked, the hub is in the plan anyway, so licensing Avi through it too adds no extra appliance.</p>
       </fieldset>
 
       <fieldset>

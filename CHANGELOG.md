@@ -17,6 +17,11 @@
   - **Test plan:** TP-505 / TP-506 drop out for such a domain, and TP-510 gets a
     VDS-networking check.
   - `docs/06-deployment-plan.md` is updated to match.
+- **Deployment plan: vDefend always needs the on-prem License Hub (#422).**
+  The *Security add-on & licensing* section now says this plainly. vDefend has
+  no cloud-licensing route, so ticking it adds License Hub with or without Avi.
+  The *Avi licensing* choice applies to Avi only. The License Hub story's reason
+  text and `prerequisites.md` (License Hub) say the same.
 
 ## v6.1.2 — 2026-10-21
 - **Backups: firewall flows, retention fields and NSX retention (#420).**

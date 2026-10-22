@@ -721,7 +721,11 @@ function day2Epic(sel: Selection): Epic {
 function licenseHubDeployStory(id: string, sel: Selection): Story {
   const hubAvi = aviOnHub(sel);
   const why = sel.vdefend
-    ? hubAvi ? 'vDefend is in scope and Avi is licensed on-prem' : 'vDefend is in scope'
+    ? hubAvi
+      ? 'vDefend is in scope (vDefend is always licensed through the on-prem License Hub) and Avi is licensed on-prem through it too'
+      : aviOnCloudLicensing(sel)
+        ? 'vDefend is in scope, and vDefend is always licensed through the on-prem License Hub, even though Avi here uses Cloud Licensing'
+        : 'vDefend is in scope, and vDefend is always licensed through the on-prem License Hub (there is no cloud-licensing route for vDefend), with or without Avi'
     : 'Avi is licensed on-prem through the hub (not Cloud Licensing)';
   return {
     id,

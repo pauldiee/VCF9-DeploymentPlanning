@@ -810,7 +810,9 @@ the host core count.
 VMware vDefend and VMware Avi subscription license files"* — it replaces the
 traditional 25-character license keys with **digitally signed subscription
 license files**. Relevant **only when vDefend or Avi is in scope**; plain VCF
-without either does not need it. **For Avi it is optional:** the Avi
+without either does not need it. **For vDefend it is always required:** there
+is no cloud-licensing route for vDefend, so vDefend in scope means an on-prem
+License Hub, with or without Avi. **For Avi it is optional:** the Avi
 Controller can use **Cloud Licensing** (register directly with the Avi Cloud
 Console) instead — *"Avi Controllers that cannot run a License Hub can connect
 and register directly to the Avi Cloud Console"* **[documented]**. The hub is
