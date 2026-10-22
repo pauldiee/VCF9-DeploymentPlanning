@@ -61,6 +61,24 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
   or your VCF Instance must be configured with VCF SSO and vCenter linking."*
   The same prerequisite applies to `24-cluster-creation.md`. See the note
   under §2 for what that means for a workload domain.
+- **"Access" means an ADMIN role in SDDC Manager.** Without it, *Hosts →
+  Unassigned Hosts* and *Network Pools* in the vSphere Client show
+  *"Authorization Error : Unauthorized access. There is a restriction with the
+  page you are trying to reach and it cannot be displayed."* *Assigned Hosts*
+  still works, and being a vCenter administrator isn't enough. SDDC Manager's
+  `/var/log/vmware/vcf/commonsvcs/vcf-commonsvcs.log` shows
+  `PERMISSION_NOT_FOUND`. Pick the fix by who is logged in:
+
+  | Who / where | Fix | Source |
+  | --- | --- | --- |
+  | **Domain user** (e.g. AD), management vCenter | Management vCenter: *Administration → Single Sign On → Users and Groups → Groups → `SDDCAdmins` → Add Members*. Add the user, or better a group it belongs to. Log out and back in | [KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html) (VCF 9.x); **field-verified 2026-10-22** |
+  | **VCF SSO user with vCenter linking**: the error, or *Add Hosts* asks you to log in to another management vCenter whose *Global Inventory* stays blank | Give the user the **ADMIN** role in **each** SDDC Manager of the linked environment. The KB's path is the SDDC Manager UI as `administrator@vsphere.local`: *Administration → Single Sign On → + USER OR GROUP* → pick the user → **ADMIN** → ADD. That console is deprecated in VCF 9, but it's the documented route | [KB 440968](https://knowledge.broadcom.com/external/article/440968/unassigned-hosts-page-fails-to-load-or-r.html) (VCF 9.x) |
+  | **VCF SSO user**: the views are simply **missing**, and password management shows *"Cannot convert a Symbol value to a string"* | Not a permission problem: the SAML token is too large for SDDC Manager's nginx (`400 Request Header Or Cookie Too Large` in `vsphere_client_virgo.log`). The workaround enlarges nginx's header buffers on SDDC Manager | [KB 425591](https://knowledge.broadcom.com/external/article/425591/unassigned-hosts-and-network-pools-not-v.html) (9.0.x) |
+  | The same message in **VCF Operations** (*Fleet Management → Lifecycle*) | The VMware Cloud Foundation adapter is in a warning collection state. Stop and start its collection | [KB 447493](https://knowledge.broadcom.com/external/article/447493/authorization-error-unauthorized-access.html) (VCF Operations 9.0.2) |
+
+  The first two rows are the same gap reached by different routes: neither
+  user has an ADMIN role in SDDC Manager. That `SDDCAdmins` maps to ADMIN is
+  inferred, not stated by Broadcom.
 
 ## 2. Add the host — vSphere Client
 
