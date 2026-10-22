@@ -122,8 +122,8 @@ deploying — like the License Hub instance, SSP lands with resource
 
 The SSP instance deploys from the **already-running SSP Installer**, through the
 **same three-step wizard** documented (and field-verified) for the License Hub
-instance in [`15-license-hub.md` → "What the License Hub deploy wizard asks
-for"](15-license-hub.md#license-hub-512-ssp-installer-flow). Read that table for
+instance in [`15-license-hub.md` → "Instance deploy
+wizard"](15-license-hub.md#instance-deploy-wizard). Read that table for
 the field-level detail and the gotchas (immutable Instance Name / FQDN /
 storage policy; DVS + port group required; content-library datastore required;
 Reserve Resource on by default; the strict password rules). What differs for an
