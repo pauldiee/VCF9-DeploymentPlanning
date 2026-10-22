@@ -653,6 +653,33 @@ equivalent of the Avi "switch the controller to On-prem License Hub" step in
 > session did not, so clear the Cloud Console's cache/cookies for the stuck
 > browser profile.
 
+> **Splitting a licence across License Hubs (or sites): split in the Broadcom
+> Support Portal, not in the Cloud Console. [field-verified 2026-10-22]** The
+> Avi Cloud Console can't split a key. To divide one vDefend (or Avi) quantity
+> between two hubs, for example one per site:
+>
+> 1. **Broadcom Support Portal → My Dashboard → My Entitlements**, select the
+>    entitlement, click the **licence badge** icon.
+> 2. On the key, **⋮ → Split License**, and enter the new quantities. They
+>    **must add up to the full original total**, or the portal errors. The key
+>    needs a quantity above 1.
+> 3. Accept the warning, then **Continue**. The new keys show as **Unallocated**,
+>    and **the original key becomes invalid**.
+> 4. In the **Avi Cloud Console**, assign **each new key to its own registered
+>    License Hub** (Enterprise Admin or License Admin role). Connected hubs pull
+>    it within 15 minutes; a disconnected hub needs a fresh licence file.
+>
+> **Split before the LIC2 upgrade** if older deployments still need the legacy
+> key. Broadcom: *"split the license key to only upgrade the required number of
+> deployments, retaining enough licenses for continued use on earlier
+> deployments"*. The upgrade can't be reversed. The split needs the **Split &
+> Merge License Keys** permission and isn't available on expired contracts;
+> **Merge** works the same way in reverse. Whether the Cloud Console can assign
+> only *part* of one key to a hub is **not verified**: split first. Sources:
+> [KB 405972](https://knowledge.broadcom.com/external/article/405972/split-vmware-license-keys-in-broadcom-su.html),
+> [Upgrading Licenses](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/managing-licenses-and-registration-using-avi-cloud-console/license-assignment-process/upgrading-licenses.html),
+> [License Hub 2.0 Licensing Workflow](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-overview/licensing-workflow.html).
+
 Order of work:
 
 1. **Register the hub and load the vDefend licence file first.** The

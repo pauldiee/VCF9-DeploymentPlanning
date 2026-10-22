@@ -1,5 +1,19 @@
 # Changelog
 
+## v6.1.6 — 2026-10-22
+- **`docs/15`: splitting a vDefend / Avi licence across License Hubs (#427).**
+  New callout in *Licensing vDefend endpoints*. You split the key in the
+  Broadcom Support Portal (**My Entitlements → ⋮ → Split License**; the
+  quantities must add up to the full total, and the original key becomes
+  invalid), not in the Avi Cloud Console. Then you assign each new key to its
+  own License Hub in the Cloud Console. Split before the irreversible LIC2
+  upgrade if older deployments need the legacy key. **Split and per-hub
+  assignment are field-verified (2026-10-22).** Assigning part of a single key
+  in the Cloud Console is not verified. Sources:
+  [KB 405972](https://knowledge.broadcom.com/external/article/405972/split-vmware-license-keys-in-broadcom-su.html),
+  [Upgrading Licenses](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/security-services-platform/5-1/licensing-overview/managing-licenses-and-registration-using-avi-cloud-console/license-assignment-process/upgrading-licenses.html),
+  [License Hub 2.0 Licensing Workflow](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-overview/licensing-workflow.html).
+
 ## v6.1.5 — 2026-10-22
 - **New `docs/34-internal-cidrs.md`: every internal, non-routed CIDR in one
   table (#426).** Covers the services runtime and VCF Automation, License Hub
