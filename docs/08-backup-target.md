@@ -32,6 +32,8 @@ from.
 | | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
 | 6 | [The SSP Installer is the odd one out](#6-the-ssp-installer-is-the-odd-one-out) | **It authenticates by key, not by the password in its own dialog** |
+| | ↳ [How it connects: two keys, not a password](#how-it-connects-two-keys-not-a-password) | Password once, then key login; pre-create a non-empty, account-owned `authorized_keys`; the [error ladder](#the-error-ladder) |
+| | ↳ [Getting the host key into the form](#getting-the-host-key-into-the-form) | Server's `.pub` line; the picker only offers `.pem` / `.key` / `.cert` |
 | | ↳ [Read the `[none publickey]` error](#read-the-none-publickey-error) | The message names the cause if you read the method list |
 | | ↳ [`authorized_keys` vs the chroot jail](#authorized_keys-vs-the-chroot-jail) | Ownership, and why the fix keeps coming undone |
 | 7 | [Cold backup / cold maintenance](#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
@@ -533,7 +535,9 @@ FQDN/IP ever changes".
 > *"The username and password to log in to the SFTP server initially.
 > Subsequently, key-based authentication is used."* — which suggests the same
 > public-key behaviour described in point 1. The three differences below were
-> **field-verified on the SSP Installer, not re-tested on License Hub 2.0**.
+> field-verified on the SSP Installer. The key-based login and the host-key
+> field have since been **field-verified on License Hub 2.0** (2026-10-22; see
+> [How it connects](#how-it-connects-two-keys-not-a-password)).
 > The 2.0 backup holds endpoints, licence assignments, usage reports and
 > platform configuration, **not** the licences or the Avi Cloud Console
 > registration, and restores only to a **new appliance of the same version**
@@ -555,7 +559,8 @@ key** (`rsa-sha2-256`). Its public key has to be in the SFTP account's
 retrieve and pin the server's host key for you ([§4](#4-verify-the-target-before-you-register-it));
 here you supply it. Use **BROWSE** with the server's `.pub` file rather than
 pasting into the textarea — a wrapped or truncated key is the usual reason the
-form will not validate.
+form will not validate. Where to get the key, and the file-extension catch, are
+in [Getting the host key into the form](#getting-the-host-key-into-the-form).
 
 **3. SAVE validates the connection, not the ability to write.** The dialog saves
 cleanly on a configuration that cannot back up. The failure surfaces only when
@@ -567,6 +572,142 @@ The Directory Path is **chroot-relative** here too, exactly as in
 path. And the **Passphrase encrypts the backup**: without it the backup cannot be
 restored, so it belongs in the password vault at the moment you set it, not
 afterwards.
+
+### How it connects: two keys, not a password
+
+VCF logs in to the SFTP target with a username and password on every backup.
+License Hub 2.0 and the SSP Installer use the password **once**, then switch
+to SSH keys. Two separate public keys are involved, one in each direction:
+
+| | **VCF** (SDDC Manager, VCF Operations, NSX) | **License Hub 2.0 / SSP Installer** |
+| --- | --- | --- |
+| **Server's host key** (the client checks it's talking to the right server) | Fetched and pinned for you (*Fetch Fingerprint*) | **You supply it** in *SFTP Server SSH Public Host Key* ([below](#getting-the-host-key-into-the-form)) |
+| **Client login** | Username + password, every time | Password **first**. The appliance then adds **its own public key** to the account's `~/.ssh/authorized_keys` over SFTP and logs in **by key** from then on |
+| **SFTP server needs** | A password account and a writable directory | Also an existing, **non-empty** `.ssh/authorized_keys`, **owned** by the account, at a path **sshd reads** |
+| **Typical errors** | Fingerprint, cipher or FIPS mismatches | See [the error ladder](#the-error-ladder) below |
+
+Every backup opens a **new** SSH connection, so the host key is checked every
+time. Regenerate the server's host keys, or point the name at another box, and
+backups fail until the form is updated. Remove the appliance's line from
+`authorized_keys`, and they fail with `[none publickey]`.
+
+TechDocs: *"The username and password to log in to the SFTP server initially.
+Subsequently, key-based authentication is used"*
+([Back Up and Restore, License Hub 2.0](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)).
+
+**Prepare `authorized_keys` before you press SAVE.** **[field-verified,
+License Hub 2.0, 2026-10-22]** The appliance doesn't create the file, can't
+use an empty one, and needs it **owned by the backup account**. The account
+never needs root. Create the directory, plus a file with one placeholder line
+whose private key is deleted straight away, so the line can't be used to log
+in:
+
+```bash
+U=<backup-user>; G=$(id -gn $U); D=/home/$U/.ssh      # chrooted: see below
+sudo install -d -m 700 -o $U -g $G $D
+ssh-keygen -q -t ed25519 -N '' -C placeholder -f /tmp/ph && sudo sh -c "cat /tmp/ph.pub > $D/authorized_keys"
+sudo chown $U:$G $D/authorized_keys && sudo chmod 600 $D/authorized_keys && rm -f /tmp/ph /tmp/ph.pub
+```
+
+Check it **as the backup account, over SFTP**, the way the appliance sees it:
+`sftp <backup-user>@<sftp-server>`, then `ls -la /home/<backup-user>/.ssh/`.
+You want `.ssh` as `drwx------` and `authorized_keys` as `-rw-------`, both
+owned by the backup account. After a successful SAVE you can remove the
+placeholder line.
+
+#### The error ladder
+
+The errors come one at a time, each only after the previous step passes.
+Every one below was hit, in this order, on one License Hub 2.0 setup
+(field-verified 2026-10-22):
+
+| Error in the dialog | Stage | Cause | Fix |
+| --- | --- | --- | --- |
+| `problem parsing server host public key: ssh: no key found` | Before connecting | The host-key field doesn't hold a parsable OpenSSH key line (see [Getting the host key into the form](#getting-the-host-key-into-the-form)) | One line, `<type> <base64>`, plain ASCII |
+| `error opening the authorized keys file at /home/<user>/.ssh/authorized_keys: file does not exist` | After the password login | No `authorized_keys` | Create it (above) |
+| `problem parsing server host public key: ssh: no key found` (again) | After the password login | `authorized_keys` exists but is **empty**. The message is misleading: it is the appliance parsing that file, not the host key | Add the placeholder line (above) |
+| `ssh: handshake failed: ssh: host key mismatch` | Handshake | The key in the form isn't the one the server presents. The **ECDSA** host key (`ssh_host_ecdsa_key.pub`) was the one accepted | Use the ECDSA key; check the *Server* field reaches the box you read it from |
+| `error opening the authorized keys file at …: permission denied` | After the password login | `.ssh` / `authorized_keys` not owned by the backup account (e.g. created with `sudo`) | `chown <backup-user>:<group>` on both, `700` / `600` |
+
+The third row's reading, an empty file rather than the host key, is inferred
+from the sequence: adding one line to the file made the error move on to the
+next row. After the last fix, **SAVE succeeded and a BACKUP ran**.
+
+**On a chrooted account** ([§3](#3-building-one-chrooted-openssh-example)),
+that path is **inside the jail**, e.g.
+`/sftp/<user>/home/<user>/.ssh/authorized_keys` on disk. TechDocs says to
+create it there. But sshd checks keys **before** it enters the jail, so it
+reads `AuthorizedKeysFile` on the real filesystem and won't see a key written
+inside the jail. Point it at the jailed file in the account's `Match` block,
+for example `AuthorizedKeysFile /sftp/%u/home/%u/.ssh/authorized_keys`, then
+check it with `sshd -T -C user=<user> | grep -i authorizedkeysfile`. This
+chroot step is reasoned from how sshd works, not from TechDocs, and isn't
+verified on License Hub yet. It replaces the root-owned
+`/etc/ssh/authorized_keys/%u` layout from
+[`authorized_keys` vs the chroot jail](#authorized_keys-vs-the-chroot-jail),
+which the appliance can't write to.
+
+### Getting the host key into the form
+
+The *SFTP Server SSH Public Host Key* field wants the SFTP server's **public
+host key**: one line in OpenSSH format, key type first. TechDocs: *"Paste the
+SSH public host key from the SFTP server or browse to a file that contains the
+key"*. Supported types: `ssh-rsa`, `rsa-sha2-512`, `rsa-sha2-256`,
+`ecdsa-sha2-nistp256` and `ssh-ed25519`
+([Back Up and Restore, License Hub 2.0](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)).
+
+**1. Read the ECDSA key on the SFTP server.** A server has several host keys
+but presents only **one**: the type negotiated during the handshake. Supply
+any other type, and the form fails with `host key mismatch`. **The ECDSA key
+is the one that worked** (field-verified, License Hub 2.0, 2026-10-22). If the
+server has no ECDSA key, find which types it offers with
+`sudo sshd -T | grep -i -E "^hostkey |hostkeyalgorithms"`, or watch the
+`kex: host key algorithm:` line in the sshd log (`LogLevel DEBUG`) while you
+press SAVE.
+
+```bash
+cat /etc/ssh/ssh_host_ecdsa_key.pub
+# ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAI... root@sftp01
+```
+
+On a Windows OpenSSH target the file is `C:\ProgramData\ssh\ssh_host_ecdsa_key.pub`.
+TechDocs' alternative is `ssh-keyscan -p 22 -t ecdsa <sftp-server>`, but run it
+from **Linux**, not Windows
+([Windows `ssh-keyscan` prints nothing](#getting-the-fingerprint-not-with-windows-ssh-keyscan)).
+Its output starts with the hostname (`sftp01 ecdsa-sha2-nistp256 AAAA…`).
+Delete that part, so the line starts at the key type.
+
+**2. Save it with a `.key` or `.pem` extension.** **[field-verified,
+License Hub 2.0, 2026-10-22]** **BROWSE** only offers `.pem`, `.key` and `.cert`
+files, so a `.pub` file doesn't show up in the picker. Picking a file just
+**loads its content into the textarea**. The extension only satisfies the
+picker; the content stays the one-line OpenSSH key. Copy and rename in one step:
+
+```bash
+cp /etc/ssh/ssh_host_ecdsa_key.pub ~/sftp-hostkey.key
+```
+
+Fetch it with `scp` or WinSCP and BROWSE to it. You can also paste the line
+straight into the textarea, as long as it stays on one line.
+
+**3. Check the textarea before SAVE.** Make sure it holds one unbroken line:
+`<key type> <base64>`, with an optional comment at the end. If the file was
+made on Windows, check its encoding: a UTF-16 file or a UTF-8 BOM looks fine
+but doesn't parse (`Format-Hex <file>` should start with the key type in
+ASCII, not `FF FE` or `EF BB BF`).
+
+> **A certificate in the field?** Broadcom's own
+> [License Hub 2.0 Day 2 walkthrough video](https://www.youtube.com/watch?v=XyAUMWDX0Zk)
+> (VMware vDefend channel, 2026-08-24) shows a `-----BEGIN CERTIFICATE-----`
+> block pasted here. An OpenSSH server has no X.509 certificate of its own,
+> so at best that's a wrapper around the server's public key. It can't fix
+> a mismatch, because the key inside it would still have to be the one the
+> server presents. The OpenSSH key line above is what TechDocs describes, and
+> what worked here.
+
+If you regenerate the server's host keys later, update this field too. It
+pins the key just as *Fetch Fingerprint* does
+([Two `sshd_config` traps](#two-sshd_config-traps)).
 
 ### Read the `[none publickey]` error
 

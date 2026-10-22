@@ -132,6 +132,17 @@ Per *Deploy a License Hub Appliance*:
 - **A lab without a real Broadcom entitlement stops at Get Started.** That's
   expected: completing registration needs a vDefend / Avi subscription behind
   the account. Reaching Get Started cleanly proves the deploy chain works.
+- **Backup is configured in the product UI** (*Backup and Restore*), against
+  an SFTP target, and it is **not** set up like VCF's backups. The appliance
+  logs in with the password once, then by key. It needs a pre-created,
+  non-empty `authorized_keys` owned by the backup account, and the server's
+  **ECDSA** host key in the form (BROWSE only offers `.pem` / `.key` / `.cert`).
+  Recipe and error ladder:
+  [`08-backup-target.md` §6](08-backup-target.md#how-it-connects-two-keys-not-a-password).
+  [field-verified 2026-10-22]
+- **The 5480 UI has no SSH toggle** [field-verified 2026-10-22]. SSH is
+  set only by **Enable SSH** in the OVA wizard. Decide at deploy time whether
+  you'll want it for troubleshooting.
 
 ### Firewall and proxy flows
 
