@@ -133,6 +133,61 @@ Per *Deploy a License Hub Appliance*:
   expected: completing registration needs a vDefend / Avi subscription behind
   the account. Reaching Get Started cleanly proves the deploy chain works.
 
+### Firewall and proxy flows
+
+From Broadcom's [Ports and Protocols](https://ports.broadcom.com/) portal,
+product *License Hub for VMware vDefend and VMware Avi Load Balancers*,
+release **2.0** (22 flows, published 2026-08-15). "License Hub IP" is the
+**appliance management IP**. "Service IP Pool" is the 2-address pool from the
+wizard (the Kafka pool).
+
+**Proxy: only the appliance IP goes out.** Every flow to Broadcom has the
+**appliance IP** as its source. The pool addresses are **inbound only**, so
+they need no proxy or internet access. Connected mode only, TCP 443:
+
+| Destination | Purpose (portal wording) |
+| ----------- | ------------------------ |
+| `access.broadcom.com` | *"License Hub to Broadcom IDP authentication"* |
+| `portal.pulse.broadcom.com` | *"Required for reporting usage and getting entitlement"* |
+| `prod-cdn-downloads.pulse.broadcom.com` | *"download secure license files from Avi Cloud console"* |
+| `prod-cdn-uploads.pulse.broadcom.com` | *"upload usage to Avi Cloud Console"* |
+
+Set the proxy in the hub's own *Proxy Server Setting* on the connected-mode
+screen; it doesn't inherit the fleet proxy. None of these four hosts is on
+Broadcom's Public URLs list.
+
+**Inbound to the hub:**
+
+| Port | Source → Destination | Purpose |
+| ---- | -------------------- | ------- |
+| 443 | NSX Manager → pool **1st IP** | Licensing client service; metrics |
+| 9092 | NSX Manager → pool | Kafka config sync |
+| 443 | SSP → pool **1st IP** | Licensing client service |
+| 443 | Avi Controller → pool **1st IP** | Licensing client service |
+| 443 | Management clients → pool **1st IP** | *"License Hub inbound ingress"* |
+| 5480 | Management clients → appliance IP | Appliance management (5480 UI) |
+| 22 | Management clients → appliance IP | SSH, *"if direct SSH is required"* |
+
+**Outbound from the appliance IP** (besides the four Broadcom hosts):
+
+| Port | Destination | Purpose |
+| ---- | ----------- | ------- |
+| 443 | NSX Manager, Avi Controller, SSP | Endpoint onboarding and assignment |
+| 53 UDP/TCP | DNS servers | DNS |
+| 123 UDP | NTP servers | NTP |
+| 514 UDP | Syslog server | *"if configured"* |
+| 389 / 636 / 3268 / 3269 | LDAP | LDAP / LDAPS |
+| 3260 / 2049 | ESXi host serving the shared storage | iSCSI / NFS, *"Worker node to vsphere datastore"* |
+
+Appliance-internal (no rule needed): 6443 kube-apiserver and 7946 TCP/UDP
+MetalLB, appliance IP → itself.
+
+> **One open question: which address serves the product UI?** The portal puts
+> management-client HTTPS 443 on the **pool's 1st IP**, while TechDocs and the
+> field deploy above reach the product UI at `https://<appliance fqdn>`. If
+> browser access is filtered, allow 443 from management clients to **both**
+> until this is confirmed.
+
 ### Troubleshooting first boot
 
 **The Kafka FQDN is checked hard at first boot, before anything is built.** If
