@@ -1,5 +1,21 @@
 # Changelog
 
+## v6.1.8 — 2026-10-22
+- **`docs/15`: License Hub 2.0 first-boot troubleshooting expanded (#429).**
+  Field case, 2026-10-22: a fresh deploy with a **wrong DNS server in the OVA
+  wizard** fails the same silent way as a wrong Kafka A record.
+  - **Symptoms** (new table): the product UI is down, the console ends at
+    *"Starting vsx-license-hub-deploy.service"*, **Deployment Status** is empty,
+    and *Diagnostic* shows **Mgmt Cluster: Critical** with *"Failed to execute
+    troubleshooting component 'Mgmt Cluster'. Error: record not found"*.
+  - **Diagnosis, fastest first:** the VM's **vApp Options** in the vSphere
+    Client show the OVF values as typed in the wizard, with no login needed;
+    then the journal over SSH or the VM console (filtered commands, since the
+    console has no scrollback); then `nslookup`.
+  - **Fix by cause:** a wrong DNS record → correct it and restart the service.
+    A wrong wizard value → redeploy. Editing vApp properties afterwards is not
+    tested on License Hub.
+
 ## v6.1.7 — 2026-10-22
 - **`docs/15` restructured: less wall of text (#428).** No facts were dropped,
   and the page went from 738 to ~600 lines, with half as many callout lines.
