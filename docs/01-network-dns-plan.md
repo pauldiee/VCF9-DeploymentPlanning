@@ -126,7 +126,11 @@ on TechDocs: [VCF Components FQDNs and IP addresses](https://techdocs.broadcom.c
 > product's own guidance to leave it at default unless that block is already
 > in use (see `15-license-hub.md`). These are internal to the platform, not
 > routed appliance IPs — just make sure the blocks do not overlap anything you
-> actually route, or each other.
+> actually route, or each other. The one documented exception: the services
+> runtime and VCF Automation **may share** one block. The full list of internal
+> blocks (also the Cloud Proxy Docker subnet, vDefend SSP pods, Supervisor /
+> VKS and the NSX transit ranges), with defaults and alternatives, is in
+> [`34-internal-cidrs.md`](34-internal-cidrs.md).
 
 ---
 
