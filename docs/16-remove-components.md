@@ -180,7 +180,7 @@ python cleanup_component.py delete vsp-component --fleet-fqdn="<fleet-fqdn>" --v
 VCF Automation removal is **three deletes, in order** — the first two use
 `vsp-component`, the last uses `vsp-cluster`. This applies regardless of
 which network VCFA was deployed to — the [non-management-network deployment
-method](05-day2-deployments.md#deploying-vcf-automation-to-a-non-management-network--api-only)
+method](05-day2-deployments.md#deploying-vcf-automation-to-a-non-management-network--ui-911-or-api)
 in `05-day2-deployments.md` links here as its fallback when the
 `admin@vsp.local` credential cannot be recovered, but the procedure itself is
 general-purpose.
