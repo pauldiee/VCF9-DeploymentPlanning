@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.1.9 — 2026-10-22
+- **`docs/15`: License Hub first-boot troubleshooting confirmed (#429).**
+  - **Redeploy confirmed as the fix (field-verified 2026-10-22):** with the
+    corrected DNS server, Workload Cluster finished 5/5 within ~15 minutes of
+    power-on and the instance came up **Healthy**.
+  - **New "not a failure" note:** during a healthy deploy, the 5480 Home page
+    shows *"Parameter 'platform-id' in path has an error: must have a value"*
+    while Platform Service is still running. Tell the two apart with Deployment
+    Status: it's filling in a healthy deploy and empty in a failed one.
+
 ## v6.1.8 — 2026-10-22
 - **`docs/15`: License Hub 2.0 first-boot troubleshooting expanded (#429).**
   Field case, 2026-10-22: a fresh deploy with a **wrong DNS server in the OVA

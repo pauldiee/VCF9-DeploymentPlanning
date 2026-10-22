@@ -152,6 +152,14 @@ server entered in the OVA wizard** (2026-10-22).
 | 5480 → *Troubleshooting → Diagnostic* | **Mgmt Cluster: Critical**, score 0: *"Failed to execute troubleshooting component 'Mgmt Cluster'. Error: record not found"*, Root Cause *Unknown*. The services next to it can still show green. The diagnostic has no cluster record to inspect; it's a symptom, not the cause |
 | `systemctl status vsx-license-hub-deploy` | `failed (Result: exit-code)`, or stuck `activating` |
 
+**Not a failure: the 5480 Home page error during a healthy deploy.** While
+*Platform Service* is still running, Home shows *"Parameter 'platform-id' in
+path has an error: must have a value: must have a value"* with a spinner. The
+platform doesn't exist yet. The difference is Deployment Status: in a healthy
+deploy it is **filling** (Workload Cluster *Completed 5/5*, Platform Service
+*"Waiting for 1 deployment(s) (monitor) to be up …(86%)"*, Metrics queued). Let
+it finish. [field-verified 2026-10-22: the deploy then completed **Healthy**]
+
 **Diagnose, fastest first:**
 
 1. **Check what was typed into the wizard, without logging in.** In the
@@ -180,7 +188,7 @@ server entered in the OVA wizard** (2026-10-22).
 | Cause | Fix |
 | ----- | --- |
 | **Wrong A record in DNS** | Correct the record, then `sudo systemctl restart vsx-license-hub-deploy`. No redeploy needed |
-| **Wrong value in the OVA wizard** (DNS server, FQDN, Kafka pool) | **Redeploy** with the correct values. FQDNs and IPs are immutable after deployment, and editing the vApp properties afterwards has **not** been tested on License Hub |
+| **Wrong value in the OVA wizard** (DNS server, FQDN, Kafka pool) | **Redeploy** with the correct values. **Field-verified 2026-10-22:** after a redeploy with the corrected DNS server, Workload Cluster finished 5/5 within ~15 minutes of power-on and the instance came up **Healthy**. FQDNs and IPs are immutable after deployment, and editing the vApp properties afterwards has **not** been tested on License Hub |
 
 Prevent it: create the appliance and Kafka A + PTR records, and check them
 with `nslookup` against the DNS servers you'll enter, **before** powering the
