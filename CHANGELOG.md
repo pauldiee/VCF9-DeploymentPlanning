@@ -8,9 +8,14 @@
     page you are trying to reach and it cannot be displayed."* Being a vCenter
     administrator isn't enough.
   - **Fix:** add the user, or a group it belongs to, to **`SDDCAdmins`** in the
-    management vCenter's SSO, then log in again.
-  - **Same message, different fix:** VCF Operations Lifecycle shows the same
-    error when the VCF adapter's collection state is in warning
+    management vCenter's SSO, then log in again. This is Broadcom's
+    [KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html)
+    (domain users only; `PERMISSION_NOT_FOUND` in SDDC Manager's commonsvcs log).
+  - **Look-alikes:** a VCF SSO user whose views are just missing hits an nginx
+    SAML-token size limit
+    ([KB 425591](https://knowledge.broadcom.com/external/article/425591/unassigned-hosts-and-network-pools-not-v.html)).
+    The same message in VCF Operations Lifecycle comes from the VCF adapter's
+    collection state
     ([KB 447493](https://knowledge.broadcom.com/external/article/447493/authorization-error-unauthorized-access.html)).
 
 ## v6.2.2 — 2026-10-22

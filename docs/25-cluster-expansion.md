@@ -61,22 +61,34 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
   or your VCF Instance must be configured with VCF SSO and vCenter linking."*
   The same prerequisite applies to `24-cluster-creation.md`. See the note
   under §2 for what that means for a workload domain.
-- **"Access" means membership of `SDDCAdmins`.** **[field-verified
-  2026-10-22]** Without it, *Hosts → Unassigned Hosts* (and the other VCF
-  host views) in the management vCenter shows *"Authorization Error :
-  Unauthorized access. There is a restriction with the page you are trying to
-  reach and it cannot be displayed."* Being a vCenter administrator isn't
-  enough. Fix: in the **management domain vCenter**, *Administration → Single
-  Sign On → Users and Groups → Groups → `SDDCAdmins` → Add Members*, and add the
-  user, or better a group it belongs to. Then log out of the vSphere Client and
-  back in.
+- **"Access" means membership of `SDDCAdmins`.** Without it, *Hosts →
+  Unassigned Hosts* and *Network Pools* in the management vCenter show
+  *"Authorization Error : Unauthorized access. There is a restriction with the
+  page you are trying to reach and it cannot be displayed."* *Assigned Hosts*
+  still works. It hits **domain users**, not the local SSO administrator, and
+  being a vCenter administrator isn't enough. SDDC Manager's
+  `/var/log/vmware/vcf/commonsvcs/vcf-commonsvcs.log` shows
+  `PERMISSION_NOT_FOUND`
+  ([KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html),
+  VCF 9.x; **field-verified 2026-10-22**).
 
-  > The same message appears in VCF Operations (*Fleet Management →
-  > Lifecycle*) with a **different** cause: the VMware Cloud Foundation adapter
-  > in a warning collection state
-  > ([KB 447493](https://knowledge.broadcom.com/external/article/447493/authorization-error-unauthorized-access.html),
-  > VCF Operations 9.0.2: stop and start that adapter's collection). Check
-  > which console shows the error before picking a fix.
+  **Fix:** in the **management domain vCenter**, *Administration → Single Sign
+  On → Users and Groups → Groups → `SDDCAdmins` → Add Members*. Add the user, or
+  better a group it belongs to. Then log out of the vSphere Client and back in.
+
+  > **Look-alikes with other fixes:**
+  > - **VCF SSO user, the views are just missing** (and password management
+  >   shows *"Cannot convert a Symbol value to a string"*): the SAML token is
+  >   too large for SDDC Manager's nginx (`400 Request Header Or Cookie Too
+  >   Large` in `vsphere_client_virgo.log`). The workaround enlarges nginx's
+  >   header buffers on SDDC Manager
+  >   ([KB 425591](https://knowledge.broadcom.com/external/article/425591/unassigned-hosts-and-network-pools-not-v.html),
+  >   9.0.x).
+  > - **The same message in VCF Operations** (*Fleet Management →
+  >   Lifecycle*): the VMware Cloud Foundation adapter is in a warning
+  >   collection state. Stop and start its collection
+  >   ([KB 447493](https://knowledge.broadcom.com/external/article/447493/authorization-error-unauthorized-access.html),
+  >   VCF Operations 9.0.2).
 
 ## 2. Add the host — vSphere Client
 
