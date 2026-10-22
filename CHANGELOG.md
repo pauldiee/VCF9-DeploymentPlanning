@@ -1,31 +1,31 @@
 # Changelog
 
 ## v6.2.1 — 2026-10-22
-- **`docs/08` §6: new *Getting the host key into the form* subsection (#431).**
-  It covers the *SFTP Server SSH Public Host Key* field of the License Hub 2.0
-  and SSP Installer backup dialogs.
-  - **Where the key comes from:** read `/etc/ssh/ssh_host_<type>_key.pub` on
-    the SFTP server, or run `ssh-keyscan` from Linux and strip the hostname
-    prefix. Lists the supported key types, per
+- **`docs/08` §6: License Hub 2.0 SFTP backup, end to end (#431).**
+  Field-verified 2026-10-22 on a working setup.
+  - **New *How it connects: two keys, not a password*:** VCF logs in with a
+    password every time. License Hub 2.0 and the SSP Installer log in with the
+    password once, add their own key to `authorized_keys` over SFTP, and log in
+    by key from then on. The host key is checked on every connection.
+  - **`authorized_keys` must exist beforehand, be non-empty, and be owned by
+    the backup account.** Includes a placeholder-line recipe and an SFTP check
+    as the account.
+  - **New *error ladder*:** the five errors in the order they appear, from
+    `no key found` to `file does not exist`, `no key found` again (from an
+    empty file), `host key mismatch` and `permission denied`, each with its
+    cause and fix.
+  - **New *Getting the host key into the form*:** use the server's **ECDSA**
+    host key (the one accepted); the other types give `host key mismatch`.
+    BROWSE only offers `.pem` / `.key` / `.cert` and loads the file's content
+    into the textarea. Includes a Windows encoding check, and a note on the
+    certificate shown in Broadcom's
+    [Day 2 walkthrough video](https://www.youtube.com/watch?v=XyAUMWDX0Zk). Per
     [Back Up and Restore (License Hub 2.0)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html).
-  - **The picker (field-verified, License Hub 2.0, 2026-10-22):** BROWSE only
-    offers `.pem` / `.key` / `.cert` files and loads the file's content into the
-    textarea. Save the `.pub` line under one of those extensions, or paste it.
-  - **Untested fallback:** if the form rejects the key, convert it to a PKCS8
-    PEM block.
-- **`docs/08` §6: new *How it connects: two keys, not a password*
-  subsection (#431).** A comparison table: VCF logs in with a password every
-  time, while License Hub 2.0 and the SSP Installer log in with the password
-  once and then by key.
-  - **Field-verified (License Hub 2.0, 2026-10-22):** the appliance doesn't
-    create `authorized_keys`. If the file is missing, the error is *"error
-    opening the authorized keys file at /home/\<user\>/.ssh/authorized_keys:
-    file does not exist"*. Pre-create the file, writable by the backup account.
-  - **Chrooted accounts:** sshd reads keys before it enters the jail, so point
-    `AuthorizedKeysFile` at the jailed file. This step is reasoned from how sshd
-    works and not yet verified.
-- **`docs/15`:** the License Hub 2.0 section now points to this backup
-  subsection.
+  - **Not yet verified:** the chroot `AuthorizedKeysFile` step, which is
+    reasoned from how sshd works.
+- **`docs/15`:** the License Hub 2.0 section now summarises the backup catches
+  and links `docs/08` §6. It also notes, field-verified, that the 5480 UI has
+  no SSH toggle; SSH is set only at OVA deploy.
 
 ## v6.2.0 — 2026-10-22
 - **`docs/15`: License Hub 2.0 firewall and proxy flows (#430).** New
