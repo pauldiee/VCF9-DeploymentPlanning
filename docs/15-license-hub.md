@@ -132,6 +132,11 @@ Per *Deploy a License Hub Appliance*:
 - **A lab without a real Broadcom entitlement stops at Get Started.** That's
   expected: completing registration needs a vDefend / Avi subscription behind
   the account. Reaching Get Started cleanly proves the deploy chain works.
+- **Backup is configured in the product UI** (*Backup and Restore*), against
+  an SFTP target. Three catches: the form wants the SFTP server's host key,
+  BROWSE only offers `.pem` / `.key` / `.cert` files, and after the first login
+  the appliance authenticates with a key. All three are in
+  [`08-backup-target.md` §6](08-backup-target.md#getting-the-host-key-into-the-form).
 
 ### Firewall and proxy flows
 

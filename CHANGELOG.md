@@ -1,5 +1,21 @@
 # Changelog
 
+## v6.2.1 — 2026-10-22
+- **`docs/08` §6: new *Getting the host key into the form* subsection (#431).**
+  It covers the *SFTP Server SSH Public Host Key* field of the License Hub 2.0
+  and SSP Installer backup dialogs.
+  - **Where the key comes from:** read `/etc/ssh/ssh_host_<type>_key.pub` on
+    the SFTP server, or run `ssh-keyscan` from Linux and strip the hostname
+    prefix. Lists the supported key types, per
+    [Back Up and Restore (License Hub 2.0)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html).
+  - **The picker (field-verified, License Hub 2.0, 2026-10-22):** BROWSE only
+    offers `.pem` / `.key` / `.cert` files and loads the file's content into the
+    textarea. Save the `.pub` line under one of those extensions, or paste it.
+  - **Untested fallback:** if the form rejects the key, convert it to a PKCS8
+    PEM block.
+- **`docs/15`:** the License Hub 2.0 section now points to this backup
+  subsection.
+
 ## v6.2.0 — 2026-10-22
 - **`docs/15`: License Hub 2.0 firewall and proxy flows (#430).** New
   *Firewall and proxy flows* subsection, from Broadcom's

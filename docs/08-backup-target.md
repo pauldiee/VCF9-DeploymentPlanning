@@ -32,6 +32,7 @@ from.
 | | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
 | 6 | [The SSP Installer is the odd one out](#6-the-ssp-installer-is-the-odd-one-out) | **It authenticates by key, not by the password in its own dialog** |
+| | ↳ [Getting the host key into the form](#getting-the-host-key-into-the-form) | Server's `.pub` line; the picker only offers `.pem` / `.key` / `.cert` |
 | | ↳ [Read the `[none publickey]` error](#read-the-none-publickey-error) | The message names the cause if you read the method list |
 | | ↳ [`authorized_keys` vs the chroot jail](#authorized_keys-vs-the-chroot-jail) | Ownership, and why the fix keeps coming undone |
 | 7 | [Cold backup / cold maintenance](#7-cold-backup--cold-maintenance-safely-shutting-down-the-management-services) | Safely shut the management plane down — Broadcom's `vcf_services_runtime_shutdown.sh` |
@@ -555,7 +556,8 @@ key** (`rsa-sha2-256`). Its public key has to be in the SFTP account's
 retrieve and pin the server's host key for you ([§4](#4-verify-the-target-before-you-register-it));
 here you supply it. Use **BROWSE** with the server's `.pub` file rather than
 pasting into the textarea — a wrapped or truncated key is the usual reason the
-form will not validate.
+form will not validate. Where to get the key, and the file-extension catch, are
+in [Getting the host key into the form](#getting-the-host-key-into-the-form).
 
 **3. SAVE validates the connection, not the ability to write.** The dialog saves
 cleanly on a configuration that cannot back up. The failure surfaces only when
@@ -567,6 +569,53 @@ The Directory Path is **chroot-relative** here too, exactly as in
 path. And the **Passphrase encrypts the backup**: without it the backup cannot be
 restored, so it belongs in the password vault at the moment you set it, not
 afterwards.
+
+### Getting the host key into the form
+
+The *SFTP Server SSH Public Host Key* field wants the SFTP server's **public
+host key**: one line in OpenSSH format, key type first. TechDocs: *"Paste the
+SSH public host key from the SFTP server or browse to a file that contains the
+key"*. Supported types: `ssh-rsa`, `rsa-sha2-512`, `rsa-sha2-256`,
+`ecdsa-sha2-nistp256` and `ssh-ed25519`
+([Back Up and Restore, License Hub 2.0](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)).
+
+**1. Read it on the SFTP server.** This is the reliable route:
+
+```bash
+cat /etc/ssh/ssh_host_ecdsa_key.pub     # or ssh_host_ed25519_key.pub / ssh_host_rsa_key.pub
+# ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAI... root@sftp01
+```
+
+On a Windows OpenSSH target the file is `C:\ProgramData\ssh\ssh_host_ecdsa_key.pub`.
+TechDocs' alternative is `ssh-keyscan -p 22 -t ecdsa <sftp-server>`, but run it
+from **Linux**, not Windows
+([Windows `ssh-keyscan` prints nothing](#getting-the-fingerprint-not-with-windows-ssh-keyscan)).
+Its output starts with the hostname (`sftp01 ecdsa-sha2-nistp256 AAAA…`).
+Delete that part, so the line starts at the key type.
+
+**2. Save it with a `.key` or `.pem` extension.** **[field-verified,
+License Hub 2.0, 2026-10-22]** **BROWSE** only offers `.pem`, `.key` and `.cert`
+files, so a `.pub` file doesn't show up in the picker. Picking a file just
+**loads its content into the textarea**. The extension only satisfies the
+picker; the content stays the one-line OpenSSH key. Copy and rename in one step:
+
+```bash
+cp /etc/ssh/ssh_host_ecdsa_key.pub ~/sftp01-hostkey.key
+```
+
+Fetch it with `scp` or WinSCP and BROWSE to it. You can also paste the line
+straight into the textarea, as long as it stays on one line.
+
+**3. Check the textarea before SAVE.** Make sure it holds one unbroken line:
+`<key type> <base64>`, with an optional comment at the end. If the form rejects
+it, convert the key to a PEM public-key block with
+`ssh-keygen -e -m PKCS8 -f /etc/ssh/ssh_host_ecdsa_key.pub > ~/sftp01-hostkey.pem`.
+TechDocs shows only the plain `.pub` content, and this conversion hasn't been
+needed or tested here.
+
+If you regenerate the server's host keys later, update this field too. It
+pins the key just as *Fetch Fingerprint* does
+([Two `sshd_config` traps](#two-sshd_config-traps)).
 
 ### Read the `[none publickey]` error
 
