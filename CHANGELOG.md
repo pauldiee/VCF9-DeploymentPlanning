@@ -2,7 +2,7 @@
 
 ## v6.2.1 — 2026-10-22
 - **`docs/08` §6: License Hub 2.0 SFTP backup, end to end (#431).**
-  Field-verified 2026-10-22 on a working setup.
+  Field-verified 2026-10-22: SAVE succeeded and a BACKUP ran.
   - **New *How it connects: two keys, not a password*:** VCF logs in with a
     password every time. License Hub 2.0 and the SSP Installer log in with the
     password once, add their own key to `authorized_keys` over SFTP, and log in

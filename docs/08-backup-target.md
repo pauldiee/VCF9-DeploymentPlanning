@@ -631,7 +631,7 @@ Every one below was hit, in this order, on one License Hub 2.0 setup
 
 The third row's reading, an empty file rather than the host key, is inferred
 from the sequence: adding one line to the file made the error move on to the
-next row.
+next row. After the last fix, **SAVE succeeded and a BACKUP ran**.
 
 **On a chrooted account** ([§3](#3-building-one-chrooted-openssh-example)),
 that path is **inside the jail**, e.g.
