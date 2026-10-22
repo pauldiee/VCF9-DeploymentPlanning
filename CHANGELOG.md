@@ -13,6 +13,17 @@
     textarea. Save the `.pub` line under one of those extensions, or paste it.
   - **Untested fallback:** if the form rejects the key, convert it to a PKCS8
     PEM block.
+- **`docs/08` §6: new *How it connects: two keys, not a password*
+  subsection (#431).** A comparison table: VCF logs in with a password every
+  time, while License Hub 2.0 and the SSP Installer log in with the password
+  once and then by key.
+  - **Field-verified (License Hub 2.0, 2026-10-22):** the appliance doesn't
+    create `authorized_keys`. If the file is missing, the error is *"error
+    opening the authorized keys file at /home/\<user\>/.ssh/authorized_keys:
+    file does not exist"*. Pre-create the file, writable by the backup account.
+  - **Chrooted accounts:** sshd reads keys before it enters the jail, so point
+    `AuthorizedKeysFile` at the jailed file. This step is reasoned from how sshd
+    works and not yet verified.
 - **`docs/15`:** the License Hub 2.0 section now points to this backup
   subsection.
 

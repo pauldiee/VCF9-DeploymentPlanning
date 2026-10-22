@@ -32,6 +32,7 @@ from.
 | | ↳ [`knownhosts: key is unknown`? Use the IP](#knownhosts-key-is-unknown-point-the-target-at-the-ip-not-an-fqdn) | Precheck fails via **FQDN**, works by **IP** — an LB'd/round-robin name breaks host-key pinning |
 | | ↳ [Ask the API what was actually stored](#ask-the-api-what-was-actually-stored) | The endpoints, and the two scripts in `tools/` |
 | 6 | [The SSP Installer is the odd one out](#6-the-ssp-installer-is-the-odd-one-out) | **It authenticates by key, not by the password in its own dialog** |
+| | ↳ [How it connects: two keys, not a password](#how-it-connects-two-keys-not-a-password) | Password once, then key login; pre-create a writable `authorized_keys` |
 | | ↳ [Getting the host key into the form](#getting-the-host-key-into-the-form) | Server's `.pub` line; the picker only offers `.pem` / `.key` / `.cert` |
 | | ↳ [Read the `[none publickey]` error](#read-the-none-publickey-error) | The message names the cause if you read the method list |
 | | ↳ [`authorized_keys` vs the chroot jail](#authorized_keys-vs-the-chroot-jail) | Ownership, and why the fix keeps coming undone |
@@ -569,6 +570,53 @@ The Directory Path is **chroot-relative** here too, exactly as in
 path. And the **Passphrase encrypts the backup**: without it the backup cannot be
 restored, so it belongs in the password vault at the moment you set it, not
 afterwards.
+
+### How it connects: two keys, not a password
+
+VCF logs in to the SFTP target with a username and password on every backup.
+License Hub 2.0 and the SSP Installer use the password **once**, then switch
+to SSH keys. Two separate public keys are involved, one in each direction:
+
+| | **VCF** (SDDC Manager, VCF Operations, NSX) | **License Hub 2.0 / SSP Installer** |
+| --- | --- | --- |
+| **Server's host key** (the client checks it's talking to the right server) | Fetched and pinned for you (*Fetch Fingerprint*) | **You supply it** in *SFTP Server SSH Public Host Key* ([below](#getting-the-host-key-into-the-form)) |
+| **Client login** | Username + password, every time | Password **first**. The appliance then adds **its own public key** to the account's `~/.ssh/authorized_keys` over SFTP and logs in **by key** from then on |
+| **SFTP server needs** | A password account and a writable directory | Also an existing `.ssh/authorized_keys` the account can **write**, at a path **sshd reads** |
+| **Typical errors** | Fingerprint, cipher or FIPS mismatches | `no key found` (host-key text the parser can't read), `authorized_keys … file does not exist`, `[none publickey]` |
+
+TechDocs: *"The username and password to log in to the SFTP server initially.
+Subsequently, key-based authentication is used"*
+([Back Up and Restore, License Hub 2.0](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)).
+
+**The appliance doesn't create `authorized_keys`.** **[field-verified,
+License Hub 2.0, 2026-10-22]** After the password login, if the file is
+missing, it fails with:
+
+```
+error opening the authorized keys file at /home/<user>/.ssh/authorized_keys: file does not exist
+```
+
+The path is the one the appliance sees over SFTP. Create the directory and an
+empty file, owned and writable by the backup account:
+
+```bash
+sudo install -d -m 700 -o <user> -g <group> /home/<user>/.ssh
+sudo install -m 600 -o <user> -g <group> /dev/null /home/<user>/.ssh/authorized_keys
+```
+
+**On a chrooted account** ([§3](#3-building-one-chrooted-openssh-example)),
+that path is **inside the jail**, e.g.
+`/sftp/<user>/home/<user>/.ssh/authorized_keys` on disk. TechDocs says to
+create it there. But sshd checks keys **before** it enters the jail, so it
+reads `AuthorizedKeysFile` on the real filesystem and won't see a key written
+inside the jail. Point it at the jailed file in the account's `Match` block,
+for example `AuthorizedKeysFile /sftp/%u/home/%u/.ssh/authorized_keys`, then
+check it with `sshd -T -C user=<user> | grep -i authorizedkeysfile`. This
+chroot step is reasoned from how sshd works, not from TechDocs, and isn't
+verified on License Hub yet. It replaces the root-owned
+`/etc/ssh/authorized_keys/%u` layout from
+[`authorized_keys` vs the chroot jail](#authorized_keys-vs-the-chroot-jail),
+which the appliance can't write to.
 
 ### Getting the host key into the form
 
