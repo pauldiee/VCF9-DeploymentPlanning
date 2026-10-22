@@ -135,21 +135,56 @@ Per *Deploy a License Hub Appliance*:
 
 ### Troubleshooting first boot
 
-> **The Kafka FQDN is checked hard at first boot, and a mismatch fails
-> silently in the UI.** Field-verified 2026-08-24. The appliance comes up and
-> the 5480 UI works, but **`vsx-license-hub-deploy.service` fails**
-> (`failed (Result: exit-code)`) and no License Hub instance is created. The UI
-> only says *"No License Hub instance configured"*. The journal names the cause:
-> *"ERROR: Kafka FQDN '\<fqdn\>' resolves to {'\<ip\>'} but none match IP pool
-> {'\<pool ip 1\>', '\<pool ip 2\>'}"*.
->
-> **Fix:** correct the A record (ideally **before** powering on), then
-> `sudo systemctl restart vsx-license-hub-deploy`. Diagnose with:
->
-> ```
-> systemctl status vsx-license-hub-deploy
-> sudo journalctl -u vsx-license-hub-deploy --no-pager -b | tail -150
-> ```
+**The Kafka FQDN is checked hard at first boot, before anything is built.** If
+it doesn't resolve to the **second** Kafka-pool IP, `vsx-license-hub-deploy`
+exits, no License Hub instance is created, and the appliance UI on 5480 keeps
+working, so it looks like a hang rather than a failure. Two causes have been
+seen in the field: a wrong **Kafka A record** (2026-08-24) and a wrong **DNS
+server entered in the OVA wizard** (2026-10-22).
+
+**Symptoms** [field-verified]:
+
+| Where | What you see |
+| ----- | ------------ |
+| Product UI (`https://<fqdn>`) | Down: there is no instance to serve it |
+| VM console | Boot log ends at *"Starting vsx-license-hub-deploy.service - License Hub Deploy Service..."* |
+| 5480 → *Infrastructure → License Hub Configuration* | **Empty** Deployment Status, or *"No License Hub instance configured"*. A healthy deploy fills this within minutes |
+| 5480 → *Troubleshooting → Diagnostic* | **Mgmt Cluster: Critical**, score 0: *"Failed to execute troubleshooting component 'Mgmt Cluster'. Error: record not found"*, Root Cause *Unknown*. The services next to it can still show green. The diagnostic has no cluster record to inspect; it's a symptom, not the cause |
+| `systemctl status vsx-license-hub-deploy` | `failed (Result: exit-code)`, or stuck `activating` |
+
+**Diagnose, fastest first:**
+
+1. **Check what was typed into the wizard, without logging in.** In the
+   vSphere Client: VM → **Configure → Settings → vApp Options**. The OVF
+   properties show the values as entered: DNS servers, appliance and Kafka
+   FQDN, Kafka pool, internal CIDR. Compare them with your plan. This is how
+   the wrong DNS server was found in the 2026-10-22 case.
+2. **Read the journal.** Over SSH, or from the **VM console** if SSH wasn't
+   enabled in the OVA: press Enter or switch to another terminal
+   (Alt+F2 / Ctrl+Alt+F2) to get a login prompt and log in as `sysadmin`
+   (the console login user isn't confirmed in TechDocs). The console has no
+   scrollback, so filter:
+
+   ```
+   systemctl status vsx-license-hub-deploy --no-pager
+   sudo journalctl -u vsx-license-hub-deploy -b --no-pager | grep -i -E "error|kafka" | tail -20
+   ```
+
+   The Kafka failure reads: *"ERROR: Kafka FQDN '\<fqdn\>' resolves to
+   {'\<ip\>'} but none match IP pool {'\<pool ip 1\>', '\<pool ip 2\>'}"*.
+3. **Check resolution from the appliance:** `nslookup <kafka-fqdn>` must return
+   the second pool address.
+
+**Fix:**
+
+| Cause | Fix |
+| ----- | --- |
+| **Wrong A record in DNS** | Correct the record, then `sudo systemctl restart vsx-license-hub-deploy`. No redeploy needed |
+| **Wrong value in the OVA wizard** (DNS server, FQDN, Kafka pool) | **Redeploy** with the correct values. FQDNs and IPs are immutable after deployment, and editing the vApp properties afterwards has **not** been tested on License Hub |
+
+Prevent it: create the appliance and Kafka A + PTR records, and check them
+with `nslookup` against the DNS servers you'll enter, **before** powering the
+appliance on.
 
 TechDocs:
 [Deploy a License Hub Appliance](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-appliance/deploy-a-license-hub-appliance.html)
