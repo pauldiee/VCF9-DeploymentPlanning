@@ -60,7 +60,9 @@ between them (see [Moving from 5.1.2 to 2.0](#moving-from-512-to-20)).
 5. **License the endpoints**: load the licence file, put the hub on the NSX DFW
    exclusion list, onboard NSX Manager (and SSP), assign, point NSX at the hub,
    verify. → [Licensing vDefend endpoints](#licensing-vdefend-endpoints)
-6. **Ongoing**: usage reporting. Automatic when connected; a recurring manual
+6. **Back up the hub** (2.0): SFTP target, key-based login, then run one
+   backup. → [Backup](#backup)
+7. **Ongoing**: usage reporting. Automatic when connected; a recurring manual
    loop when disconnected.
 
 ---
@@ -132,14 +134,8 @@ Per *Deploy a License Hub Appliance*:
 - **A lab without a real Broadcom entitlement stops at Get Started.** That's
   expected: completing registration needs a vDefend / Avi subscription behind
   the account. Reaching Get Started cleanly proves the deploy chain works.
-- **Backup is configured in the product UI** (*Backup and Restore*), against
-  an SFTP target, and it is **not** set up like VCF's backups. The appliance
-  logs in with the password once, then by key. It needs a pre-created,
-  non-empty `authorized_keys` owned by the backup account, and the server's
-  **ECDSA** host key in the form (BROWSE only offers `.pem` / `.key` / `.cert`).
-  Recipe and error ladder:
-  [`08-backup-target.md` §6](08-backup-target.md#how-it-connects-two-keys-not-a-password).
-  [field-verified 2026-10-22]
+- **Backup is configured in the product UI**, and **not** the way VCF's
+  backups are. See [Backup](#backup).
 - **The 5480 UI has no SSH toggle** [field-verified 2026-10-22]. SSH is
   set only by **Enable SSH** in the OVA wizard. Decide at deploy time whether
   you'll want it for troubleshooting.
@@ -267,6 +263,125 @@ TechDocs:
 (the two-UI / FQDN-only note)
 ·
 [License Hub 2.0 Release Notes](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/release-notes/license-hub-20-for-vmware-vdefend-and-avi-load-balancer-release-notes.html).
+
+### Backup
+
+**[field-verified 2026-10-22: SAVE succeeded and a backup ran]**
+
+License Hub 2.0 backs itself up to an **SFTP** server from the product UI
+(`https://<fqdn>` → *Backup and Restore*). It's separate from the fleet backup
+in VCF Operations, so configure it on its own.
+
+**What a backup holds:** endpoints, licence assignments, usage reports and
+platform configuration. It does **not** hold the licences or the Avi Cloud
+Console registration. It restores only to a **new appliance of the same
+version** deployed with the same FQDN, Kafka FQDN, management IP and IP pool.
+So record those values with the passphrase.
+
+**It doesn't log in the way VCF does.** VCF fetches the server's host key for
+you and logs in with the password on every backup. License Hub logs in with
+the **password once**, adds **its own public key** to the account's
+`~/.ssh/authorized_keys` over SFTP, and logs in **by key** from then on. You
+supply the server's host key yourself, and it's checked on every backup. TechDocs:
+*"The username and password to log in to the SFTP server initially.
+Subsequently, key-based authentication is used."*
+
+#### 1. Prepare the SFTP server
+
+Any SFTP target from [`08-backup-target.md`](08-backup-target.md) works: a
+dedicated account, a writable backup directory, and `internal-sftp`. Then
+prepare `authorized_keys`. The appliance **doesn't create the file**, **can't
+use an empty one**, and needs it **owned by the backup account** (not root):
+
+```bash
+U=<backup-user>; G=$(id -gn $U); D=/home/$U/.ssh      # chrooted account: see the note below
+sudo install -d -m 700 -o $U -g $G $D
+ssh-keygen -q -t ed25519 -N '' -C placeholder -f /tmp/ph && sudo sh -c "cat /tmp/ph.pub > $D/authorized_keys"
+sudo chown $U:$G $D/authorized_keys && sudo chmod 600 $D/authorized_keys && rm -f /tmp/ph /tmp/ph.pub
+```
+
+The placeholder line only stops the file from being empty. Its private key is
+deleted straight away, so it can't be used to log in. You can remove it once
+the appliance's own `ssh-rsa` line has appeared.
+
+Check the result **as the backup account, over SFTP**, the way the appliance
+sees it: `sftp <backup-user>@<sftp-server>`, then
+`ls -la /home/<backup-user>/.ssh/`. You want `.ssh` as `drwx------` and
+`authorized_keys` as `-rw-------`, both owned by the backup account.
+
+> **Chrooted account:** the appliance's `/home/<user>/.ssh/authorized_keys` is
+> a path **inside the jail**. sshd reads keys **before** it enters the jail,
+> so point `AuthorizedKeysFile` at the jailed file in the account's `Match`
+> block. See
+> [`08-backup-target.md` §6](08-backup-target.md#how-it-connects-two-keys-not-a-password).
+> That step is reasoned from how sshd works and not yet verified.
+
+#### 2. Get the server's ECDSA host key into a `.key` file
+
+```bash
+cp /etc/ssh/ssh_host_ecdsa_key.pub ~/sftp-hostkey.key
+```
+
+- **Use the ECDSA key.** The server presents only one of its host keys, and
+  ECDSA is the one the appliance accepted. Another type gives
+  `host key mismatch`.
+- **Use the `.key` extension.** BROWSE only offers `.pem`, `.key` and `.cert`
+  files, and it just loads the file's content into the textarea. The content
+  stays the one-line OpenSSH key, `ecdsa-sha2-nistp256 AAAA… root@<host>`.
+- Copy the file to your workstation with `scp` or WinSCP. Don't use
+  `ssh-keyscan` from Windows: it prints nothing
+  ([why](08-backup-target.md#getting-the-fingerprint-not-with-windows-ssh-keyscan)).
+- If you're tempted by a certificate (Broadcom's
+  [Day 2 walkthrough video](https://www.youtube.com/watch?v=XyAUMWDX0Zk) shows
+  one pasted here): an OpenSSH server has no certificate of its own, and the
+  key line is what TechDocs describes and what worked here.
+
+#### 3. Fill in the form
+
+*Backup and Restore* → *Add Backup and Restore Configuration*:
+
+| Field | Value |
+| --- | --- |
+| **Server** | The SFTP server. It must reach the **same box** you took the host key from; a load-balanced or round-robin name breaks the key check |
+| **Port** | `22` |
+| **Directory Path** | The path **as the account sees it over SFTP**: chroot-relative on a chrooted account (`/backups`, not the server-side path) |
+| **Username / Password** | The backup account. The password is used for the first login only |
+| **SFTP Server SSH Public Host Key** | **BROWSE** → `sftp-hostkey.key` |
+| **Passphrase** | Encrypts the backup. **Without it the backup can't be restored**, so put it in the vault now |
+
+Press **SAVE**, then **BACKUP**, and confirm the file arrives on the server.
+SAVE on its own only proves the connection works, not that the appliance can
+write a backup.
+
+#### 4. If it fails: the error ladder
+
+The errors arrive one at a time, each only after the previous step has
+passed. All five were hit, in this order, on one setup:
+
+| Error in the dialog | Cause | Fix |
+| --- | --- | --- |
+| `problem parsing server host public key: ssh: no key found` (before any connection) | The host-key field doesn't hold a parsable OpenSSH key line | One line, `<type> <base64>`. If the file was made on Windows, make sure it's plain ASCII, not UTF-16 or UTF-8 with a BOM |
+| `error opening the authorized keys file at /home/<user>/.ssh/authorized_keys: file does not exist` | No `authorized_keys` | Step 1 |
+| `problem parsing server host public key: ssh: no key found` (again, after the password login) | `authorized_keys` is **empty**. The message is misleading | Add the placeholder line (step 1) |
+| `ssh: handshake failed: ssh: host key mismatch` | The key in the form isn't the one the server presents | ECDSA key (step 2); check *Server* reaches that box |
+| `error opening the authorized keys file at …: permission denied` | `.ssh` / `authorized_keys` owned by root, e.g. created with `sudo` | `chown <backup-user>:<group>` on both; `700` / `600` |
+
+Reading the second `no key found` as "empty file" is an inference from the
+sequence: adding one line made the error move on to the next row. To see the
+server's side of it, watch `sudo journalctl -u sshd -f` while you press SAVE.
+It shows the source IP and, at `LogLevel DEBUG`, the negotiated
+`kex: host key algorithm`.
+
+**Later:** every backup opens a new SSH connection. Regenerate the server's
+host keys, or point the name at another box, and backups fail until you update
+the form. Remove the appliance's line from `authorized_keys`, and they fail with
+`[none publickey]`.
+
+TechDocs:
+[Back Up and Restore (License Hub 2.0)](https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/vdefend/license-hub/2-0/license-hub-service/back-up-and-restore.html)
+(prerequisites, supported key types, the Windows SFTP variant). Server build and
+deeper sshd troubleshooting:
+[`08-backup-target.md` §6](08-backup-target.md#6-the-ssp-installer-is-the-odd-one-out).
 
 ---
 

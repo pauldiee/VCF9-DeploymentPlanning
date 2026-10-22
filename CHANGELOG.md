@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.2.2 — 2026-10-22
+- **`docs/15`: new *Backup* subsection in the License Hub 2.0 section
+  (#431).** The full backup setup, field-verified 2026-10-22 (SAVE succeeded
+  and a backup ran):
+  - What a backup holds and what it restores to.
+  - Password-once-then-key login.
+  - Preparing `authorized_keys`: non-empty, owned by the account.
+  - The ECDSA host key as a `.key` file.
+  - A field-by-field table for the form, SAVE then BACKUP.
+  - The five-step error ladder.
+- **Also:** the full sequence gets a *Back up the hub* step, and `docs/08` §6
+  links to the new subsection.
+
 ## v6.2.1 — 2026-10-22
 - **`docs/08` §6: License Hub 2.0 SFTP backup, end to end (#431).**
   Field-verified 2026-10-22: SAVE succeeded and a BACKUP ran.
