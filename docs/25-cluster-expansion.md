@@ -61,6 +61,22 @@ network pool has room  →  commission the host  →  add it (vSphere Client)
   or your VCF Instance must be configured with VCF SSO and vCenter linking."*
   The same prerequisite applies to `24-cluster-creation.md`. See the note
   under §2 for what that means for a workload domain.
+- **"Access" means membership of `SDDCAdmins`.** **[field-verified
+  2026-10-22]** Without it, *Hosts → Unassigned Hosts* (and the other VCF
+  host views) in the management vCenter shows *"Authorization Error :
+  Unauthorized access. There is a restriction with the page you are trying to
+  reach and it cannot be displayed."* Being a vCenter administrator isn't
+  enough. Fix: in the **management domain vCenter**, *Administration → Single
+  Sign On → Users and Groups → Groups → `SDDCAdmins` → Add Members*, and add the
+  user, or better a group it belongs to. Then log out of the vSphere Client and
+  back in.
+
+  > The same message appears in VCF Operations (*Fleet Management →
+  > Lifecycle*) with a **different** cause: the VMware Cloud Foundation adapter
+  > in a warning collection state
+  > ([KB 447493](https://knowledge.broadcom.com/external/article/447493/authorization-error-unauthorized-access.html),
+  > VCF Operations 9.0.2: stop and start that adapter's collection). Check
+  > which console shows the error before picking a fix.
 
 ## 2. Add the host — vSphere Client
 

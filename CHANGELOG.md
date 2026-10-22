@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.2.3 — 2026-10-22
+- **`docs/25` §1 + `docs/24`: the vSphere Client's VCF host views need
+  `SDDCAdmins` (#432).** Field-verified 2026-10-22.
+  - **Symptom:** *Hosts → Unassigned Hosts* in the management vCenter shows
+    *"Authorization Error : Unauthorized access. There is a restriction with the
+    page you are trying to reach and it cannot be displayed."* Being a vCenter
+    administrator isn't enough.
+  - **Fix:** add the user, or a group it belongs to, to **`SDDCAdmins`** in the
+    management vCenter's SSO, then log in again.
+  - **Same message, different fix:** VCF Operations Lifecycle shows the same
+    error when the VCF adapter's collection state is in warning
+    ([KB 447493](https://knowledge.broadcom.com/external/article/447493/authorization-error-unauthorized-access.html)).
+
 ## v6.2.2 — 2026-10-22
 - **`docs/15`: new *Backup* subsection in the License Hub 2.0 section
   (#431).** The full backup setup, field-verified 2026-10-22 (SAVE succeeded

@@ -61,7 +61,11 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
   pool, a DHCP server must already be configured and advertising on that
   VLAN — the wizard does not configure DHCP for you.
 - You need access to the **management domain vCenter** (or VCF SSO with
-  vCenter linking) to run the wizard against this domain.
+  vCenter linking) to run the wizard against this domain. Your user, or a
+  group it's in, must be a member of **`SDDCAdmins`** in that vCenter's SSO.
+  Otherwise the VCF host views show *"Authorization Error : Unauthorized
+  access"* (field-verified 2026-10-22; see
+  [`25-cluster-expansion.md` §1](25-cluster-expansion.md#1-manual--before-you-add-anything)).
 
 ### Reusing an existing vDS (9.1.1+)
 
