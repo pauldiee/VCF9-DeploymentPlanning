@@ -537,7 +537,9 @@ FQDN/IP ever changes".
 > public-key behaviour described in point 1. The three differences below were
 > field-verified on the SSP Installer. The key-based login and the host-key
 > field have since been **field-verified on License Hub 2.0** (2026-10-22; see
-> [How it connects](#how-it-connects-two-keys-not-a-password)).
+> [How it connects](#how-it-connects-two-keys-not-a-password)). The
+> step-by-step License Hub 2.0 backup setup is in
+> [`15-license-hub.md` → Backup](15-license-hub.md#backup).
 > The 2.0 backup holds endpoints, licence assignments, usage reports and
 > platform configuration, **not** the licences or the Avi Cloud Console
 > registration, and restores only to a **new appliance of the same version**
