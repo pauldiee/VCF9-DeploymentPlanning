@@ -11,6 +11,10 @@
     management vCenter's SSO, then log in again. This is Broadcom's
     [KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html)
     (domain users only; `PERMISSION_NOT_FOUND` in SDDC Manager's commonsvcs log).
+  - **VCF SSO user with vCenter linking:** the same error, or a redirect to
+    another management vCenter. Fix: the ADMIN role in **each** SDDC Manager
+    ([KB 440968](https://knowledge.broadcom.com/external/article/440968/unassigned-hosts-page-fails-to-load-or-r.html)).
+    `docs/25` now has a symptom → fix table for all four variants.
   - **Look-alikes:** a VCF SSO user whose views are just missing hits an nginx
     SAML-token size limit
     ([KB 425591](https://knowledge.broadcom.com/external/article/425591/unassigned-hosts-and-network-pools-not-v.html)).

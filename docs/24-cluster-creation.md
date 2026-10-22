@@ -64,7 +64,7 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
   vCenter linking) to run the wizard against this domain. Your user, or a
   group it's in, must be a member of **`SDDCAdmins`** in that vCenter's SSO.
   Otherwise the VCF host views show *"Authorization Error : Unauthorized
-  access"* ([KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html), field-verified 2026-10-22; see
+  access"* ([KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html), field-verified 2026-10-22; a VCF SSO user with vCenter linking needs the ADMIN role in each SDDC Manager instead, [KB 440968](https://knowledge.broadcom.com/external/article/440968/unassigned-hosts-page-fails-to-load-or-r.html); see
   [`25-cluster-expansion.md` §1](25-cluster-expansion.md#1-manual--before-you-add-anything)).
 
 ### Reusing an existing vDS (9.1.1+)
