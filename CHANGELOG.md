@@ -1,5 +1,21 @@
 # Changelog
 
+## v6.2.0 — 2026-10-22
+- **`docs/15`: License Hub 2.0 firewall and proxy flows (#430).** New
+  *Firewall and proxy flows* subsection, from Broadcom's
+  [Ports and Protocols](https://ports.broadcom.com/) portal (product *License
+  Hub for VMware vDefend and VMware Avi Load Balancers* 2.0, 22 flows, published
+  2026-08-15).
+  - **Proxy:** only the **appliance IP** needs internet access. The four
+    Broadcom hosts are `access.broadcom.com`, `portal.pulse.broadcom.com` and
+    `prod-cdn-downloads` / `prod-cdn-uploads.pulse.broadcom.com`, on 443, in
+    connected mode. The pool IPs are inbound only.
+  - **Tables:** inbound flows (NSX / SSP / Avi → pool 1st IP 443, NSX → pool
+    9092) and outbound flows.
+  - **Open question:** the portal puts management-client 443 on the pool's 1st
+    IP, while TechDocs and the field deploy reach the product UI at the
+    appliance FQDN. Until confirmed, allow both.
+
 ## v6.1.9 — 2026-10-22
 - **`docs/15`: License Hub first-boot troubleshooting confirmed (#429).**
   - **Redeploy confirmed as the fix (field-verified 2026-10-22):** with the
