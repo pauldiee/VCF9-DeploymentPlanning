@@ -161,6 +161,32 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 
 ---
 
+## F. Backups — everything → SFTP backup target
+
+One port, **TCP 22 (SFTP)** into the backup target. The hard part is the
+source list. **The Ports and Protocols portal doesn't help here:** queried
+2026-10-21 (SDDC Manager, NSX, VCF Management Services 9.1.0 + 9.1.1,
+Identity Broker, VCF Automation, VCF Operations), it lists **no SFTP backup
+flow** for any of them. Its only backup-target rows are vCenter's. The rows
+below come from field experience and inference, and each row says which.
+
+| Source | Destination | Port | Proto | Purpose / basis |
+| ------ | ----------- | ---- | ----- | --------------- |
+| **Whole VCF Management Services runtime pool** (the 12–30 IP range) | SFTP backup target | 22 | TCP | Fleet backups (Fleet LCM, Identity Broker, the depot, Salt) and the wizard's validation. They connect from **changing internal addresses** anywhere in the pool, so allow the whole range. Field-observed, see [`08` §5](08-backup-target.md#the-clients-are-the-whole-services-runtime-block) |
+| SDDC Manager | SFTP backup target | 22 | TCP | SDDC Manager's own backup |
+| NSX Manager, **every node IP** | SFTP backup target | 22 | TCP | NSX pushes its own backups. Allow all nodes, not just the VIP. Our inference from how NSX backups work, not in the 9.1 listing |
+| VCF Automation node `/29` (if deployed) | SFTP backup target | 22 | TCP | Automation runs on its **own** services runtime and IP range. Inference, not verified; cheaper to allow than to troubleshoot |
+| vCenter (each instance) | SFTP backup target | 22 | TCP | Only if its VAMI file-based backup uses the same target. Listed in the portal (vCenter 9.1.0): *"Outbound SSH for File-Based Backup and Restore over SCP or SFTP"* |
+| Jump host (optional) | SFTP backup target | 22 | TCP | Your own testing only. It is **not** the client, so a working test from here proves nothing about the rows above |
+
+> **Not just the port.** The SFTP server must also offer a **superset** of SSH
+> algorithms (FIPS and non-FIPS), because the clients above use different SSH
+> stacks. Narrowing `sshd_config` to the FIPS set breaks some of them. See
+> [`08` §2](08-backup-target.md#2-requirements-and-placement) and
+> [§5](08-backup-target.md#the-clients-are-the-whole-services-runtime-block).
+
+---
+
 ## Using this with the toolkit
 
 - The [firewall-request template](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv)

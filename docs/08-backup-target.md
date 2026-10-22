@@ -13,6 +13,8 @@ from.
 | # | Section | Use it when |
 | - | ------- | ----------- |
 | 1 | [What backs up to it (and how often)](#1-what-backs-up-to-it-and-how-often) | Sizing the target and setting the schedule |
+| | ↳ [Retention: the SDDC Manager schedule fields](#retention-the-sddc-manager-schedule-fields) | What *Retain Last / Hourly / Daily* actually keep |
+| | ↳ [NSX backups are never pruned (KB 442696)](#nsx-backups-are-never-pruned-kb-442696) | NSX retention is ignored in 9.0/9.1 — the target fills up |
 | 2 | [Requirements and placement](#2-requirements-and-placement) | Deciding where it lives and what it must support (**FIPS is the 9.x baseline**) |
 | 3 | [Building one (chrooted OpenSSH example)](#3-building-one-chrooted-openssh-example) | Building the box |
 | | ↳ [Linux variant (chroot jail)](#linux-variant-chroot-jail) | The common case — SFTP-only account in a jail |
@@ -92,7 +94,7 @@ points at the section on this page that carries the detail.
 | ------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
 | SDDC Manager                          | Daily, 7-day retention            | Configure after bring-up                                     |
 | vCenter (every instance)              | Daily, 7-day retention            | **Manual, per instance, in the vCenter Management Interface (VAMI)** — see below. Jobs must start within the **same 5-minute window** as the SDDC Manager job |
-| NSX Manager                           | Hourly, 7-day retention           | Configured **automatically at bring-up**                     |
+| NSX Manager                           | Hourly by default; **consider daily** | Configured **automatically at bring-up**. **Retention is not applied in 9.0/9.1**, so backups pile up until the disk is full. See [NSX backups are never pruned](#nsx-backups-are-never-pruned-kb-442696) |
 | VCF Automation + VCF Identity Broker  | Follows the VCF Operations target | The SFTP config **propagates** to these — incorrect values make the Identity Broker backup config fail |
 | vSphere Distributed Switch            | On-demand export, keep last 3     | Manual                                                       |
 
@@ -114,6 +116,49 @@ component lands on it.
 >
 > Both are under VCF Operations but on separate screens, and each **vCenter** is
 > separate again (VAMI, below).
+
+### Retention: the SDDC Manager schedule fields
+
+The *Backup Schedule* dialog for SDDC Manager has three retention fields. The
+SDDC Manager API defines them
+([BackupRetentionPolicy, 9.0](https://developer.broadcom.com/xapis/sddc-manager-api/9.0/data-structures/BackupRetentionPolicy/)):
+
+| Field | Range | Keeps |
+| --- | --- | --- |
+| Retain Last Backups | 1–600 | *"the number of recent backup files to retain"* |
+| Retain Hourly Backups for Days | 0–14 | one backup per hour for that many days, counting back from the newest |
+| Retain Daily Backups for Days | 0–30 | one backup per day for that many days, counting back from the newest |
+
+*"Backup files are deleted if they do not satisfy any of the three
+attributes."* A backup survives if it matches **at least one** rule. With
+scheduled backups on, the default is **10 / 2 / 15**.
+
+Work out what a setting means for **your frequency**:
+
+- **14 / 0 / 0** keeps the 14 newest backups and nothing else. With a daily
+  schedule that's about 14 days; with an hourly schedule it's only 14 hours.
+- **Take Backup on State Change** adds backups on top of the schedule, and
+  they count toward *Retain Last Backups*. After a day of changes, the window
+  in days gets shorter.
+- To always have a full window in days, use the daily field: e.g.
+  **14 / 0 / 14** keeps one per day for 14 days, however many state-change
+  backups there are.
+
+### NSX backups are never pruned (KB 442696)
+
+The same dialog can show NSX retention values, but they do nothing.
+[KB 442696](https://knowledge.broadcom.com/external/article/442696/nsx-backup-retention-settings-in-sddc-ma.html):
+retention policies for NSX *"are not being honored in VCF 9.0 or 9.1
+environments"*, because *"NSX does not possess a native Retention Policy API
+that SDDC Manager can interface with"*. Backups keep being created on schedule
+*"but never being automatically deleted"*.
+
+- **Workaround (Broadcom's):** change the NSX backup cadence from the default
+  **hourly** to **daily**. That slows the growth but doesn't stop it.
+- **Clean up yourself:** delete old NSX backups from the target on a schedule
+  (e.g. a cron job on the SFTP server for the NSX directory), and watch free
+  space. The KB mentions a Fleet LCM-driven retention policy as planned for a
+  future release.
 
 > **vCenter backup is NOT configured by VCF.** Setting the fleet SFTP target
 > covers SDDC Manager, NSX and the fleet components — but each vCenter's
@@ -335,7 +380,9 @@ Two consequences:
 - **Open TCP 22 from the entire services-runtime block**, not from named hosts.
   A rule written for three addresses works today and fails the moment a service
   restarts onto a fourth. (Testing with WinSCP from the jump host proves nothing
-  here — the jump host is not the client.)
+  here — the jump host is not the client.) The full source list for the
+  firewall team is in
+  [`07-firewall-ports.md` §F](07-firewall-ports.md#f-backups--everything--sftp-backup-target).
 - **Offer a superset of algorithms; do not narrow.** Some of these services are
   **not** FIPS-constrained: they want **ed25519** host keys, **curve25519** key
   exchange, and will happily offer `chacha20-poly1305` and `hmac-sha1`. Tuning
@@ -699,6 +746,8 @@ error message alone.
   spelled out in [Reconfigure SFTP Backups for SDDC Manager and NSX Manager](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/map-for-administering-vcf-5-2/backup-and-restore-of-cloud-foundation-admin/reconfigure-sftp-backups-for-sddc-manager-and-nsx-manager-admin.html)
   — a **5.2** page, but the 9.x *Configure SFTP Backup Target* page doesn't
   restate them, and they still apply.
+- Retention (§1): the [BackupRetentionPolicy schema (SDDC Manager API 9.0)](https://developer.broadcom.com/xapis/sddc-manager-api/9.0/data-structures/BackupRetentionPolicy/)
+  and [KB 442696 — NSX backup retention settings in SDDC Manager not applied in VCF 9.0 and 9.1](https://knowledge.broadcom.com/external/article/442696/nsx-backup-retention-settings-in-sddc-ma.html).
 - FIPS-by-default in 9.x: [FIPS Configuration for VCF Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/fips-compliance-for-vcf-components.html).
 - Cold shutdown of the management plane (§7): [How to Safely Shutdown All Nodes Within a VCF Services Runtime Cluster](https://knowledge.broadcom.com/external/article/440874/how-to-safely-shutdown-all-nodes-within.html)
   (Broadcom KB 440874 — the `vcf_services_runtime_shutdown.sh` script and its modes).
