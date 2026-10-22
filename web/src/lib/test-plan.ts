@@ -1741,6 +1741,7 @@ const TP5: WldEntry[] = [
       'Confirm this domain\'s north-south connectivity is already up — TP-505 or TP-506 must be green first. Activation requires it and will fail without it.',
       'Centralized: confirm the Supervisor **ingress** and **egress** CIDRs are reserved, overlap nothing (cross-check TP-002), and are routed by the fabric — on the ToRs `show ip route <ingress-cidr>`.',
       'Distributed: confirm the routable external IP block and the **/16** private transit-gateway block are in place. A /24 transit block does not error, it just never completes.',
+      'No NSX north-south (VDS networking, so no TP-505 / TP-506 for this domain): confirm the Supervisor management and workload networks exist as VLAN port groups on the cluster\'s vDS and their gateways answer from the ToRs, and that the Foundation Load Balancer or Avi is ready.',
       'Confirm FIVE CONSECUTIVE free addresses for the control plane, on the management network. Consecutive is the requirement — five scattered addresses will not do.',
       'Confirm the API FQDN resolves to the planned address: `Resolve-DnsName <supervisor-api-fqdn>`',
       'Confirm DRS is on and fully automated, and HA is on: `Get-Cluster <wld-cluster> | Select Name,DrsEnabled,DrsAutomationLevel,HAEnabled`',
