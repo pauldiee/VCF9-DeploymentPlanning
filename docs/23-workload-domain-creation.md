@@ -130,7 +130,8 @@ Page by page:
    > copying the **Default** profile into it gives you the same layout as a
    > starting point, with every field editable — switch name, port group
    > names, MTU, uplink mapping — instead of building the switch from an
-   > empty profile.
+   > empty profile. **Field-verified.** The Create SDDC Cluster wizard has
+   > the same page (`24-cluster-creation.md` §2).
    >
    > **Never give a port group the same name as its vDS.** vCenter refuses
    > it, the deployment fails at *"Failed to create portgroup … in vDS"*,

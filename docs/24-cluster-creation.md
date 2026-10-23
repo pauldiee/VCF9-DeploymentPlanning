@@ -108,6 +108,16 @@ configured with VCF SSO and vCenter linking."*
 5. **Distributed Switch** — *"Enter the Distributed Switch details and
    click Next"* — create a new vDS, or **reuse an existing one** if the
    four conditions above are met.
+   > **For a new vDS with your own switch name, port group names or other
+   > settings: pick Custom, then copy in the Default profile.** Same page
+   > and same approach as workload domain creation
+   > (`23-workload-domain-creation.md` §4 step 8): the predefined profiles
+   > apply their names as they are, while Custom plus a copy of Default
+   > gives you the default layout with every field editable.
+   > **Field-verified.** Never give a port group the same name as its vDS:
+   > the deployment fails
+   > ([KB 455030](https://knowledge.broadcom.com/external/article/455030),
+   > seen on workload domain creation in VCF 9.1.0.0).
 6. **Review** — *"review the vSphere cluster details and click Finish."*
 
 TechDocs also flags a remediation consequence worth planning for, not just
