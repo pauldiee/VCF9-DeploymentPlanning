@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.2.8 — 2026-10-23
+- **`docs/31` §5: the ESX syslog problem is a confirmed defect (#228).** The
+  placeholder is now a known-issue note. Setting the ESX log source's protocol
+  (SSL or TCP) in VCF Operations isn't applied; per-host configuration works.
+  Broadcom support's cause: with a three-certificate chain on Log Management's
+  ingress, a certificate rotation doesn't update vCenter, so ESX fails the SSL
+  handshake. ESX accepts only the CA certificate, and changes take at least 20
+  minutes to show. Workaround KB 459802 is not published yet; the fix is
+  planned for a later 9.1.x release.
+
 ## v6.2.7 — 2026-10-23
 - **`docs/09` §6: keeping the vSAN HCL database current in a disconnected site
   (#435).** Two separate databases: **vCenter** (Skyline Health; *Update From
