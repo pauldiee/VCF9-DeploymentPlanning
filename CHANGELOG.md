@@ -1,5 +1,19 @@
 # Changelog
 
+## v6.2.7 — 2026-10-23
+- **`docs/09` §6: keeping the vSAN HCL database current in a disconnected site
+  (#435).** Two separate databases: **vCenter** (Skyline Health; *Update From
+  File* per vCenter, the same in VCF 5 and 9,
+  [KB 315556](https://knowledge.broadcom.com/external/article/315556/updating-the-vsan-hcl-database-manually.html))
+  and **SDDC Manager** (prechecks, commissioning, domain creation; warning at 60
+  days, failure at 90,
+  [KB 373209](https://knowledge.broadcom.com/external/article/373209/downloadupload-hcl-data-for-vcf.html)).
+  In VCF 9, SDDC Manager takes the HCL from the depot (`binaries download` fills
+  `PROD/vsan/hcl`, which must stay unauthenticated), so re-run the download
+  regularly. VCF 5.x uses SSH and `lcm-bundle-transfer-util
+  --vsanHclDownload/--vsanHclUpload`. Open: whether a VCF 9 vCenter can read
+  the HCL from the offline depot.
+
 ## v6.2.6 — 2026-10-23
 - **`docs/24` §2 step 5 and `docs/23`: Custom + copy the Default profile, now
   field-verified (#434).** The Create SDDC Cluster wizard's Distributed Switch

@@ -43,6 +43,7 @@ backs up to.
 | | ↳ [The loop](#the-loop-sync--check--export--download--re-check) | Sync → check → export → download → re-check |
 | | ↳ [Two ways to get the binaries](#two-ways-to-get-the-binaries) | The spec file, or a filtered catalog pull — and the size trade |
 | | ↳ [Gotcha: a fresh download lands root-owned](#gotcha-a-fresh-download-lands-root-owned--nginx-403s-and-the-precheck-fails) | **403 on a new file / precheck fails at Stage Precheck Binaries** — re-apply perms, and the post-download hook |
+| | ↳ [Keeping the vSAN HCL database current](#keeping-the-vsan-hcl-database-current--vcenter-and-sddc-manager) | **"vSAN HCL DB is out of date"** in a precheck or Skyline Health — two databases (vCenter, SDDC Manager), VCF 5 vs 9 |
 | | ↳ [Reclaiming space: `binaries cleanup`](#reclaiming-space-binaries-cleanup) | The depot is full — pruning superseded lines safely |
 | 7 | [References](#7-references) | The TechDocs behind the above |
 | A | [Appendix A — air-gapped Photon + nginx, end to end](#appendix-a--air-gapped-photon--nginx-end-to-end) | The depot box is a minimal Photon image with no internet path |
@@ -864,6 +865,74 @@ that several people touch.
 Whichever you pick, **re-run CHECK BINARY AVAILABILITY afterwards** — it is the
 authoritative answer on whether the fleet can actually see the new bundles.
 
+### Keeping the vSAN HCL database current — vCenter and SDDC Manager
+
+There are **two separate vSAN HCL databases**, and a disconnected site has to
+keep both current. Updating one doesn't fix the other, which is why the
+advice you find online seems to contradict itself.
+
+| Database | What reads it | How to update it without internet |
+| -------- | ------------- | --------------------------------- |
+| **vCenter** (one per vCenter: management and each workload domain) | vSAN Skyline Health, *vSAN HCL DB up-to-date* | vSphere Client, the same in VCF 5 and VCF 9 (below) |
+| **SDDC Manager** | Upgrade prechecks, host commissioning, domain and cluster creation | VCF 9: from the depot. VCF 5: SSH plus the Bundle Transfer Utility |
+
+SDDC Manager's precheck warns when its copy is **60 days** old and fails it at
+**90 days**, and an out-of-date HCL makes *"the majority of the SDDC Manager
+workflows fail"*, commissioning and domain creation included
+([KB 373209](https://knowledge.broadcom.com/external/article/373209/downloadupload-hcl-data-for-vcf.html)).
+
+**vCenter (VCF 5 and 9).** Download `all.json` from
+`https://vvs.broadcom.com/service/vsan/all.json` on a machine with internet,
+then in the vSphere Client: **Cluster → Monitor → vSAN → Skyline Health →
+vSAN HCL DB up-to-date → Update From File**, upload it, **Retest**
+([KB 315556](https://knowledge.broadcom.com/external/article/315556/updating-the-vsan-hcl-database-manually.html),
+which lists vSAN 8.x and 9.0–9.1.1). Do it in **every** vCenter; the
+database belongs to the vCenter, so once per vCenter is enough, then retest
+on each cluster to confirm. *"Failed to decode the HCL DB"* means the file
+was saved with the wrong encoding: open the URL in a browser tab, copy the
+raw text into an empty file and save it as `all.json`. If vCenter can reach
+the internet through a proxy, set it under **vCenter → Configure → vSAN →
+Internet Connectivity** and vCenter keeps its own copy current.
+
+**SDDC Manager in VCF 9: it comes from the depot.** With an online depot,
+SDDC Manager fetches the HCL itself. With an offline depot, `binaries
+download` ([§2 Step 5](#step-5--download-the-binaries)) also pulls the HCL
+into the store (the
+[`Failed to get last updated time for HCL`](#step-5--download-the-binaries)
+gotcha is that fetch failing), and the depot serves it as
+`PROD/vsan/hcl/all.json`. That path must stay **unauthenticated**
+([§2 Step 2](#step-2--auth-split)), or SDDC Manager can't read it. So:
+
+- **Re-run `binaries download` regularly**, even with no upgrade planned, so
+  the HCL in the store never ages past 60 days.
+- **Re-apply the auth split after each run** and check that
+  `PROD/vsan/hcl/` still returns 200 without credentials.
+
+No 9.x TechDocs page describes uploading `all.json` to SDDC Manager by hand.
+KB 315556 gives that procedure for SDDC Manager 4.x and 5.x only. Treat the
+depot as the route in VCF 9.
+
+**SDDC Manager in VCF 5.x: SSH and the Bundle Transfer Utility**
+([HCL Offline Download, 5.2](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vmware-cloud-foundation-lifecycle-management/downloading-vmware-cloud-foundation-bundles-lifecycle/hcl-offline-bundle-tool-lifecycle.html)).
+Broadcom calls it *"the only supported method for downloading HCL"*:
+
+```bash
+# On a machine with internet
+./lcm-bundle-transfer-util --vsanHclDownload --outputDirectory /path/to/download_dir
+
+# Copy the directory to SDDC Manager (e.g. /nfs/vmware/vcf/nfs-mount/upload),
+# then on SDDC Manager as root:
+./lcm-bundle-transfer-util --vsanHclUpload --sddcMgrFqdn sddc-manager.sfo.example.io \
+  --sddcMgrUser administrator@vsphere.local --inputDirectory /path/to/upload_dir
+```
+
+`--inputDirectory` is the directory that holds `vsan/hcl/all.json`, as in
+TechDocs; KB 315556 shows a path to the file itself instead. Re-run the
+precheck afterwards.
+
+**Open:** whether a VCF 9 vCenter can take its HCL from the offline depot
+too. Nothing found; plan on *Update From File* per vCenter.
+
 ### Reclaiming space: `binaries cleanup`
 
 Same three filter groups as `download` — `[VCF VERSION] | [BUNDLE ID] |
@@ -932,6 +1001,13 @@ ever commission a host or add a cluster.
   [VCF Download Tool fails with "Download Token is not entitled"](https://knowledge.broadcom.com/external/article/443322/vcf-download-tool-fails-with-download-to.html)
   (entitlement troubleshooting) and
   [Activation code not generated in connected registration flow](https://knowledge.broadcom.com/external/article/399124/activation-code-not-generated-in-connect.html).
+- vSAN HCL database: Broadcom KBs
+  [Updating the vSAN HCL database manually](https://knowledge.broadcom.com/external/article/315556/updating-the-vsan-hcl-database-manually.html)
+  (vCenter *Update From File*; SDDC Manager 4.x/5.x upload) and
+  [Download/Upload HCL data for VCF](https://knowledge.broadcom.com/external/article/373209/downloadupload-hcl-data-for-vcf.html)
+  (the 60/90-day precheck thresholds and which workflows fail), plus TechDocs
+  [HCL Offline Download for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vmware-cloud-foundation-lifecycle-management/downloading-vmware-cloud-foundation-bundles-lifecycle/hcl-offline-bundle-tool-lifecycle.html)
+  (VCF 5.2, the Bundle Transfer Utility commands).
 - VMware blog: [Licensing in VMware Cloud Foundation 9.0](https://blogs.vmware.com/cloud-foundation/2025/06/24/licensing-in-vmware-cloud-foundation-9-0/)
   — the *licensing* activation code and single-license-file model
   (VCF Operations ↔ `vcf.broadcom.com`), distinct from the depot-download
