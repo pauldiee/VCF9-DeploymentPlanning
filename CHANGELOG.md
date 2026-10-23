@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.2.5 — 2026-10-23
+- **`docs/23` §4 step 8: custom vDS and port group names (#434).** The
+  predefined vDS profiles apply their names as they are. To set your own switch
+  name, port group names or other settings, pick **Custom** and copy in the
+  **Default** profile, then edit it. Added the trap from
+  [KB 455030](https://knowledge.broadcom.com/external/article/455030)
+  (VCF 9.1.0.0): a port group with the same name as its vDS fails the
+  deployment, and the fix is deleting the failed domain from VCF Operations
+  and redeploying.
+
 ## v6.2.4 — 2026-10-23
 - **Site: tables with a long first column no longer scroll sideways (#433).**
   One CSS rule kept the first column of every table on a single line. That suits
