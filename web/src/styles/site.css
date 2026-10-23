@@ -629,8 +629,10 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   content: "–";
   color: var(--text-faint);
 }
-/* Keep the leading "#" / index column tight and centered */
-.prose tbody td:first-child { white-space: nowrap; }
+/* Keep a short leading "#" / ID / label column on one line. Only on tables
+   whose first column is short (class set at build time, #433): a first
+   column of sentences must wrap, or the table scrolls sideways. */
+.prose .table-scroll--keycol tbody td:first-child { white-space: nowrap; }
 .prose tbody tr:nth-child(even) { background: var(--surface-row-alt); }
 .prose tbody tr:hover { background: var(--surface-hover); }
 
