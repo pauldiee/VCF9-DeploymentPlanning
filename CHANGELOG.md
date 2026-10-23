@@ -1,5 +1,14 @@
 # Changelog
 
+## v6.2.4 — 2026-10-23
+- **Site: tables with a long first column no longer scroll sideways (#433).**
+  One CSS rule kept the first column of every table on a single line. That suits
+  short ID columns, but a first column of sentences (the symptom → fix table in
+  `docs/25` §1) pushed the table past the content width. The table wrapper in
+  `web/astro.config.mjs` now marks tables whose first-column cells are all
+  24 characters or shorter (`table-scroll--keycol`), and only those keep the
+  one-line first column (`web/src/styles/site.css`).
+
 ## v6.2.3 — 2026-10-22
 - **`docs/25` §1 + `docs/24`: the vSphere Client's VCF host views need
   `SDDCAdmins` (#432).** Field-verified 2026-10-22.

@@ -138,12 +138,30 @@ function rehypeBackToTop() {
   };
 }
 
+/** Longest first-column cell (in characters) that is still kept on one line. */
+const KEY_COL_MAX = 24;
+
 /**
  * Wrap each <table> in <figure class="table-scroll"> so wide, fill-in tables
  * can scroll horizontally on narrow screens without breaking the page layout.
+ * Tables whose first column is short (IDs, numbers, short labels) also get
+ * `table-scroll--keycol`, which keeps that column on one line; a first column
+ * of sentences must wrap, or it pushes the table into a scrollbar (#433).
  * @returns {(tree: any) => void}
  */
 function rehypeWrapTables() {
+  /** @param {any} node @returns {string} */
+  const text = (node) =>
+    node.type === 'text' ? node.value : (node.children || []).map(text).join('');
+  /** @param {any} table @returns {boolean} */
+  const hasShortFirstColumn = (table) => {
+    const body = table.children.find((c) => c.tagName === 'tbody');
+    const rows = body ? body.children.filter((r) => r.tagName === 'tr') : [];
+    return rows.every((r) => {
+      const first = r.children.find((c) => c.tagName === 'td');
+      return !first || text(first).trim().length <= KEY_COL_MAX;
+    });
+  };
   return (tree) => {
     const wrap = (node) => {
       if (!node.children) return;
@@ -152,7 +170,11 @@ function rehypeWrapTables() {
           return {
             type: 'element',
             tagName: 'figure',
-            properties: { className: ['table-scroll'] },
+            properties: {
+              className: hasShortFirstColumn(child)
+                ? ['table-scroll', 'table-scroll--keycol']
+                : ['table-scroll'],
+            },
             children: [child],
           };
         }
