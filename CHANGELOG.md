@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.2.6 — 2026-10-23
+- **`docs/24` §2 step 5 and `docs/23`: Custom + copy the Default profile, now
+  field-verified (#434).** The Create SDDC Cluster wizard's Distributed Switch
+  page has the same profile choice as workload domain creation, so `docs/24`
+  gets the same tip and the KB 455030 same-name trap. The `docs/23` tip is
+  now marked field-verified.
+
 ## v6.2.5 — 2026-10-23
 - **`docs/23` §4 step 8: custom vDS and port group names (#434).** The
   predefined vDS profiles apply their names as they are. To set your own switch
