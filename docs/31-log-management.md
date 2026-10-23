@@ -223,12 +223,25 @@ that proxy
 
 ## 5. vCenter and ESX
 
-> **Placeholder.** Log collection for vCenter and ESX is under investigation in
-> [#228](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/228):
-> collection switched on centrally does not reliably reach ESX and NSX, and a
-> Broadcom support case is open. This section gets filled in once it's
-> settled, so the guide doesn't document behaviour that may turn out to be a
-> bug.
+> **Known issue (VCF 9.1, confirmed by Broadcom support): the ESX syslog
+> protocol set in VCF Operations doesn't reach the hosts.** Choosing **SSL**
+> (the default, TCP over SSL on 1514) or **TCP** for the ESX log source in
+> VCF Operations is not applied; configuring syslog by hand on each host
+> works.
+>
+> - **Cause:** with Log Management configured with a **certificate chain
+>   (three certificates) on ingress**, after a certificate rotation the
+>   centralized log configuration **doesn't update vCenter**. ESX never
+>   learns the new certificate, and `vmsyslogd` fails the SSL handshake, so
+>   no logs arrive.
+> - **ESX accepts only the CA certificate** for syslog over SSL, not a chain.
+> - **Changes take at least 20 minutes** to show in Log Management. Wait
+>   before you conclude a change didn't apply.
+> - **Workaround:** Broadcom KB 459802, not published yet; until then,
+>   configure syslog per host. **Fix:** planned for a later 9.1.x release.
+>
+> Tracked in [#228](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/228).
+> The full how-to for this section follows once the KB is public.
 
 What TechDocs documents, for orientation only:
 
