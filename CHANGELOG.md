@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.2.9 — 2026-10-23
+- **`docs/31` §5: per-host workaround for ESX syslog over SSL (#228).** Until
+  KB 459802 is published: make sure vCenter trusts Log Management's CA and
+  intermediate CA, **Refresh CA Certificates** on the host, set
+  `Syslog.global.logHost` to `ssl://<log-management-fqdn>:1514` and
+  `Syslog.global.logCheckSSLCerts` to `true`, then check with
+  `esxcli system syslog mark`. Confirmed on a single host in the field. Added an
+  untested PowerCLI version for many hosts (CertificateManager
+  `CertMgrRefreshCACertificatesAndCRLs_Task` plus `Set-AdvancedSetting`).
+
 ## v6.2.8 — 2026-10-23
 - **`docs/31` §5: the ESX syslog problem is a confirmed defect (#228).** The
   placeholder is now a known-issue note. Setting the ESX log source's protocol

@@ -238,10 +238,62 @@ that proxy
 > - **Changes take at least 20 minutes** to show in Log Management. Wait
 >   before you conclude a change didn't apply.
 > - **Workaround:** Broadcom KB 459802, not published yet; until then,
->   configure syslog per host. **Fix:** planned for a later 9.1.x release.
+>   configure syslog per host (below). **Fix:** planned for a later 9.1.x
+>   release.
 >
 > Tracked in [#228](https://github.com/pauldiee/VCF9-DeploymentPlanning/issues/228).
 > The full how-to for this section follows once the KB is public.
+
+**Per-host workaround: syslog over SSL to Log Management.** Confirmed on a
+single host in the field so far; check the result per host.
+
+1. **Make sure vCenter trusts the Log Management certificate chain.** The
+   CA and the intermediate CA that issued the Log Management certificate
+   must be in vCenter's trusted roots (*Administration → Certificates →
+   Certificate Management → Trusted Root Certificates*).
+2. **Refresh the CA certificates on the ESX host**, so it receives those
+   trusted roots from vCenter: the **Refresh CA Certificates** action on the
+   host's certificate page in the vSphere Client (*Configure → System →
+   Certificate*; on newer vCenter versions the certificate actions sit in a
+   submenu there). It *"pushes all certificates in the TRUSTED_ROOTS store in
+   the vCenter Server VECS store to the host"*
+   ([vSphere Security, 6.7](https://docs.vmware.com/en/VMware-vSphere/6.7/com.vmware.vsphere.security.doc/GUID-ECFD1A29-0534-4118-B762-967A113D5CAA.html)).
+3. **Set two advanced settings on the host** (*Configure → System → Advanced
+   System Settings*):
+
+   | Setting | Value |
+   | --- | --- |
+   | `Syslog.global.logHost` | `ssl://logs01.sfo.example.io:1514` (your Log Management FQDN or VIP) |
+   | `Syslog.global.logCheckSSLCerts` | `true` |
+
+   `Syslog.global.logHost` is a comma-separated list. Setting it replaces
+   the whole value, so keep any other syslog targets the host needs.
+4. **Send a test message** from the host's shell and look for it in Log
+   Management:
+
+   ```bash
+   esxcli system syslog mark --message="TEST_SYSLOG_SSL_001"
+   ```
+
+   The message shows up in the log stream as a `mark:` entry from `Hostd`.
+   If it doesn't, check `/var/log/vmsyslogd.log` on the host for SSL errors.
+
+**Many hosts:** steps 2 and 3 can be scripted with PowerCLI and the
+[CertificateManager API](https://developer.broadcom.com/xapis/vsphere-web-services-api/9.0/vim.CertificateManager.html).
+**Not tested**; try it on one host first:
+
+```powershell
+$hosts = Get-Cluster 'sfo-w01-cl01' | Get-VMHost
+# Step 2: refresh CA certificates from vCenter (needs Certificate.Manage)
+$cm = Get-View (Get-View ServiceInstance).Content.CertificateManager
+$task = $cm.CertMgrRefreshCACertificatesAndCRLs_Task($hosts.ExtensionData.MoRef)
+Get-Task -Id "Task-$($task.Value)" | Wait-Task
+# Step 3: syslog target over SSL, with certificate checking
+$hosts | Get-AdvancedSetting -Name 'Syslog.global.logHost' |
+  Set-AdvancedSetting -Value 'ssl://logs01.sfo.example.io:1514' -Confirm:$false
+$hosts | Get-AdvancedSetting -Name 'Syslog.global.logCheckSSLCerts' |
+  Set-AdvancedSetting -Value $true -Confirm:$false
+```
 
 What TechDocs documents, for orientation only:
 
