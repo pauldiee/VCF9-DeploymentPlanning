@@ -124,6 +124,21 @@ Page by page:
 8. **vSphere Distributed Switch** — a profile (Default, Storage Separation,
    NSX Separation, Combined Separation, or Custom) mapping traffic types to
    uplinks/LAGs.
+   > **Want your own vDS name, port group names or other settings? Pick
+   > Custom, then copy in the Default profile.** The predefined profiles
+   > apply their names and settings as they are. Choosing **Custom** and
+   > copying the **Default** profile into it gives you the same layout as a
+   > starting point, with every field editable — switch name, port group
+   > names, MTU, uplink mapping — instead of building the switch from an
+   > empty profile.
+   >
+   > **Never give a port group the same name as its vDS.** vCenter refuses
+   > it, the deployment fails at *"Failed to create portgroup … in vDS"*,
+   > and the cleanup fails too; the fix is to delete the failed workload
+   > domain from VCF Operations (*Operate → Inventory* → the domain →
+   > **Delete domain**) and run the wizard again
+   > ([KB 455030](https://knowledge.broadcom.com/external/article/455030),
+   > VCF 9.1.0.0).
 9. **vSphere Supervisor** (only if enabled in step 1) — Supervisor name,
    Service CIDR, management network, NSX project, VPC connectivity profile,
    private CIDR ranges, workload DNS/NTP.
