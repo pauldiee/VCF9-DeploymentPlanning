@@ -1,7 +1,18 @@
 {
-  "_updated": "2026-10-25",
+  "_updated": "2026-10-26",
   "_family": "9.1",
-  "_sourceErrors": [],
+  "_sourceErrors": [
+    {
+      "key": "9.1.1:vsan-esa-witness",
+      "source": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x",
+      "error": "leaf carried no build"
+    },
+    {
+      "key": "9.1.1:vsan-osa-witness",
+      "source": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x",
+      "error": "leaf carried no build"
+    }
+  ],
   "_sources": {
     "releaseNotes": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes.html"
   },
