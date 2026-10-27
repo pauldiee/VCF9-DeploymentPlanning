@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.3.0 — 2026-10-27
+- **Version overview: vSAN witness rows no longer freeze when a sibling product
+  patches (#436).** Broadcom's `vsan-9-1-1-0200` leaf is vSAN File Services, not
+  vSAN, so the scraper's "newest leaf" had no witness header and both 9.1.1
+  witness rows kept their last-known value. `scrape-versions.mjs` now tries
+  leaves newest-first and takes the first whose header matches the component.
+
 ## v6.2.9 — 2026-10-23
 - **`docs/31` §5: per-host workaround for ESX syslog over SSL (#228).** Until
   KB 459802 is published: make sure vCenter trusts Log Management's CA and
