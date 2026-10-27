@@ -685,7 +685,7 @@ function day2Epic(sel: Selection): Epic {
         `Deploy the selected optional fleet components: ${compList}. Each needs its FQDN + reserved IP with forward/reverse DNS in place (see 05-day2-deployments.md section B).`,
         ...(c.logs
           ? [
-              'Forward SDDC Manager\'s own logs to Log Management: this is not automated in VCF 9.0/9.1. Open TCP 9543 from SDDC Manager to Log Management, then run the deploy_vcf_ops_logs_agent.sh script from Broadcom KB 396643 as root on SDDC Manager, checking the certificate it asks you to trust (see 05-day2-deployments.md section B.6). Re-run it after Story 8.5 replaces the Log Management certificate. KB: https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html',
+              'Forward SDDC Manager\'s own logs to Log Management: this is not automated in VCF 9.0/9.1.0 (from 9.1.1 it is configured in VCF Operations, see 05-day2-deployments.md section B.6). Open TCP 9543 from SDDC Manager to Log Management, then run the deploy_vcf_ops_logs_agent.sh script from Broadcom KB 396643 as root on SDDC Manager, checking the certificate it asks you to trust (see 05-day2-deployments.md section B.6). Re-run it after Story 8.5 replaces the Log Management certificate. KB: https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html',
             ]
           : []),
       ],

@@ -146,7 +146,7 @@ for SDDC Manager:
 | **VCF Operations HCX** | ✓ (9.1+) | – | Enabled when the adapter is configured |
 | **Identity Broker** | ✓ | – | Enabled once deployed through Fleet Lifecycle |
 | **VCF Automation** | ✓ | – | Enabled once deployed through Fleet Lifecycle |
-| **SDDC Manager** | ✓ | – (no SDDC Manager in VVF) | **Never automatic.** Manual agent install: [`05-day2-deployments.md` §B.6](05-day2-deployments.md#b6--log-management-does-not-collect-sddc-managers-own-logs) |
+| **SDDC Manager** | ✓ | – (no SDDC Manager in VVF) | **Never automatic on 9.0/9.1.0** (manual agent install); from 9.1.1 configured in VCF Operations, default state unverified (see §B.6). Manual install: [`05-day2-deployments.md` §B.6](05-day2-deployments.md#b6--log-management-does-not-collect-sddc-managers-own-logs) |
 | **Any other Linux appliance or VM** | ✓ | ✓ | Manual agent install with a secret: [§4](#4-agents-and-authentication) |
 
 Two settings apply to every source: **Audit Logs can't be disabled** once

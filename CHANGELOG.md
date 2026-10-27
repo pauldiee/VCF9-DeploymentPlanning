@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.3.1 — 2026-10-27
+- **SDDC Manager log collection changed in 9.1.1 (#437).** The 9.1.1.0 VCF
+  Operations release notes move SDDC Manager's log configuration into VCF
+  Operations, replacing the KB 396643 agent install. `docs/05` §B.6 carries the
+  quote and marks the script as 9.0/9.1.0; `docs/31`, `docs/07`, story 8.4 and
+  the export tool follow. Default-on after deploy/upgrade is unverified.
+
 ## v6.3.0 — 2026-10-27
 - **Version overview: vSAN witness rows no longer freeze when a sibling product
   patches (#436).** Broadcom's `vsan-9-1-1-0200` leaf is vSAN File Services, not

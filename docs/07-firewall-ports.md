@@ -129,8 +129,9 @@ Only if the cluster is stretched (see `03-multi-az-prep.md`).
 >   must use **1514 (TLS)** — [Broadcom KB 430675](https://knowledge.broadcom.com/external/article/430675/vcenter-server-syslog-messages-are-not-r.html).
 >   The full vCenter port list is on TechDocs:
 >   [Required Ports for vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vcenter-installation-and-setup/deploying-the-vcenter-server-appliance/vcenter-server-appliance-requirements/required-ports-for-vcenter-server.html).
-> - **SDDC Manager → Log Management, TCP 9543.** SDDC Manager doesn't forward its
->   own logs out of the box. The agent is installed by hand
+> - **SDDC Manager → Log Management, TCP 9543.** On 9.0/9.1.0 SDDC Manager doesn't
+>   forward its own logs out of the box (9.1.1 configures it from VCF Operations,
+>   see [`05` §B.6](05-day2-deployments.md#b6--log-management-does-not-collect-sddc-managers-own-logs)). The agent is installed by hand
 >   ([KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html)),
 >   and the script fails at its first step if 9543 is closed. Listed in the
 >   [Ports and Protocols portal](https://ports.broadcom.com/view/) for SDDC Manager 9.1.0

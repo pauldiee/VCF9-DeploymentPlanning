@@ -306,6 +306,20 @@ in [`26-vcf-operations-vvf-vcenter.md`](26-vcf-operations-vvf-vcenter.md).
 
 ## B.6 — Log Management does not collect SDDC Manager's own logs
 
+> **Changed in 9.1.1.** The
+> [VCF Operations 9.1.1.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/vcfoperations-9-1-1-0-release-notes.html)
+> (*Operate → Changes to the SDDC Manager Log Configuration*) say: *"Log
+> collection across all VCF components is now fully managed within VCF
+> Operations. This update extends automated log configuration to SDDC Manager,
+> eliminating manual setup. Users can now enable, disable, filter, and control
+> log volume to suit their environment."* On 9.1.1 and later, configure it in
+> VCF Operations (*Managing Collection from Log Sources*) instead of running the
+> script below. **Not verified:** whether collection is on by default after a
+> deploy or an upgrade (check *Log Management → Log Collection*), and whether an
+> agent installed by the script survives the upgrade. The 9.1.1.0100 and
+> 9.1.1.0200 patch notes checked say nothing on this. The rest of this section
+> applies to 9.0 and 9.1.0.
+
 Deploying Log Management does **not** start forwarding SDDC Manager's logs to
 it, and nothing in VCF Operations switches it on. Broadcom
 [KB 396643](https://knowledge.broadcom.com/external/article/396643/deploy-and-configure-vcf-operations-for.html)
