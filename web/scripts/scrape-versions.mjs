@@ -411,7 +411,10 @@ async function scrapeTechdocs(c, line) {
   const subtreeDir = index.replace(/\.html$/i, '');
   const inSubtree = hrefs(indexHtml, index).filter((h) => h.startsWith(subtreeDir + '/'));
 
-  let leafUrl;
+  // Candidate leaves, newest EEHH first. A tree can carry a sibling product's leaf at a higher
+  // EEHH (#436: vsan-9-1-1-0200 is vSAN File Services), so the newest leaf is not necessarily this
+  // component's: take the first one whose header actually matches (a null extraction is "not ours").
+  let candidates;
   if (c.nested) {
     // Gather this component's leaf across ALL EEHH sub-indexes for this line (#187): a
     // component's latest patch can live in an older sub-index than the family's newest.
@@ -421,24 +424,25 @@ async function scrapeTechdocs(c, line) {
     // rather than requiring the dashed shape.
     const subIdxs = inSubtree.filter((h) => /\/[\d-]+\.html$/i.test(h));
     if (!subIdxs.length) return null; // no patch sub-index for this line yet
-    const candidates = [];
+    candidates = [];
     for (const s of subIdxs) {
       const subHtml = await fetchText(s);
       for (const h of hrefs(subHtml, s)) if (re.test(h)) candidates.push(h);
     }
-    leafUrl = candidates.sort((a, b) => eehh(b.match(re)[1]) - eehh(a.match(re)[1]))[0];
   } else {
-    leafUrl = inSubtree
-      .filter((h) => re.test(h))
-      .sort((a, b) => eehh(b.match(re)[1]) - eehh(a.match(re)[1]))[0];
+    candidates = inSubtree.filter((h) => re.test(h));
   }
-  if (!leafUrl) return null;
+  candidates = [...new Set(candidates)].sort((a, b) => eehh(b.match(re)[1]) - eehh(a.match(re)[1]));
 
-  const leafHtml = await fetchText(leafUrl);
-  const got = extractLeafBuild(leafHtml, c);
-  if (!got || !got.build) throw new Error('leaf carried no build');
-  if (c.livePatch) got.livePatchable = extractLivePatchable(leafHtml);
-  return { ...got, sourceUrl: leafUrl, patched: true };
+  for (const leafUrl of candidates) {
+    const leafHtml = await fetchText(leafUrl);
+    const got = extractLeafBuild(leafHtml, c);
+    if (!got || !got.build) continue;
+    if (c.livePatch) got.livePatchable = extractLivePatchable(leafHtml);
+    return { ...got, sourceUrl: leafUrl, patched: true };
+  }
+  if (candidates.length) throw new Error(`${candidates.length} leaf(s) found but none carried a matching build header`);
+  return null;
 }
 
 // Single rolling release-notes page (vDefend, DSM, License Hub): read version + build in place.
