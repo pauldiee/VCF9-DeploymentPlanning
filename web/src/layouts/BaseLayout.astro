@@ -20,16 +20,10 @@ interface Props {
 }
 
 const { title, description, active, fullWidth = false, lang = 'en', altHref } = Astro.props;
-// The toggle always goes somewhere: to this page's counterpart when there is
-// one, otherwise to the other language's landing page.
+// The toggle only exists on a page that has a counterpart in the other
+// language (altHref); a page without one shows no toggle at all.
 const otherLang = lang === 'nl' ? 'en' : 'nl';
-const langToggleHref = altHref ?? (lang === 'nl' ? withBase('') : withBase('nl/'));
-const langToggleTitle =
-  lang === 'nl'
-    ? 'Switch to English'
-    : altHref
-      ? 'Nederlands'
-      : 'Nederlands (deze pagina is nog niet vertaald)';
+const langToggleTitle = lang === 'nl' ? 'Switch to English' : 'Nederlands';
 // Only an English page with a real Dutch counterpart honours a stored "nl" choice.
 const nlCounterpart = lang === 'en' ? altHref : undefined;
 const nlRoot = withBase('nl/');
@@ -263,17 +257,21 @@ const sampleHref = withBase('samples/01-network-dns-plan-rainpole/');
             <i class="fa-solid fa-sun" aria-hidden="true"></i>
             <i class="fa-solid fa-moon" aria-hidden="true"></i>
           </button>
-          <a
-            id="langToggle"
-            class="icon-btn lang-toggle"
-            href={langToggleHref}
-            hreflang={otherLang}
-            data-lang={otherLang}
-            title={langToggleTitle}
-            aria-label={langToggleTitle}
-          >
-            {otherLang.toUpperCase()}
-          </a>
+          {
+            altHref && (
+              <a
+                id="langToggle"
+                class="icon-btn lang-toggle"
+                href={altHref}
+                hreflang={otherLang}
+                data-lang={otherLang}
+                title={langToggleTitle}
+                aria-label={langToggleTitle}
+              >
+                {otherLang.toUpperCase()}
+              </a>
+            )
+          }
           <a
             class="header-version"
             href={`${repoUrl}/blob/main/CHANGELOG.md`}
