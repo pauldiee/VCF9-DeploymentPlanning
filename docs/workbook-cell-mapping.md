@@ -119,7 +119,7 @@ Domain*. **Confirmed absent (no named range):** `C3` DC FQDNs (only the Identity
 Broker Day-N `input_flt_vidb_*` fields exist), `D5`/`D6` (cert SAN auto-derives
 from the FQDNs; validity not captured), `F5` mgmt NSX Manager appliance passwords
 (only Edge `input_mgmt_nsxt_en_*`), `B16` (route policy), `B17` (DHCP scope),
-`B22` (extra BGP neighbor). **Day-2 (`B21`/`E15`)** live on the *Deploy Fleet
+`B22` (extra BGP neighbor), `B23` (EVPN-VXLAN connectivity, 9.1.1: neither pinned workbook contains an EVPN, VXLAN or Route Controller string, checked 2026-10-29). **Day-2 (`B21`/`E15`)** live on the *Deploy Fleet
 Management Day-N* sheet — the network fields there are `input_xreg_*` /
 `input_flt_auto_*`; the placement/method *Select Option* cells are not named
 ranges. Some passwords live on *Value Reference Tables* (`sddc_mgr_*`), not an

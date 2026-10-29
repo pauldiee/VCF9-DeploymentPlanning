@@ -35,7 +35,7 @@ Legend:
 |A7 | Storage option: vSAN-ESA / vSAN-OSA / NFS v3 / VMFS-on-FC? (the only greenfield options; NFS 4.1 / iSCSI / NVMe-oF need converge, see `prerequisites.md` → Principal storage) | `[MGMT]`  | **vSAN-ESA**                |
 |A8 | vSAN Data-in-Transit encryption?                                                    | `[MGMT]`  | Off (perf cost; turn on if compliance requires) |
 |A9 | Failures To Tolerate (FTT)?                                                         | `[MGMT]`  | 1                           |
-|A10| VPC Gateway: Distributed connectivity vs. Centralized?                              | `[MGMT]`  | **Centralized** (configured post-bringup) |
+|A10| VPC Gateway: Distributed connectivity vs. Centralized? ("Distributed" here is the VLAN model; the 9.1.1 EVPN-VXLAN model is `B23`) | `[MGMT]`  | **Centralized** (configured post-bringup) |
 |A11| Dual-stack (IPv4 + IPv6)?                                                           | `[MGMT]`  | IPv4 only unless requirement|
 |A12| Separate VCF mgmt network from VM mgmt network?                                     | `[MGMT]`  | Use VM mgmt network         |
 |A13| Multiple Availability Zones (stretched)? → if **Yes**, work `03-multi-az-prep.md` | `[MGMT]`  | No (single AZ)              |
@@ -74,6 +74,7 @@ Legend:
 |B20| VPC Gateway external network (only if `A10` = Distributed): VLAN, gateway CIDR | `[MGMT]`   |
 |B21| Day-2 fleet network (if not Shared Mgmt): placement (Dedicated Mgmt / NSX Overlay Segment / NSX VLAN Segment) + networkName, subnet, gateway, IP pool, VCF Automation cluster CIDR → `05-day2-deployments.md` | `[DAYN]`  |
 |B22| Public / upstream peering (optional) — needed? If so: peer AS, peer IP, MD5, advertised/received prefixes; own uplink subnet if not sharing the Edge uplinks → `01-network-dns-plan.md` §B | `[CFG-M]`  |
+|B23| **Distributed VXLAN (EVPN)** (9.1.1+; only if the fabric is EVPN-VXLAN and you choose it over `A10`/`H4` Centralized or Distributed VLAN) — HA mode and node count; per-node FQDN, management IP, BGP interface IP/MTU; Route Controller local AS; EVPN gateway remote AS + neighbor IP (+ gateway IP / hop limit / password); per tenant: L3 VNI, route distinguisher, import/export route targets; summarise on the gateway? default route from the BGW? Direct Prefix Routing? NAT / LB / DHCP relay wanted (VNA cluster, ESX 9.1.1.0+)? → `01-network-dns-plan.md` §B.3. **Not in the workbook** | `[—]` |
 
 ---
 
@@ -229,7 +230,7 @@ WLD-level:
 |H1 | WLD name (e.g. `sfo-w01`) + deployment type (full deployment with cluster)                 | `[WLD]` |
 |H2 | WLD vCenter FQDN + IP, SSO domain — always new/separate, named `vsphere.local` (KISS, not a WLD-specific name). vCenter IP is on the **mgmt VM Mgmt** subnet | `[WLD]` |
 |H3 | NSX Manager: new instance or shared? If new — 3 node FQDNs+IPs + cluster VIP FQDN+IP (all on the **mgmt VM Mgmt** subnet) | `[WLD]` |
-|H4 | NSX connectivity: **Centralized** or **Distributed**? If Distributed — external VLAN + gateway CIDR + 2 Virtual Network Appliance FQDNs/IPs (on the ESX Mgmt network) | `[WLD]` |
+|H4 | NSX connectivity: **Centralized** or **Distributed**? If Distributed — external VLAN + gateway CIDR + 2 Virtual Network Appliance FQDNs/IPs (on the ESX Mgmt network). For the 9.1.1 EVPN-VXLAN model see `B23` | `[WLD]` |
 |H5 | Enable **vSphere Supervisor**? Its **north-south connectivity (`H4`) is a prerequisite** and must be up **before activation** — **Centralized:** Edge cluster + Tier-0 + the Supervisor **ingress/egress CIDRs**; **Distributed/VPC:** Transit Gateway + VNA + the routable **external IP block** and the **`/16` private transit-gateway block** (9.1). Needs Service CIDR + control-plane IP range (**5 consecutive IPs**: 3 nodes + floating + upgrade spare) plus an **API FQDN** with a DNS record. If yes: **load-balancer choice** — built-in NSX/VPC LB / Foundation Load Balancer / **Avi** (Avi → `E16`/`F11`, controller cluster **before activation**). Full checklist: `prerequisites.md` → vSphere Supervisor | `[WLD]` |
 |H6 | Principal storage: vSAN-ESA / vSAN-OSA / VMFS-on-FC / NFS v3 / vVols (**deprecated in VCF/VVF 9.0+** — confirm with the architect before selecting, see note below); NFS 4.1 / iSCSI / NVMe-oF only via **Import a vCenter** (drawbacks: `prerequisites.md` → Principal storage); storage-policy FTT | `[WLD]` |
 

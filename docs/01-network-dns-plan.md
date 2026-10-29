@@ -144,6 +144,9 @@ workload domain) and fill in **only that model's table**:
 - **Distributed** — a **Distributed Transit Gateway (DTGW)**: the transit
   gateway maps onto a **VLAN every ESX host attaches to**, no Edge VMs. Fill in
   **B.2**.
+- **Distributed VXLAN (EVPN)** — **9.1.1 and later**: the transit gateway
+  attaches to an existing **EVPN-VXLAN fabric** through a Route Controller, no
+  Edge VMs and no VLAN across the fabric. Fill in **B.3**.
 
 > **"Distributed" is not the same thing as "VPC".** VPCs run on **either**
 > transit-gateway type — the choice below is about *how north-south traffic
@@ -202,6 +205,79 @@ it. Stateful services (NAT/SNAT) come from a **VNA cluster**.
 > and [Transit Gateways](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/virtual-private-cloud-in-nsx/transit-gateways.html)
 > (*"You can also add NAT rules for a DTGW … by creating a virtual network
 > appliance (VNA)"*).
+
+### B.3 Distributed VXLAN (EVPN) plan (**VCF 9.1.1 and later**)
+
+The third model: the transit gateway attaches straight to an existing **EVPN-VXLAN
+fabric** instead of a VLAN or an Edge cluster. Pick it when the fabric team
+already runs EVPN-VXLAN and wants direct VM-to-physical routing with no Edge
+nodes. TechDocs: *"Use this type of external connection in environments with an
+existing EVPN-VXLAN fabric that requires direct VM-to-physical-network routing
+without edge nodes."* ([Managing External Connections in VCF Automation][evpn-vcfa]).
+
+> **Status.** The 9.1.1 NSX release notes list EVPN-VXLAN distributed
+> connectivity, its advanced networking services, Active/Active Route Controllers
+> and Direct Prefix Routing under *What's New*, without a technical-preview label
+> (I searched the page for "technical preview": no hit; pages *Last Updated
+> October 26, 2026*, read 2026-10-29). That is the absence of a label, not a
+> statement of support level; confirm with Broadcom if the design depends on it.
+> **Neither pinned planning workbook has EVPN fields**, so there is nothing to
+> transfer: this table is the hand-off to the fabric and NSX teams (intake `B23`).
+
+**What it is.** A **Route Controller** (a two-node NSX cluster) is the common
+control plane: it peers over MP-BGP with the **EVPN gateways** (border gateways,
+BGWs) of the physical fabric, while forwarding stays on the ESX hosts, whose TEP
+VMkernel interface *"can handle both Geneve and VXLAN traffic simultaneously"*.
+Each distributed VXLAN transit gateway maps **one-to-one** to a **Layer 3 VNI**
+(L3VNI) in the fabric, which is the tenant's VRF ([Distributed VXLAN
+Connectivity][evpn-dvx]).
+
+| Item | Value | Notes |
+| ---- | ----- | ----- |
+| Route Controller HA mode | Active/Standby, or Active/Active | **Active/Standby** (default): both nodes on the same VLAN/subnet, one **BGP floating IP**, only the active node peers. **Active/Active** (9.1.1+): no floating IP, each node peers from its own interface IP, minimum 2 and up to 8 nodes, each node may be on a different VLAN, and *"BGW must be manually configured with separate BGP neighbors for each Route Controller node"* |
+| Route Controller nodes | 1 or 2 (lab: 1) | *"Unless you are configuring a lab environment, deploy two nodes"* for high availability Form factor **Small** = PoC and lab only; **Medium** = production |
+| Per node: FQDN, management IP | | A port group reachable from NSX Manager. Add the FQDNs to the DNS table in section C |
+| Per node: BGP interface IP/mask, port group, MTU | | Active/Standby: all interfaces in one subnet plus the floating IP in that subnet |
+| Local AS (Route Controller side) | | Unique AS number for the Route Controller |
+| EVPN gateway: remote AS, neighbor IP | | Per BGP peer. Optional: **gateway IP** (multihop), **max hop limit**, **BGP password**; ECMP, multipath relax and BFD are settings on the session |
+| Reachability | | The ESX NSX overlay VMkernel adapter must reach the **TEP addresses of the EVPN gateway**; the **Route Controller VIP** must be reachable from the BGW routers |
+| Per tenant (organization / transit gateway): **L3 VNI** | | Must match the L3VNI on the physical gateway for that tenant |
+| Per tenant: **Route Distinguisher** | | Unique per distributed VXLAN connection |
+| Per tenant: **import / export Route Target** | | Your import RT must match the gateway's **export** RT, and your export RT its **import** RT |
+| Summarisation on the EVPN gateway | Y/N | The Route Controller advertises a **/32 per workload** (EVPN type 5); *"You can summarize these routes at the EVPN gateway"* |
+| Default route toward the hosts | | From 9.1.1 the Route Controller *"no longer advertises a default route to the ESX"*: the **BGW must originate it** if hosts need one |
+| Direct Prefix Routing (9.1.1) | Y/N | Optional, per external connection: a direct VXLAN tunnel from the ESXi VTEP to the physical leaf VTEP so latency-sensitive storage traffic (NFS, S3/object) bypasses the EVPN gateway |
+| Services on top (9.1.1) | NAT / LB / DHCP relay | Needs a **VNA cluster** (see B.2), all host transport nodes on **ESX 9.1.1.0 or later**, and the `host_tn_min_os_version` opt-in through the NSX API |
+
+> **Services and what they need.** TechDocs lists, for 9.1.1 and later: NAT
+> (including default outbound SNAT), the NSX native load balancer, **Avi in
+> active/standby and active/active L2 scale-out modes**, the distributed DHCP
+> server and **DHCP relay to external servers**. Avi needs **32.1.3 or later** for
+> this model ([Avi external connectivity][evpn-avi]); DHCP relay works for **public
+> VPC subnets only**; vSphere Kubernetes Service needs a load balancer. EVPN
+> connectivity is supported for VCF Automation and vSphere Supervisor.
+
+> **Constraints.**
+> - *"An organization can use only one connection type per region — centralized,
+>   distributed VLAN, or - for version 9.1.1 only - distributed VXLAN. Mixing
+>   connection types within a single region is not supported."*
+> - The connection is created in the **VCF Automation Provider Management UI**
+>   (*Infrastructure → Networking → External Connections → Distributed VXLAN
+>   Connections*); the Route Controller and the VNA cluster are built in **NSX
+>   Manager** (*Networking → EVPN → Route Controller*; *System → Fabric → VNA
+>   Clusters*).
+> - **Not found in the pages read:** Route Controller node sizes in vCPU/RAM, and
+>   the firewall ports for the BGP sessions. Check the Ports & Protocols tool
+>   ([`07-firewall-ports.md`](07-firewall-ports.md)) before the network team signs off.
+
+[evpn-dvx]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/ethernet-vpn-evpn/distributed-vxlan-connection.html
+[evpn-vcfa]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/provider-management/managing-networking-resources/managing-provider-gateways.html
+[evpn-avi]: https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer-vmware-cloud-foundation/9-1/configure-and-consume-avi/managing-network-topologies.html
+
+> TechDocs: [Create a Route Controller](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/ethernet-vpn-evpn/distributed-vxlan-connection/create-a-route-controller.html),
+> [Create a New Distributed VXLAN Connection](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/provider-management/managing-networking-resources/managing-provider-gateways/create-a-new-distributed-vxlan-connection.html),
+> [Enable Advanced Networking Services for Distributed VXLAN Connections](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/advanced-network-management/ethernet-vpn-evpn/distributed-vxlan-connection/enable-advanced-networking-services-for-distributed-vxlan-connections.html)
+> and the [NSX 9.1.1.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-1-0-release-notes/nsx-9-1-1-0-release-notes.html).
 
 ---
 
@@ -360,6 +436,8 @@ same shape.
 | NSX Edge 2 (Centralized only) | `sfo-m01-en02.sfo.example.io` | VM Mgmt subnet       |
 | Virtual Network Appliance 1 (Distributed only) | `sfo-m01-vna01.sfo.example.io` | ESX Mgmt subnet — the VNA cluster that gives a Distributed Transit Gateway its stateful services (NAT); **not** a replacement for an Edge cluster (no Tier-0/Tier-1 runs on it) |
 | Virtual Network Appliance 2 (Distributed only) | `sfo-m01-vna02.sfo.example.io` | ESX Mgmt subnet — 2 nodes minimum for HA |
+| Route Controller node 1 (Distributed VXLAN / EVPN only) | `sfo-m01-rc01.sfo.example.io` | A port group reachable from NSX Manager (B.3) |
+| Route Controller node 2 (Distributed VXLAN / EVPN only) | `sfo-m01-rc02.sfo.example.io` | Same; two nodes unless it is a lab |
 | Avi Controller cluster FQDN (optional) | `sfo-m01-avi01.sfo.example.io` | VM Mgmt subnet — the 3 controller nodes are **IP-only** (no DNS records). **Must resolve BEFORE the deploy** — field-confirmed; the wizard has no VIP-address input and reaches the VIP through this record. Also decide a separate **Cluster Name**, a distinct wizard field from this FQDN |
 | License Hub appliance FQDN (optional — 2.0) | `sfo-lichub01.sfo.example.io` | VM Mgmt subnet — deliberately **not** `lic`, which is already the **License Server** stem above; the two are unrelated appliances, see `prerequisites.md` → License Hub |
 | License Hub Kafka FQDN (optional — 2.0) | `sfo-lichub01-kafka.sfo.example.io` | Same subnet — resolves to the **second** IP in the Kafka IP pool, field-confirmed; NSX connects to the Kafka broker through this record |
