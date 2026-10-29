@@ -1,5 +1,17 @@
 # Changelog
 
+## v6.4.3 — 2026-10-29
+- **`docs/33`: PAIF / PAIS / VMware AI Factory terminology note, and the Private
+  AI Services release-notes link fixed (#423).** A short note near the top says
+  PAIF is still *Private AI Foundation with NVIDIA*, PAIS is the Supervisor
+  Service layer (not deprecated), and VMware AI Factory is the infrastructure
+  foundation of VMware Private AI Cloud, with no public source saying it renames
+  or replaces PAIF. §9 and the version table pointed "Private AI Services
+  release notes" at the PAIF PDF; they now link the
+  [actual release notes](https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-release-notes/vmware-private-ai-services-release-notes.html)
+  (3.0 of 2026-09-03; 2.1 of 2026-03-20 and 2026-05-12, as stated there). The
+  Broadcom announcement page returned 403 here, so only Network World was read.
+
 ## v6.4.2 — 2026-10-29
 - **`docs/10` §9.3 (vDS + Foundation Load Balancer) re-checked verbatim against
   its sources (#414).** Architecture, requirements and deployment TechDocs pages,

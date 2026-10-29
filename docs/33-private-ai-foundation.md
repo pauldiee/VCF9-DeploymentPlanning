@@ -20,6 +20,21 @@ for everything here.
 > cadence, separately from VCF, so check their release notes for the versions
 > you install.
 
+> **Names that get mixed up** (checked 2026-10-29):
+>
+> - **PAIF** is *Private AI Foundation with NVIDIA*, still the product name in
+>   the [9.1 documentation][paif-pdf] — not "Private AI Factory".
+> - **PAIS** is *Private AI Services*, the model, agent and data-indexing layer
+>   that runs as a Supervisor Service on top ([release notes][pais-rn]). Broadcom's
+>   CMO: *"Private AI Services is most definitely not deprecated"*
+>   ([Network World][nw-explore]).
+> - **VMware AI Factory** was announced at VMware Explore 2026 as the
+>   *infrastructure foundation* of **VMware Private AI Cloud**; per the same
+>   article it is *"not a separate product nor [does it] cost extra"* but
+>   something customers build with VCF's automation ([Network World][nw-explore];
+>   [Broadcom announcement][bc-aifactory]). No public source says it renames or
+>   replaces PAIF, and this guide does not assume it does.
+
 ---
 
 ## The sequence, end to end
@@ -373,7 +388,7 @@ items: **AI Workstation** (deep learning VM), **Triton Inference Server**,
 
 Model runtime and API gateway (vLLM, Infinity, llama.cpp), data indexing and
 retrieval, an MCP tool gallery, an agent builder and observability, run as a
-**Supervisor Service** ([Private AI Services release notes][paif-pdf]).
+**Supervisor Service** ([Private AI Services release notes][pais-rn]).
 
 **Before installing:**
 
@@ -425,7 +440,7 @@ without updating VCF.
 | Item | Value | Source |
 | --- | --- | --- |
 | PAIF 9.1 / 9.1.1 | 2026-05-12 / 2026-09-03 | [PAIF 9.1][paif-pdf] release notes |
-| Private AI Services | 2.1 (2026-03-20, 2026-05-12) · **3.0 (2026-09-03)** | Private AI Services release notes |
+| Private AI Services | 2.1 (2026-03-20, 2026-05-12) · **3.0 (2026-09-03)** | [Private AI Services release notes][pais-rn] |
 | Data Services Manager | 9.1.x for VCF 9.1.0 and 9.1.1 | PAIF compatibility table |
 | Deep learning VM for 9.1 | Ubuntu 24.04; vGPU host drivers NVAIE 7.x (580.x) and 8.0 (595.58.02) | DLVM release notes |
 | Deep learning VM for 9.1.1 | Ubuntu 26.04; NVAIE 8.0 and later (595.x) | DLVM release notes |
@@ -461,6 +476,9 @@ without updating VCF.
 [paif-pdf]: https://techdocs.broadcom.com/content/dam/broadcom/techdocs/us/en/pdf/vmware/private-ai/private-ai-nvidia/vmware-private-ai-foundation-with-nvidia-9-1.pdf
 [paif]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x.html
 [td-workflows]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/setup-workflows.html
+[pais-rn]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-release-notes/vmware-private-ai-services-release-notes.html
+[nw-explore]: https://www.networkworld.com/article/4215847/private-ai-cloud-agentic-infrastructure-dominate-vmware-explore.html
+[bc-aifactory]: https://investors.broadcom.com/news-releases/news-release-details/broadcom-announces-vmware-ai-factory-enabling-faster-time
 [td-workflows-pais]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/setup-workflow-for-private-ai-services.html
 [td-vmclass]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/configure-vgpu-based-vm-classes-for-ai-workloads.html
 [td-vkr]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/create-a-content-library-with-ubuntu-tkr.html
