@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.6.3 — 2026-10-29
+- **Site: the NL/EN toggle only appears on pages that exist in both languages
+  (#440).** It used to show everywhere and, on an untranslated page, sent the
+  reader to the other language's landing page. Now a page without a counterpart
+  shows no toggle. The English start page links to the Dutch one, so the toggle (and
+  a remembered Dutch choice) still works from there.
+
 ## v6.6.2 — 2026-10-29
 - **`prerequisites.md`: back-in-time source versions for upgrade, converge and
   import (#397).** "Support for Back in Time Upgrades" in the VCF 9.1.1 announcement
