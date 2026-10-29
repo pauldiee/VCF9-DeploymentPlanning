@@ -128,7 +128,7 @@ export const OPTIONS = {
   nsxModel: ['Shared', 'Dedicated - Single Node', 'Dedicated - HA Cluster'] as const,
   gm: ['Excluded', 'Active GM', 'Standby GM', 'Connect Instance'] as const,
   spr: ['Exclude', 'Management Only', 'Workload Only', 'Management & Workload'] as const,
-  clusterType: ['Standard', 'Stretched (multi-AZ)'] as const,
+  clusterType: ['Standard', 'Stretched (multi-AZ)', 'Stretched (vMSC)'] as const,
   // Advanced Management Domain Sizing (workbook R24-R32)
   advNsxModel: ['HA Cluster', 'Single Node'] as const,
   advNsxSize: ['Medium', 'Large', 'XLarge'] as const,
@@ -803,6 +803,9 @@ export function compute(s: SizingState): SizingResult {
   // Capacity (cells R15..R20). vSAN: FTT redundancy -> rebuild/ops reserve ->
   // growth; NFS / FC: VM disk + swap -> growth only.
   const stretched = s.clusterType !== 'Standard';
+  // vMSC (NFS / FC metro storage cluster, KB 417356): the array mirrors between
+  // sites, so the vSAN x2 and the vSAN-stretch 8-host floor do not apply.
+  const vmsc = s.clusterType === 'Stretched (vMSC)';
   const vmCapacity = totals.disk;
   const swap = totals.ram;
   const interim = vmCapacity + swap;
@@ -810,7 +813,7 @@ export function compute(s: SizingState): SizingResult {
   const reserve = ceil(redundancy * (1 + s.reservePct / 100));
   const growth = isVsan(s.storageType) ? ceil(reserve * (1 + s.growthPct / 100)) : ceil(interim * (1 + s.growthPct / 100));
   // Stretched vSAN mirrors the full dataset into each AZ (sizer addition).
-  const raw = stretched && isVsan(s.storageType) ? growth * 2 : growth;
+  const raw = stretched && !vmsc && isVsan(s.storageType) ? growth * 2 : growth;
 
   const n = s.proposedHosts;
   const perHostRaw = s.capacityDisksPerHost * s.capacityDiskSizeGb;
@@ -820,7 +823,7 @@ export function compute(s: SizingState): SizingResult {
   let requiredHosts = workbookHosts;
   const hostsForStorage = isVsan(s.storageType) && perHostRaw > 0 ? ceil(raw / perHostRaw) : 0;
   requiredHosts = Math.max(requiredHosts, hostsForStorage);
-  if (stretched) requiredHosts = Math.max(8, requiredHosts + (requiredHosts % 2));
+  if (stretched) requiredHosts = Math.max(vmsc ? 2 : 8, requiredHosts + (requiredHosts % 2));
   const perHostN1 = n > 1
     ? { cpu: ceil(totals.cpu / (n - 1) / s.cpuOver), ram: ceil(totals.ram / (n - 1) / s.ramOver), storage: ceil(raw / (n - 1)) }
     : null;

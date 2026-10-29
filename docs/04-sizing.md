@@ -101,7 +101,7 @@ sizes when a fleet doesn't fit one of the four profiles (see below).
 
 **Cluster inputs (the part the workbook lacks)**
 
-- Cluster type (standard / stretched multi-AZ), host count
+- Cluster type (standard / stretched multi-AZ / stretched vMSC), host count
 - Per-host cores, RAM, and usable vSAN capacity
 - CPU/RAM oversubscription, storage growth %, and the **vSAN rebuild + operations
   reserve %** — vSAN only; NFS / FC skip it, as they skip the FTT and stretched ×2 steps
@@ -178,6 +178,14 @@ to the gigabyte:
 > stretched (multi-AZ) builds, also work through [`03-multi-az-prep.md`](03-multi-az-prep.md) —
 > the tool doubles vSAN raw for the dual-site mirror, but the witness, latency
 > budgets, and per-AZ networking still need the multi-AZ prep page.
+>
+> **Stretched (vMSC)** is the NFS / FC option: a vSphere Metro Storage Cluster built
+> by the storage vendor ([KB 417356](https://knowledge.broadcom.com/external/article/417356)).
+> The tool keeps the one-site-down (N/2) CPU/RAM check but applies neither the
+> vSAN ×2 mirror nor the 8-host floor of the vSAN stretch (hosts are rounded to an
+> even number, at least 2). The array-side capacity (synchronous mirror),
+> tiebreaker / arbiter and inter-site latency are the storage vendor's design and
+> are not modelled; enter the datastore capacity the management cluster gets.
 
 ## Validation against Broadcom TechDocs
 
