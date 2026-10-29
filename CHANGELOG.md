@@ -1,5 +1,19 @@
 # Changelog
 
+## v6.4.2 — 2026-10-29
+- **`docs/10` §9.3 (vDS + Foundation Load Balancer) re-checked verbatim against
+  its sources (#414).** Architecture, requirements and deployment TechDocs pages,
+  [KB 438769](https://knowledge.broadcom.com/external/article/438769/vsphere-foundation-load-balancer-flb-arc.html)
+  and the `VsphereFoundationConfig` API page all agree with the walkthrough.
+  Fixes: the FLB management network also offers DHCP in the wizard (static
+  still advised, per the requirements page); added the cluster prerequisites
+  (DRS Fully Automated + HA, 3 hosts without / 4 with vSAN, 100 ms between
+  clusters, no IPv6, DHCP never for VIPs); the FLB lands on one Management Zone
+  of a three-zone Supervisor; *API Server DNS Names* is optional in the wizard
+  (still advised); noted that the requirements page's control-plane minimum
+  (4 / 16 / 16) disagrees with the wizard's Tiny size (2 / 8). Still not
+  field-verified.
+
 ## v6.4.1 — 2026-10-29
 - **Sizer worker count: review done, workbook formula kept (#410).** TechDocs
   *VCF Fleet Sizing Models* (Last Updated 2026-10-26) still lists the workbook's

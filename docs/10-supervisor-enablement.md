@@ -1774,10 +1774,11 @@ image registry connectivity, validation ([§7](#7-validate)) and field notes
 ([§8](#8-field-notes)) apply unchanged. §1–§4 and the VPC parts of §6 don't.
 
 > **Status: TechDocs-sourced, not yet field-verified.** Built from the 9.1
-> FLB pages (last updated 15 October 2026), [KB 438769][kb438769] and the
-> vSphere Automation API. The minimal two-network layout in
-> [§9.3.2](#932-network-layouts) is derived from those sources, not a
-> documented topology name.
+> FLB pages, [KB 438769][kb438769] and the vSphere Automation API. Re-read
+> verbatim on 2026-10-29: the architecture and requirements pages were *Last
+> Updated October 26, 2026*, the deployment page *October 22, 2026*. The minimal
+> two-network layout in [§9.3.2](#932-network-layouts) is derived from those
+> sources, not a documented topology name.
 
 #### 9.3.1 What the Foundation Load Balancer is
 
@@ -1791,7 +1792,8 @@ image registry connectivity, validation ([§7](#7-validate)) and field notes
   ([KB 438769][kb438769]).
 - **Placement** **[documented]**: on a Management Zone of the Supervisor, in the
   same folder (*Namespaces > &lt;Supervisor name&gt;*) and resource pool as the
-  control plane VMs, with disks on the control plane storage policy
+  control plane VMs, with disks on the control plane storage policy. On a
+  Supervisor with three Management Zones, one zone is selected for the FLB
   ([architecture][flb-arch]).
 - **Availability** **[documented]**: one VM (DRS places it), or two VMs
   active-passive with a **soft host anti-affinity** rule in the same cluster.
@@ -1831,7 +1833,7 @@ image registry connectivity, validation ([§7](#7-validate)) and field notes
 | Network | Port group | Addresses |
 | ------- | ---------- | --------- |
 | Supervisor management | Existing management port group | Static block of **5** (3 control plane VMs, floating IP, 1 spare for replacement) **[documented]** |
-| FLB management | Own port group, or the management port group | Static range for the FLB VMs |
+| FLB management | Own port group, or the management port group | Static range for the FLB VMs. The wizard also offers DHCP here, but the requirements page warns *"Load balancers may require static IP addresses for Management"*, so plan a static range **[documented]** |
 | Virtual Server (VIPs) | Own port group | VIP range for the Supervisor API, every VKS control plane and every `LoadBalancer` service |
 | Transit (two-arm only) | Own port group | Range for forwarded traffic |
 | Workload | Own port group(s), different subnet from management | Range for VKS nodes; no overlap across workload networks |
@@ -1871,7 +1873,10 @@ use Layout A for production.
 
 **Supervisor control plane** **[documented]** — Tiny (2 CPU / 8 GB), Small
 (4 / 16), Medium (8 / 16), Large (16 / 32), 32 GB storage each. *"Once you
-select a control plane size, you can only scale up."*
+select a control plane size, you can only scale up."* The requirements page
+lists a smaller minimum for the control plane VMs (4 CPU / 16 GB / 16 GB) than
+the wizard's Tiny size (2 / 8) — the two pages disagree; size from the wizard
+list (checked 2026-10-29).
 
 #### 9.3.4 Firewall flows
 
@@ -1890,15 +1895,20 @@ Add the content library and container registry egress
 
 #### 9.3.5 Before the wizard
 
-1. **A vSphere Zone exists**, even for a single-cluster Supervisor: the
+1. **Cluster prerequisites** **[documented]** ([requirements][flb-req]): 1 or 3
+   vSphere clusters with **DRS in Fully Automated mode and HA enabled**; per
+   cluster 3 ESX hosts without vSAN (1 static IP each) or 4 hosts with at least 2
+   physical NICs with vSAN; at most 100 ms latency between the clusters of a
+   multi-zone Supervisor; no IPv6. DHCP is never used for the VIPs.
+2. **A vSphere Zone exists**, even for a single-cluster Supervisor: the
    *Cluster Deployment* option asks you to *"select a compatible vSphere Zone"*
    **[documented]**. Create it in vCenter first.
-2. **Supervisor Images content library** assigned ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first)).
-3. **Storage policy** for control plane, ephemeral disks and image cache.
-4. **DNS** A + PTR for the Supervisor API FQDN (pointed at the API VIP once
+3. **Supervisor Images content library** assigned ([§5.1](#51-the-supervisor-images-library--the-one-you-need-first)).
+4. **Storage policy** for control plane, ephemeral disks and image cache.
+5. **DNS** A + PTR for the Supervisor API FQDN (pointed at the API VIP once
    known — [§7.1](#71-followable-validation-runbook)).
-5. **IP ranges reserved** and excluded from DHCP; vDS MTU checked.
-6. **Proxy** details if egress is proxied, including the proxy root CA if it
+6. **IP ranges reserved** and excluded from DHCP; vDS MTU checked.
+7. **Proxy** details if egress is proxied, including the proxy root CA if it
    intercepts TLS ([docs/20 §3](20-supervisor-image-registry.md)).
 
 #### 9.3.6 The activation wizard, screen by screen
@@ -1932,7 +1942,7 @@ From [Deploy a Supervisor with Foundation Load Balancer and VDS Networking][flb-
      on the same subnet as the gateway."*
    - *Transit Network* (two-arm only): port group and IP range.
 7. **Advanced Settings** — control plane size (scale-up only); **API Server DNS
-   Names** — always fill in the FQDN, it goes into the generated certificate and
+   Names** — the wizard marks it optional; fill in the FQDN anyway, it goes into the generated certificate and
    the 9.1 VCF CLI login by FQDN depends on it ([§7](#7-validate)); **Export
    Configuration** — save the JSON, it makes a redeploy a re-import instead of a
    re-type.
