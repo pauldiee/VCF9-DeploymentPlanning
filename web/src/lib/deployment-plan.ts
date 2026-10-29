@@ -390,7 +390,7 @@ function coreEpics(sel: Selection): Epic[] {
     owner: 'Architect + Platform',
     stories: [
       { id: '3.1', title: 'Fill the P&P workbook', tasks: ["Transfer intake answers into the official workbook — or use Coscia's VCF Planner (https://vcfplanning.lcoscia.fr/) for an easier fillable form with live validation that also doubles as an as-built record (JSON/Markdown/CSV export)."], acceptance: "Workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner)." },
-      { id: '3.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.'], acceptance: 'Deployment JSON generated, schema-valid, and reviewed against the plan.' },
+      { id: '3.2', title: 'Generate the deployment JSON', tasks: ['Produce the bring-up JSON: from the filled workbook with VCF.JSONGenerator (its version must match the workbook revision), from the VCF Installer wizard (download the JSON template or the spec from the review page; the download has no passwords), or by hand from the Installer API schema. The JSON route needs VCF Installer 9.1.1 or later.', 'Validate it before bring-up: upload it with Deploy Using JSON Spec and clear every error (acknowledge or fix each warning), or dry-run it with POST /v1/sddcs/validations. Then review it against the plan: FQDNs and IPs against the network plan, sizes against the sizing result, components new vs existing, passwords present.', 'Treat the file as a secret: it holds every bring-up password. Store it encrypted and access-controlled, never in a public repository or a ticket.'], acceptance: 'Deployment JSON generated, accepted by the Installer validation with no open errors, reviewed against the plan, and stored as a secret.' },
     ],
   },
   {
@@ -1212,6 +1212,8 @@ const GD = {
   paifHarbor: guide('PAIF: platform Harbor registry', '33-private-ai-foundation', '7-platform-harbor-registry'),
   paifQuickstart: guide('PAIF: catalog items (Quickstart)', '33-private-ai-foundation', '8-catalog-items-the-private-ai-foundation-quickstart'),
   paifServices: guide('PAIF: Private AI Services', '33-private-ai-foundation', '9-private-ai-services'),
+  bringupJson: guide('Bring-up JSON: generate, validate, review', '35-bringup-json'),
+  bringupJsonValidate: guide('Bring-up JSON: validate before bring-up', '35-bringup-json', '6-validate-before-bring-up'),
   paisStandalone: guide('PAIS without GPUs or the Quickstart', '33-private-ai-foundation', '91-without-gpus-or-without-the-quickstart'),
   prereqPaif: guide('Prerequisites: Private AI Foundation', 'prerequisites', 'private-ai-foundation-only-if-in-scope'),
   prereqGpu: guide('Prerequisites: GPU hosts', 'prerequisites', 'gpu-hosts-only-if-in-scope'),
@@ -1239,6 +1241,7 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E2', story: /^Sizing/, guides: () => [GD.sizer, GD.sizing] },
   { epic: 'E3', guides: () => [GD.workbook] },
   { epic: 'E3', story: /^Fill the P&P workbook/, guides: () => [GD.workbook] },
+  { epic: 'E3', story: /^Generate the deployment JSON/, guides: () => [GD.bringupJson, GD.bringupJsonValidate] },
   { epic: 'E4', guides: () => [GD.prereq] },
   { epic: 'E4', story: /^Hardware ready/, guides: () => [GD.prereqHw, GD.prereqStorage, GD.sizer] },
   { epic: 'E4', story: /^Physical network/, guides: () => [GD.prereqNet, GD.netNs] },

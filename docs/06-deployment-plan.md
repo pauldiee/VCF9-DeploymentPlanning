@@ -74,7 +74,7 @@ Ref: [`workbook-cell-mapping.md`](workbook-cell-mapping.md)
 
 - **Story 3.1 — Fill the P&P workbook.** Transfer intake answers into the official workbook — or use [**Coscia's VCF Planner**](https://vcfplanning.lcoscia.fr/) for an easier fillable form (live VLAN/IP/CIDR validation) that also doubles as an **as-built** record, with JSON/Markdown/CSV export.
   - *Acceptance:* workbook complete with no red validation warnings (or the equivalent complete in Coscia's Planner).
-- **Story 3.2 — Generate the deployment JSON.** Produce the bring-up JSON (e.g. VCF.JSONGenerator) from the filled workbook.
+- **Story 3.2 — Generate the deployment JSON.** Produce the bring-up JSON from the filled workbook (VCF.JSONGenerator), from the VCF Installer wizard's download, or by hand from the API schema; validate it in the Installer (or by the API dry run) and review it against the plan. Guide: [`35-bringup-json.md`](35-bringup-json.md).
   - *Acceptance:* deployment JSON generated, schema-valid, and reviewed against the plan.
 
 ### E4 — Prerequisites & readiness gate  ·  Owner: Architect + infrastructure teams
