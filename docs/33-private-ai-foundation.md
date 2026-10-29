@@ -428,10 +428,63 @@ package into Harbor. The AMT pulls from `pais-docker.packages.broadcom.com`,
 `archive.ubuntu.com` — the bastion's allowlist. The vGPU variant of the GPU
 Operator package needs an NVAIE licence.
 
-**Then:** install the Supervisor Service on the GPU workload domain's
-Supervisors, and activate Private AI Services per organization namespace (in
-the VCF Automation UI or with `kubectl`). Private AI Services can be updated
-without updating VCF.
+**Then:** install the Supervisor Service on the workload domain's Supervisor,
+and activate Private AI Services per namespace (in the VCF Automation UI or
+with `kubectl`). Private AI Services can be updated without updating VCF.
+
+### 9.1 Without GPUs, or without the Quickstart
+
+Private AI Services does not need GPU hosts and does not need the Private AI
+Foundation Quickstart. Broadcom's setup workflow says so in so many words:
+*"AI workloads can run on top of different compute infrastructure, which can
+include GPU devices in vGPU or passthrough mode or can be CPU-only"*, and marks
+every step with the compute models it applies to ([Private AI Services setup
+workflow][td-workflows-pais], page read 2026-10-29):
+
+| Step | vGPU | GPU passthrough | CPU-only |
+| --- | --- | --- | --- |
+| NVIDIA License Service instance and NGC API key (DLS appliance on a dark site) | ✓ | — | — |
+| Configure vGPU or passthrough on the ESX hosts | ✓ | ✓ | — |
+| Everything else: workload domain with a Supervisor, VM classes, Data Services Manager, Harbor, VCF Automation organization, install and activate Private AI Services, metrics | ✓ | ✓ | ✓ |
+
+- **Licence.** *"Private AI Services releases are available under a VMware
+  Private AI Foundation with NVIDIA license"* ([release notes][pais-rn]), so a
+  CPU-only install still needs the Private AI Foundation add-on licence; NVIDIA
+  licences are only for vGPU. I found no Broadcom statement that Identity Broker
+  SSO and vCenter Linking can be skipped for it, so plan them as for Private AI
+  Foundation ([`32-gpu-hosts.md`](32-gpu-hosts.md) lines up the licence layers).
+- **CPU-only compute.** *"The llama.cpp image delivered with Private AI Services
+  is CPU-only."* The release notes' CPU examples (Gemma 3 1B and 4B, GPT-OSS
+  20B and 120B, Nemotron 3 Nano 4B on llama.cpp) are listed at **16 vCPU /
+  128 GB RAM** per endpoint. To run llama.cpp on a GPU you upload the CUDA image
+  to an OCI registry yourself.
+- **Remote models only.** An instance that only consumes remote models needs no
+  GPU capacity: design requirement PAIF-PL-RCMD-PAIS-028 ([Private AI Services
+  design page][pais-design], *Last Updated October 26, 2026*).
+- **Namespace reservation.** PAIF-PL-RCMD-PAIS-002: *"Deploy Private AI Services
+  in a namespace with at least 5 GHz of CPU reservation"*; the default components
+  *"will not start in a namespace without enough reserved resources"*.
+- **Two ways to consume it.** Through a VCF Automation All Apps organization and
+  project (guided enablement, VCF Automation as OIDC provider), which is what the
+  setup workflow assumes (*"Verify that VCF Automation was deployed in your VCF
+  fleet"*). Or through a namespace created in vCenter with the service enabled by
+  `kubectl` or, on 3.0, the Local Consumption Interface: *"There is no VCF
+  Automation dependency, and any Supervisor networking option can be used"*, and
+  tenancy comes from namespace segmentation ([design page][pais-design]). The two
+  Broadcom pages differ here; decide the route before you plan the identity
+  provider and the namespaces.
+- **Dark site.** The disconnected workflow lists, for every compute model
+  including CPU-only: the bastion and admin hosts, a local Harbor, a **VKr
+  content library for Ubuntu**, the VCF Automation organization and *"Upload the
+  Private AI Services Components to a Disconnected Environment"* (the artifact
+  mirroring tool, plus the GPU Operator package when GPUs are used). The DLS
+  appliance is vGPU only. The Ubuntu package mirror and the driver web server of
+  §4 serve VKS GPU clusters and deep learning VMs; Broadcom does not say whether
+  a Private AI Services-only site needs them, so confirm that before you skip
+  them.
+
+The export tool follows this: tick *Private AI Services* on a workload domain,
+independent of its GPU choice ([`06-deployment-plan.md`](06-deployment-plan.md)).
 
 ---
 
@@ -477,6 +530,7 @@ without updating VCF.
 [paif]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x.html
 [td-workflows]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/setup-workflows.html
 [pais-rn]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-release-notes/vmware-private-ai-services-release-notes.html
+[pais-design]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/private-ai-platform-detailed-design/private-ai-services.html
 [nw-explore]: https://www.networkworld.com/article/4215847/private-ai-cloud-agentic-infrastructure-dominate-vmware-explore.html
 [bc-aifactory]: https://investors.broadcom.com/news-releases/news-release-details/broadcom-announces-vmware-ai-factory-enabling-faster-time
 [td-workflows-pais]: https://techdocs.broadcom.com/us/en/vmware-cis/private-ai/foundation-with-nvidia/9-0/private-ai-foundation-9-x/deploying-private-ai-foundation-with-nvidia/setup-workflow-for-private-ai-services.html

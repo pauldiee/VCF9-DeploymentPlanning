@@ -38,10 +38,17 @@ function selections() {
         s.aviLicensing = lic;
         s.automation = { deploy: true, model: 'medium', placement: 'overlay', aviLb: true };
         s.day2Components = { logs: true, networks: true, identityBroker: stretched };
-        s.wlds = [{ name: 'w1', stretched, connectivity: conn, supervisor: true, supervisorLb: 'avi', gpu: lic === 'hub' ? 'paif' : 'vms', paifConnectivity: stretched ? 'disconnected' : 'connected' }];
+        s.wlds = [{ name: 'w1', stretched, connectivity: conn, supervisor: true, supervisorLb: 'avi', gpu: lic === 'hub' ? 'paif' : 'vms', paifConnectivity: stretched ? 'disconnected' : 'connected', pais: lic === 'hub' }];
         out.push(s);
       }
     }
+  }
+  // Private AI Services as its own option (#424): CPU-only, connected and dark;
+  // GPU hosts without the Quickstart; and on top of Private AI Foundation.
+  for (const [gpu, dark] of [['none', false], ['none', true], ['vms', false], ['vms', true], ['paif', true]]) {
+    const p = m.defaultSelection();
+    p.wlds = [{ name: 'w1', stretched: false, connectivity: 'centralized', supervisor: true, supervisorLb: 'flb', gpu, paifConnectivity: dark ? 'disconnected' : 'connected', pais: true }];
+    out.push(p);
   }
   const off = m.defaultSelection();
   off.day2 = false;
