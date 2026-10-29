@@ -88,8 +88,9 @@ const opt = (values: readonly string[]) => values;
           <label>Cluster type
             <select id="clusterType">{opt(OPTIONS.clusterType).map((v) => <option>{v}</option>)}</select>
           </label>
-          <p class="sizer__hint"><strong>Standard</strong>: one site. <strong>Stretched</strong>: the cluster spans two sites so it survives losing a whole site (at least 8 hosts, half per site). <strong>Not sure?</strong> Standard.</p>
-          <p class="sizer__hint" id="stretchHint" hidden>The stretched <strong>×2 mirror is vSAN only</strong>. With NFS / FC stretched (vSphere Metro Storage Cluster), replication between sites is done by the storage array and is not modelled here — enter the datastore capacity available to the management cluster.</p>
+          <p class="sizer__hint"><strong>Standard</strong>: one site. <strong>Stretched (multi-AZ)</strong>: VCF's automated vSAN stretch; the cluster spans two sites so it survives losing a whole site (at least 8 hosts, half per site). <strong>Stretched (vMSC)</strong>: an NFS / FC vSphere Metro Storage Cluster built by the storage vendor; no ×2 mirror and no 8-host floor, an even host count split over the two sites. <strong>Not sure?</strong> Standard.</p>
+          <p class="sizer__hint" id="stretchHint" hidden>The stretched <strong>×2 mirror is vSAN only</strong>. With NFS / FC stretched (vSphere Metro Storage Cluster, choose <em>Stretched (vMSC)</em>), replication between sites, the tiebreaker / arbiter and the array-side capacity are the storage vendor's job and are not modelled here — enter the datastore capacity available to the management cluster.</p>
+          <p class="sizer__warn" id="vmscVsanWarn" hidden>⚠ <strong>vMSC and vSAN do not combine.</strong> A vSphere Metro Storage Cluster is built on NFS / FC storage; vSAN is stretched with <em>Stretched (multi-AZ)</em> instead. Change the cluster type or the principal storage.</p>
           <label>Number of hosts
             <input id="proposedHosts" type="number" min="1" step="1" />
           </label>
@@ -299,7 +300,7 @@ const opt = (values: readonly string[]) => values;
         </table>
         <p class="sizer__hint">CPU and RAM are checked against the tolerated failure: <strong>N-1</strong> (one host)
           for a standard cluster, or <strong>N/2</strong> (the surviving AZ must run everything) for a stretched
-          cluster. For <strong>vSAN</strong>, storage rebuild is covered by the reserve %, and stretched mirrors a
+          cluster (vMSC included). For <strong>vSAN</strong>, storage rebuild is covered by the reserve %, and stretched mirrors a
           full copy per AZ. For <strong>NFS / FC</strong>, storage is checked against the datastore capacity you enter;
           resilience and replication are the array's job.</p>
 
@@ -547,9 +548,13 @@ const opt = (values: readonly string[]) => values;
 
     // verdict banner
     const v = $('verdict');
-    v.className = `verdict ${r.fit.overall ? 'verdict--ok' : 'verdict--bad'}`;
+    const vmscVsan = state.clusterType === 'Stretched (vMSC)' && isVsanType(state.storageType);
+    ($('vmscVsanWarn') as HTMLElement).hidden = !vmscVsan;
+    v.className = `verdict ${r.fit.overall && !vmscVsan ? 'verdict--ok' : 'verdict--bad'}`;
     const survives = state.clusterType === 'Standard' ? 'one host failure' : 'a full AZ (site) failure';
-    v.innerHTML = r.fit.overall
+    v.innerHTML = vmscVsan
+      ? `<strong>Not a valid combination.</strong> Stretched (vMSC) needs NFS / FC principal storage; for vSAN choose Stretched (multi-AZ).`
+      : r.fit.overall
       ? `<strong>Fits.</strong> ${state.proposedHosts} × host survives ${survives} with room to spare. Tightest dimension: ${r.fit.binding}.`
       : `<strong>Does not fit.</strong> Shortfall on <strong>${r.fit.binding}</strong> (survivability basis: ${r.survivorBasis}). Minimum hosts for this fleet &amp; spec: <strong>${r.requiredHosts}</strong>.`;
 
@@ -653,8 +658,8 @@ const opt = (values: readonly string[]) => values;
     // capacity breakdown — vSAN shows its FTT / reserve / mirror steps; NFS / FC
     // only VM disk + swap + growth, so no step reads as if it had been applied.
     const vsanStore = isVsanType(state.storageType);
-    const stretchedStore = state.clusterType !== 'Standard';
-    ($('stretchHint') as HTMLElement).hidden = vsanStore || !stretchedStore;
+    const stretchedStore = state.clusterType === 'Stretched (multi-AZ)';
+    ($('stretchHint') as HTMLElement).hidden = state.clusterType === 'Standard' || (vsanStore && !state.clusterType.includes('vMSC'));
     $('breakdownTitle').textContent = vsanStore ? 'vSAN raw capacity breakdown' : 'Datastore capacity breakdown (NFS / FC)';
     const fttFactor = state.storageType === 'vSAN-ESA' ? '×1.5, ESA' : '×2, OSA';
     const breakdown: Array<[string, string]> = vsanStore

@@ -1,5 +1,14 @@
 # Changelog
 
+## v6.4.0 — 2026-10-29
+- **Management sizer: new `Stretched (vMSC)` cluster type (#438).** For an NFS /
+  FC vSphere Metro Storage Cluster ([KB 417356](https://knowledge.broadcom.com/external/article/417356)):
+  keeps the one-site-down (N/2) CPU/RAM check, drops the vSAN-stretch 8-host floor
+  (even host count, minimum 2) and never applies the vSAN ×2 mirror. Array-side
+  capacity, tiebreaker and latency stay the storage vendor's design and are stated
+  as not modelled. `docs/04-sizing.md` follows. `Stretched (multi-AZ)` is
+  unchanged.
+
 ## v6.3.1 — 2026-10-27
 - **SDDC Manager log collection changed in 9.1.1 (#437).** The 9.1.1.0 VCF
   Operations release notes move SDDC Manager's log configuration into VCF
