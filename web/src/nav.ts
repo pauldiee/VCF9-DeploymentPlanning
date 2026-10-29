@@ -100,6 +100,14 @@ export const NAV: NavItem[] = [
     blurb: 'The offline depot and VCF Download Tool — build, feed, and connect the depot the platform installs and patches from.',
   },
   {
+    slug: '35-bringup-json',
+    step: 'Foundation services',
+    band: 'Foundation services',
+    label: 'Bring-up JSON',
+    icon: 'file-code',
+    blurb: 'Generate, validate and review the VCF Installer JSON specification before bring-up: the wizard download, VCF.JSONGenerator, the API schema, the validation dry run, and handling the file as a secret.',
+  },
+  {
     slug: '11-esx-coredump',
     step: 'Foundation services',
     band: 'Foundation services',

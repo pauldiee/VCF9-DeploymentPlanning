@@ -1,5 +1,20 @@
 # Changelog
 
+## v6.6.0 — 2026-10-29
+- **New guide `docs/35`: bring-up JSON (#381).** Plan story 3.2 had one line and
+  no guide. `docs/35-bringup-json.md` covers the three routes to the VCF Installer
+  JSON specification (wizard download, VCF.JSONGenerator, hand-built from the
+  `SddcSpec` schema), which blocks each scenario needs, the Installer's own
+  validation, an API dry run through `POST /v1/sddcs/validations` (**untested**,
+  from the 9.1.0.0 OpenAPI specification), a review checklist against the plan
+  and handling the file as a secret. Facts are from the 9.1 TechDocs (JSON
+  specification and wizard pages, read 2026-10-29): the JSON route needs VCF
+  Installer 9.1.1 or later, and the downloaded spec has no passwords.
+  VCF.JSONGenerator is credited to its author with links; its README warns of a
+  tight coupling to the workbook version. Story 3.2 in the export tool and
+  `docs/06` now name the routes and link the guide (new `GUIDE_RULES` entry); the
+  guide is in the nav, README and CLAUDE.md.
+
 ## v6.5.0 — 2026-10-29
 - **Export tool + `docs/33`: Private AI Services is its own per-domain option
   (#424).** A new *Private AI Services* box on each workload domain, independent
