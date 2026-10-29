@@ -255,7 +255,14 @@ sources (2026-10-01):
   baseline in every profile (sizer: Simple 2, HA-Small 3, HA-Medium 3, HA-Large
   4), which is the workbook's per-profile **+1 node**. The blog is the newest
   official source; the tool keeps the workbook formula so it stays verified
-  against the workbook, which puts it one worker on the safe side. KB 455842
+  against the workbook, which puts it one worker on the safe side. **Re-checked
+  2026-10-29 (#410):** the TechDocs
+  [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html)
+  page (*Last Updated October 26, 2026*) still lists the workbook counts for the
+  first instance (Simple 2, HA-Small 3, HA-Medium 3, HA-Large 4 workers) and 2
+  workers in every profile of an additional instance, so the blog's lower figures
+  are not in TechDocs yet. Decision: the tool keeps the workbook formula until
+  TechDocs or a newer workbook revision follows the blog. KB 455842
   ([below](#vvf--standalone-profile)) shrinks a 9.1.0 deployment to the 9.1.1
   footprint after an upgrade.
 - **VCF Automation is sized on its own size.** The sizer keeps a separate
@@ -339,6 +346,11 @@ profile. This is the tool's own model, not a Broadcom figure.
 > | [VCF Fleet Sizing Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-fleet-sizing-models-9-x.html) and the 9.1.1 workbook | 1 control node + **2** workers |
 > | [VCF Management Services Models](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/vmware-cloud-foundation-concepts/vcf-management-services-models.html), [Simple VCF Management Services Model](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-library/vcf-management-services-availabilty-detailed-design/vcf-management-services-simple-deployment-model.html) | 1 control node + **3** workers |
 > | [VCF blog, 2026-10-13](https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/) (newest; read 2026-10-16) | 9.1.0: 1 + 3; **9.1.1: 1 control node + 1 worker** |
+>
+> Re-read 2026-10-29: both TechDocs pages now say *Last Updated October 26,
+> 2026* and still show 2 (Fleet Sizing Models) and 3 (Management Services Models,
+> design requirement VCF-MS-REQD-SIM-001) workers for Simple, so the gap between
+> them is unchanged.
 >
 > [William Lam (September 2026)](https://williamlam.com/2026/09/vcf-9-1-1-adopting-the-reduced-vcf-management-services-vcfms-footprint-after-an-upgrade.html)
 > explains the gap: VCF 9.1.1 removed one worker from new Simple deployments,
