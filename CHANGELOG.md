@@ -1,5 +1,14 @@
 # Changelog
 
+## v6.4.1 — 2026-10-29
+- **Sizer worker count: review done, workbook formula kept (#410).** TechDocs
+  *VCF Fleet Sizing Models* (Last Updated 2026-10-26) still lists the workbook's
+  worker counts (Simple 2, HA-Small 3, HA-Medium 3, HA-Large 4; 2 in every
+  profile of an additional instance), so Broadcom's 2026-10-13 blog figure (one
+  worker fewer) is not in TechDocs or the workbook yet. `docs/04` records the
+  re-check, including that the Simple model page still says 3 (VCF-MS-REQD-SIM-001);
+  the sizer note says the workbook spare node is also TechDocs' figure.
+
 ## v6.4.0 — 2026-10-29
 - **Management sizer: new `Stretched (vMSC)` cluster type (#438).** For an NFS /
   FC vSphere Metro Storage Cluster ([KB 417356](https://knowledge.broadcom.com/external/article/417356)):

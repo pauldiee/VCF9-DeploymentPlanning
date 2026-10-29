@@ -624,8 +624,9 @@ const opt = (values: readonly string[]) => values;
       ? 'No services runtime: VCF Management Services are left out.'
       : `Services runtime: <strong>${r.workers.nodes} worker nodes</strong> × ${r.workers.perNodeCpu} vCPU / ${r.workers.perNodeRam} GB (workbook formula). ` +
         // Broadcom's VCF blog of 2026-10-13 charts one worker fewer per profile (the
-        // workbook's +1 spare node). Kept on the workbook formula; review in #410.
-        `Broadcom's <a href="https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/" target="_blank" rel="noopener">9.1.1 blog (2026-10-13)</a> shows one worker fewer per profile before Day-N services; this tool keeps the workbook's spare node. <a href="${docHref('04-sizing')}#validation-against-broadcom-techdocs">Details</a>.`;
+        // workbook's +1 spare node). Kept on the workbook formula (decided in #410,
+        // 2026-10-29: TechDocs Fleet Sizing Models still lists the workbook counts).
+        `Broadcom's <a href="https://blogs.vmware.com/cloud-foundation/2026/10/13/customer-favorite-capabilities-accelerating-your-path-to-vcf-9-1-1/" target="_blank" rel="noopener">9.1.1 blog (2026-10-13)</a> shows one worker fewer per profile before Day-N services; this tool keeps the workbook's spare node, which TechDocs' Fleet Sizing Models page still lists too. <a href="${docHref('04-sizing')}#validation-against-broadcom-techdocs">Details</a>.`;
 
     // Oversubscription guardrail — the workbook caps the recommendation at 2:1
     const over = Math.max(state.cpuOver, state.ramOver);
