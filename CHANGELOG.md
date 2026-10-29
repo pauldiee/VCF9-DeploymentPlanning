@@ -1,5 +1,24 @@
 # Changelog
 
+## v6.6.1 — 2026-10-29
+- **`docs/01` §B.3, intake `B23`: VCF 9.1.1 Distributed VXLAN (EVPN) connectivity
+  (#396).** A third north-south option next to Centralized and Distributed VLAN,
+  written from the 9.1 TechDocs (Distributed VXLAN Connectivity, Create a Route
+  Controller, the new-connection and enable-services pages, the NSX 9.1.1.0 release
+  notes and the VCF Automation external-connections page, all read 2026-10-29,
+  *Last Updated October 26, 2026*). It lists what the fabric and NSX teams must
+  provide: Route Controller HA mode and nodes, BGP interface and AS numbers, EVPN
+  gateway peers, per-tenant L3 VNI / route distinguisher / route targets, the
+  default-route change, Direct Prefix Routing, and the services-on-EVPN
+  prerequisites (VNA cluster, ESX 9.1.1.0, Avi 32.1.3+). The release notes carry no
+  technical-preview label, which is reported as an absent label, not a support
+  statement. Neither pinned workbook has EVPN fields, so `B23` has no workbook
+  mapping (recorded in `workbook-cell-mapping.md`). Route Controller sizes and the
+  BGP firewall ports were not in the pages read and are flagged as such. `A10` /
+  `H4` now point at `B23`; the DNS table gains the Route Controller nodes.
+  `docs/07`, `10` and `14` unchanged. The vcf-knowledge plugin has the verified
+  facts (networking-and-lb §12).
+
 ## v6.6.0 — 2026-10-29
 - **New guide `docs/35`: bring-up JSON (#381).** Plan story 3.2 had one line and
   no guide. `docs/35-bringup-json.md` covers the three routes to the VCF Installer
