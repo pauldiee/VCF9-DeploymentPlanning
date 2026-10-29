@@ -1,5 +1,22 @@
 # Changelog
 
+## v6.5.0 — 2026-10-29
+- **Export tool + `docs/33`: Private AI Services is its own per-domain option
+  (#424).** A new *Private AI Services* box on each workload domain, independent
+  of the GPU choice, adds the Supervisor and the install story. On a domain
+  without Private AI Foundation (CPU-only, or GPU hosts without the Quickstart)
+  it adds licence-and-prerequisites, (dark site) staging, and VM-class-and-Harbor
+  stories first. Plans saved before keep the install story on their Private AI
+  Foundation domains. `docs/33` gets §9.1 *Without GPUs, or without the
+  Quickstart*, quoting TechDocs (read 2026-10-29): the setup workflow marks every
+  step vGPU / passthrough / CPU-only, Private AI Services ships under the Private
+  AI Foundation licence, the llama.cpp image is CPU-only (16 vCPU / 128 GB RAM
+  examples), a remote-models-only instance needs no GPU capacity, and VCF
+  Automation is optional per the design page but assumed by the setup workflow.
+  Not stated by Broadcom, so flagged in the plan: whether SSO / vCenter Linking
+  can be skipped for a Private AI Services-only install, and whether its dark
+  site needs the Ubuntu package mirror. `docs/06` follows.
+
 ## v6.4.3 — 2026-10-29
 - **`docs/33`: PAIF / PAIS / VMware AI Factory terminology note, and the Private
   AI Services release-notes link fixed (#423).** A short note near the top says

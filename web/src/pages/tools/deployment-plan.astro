@@ -87,7 +87,7 @@ const epics = selectedEpics(sel);
 
       <fieldset>
         <legend>Workload domains <button type="button" id="btnAddWld" class="planx__add">+ Add</button></legend>
-        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…) and picks its own <em>NSX connectivity</em>, independent of the management domain's (intake H4). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story. Activation <strong>requires that domain's north-south connectivity to be in place first</strong>, so its connectivity story becomes an explicit prerequisite (Centralized: Edge cluster + Tier-0 + BGP, plus the Supervisor ingress/egress CIDRs; Distributed: Distributed Transit Gateway + VNA, plus the external IP block and the /16 private transit-gateway block). <em>None</em> builds no Edge cluster or Transit Gateway: the domain's networks stay VLAN-backed, a Supervisor there runs on VDS networking (Foundation LB or Avi, not the built-in NSX/VPC LB), and Private AI Foundation is not available. Then pick the Supervisor <em>load balancer</em>: the built-in NSX/VPC LB (default, no extra appliance), the Foundation Load Balancer (platform-packaged L4 pair for VDS networking), or Avi (adds its own story: controller cluster into the domain + cloud connector + Service Engine/VIP networks, all before activation).</p>
+        <p class="planx__hint">Workload domains are <em>optional</em>: remove them all for a management-only scope. Each one is its own epic (E9…) and picks its own <em>NSX connectivity</em>, independent of the management domain's (intake H4). Tick <em>Stretched</em> for per-AZ host prep + a dedicated witness; it requires the management domain stretched first, so ticking it adds E7 automatically. Tick <em>Supervisor</em> to add the vSphere Supervisor enablement story. Tick <em>Private AI Services</em> to add its stories on that Supervisor (it adds the Supervisor for you): on a domain with no GPUs it plans a CPU-only install, with GPU hosts it plans the GPU variant, with or without the Private AI Foundation Quickstart. Activation <strong>requires that domain's north-south connectivity to be in place first</strong>, so its connectivity story becomes an explicit prerequisite (Centralized: Edge cluster + Tier-0 + BGP, plus the Supervisor ingress/egress CIDRs; Distributed: Distributed Transit Gateway + VNA, plus the external IP block and the /16 private transit-gateway block). <em>None</em> builds no Edge cluster or Transit Gateway: the domain's networks stay VLAN-backed, a Supervisor there runs on VDS networking (Foundation LB or Avi, not the built-in NSX/VPC LB), and Private AI Foundation is not available. Then pick the Supervisor <em>load balancer</em>: the built-in NSX/VPC LB (default, no extra appliance), the Foundation Load Balancer (platform-packaged L4 pair for VDS networking), or Avi (adds its own story: controller cluster into the domain + cloud connector + Service Engine/VIP networks, all before activation).</p>
         <div id="wldList"></div>
         <label class="planx__sublabel">Supervisor control-plane size (for enabled Supervisors)
           <select id="selSuperSize">
@@ -297,7 +297,8 @@ const epics = selectedEpics(sel);
           <select class="planx__wldgpu" aria-label="GPU hosts in this workload domain" title="NVIDIA GPU hosts: plain vGPU / passthrough for VMs, or a Private AI Foundation implementation">
             ${GPU_USES.map((g) => `<option value="${g.value}"${w.gpu === g.value ? ' selected' : ''}>${g.label}</option>`).join('')}
           </select>
-          <select class="planx__wldpaifconn" aria-label="Private AI Foundation connectivity" title="Private AI Foundation: connected, or a disconnected (dark) site that stages every artifact locally"${w.gpu === 'paif' ? '' : ' disabled'}>
+          <label class="planx__check" title="Private AI Services on this domain's Supervisor: with GPU hosts or CPU-only, with or without the Private AI Foundation Quickstart"><input type="checkbox" class="planx__wldpais" ${w.pais ? 'checked' : ''} /> Private AI Services</label>
+          <select class="planx__wldpaifconn" aria-label="Private AI connectivity" title="Private AI Foundation / Private AI Services: connected, or a disconnected (dark) site that stages every artifact locally"${w.gpu === 'paif' || w.pais ? '' : ' disabled'}>
             ${PAIF_CONNECTIVITY.map((c) => `<option value="${c.value}"${w.paifConnectivity === c.value ? ' selected' : ''}>${c.label}</option>`).join('')}
           </select>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain">×</button>
@@ -396,6 +397,7 @@ const epics = selectedEpics(sel);
       supervisorLb: 'builtin',
       gpu: 'none',
       paifConnectivity: 'connected',
+      pais: false,
     });
     renderWlds();
     render();
@@ -419,9 +421,9 @@ const epics = selectedEpics(sel);
       renderWlds(); // enable / disable the built-in LB option
     } else if (t.classList.contains('planx__wldsuper')) {
       wlds[i].supervisor = (<HTMLInputElement>t).checked;
-      if (!wlds[i].supervisor && wlds[i].gpu === 'paif') {
+      if (!wlds[i].supervisor && (wlds[i].gpu === 'paif' || wlds[i].pais)) {
         wlds[i].supervisor = true;
-        toolbarMsg('Supervisor stays on: Private AI Foundation runs on it');
+        toolbarMsg(`Supervisor stays on: ${wlds[i].gpu === 'paif' ? 'Private AI Foundation' : 'Private AI Services'} runs on it`);
       }
       noNsLbFallback(i);
       renderWlds(); // refresh the row so the LB select follows the Supervisor toggle
@@ -439,6 +441,14 @@ const epics = selectedEpics(sel);
       }
       noNsLbFallback(i);
       renderWlds(); // enable the PAIF connectivity select, refresh the Supervisor box
+    } else if (t.classList.contains('planx__wldpais')) {
+      wlds[i].pais = (<HTMLInputElement>t).checked;
+      if (wlds[i].pais && !wlds[i].supervisor) {
+        wlds[i].supervisor = true;
+        toolbarMsg('Supervisor added: Private AI Services runs on it');
+      }
+      noNsLbFallback(i);
+      renderWlds(); // enable the connectivity select, refresh the Supervisor box
     } else if (t.classList.contains('planx__wldpaifconn')) {
       wlds[i].paifConnectivity = (<HTMLSelectElement>t).value as PaifConnectivity;
     }

@@ -310,10 +310,32 @@ stories, in this order (guide:
   namespace, then the **Private AI Foundation Quickstart** (9.1.1 blueprint
   swap to `deep-learning-container`; GPU Operator v25.3.1 → v26.3.1,
   [KB 439984](https://knowledge.broadcom.com/external/article/439984)).
-- **Private AI Services (if used)** — Data Services Manager, an OIDC provider
-  (not VCF SSO), the install source (dark site: separately distributed package
-  through the artifact mirroring tool), install on the Supervisor, activate per
-  namespace.
+- **Private AI Services: install and activate** (only when the domain's
+  *Private AI Services* box is ticked, #424) — Data Services Manager, an OIDC
+  provider (not VCF SSO), the install source (dark site: separately distributed
+  package through the artifact mirroring tool), install on the Supervisor,
+  activate per namespace.
+
+**Private AI Services as its own option (#424).** The *Private AI Services* box
+on a workload domain is independent of the GPU choice and adds the Supervisor
+for you. On a Private AI Foundation domain it adds only the install story above
+(the licence, Harbor, VM-class and dark-site stories already exist). On a domain
+**without** Private AI Foundation — CPU-only (no GPU hosts) or GPU hosts without
+the Quickstart — it adds three stories instead, in this order:
+
+- **Private AI Services: licence and prerequisites** — Private AI Services
+  ships under the Private AI Foundation licence, the compute model (CPU-only
+  llama.cpp, or GPU), and the consumption route (VCF Automation organization, or
+  vCenter namespaces with `kubectl` / the Local Consumption Interface).
+- *Dark site only —* **Private AI Services: dark-site staging** — bastion and
+  admin hosts, allowlist, Harbor, the artifact mirroring tool.
+- **Private AI Services: VM classes and Harbor** — VM classes for the endpoints,
+  the 5 GHz namespace CPU reservation, Harbor for the model galleries.
+
+then **Private AI Services: install and activate**. Background:
+[`33-private-ai-foundation.md` §9.1](33-private-ai-foundation.md#91-without-gpus-or-without-the-quickstart).
+Plans saved before this option existed keep the install story on their Private AI
+Foundation domains.
 
 Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
 [`prerequisites.md` → GPU hosts](prerequisites.md#gpu-hosts-only-if-in-scope).
