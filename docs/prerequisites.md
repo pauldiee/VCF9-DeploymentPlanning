@@ -496,6 +496,66 @@ host before bring-up.
 > TechDocs: [Deploy a New VCF Fleet or VCF Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html)
 > (storage page). TechDocs-sourced — not yet field-verified in this repo.
 
+## Existing infrastructure: back-in-time source versions (only if in scope)
+
+*When needed: **Bring-up (if in scope)**.* Only when you **upgrade, converge or
+import** existing vSphere or VCF 5.x infrastructure into VCF 9.1; a greenfield
+deployment never meets this.
+
+A **back-in-time** source is a release that came out **after** the VCF release
+you are moving to. Broadcom, verbatim: *"A back-in-time condition occurs when a
+source software version (such as vSphere 8.0 Update 3j or VCF 5.2.4) was released
+after the target software build (such as VCF 9.1.0 GA)."* The upgrade is blocked
+because it *"would cause an unintended regression of security fixes, critical
+patches, or stability code"* ([KB 450972][bit-kb450972]). The pre-check shows it as
+*"Cannot upgrade to VCF version 9.1.0.0 for domain … in a compatible way"* with
+the components *"not upgradable"* and *"not interoperable"*
+([KB 448135][bit-kb448135]).
+
+**What is blocked, by target release**
+
+| Source | Target 9.1.0.x | Target 9.1.1.x |
+| ------ | -------------- | -------------- |
+| vSphere 8.0 U3 through U3i | Upgrade, converge and import all supported | Upgrade supported (matrix ¹) |
+| vCenter and ESX **8.0 U3j, U3k** | Upgrade and converge **unsupported**; **import** supported | Upgrade supported (matrix ¹) |
+| NSX **4.2.4, 4.2.4.1** | Not supported (matrix ¹) | Supported (matrix ¹) |
+| VCF 5.2.0 to 5.2.3 | Supported | Supported (SDDC Manager 5.2.3 and 5.2.2 in the matrix on 2026-10-16, not re-checked) |
+| **VCF 5.2.4** | **Unsupported** | Supported (blog ²) |
+| **VCF 9.0.2 EP02** (9.1.0.0200) | Unsupported (blog ²) | Supported (blog ²) |
+
+¹ Read from the Interoperability Matrix upgrade-path data on 2026-10-29 with patch
+releases shown: vCenter and ESX 8.0 U3j and U3k reach **9.1.1.0 and 9.1.1.0100** and
+no 9.1.0.x build; NSX 4.2.4 and 4.2.4.1 reach 9.1.1.0 and 9.1.1.0100 and no 9.1.0.x.
+² As reported by Broadcom's VCF 9.1.1 write-ups
+([William Lam][bit-lam911], [GA announcement][bit-ga911]); not re-read in the matrix
+for this table. Match on **build numbers**, not on the label "EP02".
+
+- **9.1.1 resolves it.** *"VMware Cloud Foundation 9.1.1.0 has been released with an
+  updated Bill of Materials (BOM) that includes component build versions
+  chronologically newer than the previous 9.1.0.0 restriction baseline"*
+  ([KB 448135][bit-kb448135]). If you must be on 9.1.0.x, these sources are still
+  blocked.
+- **Import is the 9.1.0 workaround, not an upgrade.** It brings a vSphere 8.0
+  environment under an existing 9.1 fleet without changing its versions (minimum
+  vSphere 8.0 Update 3a, per [William Lam][bit-lam91]); it gives fleet visibility,
+  lifecycle management and ESX certificate and password management without an
+  upgrade to vSphere 9.1.
+- **Check before you commit to a window.** In the Interoperability Matrix, untick
+  **Hide Patch Releases**; an unsupported back-in-time path shows an **X** with
+  hover text. The vSphere release notes of an affected build carry a line such as
+  *"Upgrade from vCenter 8.0 Update 3j to vCenter 9.1.0 or any EP based on 9.1.0 is
+  not supported."* Broadcom *"manages back-in-time restrictions dynamically"* in the
+  matrix, so re-check right before the change.
+- **Open detail.** Broadcom's page text for the 9.1.1 path names vCenter and ESX
+  8.0 U3j; a reader of Lam's post asked whether U3k is included. The matrix lists
+  both U3j and U3k as supported sources for 9.1.1 (2026-10-29).
+
+[bit-kb450972]: https://knowledge.broadcom.com/external/article/450972
+[bit-kb448135]: https://knowledge.broadcom.com/external/article/448135
+[bit-lam91]: https://williamlam.com/2026/07/vcf-9-1-vsphere-back-in-time-support-for-upgrade-converge-and-import.html
+[bit-lam911]: https://williamlam.com/2026/09/10-exciting-enhancements-in-vmware-cloud-foundation-9-1-1.html
+[bit-ga911]: https://blogs.vmware.com/cloud-foundation/2026/09/03/announcing-general-availability-of-vmware-cloud-foundation-9-1-1/
+
 ## Memory Tiering over NVMe (only if in scope)
 
 *When needed: **Day-N (if in scope)** — but the hardware is ordered with the

@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.6.2 — 2026-10-29
+- **`prerequisites.md`: back-in-time source versions for upgrade, converge and
+  import (#397).** "Support for Back in Time Upgrades" in the VCF 9.1.1 announcement
+  means: a source release that shipped *after* the target (vSphere 8.0 U3j/U3k,
+  NSX 4.2.4, VCF 5.2.4, VCF 9.0.2 EP02) was blocked from 9.1.0.x and has a supported
+  upgrade path to 9.1.1. New section with the by-target table (KB 450972, KB 448135,
+  William Lam's two posts credited), the Import workaround for 9.1.0, and how to check
+  (Interoperability Matrix with Hide Patch Releases unticked). The vCenter, ESX and NSX
+  rows were re-read in the matrix's upgrade-path data on 2026-10-29 and match;
+  VCF 5.2.4 and 9.0.2 EP02 are from the blog and flagged so. No Version Overview or
+  deployment-plan change: the plan covers greenfield, and no upgrade sequencing in it
+  changes. The vcf-knowledge plugin (§14) records the re-check.
+
 ## v6.6.1 — 2026-10-29
 - **`docs/01` §B.3, intake `B23`: VCF 9.1.1 Distributed VXLAN (EVPN) connectivity
   (#396).** A third north-south option next to Centralized and Distributed VLAN,
