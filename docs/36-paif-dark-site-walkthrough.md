@@ -75,6 +75,59 @@ built them for the Supervisor
 ([`20` §4.1](20-supervisor-image-registry.md#41-two-hosts-and-the-tooling)),
 reuse them and only add what is missing.
 
+### What the two hosts are for
+
+- The **bastion** is the only machine that talks to the internet. It pulls and
+  packages everything and serves nothing. Broadcom's wording: *"a VM, usually
+  running Linux, that is connected to the Internet or has access to download
+  packages"* ([PAIF 9.1][paif-pdf]).
+- The **admin host** is the only machine that talks to the inside: Harbor, the
+  web servers, vCenter, the Supervisor. It pushes what the bastion pulled.
+- Splitting them means the isolated side never needs an internet route. One
+  machine can do both only where it has both network paths, for example a DMZ
+  server with temporary access into the isolated network; with two, the files
+  cross the gap by hand ([`33` §4.1](33-private-ai-foundation.md#41-bastion-and-admin-hosts)).
+
+### Using your own workstation as the bastion
+
+The bastion is a role, not a particular server, so a workstation or laptop can
+fill it for the download side: William Lam does exactly that in his
+[PAIS walkthrough][lam-amt]. Agree it with the customer first: some sites do not
+allow outside equipment to carry files onto their network. The safe split is
+that **your workstation is the bastion only**, and a **customer-owned admin
+host** does the push after the files are carried in (and scanned, if their
+policy says so).
+
+**What the workstation needs**
+
+| Need | Value | Source |
+| --- | --- | --- |
+| Operating system | **Ubuntu 22.04 or 24.04** for the mirroring script, so a Linux VM (or native Linux) on a Windows or macOS laptop. WSL2 should work for the bash tools but is **untested** here and not named by Broadcom | [KB 388470][kb388470] |
+| CPU / RAM | 4 cores and 8 GB for the script (give the VM that, plus what the host needs) | [KB 388470][kb388470] |
+| Disk | **180 GB free** with the default `bom.json`, **+100 GB** with `PACK_CONTAINER=true`; add the Ubuntu mirror (**≥ 800 GB**, [phase 4](#4-ubuntu-package-mirror-and-index-file)), the drivers, the `.ova`, the VKr images and any models. Use an external SSD for the staging area | [KB 388470][kb388470], [PAIF 9.1][paif-pdf] |
+| Network | Internet access to the hosts in the [paths table](#1-bastion-and-admin-hosts) below, directly or through a proxy | [PAIF 9.1][paif-pdf] |
+| Tools | Docker (**v27.5 or earlier**), `jq`, `helm`, the VCF Consumption CLI with the `pais` plug-in | [KB 388470][kb388470] |
+| Accounts | The **customer's** Support Portal login and registry token, NGC key with NVAIE entitlement, NVIDIA Licensing Portal access (the entitlements are theirs, not yours) | [PAIF 9.1][paif-pdf] |
+
+**What should be on it before you carry anything in**
+
+| Item | Why |
+| --- | --- |
+| The KB 388470 zip for the target version, `bom.json` set to the release you run, `config.env` filled | Phase 3 |
+| **Both** CLI downloads: the online install for the bastion **and** the offline CLI + plug-in bundle for the admin host | The admin host cannot fetch plug-ins ([phase 1](#1-bastion-and-admin-hosts)) |
+| `pais-3.0.0-external.yaml`, the pulled `pais-store` | Phase 7 |
+| The Ubuntu mirror tree and your `custom-repo.list` | Phase 4 |
+| Guest drivers and the draft `index.txt` | Phase 5 |
+| Ubuntu VKr images and the deep learning VM `.ova` | Phase 6 and the Quickstart |
+| A **manifest**: file names, versions, SHA-256 checksums | Verified on the admin host before any push |
+| The written BOM / version list | Refresh diffing ([Refreshing](#refreshing)) |
+
+**When you are done, clean the workstation** (general practice): delete
+`config.env`, run `docker logout` for each registry and remove the stored
+credentials, clear the shell history, and have the customer **revoke or rotate**
+the registry token and NGC key if they were created for this job. Keep nothing
+customer-specific on the laptop beyond what your agreement allows.
+
 **Minimum for the mirroring script** ([KB 388470][kb388470]): Ubuntu 22.04 or
 24.04, 4 cores, 8 GB RAM, and **at least 180 GB free disk** with the default
 `bom.json` (**+100 GB** if you set `PACK_CONTAINER=true`, see

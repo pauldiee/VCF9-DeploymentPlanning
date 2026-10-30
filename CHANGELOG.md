@@ -1,5 +1,14 @@
 # Changelog
 
+## v6.6.6 — 2026-10-30
+- **`docs/36` phase 1: what the bastion and admin hosts are for, and running the
+  bastion on your own workstation (#441).** Role and placement in plain words,
+  the safe split (your workstation = bastion only, customer-owned admin host
+  pushes), a needs table (Ubuntu 22.04/24.04, 180 GB + 100 GB, Docker 27.5 or
+  earlier, customer-owned credentials; WSL2 flagged untested), a what-to-have
+  checklist including the offline CLI bundle for the admin host, and a clean-up
+  list. From the PAIF 9.1 PDF, KB 388470 and William Lam's PAIS walkthrough.
+
 ## v6.6.5 — 2026-10-30
 - **`docs/36` deeper, with a flow diagram (#441).** New flow picture
   (`web/public/diagrams/paif-dark-site-flow.svg`): five lanes, source → bastion →
