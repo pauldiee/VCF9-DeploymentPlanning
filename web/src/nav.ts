@@ -182,6 +182,22 @@ export const NAV: NavItem[] = [
     blurb: 'Private AI Foundation above the GPU hosts, connected or on a dark site: NVIDIA licensing (DLS), VM classes, content libraries, the VCF Automation org, Harbor, the artifacts to stage, the Quickstart and Private AI Services.',
   },
   {
+    slug: '36-paif-dark-site-walkthrough',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'PAIF dark-site build',
+    icon: 'brain',
+    blurb: 'Step-by-step for a disconnected Private AI Foundation build: bastion and admin hosts, the KB 388470 mirroring script, Ubuntu mirror and index file, driver server, VKr library and the Private AI Services artifact mirroring tool.',
+  },
+  {
+    slug: '37-paif-connected-runbook',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'PAIF connected runbook',
+    icon: 'brain',
+    blurb: 'Checklist runbook for a connected Private AI Foundation build: tokens, licence service, VM classes, the VCF Automation organization, the Quickstart and installing Private AI Services.',
+  },
+  {
     slug: '29-single-pnic-build',
     step: 'Build & expand',
     band: 'Build & expand',

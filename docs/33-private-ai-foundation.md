@@ -12,6 +12,12 @@ Start with [`32-gpu-hosts.md`](32-gpu-hosts.md): the GPU hosts, the NVIDIA host
 driver in the vLCM image, and the per-host GPU configuration are prerequisites
 for everything here.
 
+This page is the **reference** (decisions, artifacts, what and why). For the
+**do-it-in-order steps and commands** use the companions:
+[`36-paif-dark-site-walkthrough.md`](36-paif-dark-site-walkthrough.md) for a
+disconnected site, [`37-paif-connected-runbook.md`](37-paif-connected-runbook.md)
+for a connected one.
+
 > **Evidence level:** sourced from the
 > [*VMware Private AI Foundation with NVIDIA 9.1*][paif-pdf] PDF (generated
 > 2026-09-21; covers PAIF 9.1 of 2026-05-12 and 9.1.1 of 2026-09-03, and
