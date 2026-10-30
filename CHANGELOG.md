@@ -1,5 +1,10 @@
 # Changelog
 
+## v6.6.8 — 2026-10-30
+- **`docs/36` flow diagram: the three carries, larger text (#441).** New lane for
+  Carry 1 (offline CLI and plug-in bundle to the admin host), a red CARRY 1 / 2 / 3
+  badge on every arrow across the gap, and bigger type so it reads at page width.
+
 ## v6.6.7 — 2026-10-30
 - **`docs/36`: where each step runs and when data crosses the air gap (#441).**
   A where/gap table for every phase (outside bastion vs inside admin host), a

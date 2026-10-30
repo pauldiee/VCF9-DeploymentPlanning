@@ -1,93 +1,127 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 700" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 902" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
 <title id="t">Private AI Foundation dark-site build flow</title>
-<desc id="d">Five parallel lanes, phases 3 to 7. Each lane pulls from an internet source on the bastion host, is carried across the air gap, and is pushed by the admin host into Harbor, a web server or a vCenter content library.</desc>
+<desc id="d">Six lanes. Each pulls from an internet source on the bastion host, is carried across the air gap in one of three carries (1 tooling, 2 content, 3 Private AI Services), and is pushed or installed by the admin host into Harbor, a web server, a vCenter content library or the admin host itself.</desc>
 <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker></defs>
-<rect width="1060" height="700" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
-<rect x="14" y="14" width="500" height="640" rx="8" fill="#eff6ff"/>
-<rect x="546" y="14" width="500" height="640" rx="8" fill="#f0fdf4"/>
-<text x="30" y="42" font-size="16" font-weight="700" fill="#1e3a8a">OUTSIDE - internet side</text>
-<text x="562" y="42" font-size="16" font-weight="700" fill="#14532d">INSIDE - air-gapped</text>
-<text x="262" y="72" font-size="12" font-weight="600" fill="#1e3a8a" text-anchor="middle">Bastion host</text>
-<text x="708" y="72" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">Admin host</text>
-<line x1="530" y1="14" x2="530" y2="654" stroke="#b91c1c" stroke-width="2.5" stroke-dasharray="8 6"/>
-<text x="530" y="676" font-size="12" fill="#b91c1c" text-anchor="middle" font-weight="600">AIR GAP - carry: removable media, data diode or a temporary firewall opening</text>
-<circle cx="34" cy="124" r="12" fill="#334155"/><text x="34" y="129" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text>
-<rect x="54" y="92" width="150" height="64" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-<text x="129.0" y="120.0" font-size="12.5" fill="#0f172a" text-anchor="middle">NGC + Broadcom</text>
-<text x="129.0" y="136.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Artifactory</text>
-<rect x="222" y="92" width="230" height="64" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
-<text x="337.0" y="120.0" font-size="12.5" fill="#0f172a" text-anchor="middle">KB 388470 script</text>
-<text x="337.0" y="136.0" font-size="12.5" fill="#0f172a" text-anchor="middle">--pull (bom.json)</text>
-<rect x="580" y="92" width="236" height="64" rx="6" fill="#dcfce7" stroke="#22c55e"/>
-<text x="698.0" y="120.0" font-size="12.5" fill="#0f172a" text-anchor="middle">script --push</text>
-<text x="698.0" y="136.0" font-size="12.5" fill="#0f172a" text-anchor="middle">(config.env)</text>
-<rect x="838" y="92" width="196" height="64" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
-<text x="936.0" y="120.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Harbor project:</text>
-<text x="936.0" y="136.0" font-size="12.5" fill="#0f172a" text-anchor="middle">GPU Operator, DL images</text>
-<line x1="204" y1="124" x2="220" y2="124" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="452" y1="124" x2="578" y2="124" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="816" y1="124" x2="836" y2="124" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<circle cx="34" cy="232" r="12" fill="#334155"/><text x="34" y="237" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">4</text>
-<rect x="54" y="200" width="150" height="64" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-<text x="129.0" y="236.0" font-size="12.5" fill="#0f172a" text-anchor="middle">archive.ubuntu.com</text>
-<rect x="222" y="200" width="230" height="64" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
-<text x="337.0" y="228.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Ubuntu mirror (&gt;=800 GB)</text>
-<text x="337.0" y="244.0" font-size="12.5" fill="#0f172a" text-anchor="middle">+ custom-repo.list</text>
-<rect x="580" y="200" width="236" height="64" rx="6" fill="#dcfce7" stroke="#22c55e"/>
-<text x="698.0" y="228.0" font-size="12.5" fill="#0f172a" text-anchor="middle">copy mirror to web server;</text>
-<text x="698.0" y="244.0" font-size="12.5" fill="#0f172a" text-anchor="middle">oras push index</text>
-<rect x="838" y="200" width="196" height="64" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
-<text x="936.0" y="228.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Web server (mirror)</text>
-<text x="936.0" y="244.0" font-size="12.5" fill="#0f172a" text-anchor="middle">+ Harbor resources/</text>
-<line x1="204" y1="232" x2="220" y2="232" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="452" y1="232" x2="578" y2="232" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="816" y1="232" x2="836" y2="232" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<circle cx="34" cy="340" r="12" fill="#334155"/><text x="34" y="345" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">5</text>
-<rect x="54" y="308" width="150" height="64" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-<text x="129.0" y="336.0" font-size="12.5" fill="#0f172a" text-anchor="middle">NVIDIA Licensing</text>
-<text x="129.0" y="352.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Portal</text>
-<rect x="222" y="308" width="230" height="64" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
-<text x="337.0" y="336.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Guest drivers</text>
-<text x="337.0" y="352.0" font-size="12.5" fill="#0f172a" text-anchor="middle">(.run / .zip)</text>
-<rect x="580" y="308" width="236" height="64" rx="6" fill="#dcfce7" stroke="#22c55e"/>
-<text x="698.0" y="336.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Upload to web server</text>
-<text x="698.0" y="352.0" font-size="12.5" fill="#0f172a" text-anchor="middle">+ write index file</text>
-<rect x="838" y="308" width="196" height="64" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
-<text x="936.0" y="336.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Web server:</text>
-<text x="936.0" y="352.0" font-size="12.5" fill="#0f172a" text-anchor="middle">drivers + index</text>
-<line x1="204" y1="340" x2="220" y2="340" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="452" y1="340" x2="578" y2="340" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="816" y1="340" x2="836" y2="340" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<circle cx="34" cy="448" r="12" fill="#334155"/><text x="34" y="453" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">6</text>
-<rect x="54" y="416" width="150" height="64" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-<text x="129.0" y="444.0" font-size="12.5" fill="#0f172a" text-anchor="middle">VKr Ubuntu images</text>
-<text x="129.0" y="460.0" font-size="12.5" fill="#0f172a" text-anchor="middle">(depot / wp-content)</text>
-<rect x="222" y="416" width="230" height="64" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
-<text x="337.0" y="444.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Download</text>
-<text x="337.0" y="460.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Ubuntu VKr</text>
-<rect x="580" y="416" width="236" height="64" rx="6" fill="#dcfce7" stroke="#22c55e"/>
-<text x="698.0" y="444.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Import into local</text>
-<text x="698.0" y="460.0" font-size="12.5" fill="#0f172a" text-anchor="middle">content library</text>
-<rect x="838" y="416" width="196" height="64" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
-<text x="936.0" y="444.0" font-size="12.5" fill="#0f172a" text-anchor="middle">vCenter library,</text>
-<text x="936.0" y="460.0" font-size="12.5" fill="#0f172a" text-anchor="middle">attached to Supervisor</text>
-<line x1="204" y1="448" x2="220" y2="448" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="452" y1="448" x2="578" y2="448" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="816" y1="448" x2="836" y2="448" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<circle cx="34" cy="556" r="12" fill="#334155"/><text x="34" y="561" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">7</text>
-<rect x="54" y="524" width="150" height="64" rx="6" fill="#ffffff" stroke="#94a3b8"/>
-<text x="129.0" y="552.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Broadcom registry</text>
-<text x="129.0" y="568.0" font-size="12.5" fill="#0f172a" text-anchor="middle">+ NGC + Ubuntu</text>
-<rect x="222" y="524" width="230" height="64" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
-<text x="337.0" y="552.0" font-size="12.5" fill="#0f172a" text-anchor="middle">vcf pais amt pull</text>
-<text x="337.0" y="568.0" font-size="12.5" fill="#0f172a" text-anchor="middle">-&gt; pais-store</text>
-<rect x="580" y="524" width="236" height="64" rx="6" fill="#dcfce7" stroke="#22c55e"/>
-<text x="698.0" y="552.0" font-size="12.5" fill="#0f172a" text-anchor="middle">vcf pais amt push</text>
-<text x="698.0" y="568.0" font-size="12.5" fill="#0f172a" text-anchor="middle">--local-store</text>
-<rect x="838" y="524" width="196" height="64" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
-<text x="936.0" y="552.0" font-size="12.5" fill="#0f172a" text-anchor="middle">Harbor project: PAIS 3.0</text>
-<text x="936.0" y="568.0" font-size="12.5" fill="#0f172a" text-anchor="middle">+ pais.yml, yaml-svc-cfg.yaml</text>
-<line x1="204" y1="556" x2="220" y2="556" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="452" y1="556" x2="578" y2="556" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
-<line x1="816" y1="556" x2="836" y2="556" stroke="#475569" stroke-width="1.8" marker-end="url(#a)"/>
+<rect width="1100" height="902" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<rect x="14" y="14" width="520" height="826" rx="8" fill="#eff6ff"/>
+<rect x="566" y="14" width="520" height="826" rx="8" fill="#f0fdf4"/>
+<text x="30" y="46" font-size="20" font-weight="700" fill="#1e3a8a">OUTSIDE - internet side</text>
+<text x="582" y="46" font-size="20" font-weight="700" fill="#14532d">INSIDE - air-gapped</text>
+<text x="310" y="80" font-size="15" font-weight="600" fill="#1e3a8a" text-anchor="middle">Bastion host</text>
+<text x="764" y="80" font-size="15" font-weight="600" fill="#14532d" text-anchor="middle">Admin host</text>
+<line x1="550" y1="14" x2="550" y2="840" stroke="#b91c1c" stroke-width="3" stroke-dasharray="9 7"/>
+<text x="550" y="878" font-size="15" fill="#b91c1c" text-anchor="middle" font-weight="600">AIR GAP: removable media, data diode or a temporary firewall opening. Nothing goes back out.</text>
+<circle cx="36" cy="144.0" r="14" fill="#334155"/><text x="36" y="149.0" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<rect x="58" y="98" width="170" height="92" rx="7" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="143.0" y="130.0" font-size="15.5" fill="#0f172a" text-anchor="middle">Support Portal</text>
+<text x="143.0" y="149.0" font-size="15.5" fill="#0f172a" text-anchor="middle">CLI + plug-in bundle,</text>
+<text x="143.0" y="168.0" font-size="15.5" fill="#0f172a" text-anchor="middle">scripts, YAML</text>
+<rect x="252" y="98" width="226" height="92" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="365.0" y="139.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Download the</text>
+<text x="365.0" y="158.5" font-size="15.5" fill="#0f172a" text-anchor="middle">offline CLI bundle</text>
+<rect x="622" y="98" width="236" height="92" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.4"/>
+<text x="740.0" y="130.0" font-size="15.5" fill="#0f172a" text-anchor="middle">Install on admin host:</text>
+<text x="740.0" y="149.0" font-size="15.5" fill="#0f172a" text-anchor="middle">vcf plugin install all</text>
+<text x="740.0" y="168.0" font-size="15.5" fill="#0f172a" text-anchor="middle">--local-source</text>
+<rect x="884" y="98" width="190" height="92" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.4"/>
+<text x="979.0" y="139.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Admin host ready</text>
+<text x="979.0" y="158.5" font-size="15.5" fill="#0f172a" text-anchor="middle">(phase 1)</text>
+<line x1="228" y1="144.0" x2="250" y2="144.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="478" y1="144.0" x2="620" y2="144.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="858" y1="144.0" x2="882" y2="144.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="488" y="110.0" width="124" height="26" rx="13" fill="#b91c1c"/><text x="550" y="128.0" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">CARRY 1</text>
+<rect x="491.6" y="154.0" width="116.8" height="20" rx="4" fill="#ffffff"/><text x="550" y="168.0" font-size="12.5" fill="#b91c1c" text-anchor="middle">tooling, first</text>
+<circle cx="36" cy="268.0" r="14" fill="#334155"/><text x="36" y="273.0" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<rect x="58" y="222" width="170" height="92" rx="7" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="143.0" y="263.5" font-size="15.5" fill="#0f172a" text-anchor="middle">NGC + Broadcom</text>
+<text x="143.0" y="282.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Artifactory</text>
+<rect x="252" y="222" width="226" height="92" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="365.0" y="263.5" font-size="15.5" fill="#0f172a" text-anchor="middle">KB 388470 script</text>
+<text x="365.0" y="282.5" font-size="15.5" fill="#0f172a" text-anchor="middle">--pull (bom.json)</text>
+<rect x="622" y="222" width="236" height="92" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.4"/>
+<text x="740.0" y="263.5" font-size="15.5" fill="#0f172a" text-anchor="middle">script --push</text>
+<text x="740.0" y="282.5" font-size="15.5" fill="#0f172a" text-anchor="middle">(config.env)</text>
+<rect x="884" y="222" width="190" height="92" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.4"/>
+<text x="979.0" y="254.0" font-size="15.5" fill="#0f172a" text-anchor="middle">Harbor project:</text>
+<text x="979.0" y="273.0" font-size="15.5" fill="#0f172a" text-anchor="middle">GPU Operator,</text>
+<text x="979.0" y="292.0" font-size="15.5" fill="#0f172a" text-anchor="middle">DL images</text>
+<line x1="228" y1="268.0" x2="250" y2="268.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="478" y1="268.0" x2="620" y2="268.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="858" y1="268.0" x2="882" y2="268.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="488" y="234.0" width="124" height="26" rx="13" fill="#b91c1c"/><text x="550" y="252.0" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">CARRY 2</text>
+<rect x="516.8" y="278.0" width="66.4" height="20" rx="4" fill="#ffffff"/><text x="550" y="292.0" font-size="12.5" fill="#b91c1c" text-anchor="middle">content</text>
+<circle cx="36" cy="392.0" r="14" fill="#334155"/><text x="36" y="397.0" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<rect x="58" y="346" width="170" height="92" rx="7" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="143.0" y="397.0" font-size="15.5" fill="#0f172a" text-anchor="middle">archive.ubuntu.com</text>
+<rect x="252" y="346" width="226" height="92" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="365.0" y="387.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Ubuntu mirror</text>
+<text x="365.0" y="406.5" font-size="15.5" fill="#0f172a" text-anchor="middle">(&gt;=800 GB)</text>
+<rect x="622" y="346" width="236" height="92" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.4"/>
+<text x="740.0" y="378.0" font-size="15.5" fill="#0f172a" text-anchor="middle">Serve on web server;</text>
+<text x="740.0" y="397.0" font-size="15.5" fill="#0f172a" text-anchor="middle">write custom-repo.list;</text>
+<text x="740.0" y="416.0" font-size="15.5" fill="#0f172a" text-anchor="middle">oras push index</text>
+<rect x="884" y="346" width="190" height="92" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.4"/>
+<text x="979.0" y="387.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Web server (mirror)</text>
+<text x="979.0" y="406.5" font-size="15.5" fill="#0f172a" text-anchor="middle">+ Harbor resources/</text>
+<line x1="228" y1="392.0" x2="250" y2="392.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="478" y1="392.0" x2="620" y2="392.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="858" y1="392.0" x2="882" y2="392.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="488" y="358.0" width="124" height="26" rx="13" fill="#b91c1c"/><text x="550" y="376.0" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">CARRY 2</text>
+<rect x="516.8" y="402.0" width="66.4" height="20" rx="4" fill="#ffffff"/><text x="550" y="416.0" font-size="12.5" fill="#b91c1c" text-anchor="middle">content</text>
+<circle cx="36" cy="516.0" r="14" fill="#334155"/><text x="36" y="521.0" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<rect x="58" y="470" width="170" height="92" rx="7" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="143.0" y="511.5" font-size="15.5" fill="#0f172a" text-anchor="middle">NVIDIA Licensing</text>
+<text x="143.0" y="530.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Portal</text>
+<rect x="252" y="470" width="226" height="92" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="365.0" y="511.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Guest drivers</text>
+<text x="365.0" y="530.5" font-size="15.5" fill="#0f172a" text-anchor="middle">(.run / .zip)</text>
+<rect x="622" y="470" width="236" height="92" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.4"/>
+<text x="740.0" y="511.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Upload to web server;</text>
+<text x="740.0" y="530.5" font-size="15.5" fill="#0f172a" text-anchor="middle">write index file</text>
+<rect x="884" y="470" width="190" height="92" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.4"/>
+<text x="979.0" y="511.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Web server:</text>
+<text x="979.0" y="530.5" font-size="15.5" fill="#0f172a" text-anchor="middle">drivers + index</text>
+<line x1="228" y1="516.0" x2="250" y2="516.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="478" y1="516.0" x2="620" y2="516.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="858" y1="516.0" x2="882" y2="516.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="488" y="482.0" width="124" height="26" rx="13" fill="#b91c1c"/><text x="550" y="500.0" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">CARRY 2</text>
+<rect x="516.8" y="526.0" width="66.4" height="20" rx="4" fill="#ffffff"/><text x="550" y="540.0" font-size="12.5" fill="#b91c1c" text-anchor="middle">content</text>
+<circle cx="36" cy="640.0" r="14" fill="#334155"/><text x="36" y="645.0" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+<rect x="58" y="594" width="170" height="92" rx="7" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="143.0" y="635.5" font-size="15.5" fill="#0f172a" text-anchor="middle">VKr Ubuntu images</text>
+<text x="143.0" y="654.5" font-size="15.5" fill="#0f172a" text-anchor="middle">(wp-content / depot)</text>
+<rect x="252" y="594" width="226" height="92" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="365.0" y="635.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Download</text>
+<text x="365.0" y="654.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Ubuntu VKr</text>
+<rect x="622" y="594" width="236" height="92" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.4"/>
+<text x="740.0" y="635.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Import into local</text>
+<text x="740.0" y="654.5" font-size="15.5" fill="#0f172a" text-anchor="middle">content library</text>
+<rect x="884" y="594" width="190" height="92" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.4"/>
+<text x="979.0" y="626.0" font-size="15.5" fill="#0f172a" text-anchor="middle">vCenter library,</text>
+<text x="979.0" y="645.0" font-size="15.5" fill="#0f172a" text-anchor="middle">attached to</text>
+<text x="979.0" y="664.0" font-size="15.5" fill="#0f172a" text-anchor="middle">Supervisor</text>
+<line x1="228" y1="640.0" x2="250" y2="640.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="478" y1="640.0" x2="620" y2="640.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="858" y1="640.0" x2="882" y2="640.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="488" y="606.0" width="124" height="26" rx="13" fill="#b91c1c"/><text x="550" y="624.0" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">CARRY 2</text>
+<rect x="516.8" y="650.0" width="66.4" height="20" rx="4" fill="#ffffff"/><text x="550" y="664.0" font-size="12.5" fill="#b91c1c" text-anchor="middle">content</text>
+<circle cx="36" cy="764.0" r="14" fill="#334155"/><text x="36" y="769.0" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+<rect x="58" y="718" width="170" height="92" rx="7" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+<text x="143.0" y="759.5" font-size="15.5" fill="#0f172a" text-anchor="middle">Broadcom registry</text>
+<text x="143.0" y="778.5" font-size="15.5" fill="#0f172a" text-anchor="middle">+ NGC + Ubuntu</text>
+<rect x="252" y="718" width="226" height="92" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+<text x="365.0" y="759.5" font-size="15.5" fill="#0f172a" text-anchor="middle">vcf pais amt pull</text>
+<text x="365.0" y="778.5" font-size="15.5" fill="#0f172a" text-anchor="middle">-&gt; pais-store</text>
+<rect x="622" y="718" width="236" height="92" rx="7" fill="#dcfce7" stroke="#22c55e" stroke-width="1.4"/>
+<text x="740.0" y="759.5" font-size="15.5" fill="#0f172a" text-anchor="middle">vcf pais amt push</text>
+<text x="740.0" y="778.5" font-size="15.5" fill="#0f172a" text-anchor="middle">--local-store</text>
+<rect x="884" y="718" width="190" height="92" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.4"/>
+<text x="979.0" y="750.0" font-size="15.5" fill="#0f172a" text-anchor="middle">Harbor project:</text>
+<text x="979.0" y="769.0" font-size="15.5" fill="#0f172a" text-anchor="middle">PAIS 3.0 +</text>
+<text x="979.0" y="788.0" font-size="15.5" fill="#0f172a" text-anchor="middle">yaml-svc-cfg.yaml</text>
+<line x1="228" y1="764.0" x2="250" y2="764.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="478" y1="764.0" x2="620" y2="764.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="858" y1="764.0" x2="882" y2="764.0" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="488" y="730.0" width="124" height="26" rx="13" fill="#b91c1c"/><text x="550" y="748.0" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">CARRY 3</text>
+<rect x="473.6" y="774.0" width="152.8" height="20" rx="4" fill="#ffffff"/><text x="550" y="788.0" font-size="12.5" fill="#b91c1c" text-anchor="middle">Private AI Services</text>
 </svg>
