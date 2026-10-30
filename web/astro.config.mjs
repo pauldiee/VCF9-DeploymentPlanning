@@ -33,6 +33,13 @@ function rehypeRewriteDocLinks() {
           const up = nl ? href.match(NL_TO_EN_LINK) : null;
           const m = up ?? href.match(DOC_LINK);
           if (m) node.properties.href = docRoute(m[1], nl && !up) + (m[2] ?? '');
+          // A link to a diagram file (click-to-enlarge): open it full size in a new tab.
+          const dm = href.match(/^(?:\.\.\/)+web\/public\/(.+)$/);
+          if (dm) {
+            node.properties.href = `${BASE}/${dm[1]}`;
+            node.properties.target = '_blank';
+            node.properties.rel = 'noopener';
+          }
         }
       }
       // Diagrams: docs reference `../web/public/<path>` so the image also renders
