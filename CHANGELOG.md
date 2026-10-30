@@ -1,5 +1,13 @@
 # Changelog
 
+## v6.6.7 — 2026-10-30
+- **`docs/36`: where each step runs and when data crosses the air gap (#441).**
+  A where/gap table for every phase (outside bastion vs inside admin host), a
+  "three carries" schedule (1 tooling first, 2 content as each pull finishes,
+  3 Private AI Services), a **Where / Gap** line under each phase heading, and
+  `[Outside]` / `[Inside]` / `[Across the gap]` tags on the numbered steps of
+  phases 3 to 6.
+
 ## v6.6.6 — 2026-10-30
 - **`docs/36` phase 1: what the bastion and admin hosts are for, and running the
   bastion on your own workstation (#441).** Role and placement in plain words,
