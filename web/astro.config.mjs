@@ -35,6 +35,13 @@ function rehypeRewriteDocLinks() {
           if (m) node.properties.href = docRoute(m[1], nl && !up) + (m[2] ?? '');
         }
       }
+      // Diagrams: docs reference `../web/public/<path>` so the image also renders
+      // on GitHub; on the site that file is served from <base>/<path>.
+      if (node.type === 'element' && node.tagName === 'img' && node.properties) {
+        const src = node.properties.src;
+        const im = typeof src === 'string' ? src.match(/^(?:\.\.\/)+web\/public\/(.+)$/) : null;
+        if (im) node.properties.src = `${BASE}/${im[1]}`;
+      }
       if (node.children) node.children.forEach(visit);
     };
     visit(tree);
