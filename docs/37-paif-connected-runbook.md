@@ -7,7 +7,8 @@ straight from Broadcom and NVIDIA, so there is little to stage: the work is the
 that are easy to miss. For a disconnected site use
 [`36-paif-dark-site-walkthrough.md`](36-paif-dark-site-walkthrough.md); the
 install and activation of Private AI Services in
-[§6](#6-install-and-activate-private-ai-services) is shared by both.
+[§7](#7-install-private-ai-services-the-supervisor-service) and
+[§8](#8-activate-private-ai-services-in-a-namespace) is shared by both.
 
 > **Evidence level:** from the [*VMware Private AI Foundation with NVIDIA 9.1*][paif-pdf]
 > PDF (read 2026-10-30) and [KB 388470][kb388470]. **Not run on a build in this
@@ -37,16 +38,13 @@ the org admin then uses.
 | 3 | [VM classes](#3-vm-classes) | VI admin | vSphere Client (**management** vCenter, and the workload vCenter for the DirectPath profile) | Reserved VM classes exist per zone |
 | 4 | [Region and region quota](#4-vcf-automation-region-and-quota) | Provider admin | VCF Automation **Provider Management** | The organization has a quota in the GPU zone |
 | 5 | [Library, namespace class, project, namespace](#5-vcf-automation-organization-content) | Org admin | VCF Automation **organization** (+ CLI for reserved classes) | A namespace exists in a project |
-| 6 | [Quickstart](#6-run-the-quickstart-optional-here-order) | Org admin | VCF Automation organization | Four catalog items visible |
+| 6 | [Quickstart](#6-run-the-quickstart-deep-learning-vms-and-vks) | Org admin | VCF Automation organization | Four catalog items visible |
 | 7 | [Install Private AI Services](#7-install-private-ai-services-the-supervisor-service) | VI admin | vSphere Client | Service shows as configured |
 | 8 | [Activate Private AI Services](#8-activate-private-ai-services-in-a-namespace) | Org admin or VI admin | VCF Automation or vSphere Client | Model endpoints can be created |
 
 Steps 1 and 2 can start on day one. Step 3 needs the Supervisor. Steps 7 and 8
 are only for **Private AI Services**; the Quickstart (6) is for deep learning
 VMs and VKS clusters. You can do either path, or both.
-
-> The numbering here follows the flow picture. Earlier versions of this page
-> numbered Private AI Services as §6; it is now §7 and §8.
 
 ---
 
@@ -192,8 +190,9 @@ and the library from 5.1; *Create*. A namespace class holds **either** reserved
 reserved and requests with the non-reserved class fail
 ([PAIF 9.1][paif-pdf]).
 
-**Reserved GPU classes need the CLI or API.** On a machine with the VCF
-Consumption CLI and `kubectl`:
+**Reserved GPU classes:** the PDF's route for a namespace class with **reserved**
+GPU VM classes is the CLI or API (the UI example lists non-GPU and unbound GPU
+classes). On a machine with the VCF Consumption CLI and `kubectl`:
 
 ```bash
 vcf context create cci -e <vcf_automation_endpoint> -t cci \
@@ -260,7 +259,7 @@ on the clusters of the chosen zones.
 
 ---
 
-## 6. Run the Quickstart (optional here, order)
+## 6. Run the Quickstart (deep learning VMs and VKS)
 
 *Skip if you only use Private AI Services.* As **organization administrator**:
 *Overview → Private AI Foundation Quickstart → Start*. You prepare **both** the
