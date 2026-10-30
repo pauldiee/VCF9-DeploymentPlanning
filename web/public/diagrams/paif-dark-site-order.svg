@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1344 820" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="t">Private AI Foundation dark-site build: order and roles</title>
+<desc id="d">Ten columns left to right across five roles. Prepare, hosts with Carry 1, Harbor, then pull on the bastion and push on the admin host (phases 3 to 7 in parallel) with the VKr library, then the steps shared with the connected build: VM classes, region and quota, organization content, Quickstart, install and activate Private AI Services.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker></defs>
+<rect width="1344" height="820" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="672.0" y="36" font-size="20" font-weight="700" fill="#0f172a" text-anchor="middle">Dark-site build: order, and who does each step in which console</text>
+<rect x="14" y="72" width="1316" height="130" rx="8" fill="#dbeafe" fill-opacity="0.4" stroke="#3b82f6" stroke-opacity="0.5"/>
+<text x="26" y="133.0" font-size="14.5" font-weight="700" fill="#0f172a">You: bastion</text>
+<text x="26" y="151.0" font-size="14.5" font-weight="700" fill="#0f172a">(outside)</text>
+<rect x="14" y="210" width="1316" height="130" rx="8" fill="#dcfce7" fill-opacity="0.4" stroke="#22c55e" stroke-opacity="0.5"/>
+<text x="26" y="262.0" font-size="14.5" font-weight="700" fill="#0f172a">You: admin host</text>
+<text x="26" y="280.0" font-size="14.5" font-weight="700" fill="#0f172a">and Harbor admin</text>
+<text x="26" y="298.0" font-size="14.5" font-weight="700" fill="#0f172a">(inside)</text>
+<rect x="14" y="348" width="1316" height="130" rx="8" fill="#e0f2fe" fill-opacity="0.4" stroke="#0284c7" stroke-opacity="0.5"/>
+<text x="26" y="409.0" font-size="14.5" font-weight="700" fill="#0f172a">VI admin</text>
+<text x="26" y="427.0" font-size="14.5" font-weight="700" fill="#0f172a">vSphere Client</text>
+<rect x="14" y="486" width="1316" height="130" rx="8" fill="#ede9fe" fill-opacity="0.4" stroke="#7c3aed" stroke-opacity="0.5"/>
+<text x="26" y="538.0" font-size="14.5" font-weight="700" fill="#0f172a">Provider admin</text>
+<text x="26" y="556.0" font-size="14.5" font-weight="700" fill="#0f172a">VCF Automation</text>
+<text x="26" y="574.0" font-size="14.5" font-weight="700" fill="#0f172a">Provider Mgmt</text>
+<rect x="14" y="624" width="1316" height="130" rx="8" fill="#fef3c7" fill-opacity="0.4" stroke="#d97706" stroke-opacity="0.5"/>
+<text x="26" y="676.0" font-size="14.5" font-weight="700" fill="#0f172a">Org admin</text>
+<text x="26" y="694.0" font-size="14.5" font-weight="700" fill="#0f172a">VCF Automation</text>
+<text x="26" y="712.0" font-size="14.5" font-weight="700" fill="#0f172a">organization</text>
+<path d="M263.0 137.0 H268.0 V275.0 H271.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M381.0 275.0 H386.0 V275.0 H389.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M499.0 275.0 H504.0 V275.0 H507.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M499.0 275.0 H504.0 V413.0 H507.0" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#a)"/>
+<path d="M617.0 275.0 H622.0 V413.0 H625.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M735.0 413.0 H740.0 V551.0 H743.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M853.0 551.0 H858.0 V689.0 H861.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M971.0 689.0 H976.0 V689.0 H979.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M1089.0 689.0 H1094.0 V413.0 H1097.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M1207.0 413.0 H1212.0 V689.0 H1215.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<line x1="563.0" y1="179.0" x2="563.0" y2="231.0" stroke="#b91c1c" stroke-width="2.5" marker-end="url(#r)"/>
+<line x1="14" y1="206" x2="1330" y2="206" stroke="#b91c1c" stroke-width="2.5" stroke-dasharray="9 7"/>
+<text x="1320" y="200" font-size="12.5" fill="#b91c1c" text-anchor="end" font-weight="600">AIR GAP</text>
+<rect x="515.0" y="195" width="96" height="22" rx="11" fill="#b91c1c"/><text x="563.0" y="210.5" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">CARRY 2 / 3</text>
+<rect x="155.0" y="95.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="209.0" y="124.5" font-size="13" fill="#0f172a" text-anchor="middle">0  Prepare</text>
+<text x="209.0" y="141.0" font-size="13" fill="#0f172a" text-anchor="middle">accounts,</text>
+<text x="209.0" y="157.5" font-size="13" fill="#0f172a" text-anchor="middle">tokens, BOM</text>
+<rect x="273.0" y="233.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="327.0" y="262.5" font-size="13" fill="#0f172a" text-anchor="middle">1  Hosts</text>
+<text x="327.0" y="279.0" font-size="13" fill="#0f172a" text-anchor="middle">+ CARRY 1</text>
+<text x="327.0" y="295.5" font-size="13" fill="#0f172a" text-anchor="middle">(offline CLI)</text>
+<rect x="391.0" y="233.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="445.0" y="262.5" font-size="13" fill="#0f172a" text-anchor="middle">2  Harbor:</text>
+<text x="445.0" y="279.0" font-size="13" fill="#0f172a" text-anchor="middle">project, robot</text>
+<text x="445.0" y="295.5" font-size="13" fill="#0f172a" text-anchor="middle">account</text>
+<rect x="509.0" y="95.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="563.0" y="116.25" font-size="13" fill="#0f172a" text-anchor="middle">3 4 5 7</text>
+<text x="563.0" y="132.75" font-size="13" fill="#0f172a" text-anchor="middle">Pull on the</text>
+<text x="563.0" y="149.25" font-size="13" fill="#0f172a" text-anchor="middle">bastion</text>
+<text x="563.0" y="165.75" font-size="13" fill="#0f172a" text-anchor="middle">(in parallel)</text>
+<rect x="509.0" y="233.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="563.0" y="262.5" font-size="13" fill="#0f172a" text-anchor="middle">Push on the</text>
+<text x="563.0" y="279.0" font-size="13" fill="#0f172a" text-anchor="middle">admin host,</text>
+<text x="563.0" y="295.5" font-size="13" fill="#0f172a" text-anchor="middle">then 8 Verify</text>
+<rect x="509.0" y="371.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.8"/>
+<text x="563.0" y="400.5" font-size="13" fill="#0f172a" text-anchor="middle">6  VKr library</text>
+<text x="563.0" y="417.0" font-size="13" fill="#0f172a" text-anchor="middle">(import into</text>
+<text x="563.0" y="433.5" font-size="13" fill="#0f172a" text-anchor="middle">vCenter)</text>
+<rect x="627.0" y="371.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="681.0" y="394.5" font-size="13" fill="#0f172a" text-anchor="middle">VM classes,</text>
+<text x="681.0" y="411.0" font-size="13" fill="#0f172a" text-anchor="middle">reserved</text>
+<text x="681.0" y="427.5" font-size="13" fill="#0f172a" text-anchor="middle">per zone</text>
+<text x="681.0" y="449.0" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">37 §3</text>
+<rect x="745.0" y="509.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="799.0" y="540.75" font-size="13" fill="#0f172a" text-anchor="middle">Region +</text>
+<text x="799.0" y="557.25" font-size="13" fill="#0f172a" text-anchor="middle">region quota</text>
+<text x="799.0" y="587.0" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">37 §4</text>
+<rect x="863.0" y="647.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="917.0" y="670.5" font-size="13" fill="#0f172a" text-anchor="middle">Library, class,</text>
+<text x="917.0" y="687.0" font-size="13" fill="#0f172a" text-anchor="middle">project +</text>
+<text x="917.0" y="703.5" font-size="13" fill="#0f172a" text-anchor="middle">namespace</text>
+<text x="917.0" y="725.0" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">37 §5</text>
+<rect x="981.0" y="647.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="1035.0" y="687.0" font-size="13" fill="#0f172a" text-anchor="middle">Quickstart</text>
+<text x="1035.0" y="725.0" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">37 §6</text>
+<rect x="1099.0" y="371.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="1153.0" y="402.75" font-size="13" fill="#0f172a" text-anchor="middle">Install Private</text>
+<text x="1153.0" y="419.25" font-size="13" fill="#0f172a" text-anchor="middle">AI Services</text>
+<text x="1153.0" y="449.0" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">37 §7</text>
+<rect x="1217.0" y="647.0" width="108" height="84" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="1.8" stroke-dasharray="5 3"/>
+<text x="1271.0" y="678.75" font-size="13" fill="#0f172a" text-anchor="middle">Activate in a</text>
+<text x="1271.0" y="695.25" font-size="13" fill="#0f172a" text-anchor="middle">namespace</text>
+<text x="1271.0" y="725.0" font-size="12" font-weight="700" fill="#b45309" text-anchor="middle">37 §8</text>
+<text x="672.0" y="800" font-size="13.5" fill="#475569" text-anchor="middle">Solid box: this page. Dashed box with a tag: the same step as in the connected runbook (docs/37), done the same way on a dark site.</text>
+</svg>

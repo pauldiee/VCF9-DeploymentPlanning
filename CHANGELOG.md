@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.7.1 — 2026-10-30
+- **`docs/36`: second diagram, the order and who does what (#441).** A swim-lane
+  picture (`web/public/diagrams/paif-dark-site-order.svg`) of the whole dark-site
+  build by role and console: prepare, hosts, Harbor, the parallel pull and push
+  (phases 3 to 7) with the air gap and Carry 2 / 3, and then the steps shared with
+  the connected build, tagged with their section in `docs/37`.
+
 ## v6.7.0 — 2026-10-30
 - **`docs/37` brought to the depth of `docs/36` (#441).** New flow picture
   (`web/public/diagrams/paif-connected-flow.svg`): eight steps across four roles and

@@ -30,6 +30,20 @@ tooling, 2 content, 3 Private AI Services); the schedule is in
 [the three carries](#the-three-carries-and-when-each-happens). Every lane
 repeats on each refresh. The numbers are the phases below.
 
+## The order, and who does what
+
+[![Dark-site build order: ten columns left to right across five roles and consoles: prepare, hosts with Carry 1 and Harbor on the inside, then pull on the bastion and push on the admin host in parallel with the VKr library, then the steps shared with the connected build: VM classes, region and quota, organization content, Quickstart, install and activate Private AI Services](../web/public/diagrams/paif-dark-site-order.svg)](../web/public/diagrams/paif-dark-site-order.svg)
+
+*Click the picture to open it full size.*
+
+The first picture shows **what crosses the air gap**; this one shows the **order
+and the owners**. Phases 3, 4, 5 and 7 are pulled on the bastion and pushed on the
+admin host in parallel, and the VKr library (6) runs next to them. Everything after
+that, the dashed boxes, is done **the same way as on a connected site**, so it lives
+in [`37-paif-connected-runbook.md`](37-paif-connected-runbook.md): the tag on each
+box is the section there. Only the content those steps use (images, registry,
+library) comes from the inside copies you built here.
+
 ## Where each phase runs, and what crosses the gap
 
 **Outside** is the bastion side (internet). **Inside** is the air-gapped side
