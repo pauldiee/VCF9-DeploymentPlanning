@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1258 596" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="t">Private AI Foundation connected build flow</title>
+<desc id="d">Eight steps across four roles and consoles: NVIDIA and Broadcom portals, the vSphere Client, VCF Automation Provider Management and the VCF Automation organization. Steps run left to right.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker></defs>
+<rect width="1258" height="596" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="629.0" y="38" font-size="20" font-weight="700" fill="#0f172a" text-anchor="middle">Connected build: who does each step, in which console</text>
+<rect x="14" y="70" width="1230" height="110" rx="8" fill="#fef3c7" fill-opacity="0.35" stroke="#d97706" stroke-opacity="0.5"/>
+<text x="28" y="112.0" font-size="15" font-weight="700" fill="#0f172a">NVIDIA +</text>
+<text x="28" y="131.0" font-size="15" font-weight="700" fill="#0f172a">Broadcom</text>
+<text x="28" y="150.0" font-size="15" font-weight="700" fill="#0f172a">portals</text>
+<rect x="14" y="188" width="1230" height="110" rx="8" fill="#dbeafe" fill-opacity="0.35" stroke="#3b82f6" stroke-opacity="0.5"/>
+<text x="28" y="239.0" font-size="15" font-weight="700" fill="#0f172a">VI admin</text>
+<text x="28" y="258.0" font-size="15" font-weight="700" fill="#0f172a">vSphere Client</text>
+<rect x="14" y="306" width="1230" height="110" rx="8" fill="#ede9fe" fill-opacity="0.35" stroke="#7c3aed" stroke-opacity="0.5"/>
+<text x="28" y="348.0" font-size="15" font-weight="700" fill="#0f172a">Provider admin</text>
+<text x="28" y="367.0" font-size="15" font-weight="700" fill="#0f172a">VCF Automation</text>
+<text x="28" y="386.0" font-size="15" font-weight="700" fill="#0f172a">Provider Mgmt</text>
+<rect x="14" y="424" width="1230" height="110" rx="8" fill="#dcfce7" fill-opacity="0.35" stroke="#22c55e" stroke-opacity="0.5"/>
+<text x="28" y="466.0" font-size="15" font-weight="700" fill="#0f172a">Org admin</text>
+<text x="28" y="485.0" font-size="15" font-weight="700" fill="#0f172a">VCF Automation</text>
+<text x="28" y="504.0" font-size="15" font-weight="700" fill="#0f172a">organization</text>
+<path d="M293.0 125.0 H304.0 V125.0 H313.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M427.0 125.0 H438.0 V243.0 H447.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M561.0 243.0 H572.0 V361.0 H581.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M695.0 361.0 H706.0 V479.0 H715.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M829.0 479.0 H840.0 V479.0 H849.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M963.0 479.0 H974.0 V243.0 H983.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M1097.0 243.0 H1108.0 V479.0 H1117.0" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="181.0" y="80.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="1.8"/>
+<circle cx="195.0" cy="94.0" r="11" fill="#334155"/><text x="195.0" y="99.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<text x="237.0" y="117.0" font-size="13.5" fill="#0f172a" text-anchor="middle">Tokens + keys</text>
+<text x="237.0" y="134.0" font-size="13.5" fill="#0f172a" text-anchor="middle">NGC, registry,</text>
+<text x="237.0" y="151.0" font-size="13.5" fill="#0f172a" text-anchor="middle">DL VM library</text>
+<rect x="315.0" y="80.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="1.8"/>
+<circle cx="329.0" cy="94.0" r="11" fill="#334155"/><text x="329.0" y="99.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<text x="371.0" y="125.5" font-size="13.5" fill="#0f172a" text-anchor="middle">Licence service</text>
+<text x="371.0" y="142.5" font-size="13.5" fill="#0f172a" text-anchor="middle">+ client token</text>
+<rect x="449.0" y="198.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<circle cx="463.0" cy="212.0" r="11" fill="#334155"/><text x="463.0" y="217.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<text x="505.0" y="235.0" font-size="13.5" fill="#0f172a" text-anchor="middle">VM classes,</text>
+<text x="505.0" y="252.0" font-size="13.5" fill="#0f172a" text-anchor="middle">DirectPath profile,</text>
+<text x="505.0" y="269.0" font-size="13.5" fill="#0f172a" text-anchor="middle">reserved per zone</text>
+<rect x="583.0" y="316.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#7c3aed" stroke-width="1.8"/>
+<circle cx="597.0" cy="330.0" r="11" fill="#334155"/><text x="597.0" y="335.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<text x="639.0" y="361.5" font-size="13.5" fill="#0f172a" text-anchor="middle">Region +</text>
+<text x="639.0" y="378.5" font-size="13.5" fill="#0f172a" text-anchor="middle">region quota</text>
+<rect x="717.0" y="434.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<circle cx="731.0" cy="448.0" r="11" fill="#334155"/><text x="731.0" y="453.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<text x="773.0" y="471.0" font-size="13.5" fill="#0f172a" text-anchor="middle">Library, class,</text>
+<text x="773.0" y="488.0" font-size="13.5" fill="#0f172a" text-anchor="middle">project +</text>
+<text x="773.0" y="505.0" font-size="13.5" fill="#0f172a" text-anchor="middle">namespace</text>
+<rect x="851.0" y="434.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<circle cx="865.0" cy="448.0" r="11" fill="#334155"/><text x="865.0" y="453.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+<text x="907.0" y="479.5" font-size="13.5" fill="#0f172a" text-anchor="middle">Quickstart:</text>
+<text x="907.0" y="496.5" font-size="13.5" fill="#0f172a" text-anchor="middle">4 catalog items</text>
+<rect x="985.0" y="198.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<circle cx="999.0" cy="212.0" r="11" fill="#334155"/><text x="999.0" y="217.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+<text x="1041.0" y="235.0" font-size="13.5" fill="#0f172a" text-anchor="middle">Install Private AI</text>
+<text x="1041.0" y="252.0" font-size="13.5" fill="#0f172a" text-anchor="middle">Services on the</text>
+<text x="1041.0" y="269.0" font-size="13.5" fill="#0f172a" text-anchor="middle">Supervisor</text>
+<rect x="1119.0" y="434.0" width="112" height="90" rx="7" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<circle cx="1133.0" cy="448.0" r="11" fill="#334155"/><text x="1133.0" y="453.0" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">8</text>
+<text x="1175.0" y="471.0" font-size="13.5" fill="#0f172a" text-anchor="middle">Activate in</text>
+<text x="1175.0" y="488.0" font-size="13.5" fill="#0f172a" text-anchor="middle">namespace</text>
+<text x="1175.0" y="505.0" font-size="13.5" fill="#0f172a" text-anchor="middle">(or vSphere Client)</text>
+<text x="629.0" y="576" font-size="14" fill="#475569" text-anchor="middle">Step 7 needs a registry token (Support Portal) and, on 9.1.1, the regional Harbor connected to the software depot.</text>
+</svg>

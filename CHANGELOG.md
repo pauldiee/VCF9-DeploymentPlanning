@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.7.0 — 2026-10-30
+- **`docs/37` brought to the depth of `docs/36` (#441).** New flow picture
+  (`web/public/diagrams/paif-connected-flow.svg`): eight steps across four roles and
+  consoles. Every step now has an owner, a console and a done-when; VM class
+  settings and the `use64bitMMIOSizeGB` sizing worked example; the Provider
+  Management region and quota steps and their rules (reservations cannot be
+  over-provisioned, guaranteed classes, the 2 GB minimum); the organization content
+  library, namespace class (with the `vcf context` / `kubectl` commands and the
+  namespace class YAML), project and namespace; every Quickstart page; the 9.1.1
+  `deep-learning-container` swap with its commands; the Private AI Services
+  activation wizard; and a troubleshooting table. Private AI Services is now §7
+  (install) and §8 (activate).
+
 ## v6.6.9 — 2026-10-30
 - **Site: diagrams in docs fill the article column (#441).** The PAIF flow diagram
   rendered at about 660 px inside a 1000 px column; images in rendered markdown

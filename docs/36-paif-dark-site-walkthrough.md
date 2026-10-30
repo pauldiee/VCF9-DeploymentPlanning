@@ -637,7 +637,7 @@ hosts. (2.1 uses a different procedure; it is only in the
 **Result:** the artifacts are in the Harbor project, and `pais-store` now holds
 an **updated `pais-3.0.0-external.yaml`** and a **`yaml-svc-cfg.yaml`**. Those two
 files are what you use to install the Supervisor Service. Keep them; the install
-steps are in [`37` §6](37-paif-connected-runbook.md#6-install-private-ai-services-the-supervisor-service)
+steps are in [`37` §7](37-paif-connected-runbook.md#7-install-private-ai-services-the-supervisor-service)
 (the disconnected column), background in [`33` §9](33-private-ai-foundation.md#9-private-ai-services).
 
 ---
