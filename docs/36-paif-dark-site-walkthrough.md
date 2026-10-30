@@ -18,6 +18,14 @@ the GPU workload domain and Supervisor exist
 
 ---
 
+## The flow
+
+![Dark-site build flow: five lanes (phases 3 to 7), each pulled on the bastion host, carried across the air gap, and pushed by the admin host into Harbor, a web server or a vCenter content library](../web/public/diagrams/paif-dark-site-flow.svg)
+
+Read it left to right: **source → bastion (pull) → carry across the air gap →
+admin host (push) → destination**. Every lane repeats on each refresh. The
+numbers are the phases below.
+
 ## The build at a glance
 
 | Phase | What you end up with | Where you work |
@@ -126,6 +134,22 @@ offline method instead ([KB 415112][kb415112]; William Lam walks it through for
 
 The same bundle route works on the bastion if it also lacks direct access.
 
+**Prove the network paths before the window.** Each hop below is a firewall
+request or a transfer route; list them in your change ticket.
+
+| From | To | Why | Source |
+| --- | --- | --- | --- |
+| Bastion | `pais-docker.packages.broadcom.com`, `packages.broadcom.com` | Private AI Services package and inference engines | [PAIF 9.1][paif-pdf] |
+| Bastion | `helm.ngc.nvidia.com`, `nvcr.io` | GPU Operator chart, NVIDIA images | [PAIF 9.1][paif-pdf] |
+| Bastion | `archive.ubuntu.com` | Ubuntu package mirror | [PAIF 9.1][paif-pdf] |
+| Bastion | `dlvm.packages.broadcom.com` | `deep-learning-container` image (9.1.1) | [KB 388470][kb388470] |
+| Bastion | `support.broadcom.com`, `wp-content.vmware.com` | Downloads (YAML, CLI bundles, `.ova`), Ubuntu VKr images | [PAIF 9.1][paif-pdf] |
+| Bastion | NVIDIA Licensing Portal | Guest drivers | [PAIF 9.1][paif-pdf] |
+| Admin host | Harbor (443) | `docker login`, `oras push`, `amt push` | General practice |
+| Admin host | Management vCenter, Supervisor API | Content library import, `kubectl`, registry settings | General practice |
+| Supervisor / VKS nodes | Harbor, Ubuntu mirror web server | Pulling images, compiling the driver | General practice |
+| Deep learning VMs | Driver web server | Fetching the guest driver | General practice |
+
 If the bastion reaches the internet through a **proxy**, set `HTTP_PROXY`,
 `HTTPS_PROXY`, `NO_PROXY` in the shell **and** give the Docker daemon a systemd
 drop-in (`/etc/systemd/system/docker.service.d/proxy.conf`, then
@@ -160,6 +184,22 @@ Then, with Harbor running ([PAIF 9.1][paif-pdf]):
    (needed even when connected, see [`33` §8](33-private-ai-foundation.md#8-catalog-items-the-private-ai-foundation-quickstart)).
 5. **Trust Harbor's CA** on the Supervisor / VKS side
    ([`20` §4.8](20-supervisor-image-registry.md#48-harbor-for-user-images-only-if-you-need-one)).
+
+**In the Harbor UI** (general Harbor practice; the PAIF text only says *create a
+project* and *create a robot account*):
+
+1. *Projects → New Project*: name it (for example `paif`), set a **storage
+   quota** above your total, access level **private**. Create a second project
+   for Private AI Services if you split them, and on 9.1.1 the **public**
+   project for `deep-learning-container`.
+2. *Robot Accounts → New Robot Account* (system level, or per project): give it
+   a name and an expiry, **pull** permission on the model-gallery project, and
+   copy the secret when it is shown: Harbor does not show it again. Put the
+   expiry in the team calendar; a lapsed robot account breaks model pulls.
+3. Note the **Harbor FQDN** and whether its certificate chains to a CA the
+   Supervisor and VKS nodes already trust. If not, that CA goes onto the
+   Supervisor ([`20` §4.8](20-supervisor-image-registry.md#48-harbor-for-user-images-only-if-you-need-one))
+   before anything can pull.
 
 **Check:** from the admin host, `docker login <harbor-fqdn>` succeeds, and you
 can push a small test image to the project.
@@ -208,6 +248,38 @@ profiles** for deep learning VMs and VKS clusters with GPU.
 
    On a **single machine** with both network paths, `--all` does pull and push
    in one go. Do not edit `bom.json` unless Broadcom support tells you to.
+
+**A filled `config.env`** (placeholder values; the variables are from
+[KB 388470][kb388470]):
+
+```bash
+LOCAL_HARBOR_URI=harbor.sfo.rainpole.io/paif
+LOCAL_HARBOR_USERNAME=admin
+LOCAL_HARBOR_PASSWORD='<harbor-password>'
+NGC_API_KEY='<ngc-api-key-with-nvaie-entitlement>'
+LOCAL_RESOURCES_DIR=/data/paif-resources
+PACK_CONTAINER=true      # pull and push on different machines
+```
+
+The file holds two secrets: keep it out of tickets and shell history, and delete
+it from the bastion when the run is done.
+
+**What to expect.** `--pull` downloads every image, chart and model profile in
+`bom.json` into `LOCAL_RESOURCES_DIR` (with `PACK_CONTAINER=true`, plus one
+`.tar` per image). Broadcom gives no run time and no size beyond the **180 GB**
+minimum, so time your first pull and record the real size: it sets your
+transfer-window plan. `--push` then loads each image into the project.
+
+**If it fails:**
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| Pull errors on a specific image | An older `bom-<release>.json` lists a resource removed from the source registry | Use the BOM for the release you run, or the default for the series ([KB 388470][kb388470]) |
+| Denied pulling from `nvcr.io` | NGC key lacks the NVAIE entitlement | Fix the entitlement on the NVIDIA account, then re-run |
+| `deep-learning-container:9.1.1.0` cannot be pulled | Not logged in to `dlvm.packages.broadcom.com` | Run the `docker login` below **before** the script |
+| Out of disk during pull | Under 180 GB (or 280 GB with `PACK_CONTAINER=true`) | Add disk; re-run `--pull` |
+| Push cannot reach Harbor | Wrong `LOCAL_HARBOR_URI`, untrusted CA or no route from the admin host | Fix the URI/CA; test `docker login` first |
+| Docker problems on a new bastion | Docker newer than the KB's v27.5 limit | Install a version within the KB's stated range |
 
 **9.1.1 extra — replace `tkg-gpu-console`.** For a more secure image, log in to
 the VCF registry **before running the script** or the
@@ -264,6 +336,49 @@ Required to **compile the guest driver** on the VKS GPU nodes
    clusters with `kubectl`. With the VCF Automation catalog the location is
    *discovered automatically*.
 
+**Worked example: `apt-mirror` plus nginx** (general practice; Broadcom only
+says *"set up a web server"* and leaves the tooling to you). Run `apt-mirror`
+on the bastion, then carry the tree:
+
+```text
+# /etc/apt/mirror.list on the bastion (Ubuntu 24.04 'noble' shown)
+set base_path /srv/mirror
+set nthreads  20
+deb-amd64 http://archive.ubuntu.com/ubuntu noble          main universe
+deb-amd64 http://archive.ubuntu.com/ubuntu noble-updates  main universe
+deb-amd64 http://archive.ubuntu.com/ubuntu noble-security main universe
+clean http://archive.ubuntu.com/ubuntu
+```
+
+`apt-mirror` writes the tree to
+`/srv/mirror/mirror/archive.ubuntu.com/ubuntu/`. On the inside web server,
+serve it so the URL path is `/ubuntu`, matching the `custom-repo.list` lines:
+
+```nginx
+server {
+    listen 80;
+    server_name mirror.sfo.rainpole.io;
+    location /ubuntu/ {
+        alias /srv/mirror/archive.ubuntu.com/ubuntu/;
+        autoindex on;
+    }
+}
+```
+
+Test the mirror the way a node will use it, from a Ubuntu machine on the VKS
+network, using only your index file:
+
+```bash
+sudo apt-get -o Dir::Etc::sourcelist=./custom-repo.list \
+             -o Dir::Etc::sourceparts=- update
+```
+
+A clean update with no `404` or `NO_PUBKEY` means the layout and signatures are
+right. A `404` almost always means the web path does not match the `/ubuntu`
+prefix in the file. Refresh by re-running `apt-mirror`, then `rsync` the changes
+across; the *"≥ 800 GB"* sizing and the trimming options are in
+[`33` §4.2a](33-private-ai-foundation.md#42a-plan-the-outside-staging-first--it-is-the-hard-part).
+
 For **Private AI Services** the index file is not pushed with `oras`: it is
 passed to the artifact mirroring tool in
 [phase 7](#7-private-ai-services-30-artifacts).
@@ -299,6 +414,41 @@ For **deep learning VMs** ([PAIF 9.1][paif-pdf]):
 4. **Passthrough:** no index; the deep learning VM's OVF parameter
    `gpu-driver-url` points at the `.run` URL.
 5. Tell DevOps engineers where the drivers are if they deploy with `kubectl`.
+
+**Worked example** (general practice for the web server; the index format is
+Broadcom's). Layout on the web server and an nginx location:
+
+```text
+/srv/drivers/
+  vgpu/
+    NVIDIA-Linux-x86_64-<guest-version>-grid.run
+    NVIDIA-Linux-x86_64-<guest-version-2>-grid.run
+    index.txt
+  datacenter/
+    NVIDIA-Linux-x86_64-<version>.run
+```
+
+```nginx
+location /drivers/ {
+    alias /srv/drivers/;
+    autoindex on;
+}
+```
+
+`index.txt`, one **host driver version** line followed by its **guest driver
+URL** line:
+
+```text
+<host-driver-version-1>
+http://drivers.sfo.rainpole.io/drivers/vgpu/NVIDIA-Linux-x86_64-<guest-version>-grid.run
+<host-driver-version-2>
+http://drivers.sfo.rainpole.io/drivers/vgpu/NVIDIA-Linux-x86_64-<guest-version-2>-grid.run
+```
+
+The host driver version is the one in your ESX vLCM image; the matching guest
+version comes from the NVIDIA vGPU release notes for that release
+([`32-gpu-hosts.md`](32-gpu-hosts.md) covers choosing the release). **Keep every
+host driver version you run in the index**: a cluster mid-upgrade has two.
 
 **Check:** `curl -I <driver-url>` returns 200 from a machine on the VM network.
 
@@ -414,6 +564,22 @@ Then continue with the VCF Automation organization and the Quickstart
 
 ---
 
+## Troubleshooting
+
+| Symptom | Cause | Fix | Source |
+| --- | --- | --- | --- |
+| `vcf plugin install pais` → `MANIFEST_UNKNOWN` (`pais:v…`, `telemetry:v…`) | CLI queries the public registry, unreachable inside the gap | Offline bundle with `--local-source` ([phase 1](#1-bastion-and-admin-hosts)) | [KB 451356][kb451356] |
+| CLI start-up prints an error about `projects.packages.broadcom.com` | First-run discovery of the online inventory | Expected; ignore | [KB 415112][kb415112] |
+| `telemetry` plug-in install times out | Same cause | Expected; other plug-ins still install | [KB 415112][kb415112] |
+| Mirroring script fails on one image | Old BOM, resource removed upstream | Use the BOM for your release | [KB 388470][kb388470] |
+| `deep-learning-container:9.1.1.0` not pulled | Not logged in to `dlvm.packages.broadcom.com` | `docker login` first | [KB 388470][kb388470] |
+| Service cannot pull from Harbor | Harbor CA not trusted by the Supervisor | Add the CA under *Container Registries* | [Lam][lam-amt] |
+| GPU Operator cannot compile the driver | Ubuntu mirror unreachable, wrong release, or index not found | `apt-get update` test from the VKS network; check the `oras` path and `1.0` tag | [PAIF 9.1][paif-pdf] |
+| 403 pulling `tkg-gpu-console` on **VCF 9.0.0** | Old combined registry sub-domain | Use `paif.packages.broadcom.com/tkg-gpu-console:9.0.0.0` (9.0 only) | [KB 431214][kb431214] |
+| Deep learning VM cannot fetch the guest driver | Index missing the host driver version, or URL unreachable | Add the version pair; `curl -I` the URL | [PAIF 9.1][paif-pdf] |
+
+---
+
 ## Refreshing
 
 Every update repeats phases 3, 4, 5 or 7 for the part that changed. Keep the
@@ -453,6 +619,7 @@ only the difference ([`33` §4.2a](33-private-ai-foundation.md#42a-plan-the-outs
 [ngc-keys]: https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#ngc-api-keys
 [docker-post]: https://docs.docker.com/engine/install/linux-postinstall/
 [kb415112]: https://knowledge.broadcom.com/external/article/415112/this-article-explains-how-to-install-vcf.html
+[kb431214]: https://knowledge.broadcom.com/external/article/431214/resolution-for-403-error-when-pulling-pa.html
 [kb451356]: https://knowledge.broadcom.com/external/article/451356/vcf-cli-plugin-installation-fails-with-m.html
 [lam-amt]: https://williamlam.com/2026/09/vcf-9-1-1-setting-up-vcf-private-ai-services-pais-using-artifact-mirroring-tool-amt-for-air-gapped-environments.html
 [lam-cli]: https://williamlam.com/2025/12/quick-tip-downloading-vmware-cloud-foundation-vcf-consumption-cli-for-air-gapped-environments.html

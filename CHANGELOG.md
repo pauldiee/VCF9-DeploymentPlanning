@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.6.5 — 2026-10-30
+- **`docs/36` deeper, with a flow diagram (#441).** New flow picture
+  (`web/public/diagrams/paif-dark-site-flow.svg`): five lanes, source → bastion →
+  air gap → admin host → destination. Added a network-path/allowlist table, the
+  Harbor UI steps, a filled `config.env` with a failure table for the mirroring
+  script, a worked `apt-mirror` + nginx Ubuntu mirror with a client test, a driver
+  web-server layout with the index file, and a troubleshooting table
+  (KB 388470, 415112, 451356, 431214). The site's doc renderer now rewrites
+  `../web/public/...` image paths so the same markdown renders on GitHub and on
+  the site.
+
 ## v6.6.4 — 2026-10-30
 - **Private AI Foundation: two step-by-step companions to `docs/33` (#441).**
   `docs/36-paif-dark-site-walkthrough.md` is the ordered build for a disconnected
