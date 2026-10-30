@@ -20,7 +20,9 @@ the GPU workload domain and Supervisor exist
 
 ## The flow
 
-![Dark-site build flow: five lanes (phases 3 to 7), each pulled on the bastion host, carried across the air gap, and pushed by the admin host into Harbor, a web server or a vCenter content library](../web/public/diagrams/paif-dark-site-flow.svg)
+[![Dark-site build flow: five lanes (phases 3 to 7), each pulled on the bastion host, carried across the air gap, and pushed by the admin host into Harbor, a web server or a vCenter content library](../web/public/diagrams/paif-dark-site-flow.svg)](../web/public/diagrams/paif-dark-site-flow.svg)
+
+*Click the picture to open it full size.*
 
 Read it left to right: **source → bastion (pull) → carry across the air gap →
 admin host (push) → destination**. Every lane repeats on each refresh. The
