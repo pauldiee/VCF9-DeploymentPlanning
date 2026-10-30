@@ -20,13 +20,15 @@ the GPU workload domain and Supervisor exist
 
 ## The flow
 
-[![Dark-site build flow: five lanes (phases 3 to 7), each pulled on the bastion host, carried across the air gap, and pushed by the admin host into Harbor, a web server or a vCenter content library](../web/public/diagrams/paif-dark-site-flow.svg)](../web/public/diagrams/paif-dark-site-flow.svg)
+[![Dark-site build flow: six lanes (phases 1, 3 to 7), each pulled on the bastion host, carried across the air gap in Carry 1, 2 or 3, and pushed or installed by the admin host](../web/public/diagrams/paif-dark-site-flow.svg)](../web/public/diagrams/paif-dark-site-flow.svg)
 
 *Click the picture to open it full size.*
 
 Read it left to right: **source → bastion (pull) → carry across the air gap →
-admin host (push) → destination**. Every lane repeats on each refresh. The
-numbers are the phases below.
+admin host (push) → destination**. The red badge on each arrow is the carry (1
+tooling, 2 content, 3 Private AI Services); the schedule is in
+[the three carries](#the-three-carries-and-when-each-happens). Every lane
+repeats on each refresh. The numbers are the phases below.
 
 ## Where each phase runs, and what crosses the gap
 
