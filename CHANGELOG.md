@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.6.9 — 2026-10-30
+- **Site: diagrams in docs fill the article column (#441).** The PAIF flow diagram
+  rendered at about 660 px inside a 1000 px column; images in rendered markdown
+  now take the full column width (paragraphs that hold an image
+  are exempt from the 74-character running-text cap).
+
 ## v6.6.8 — 2026-10-30
 - **`docs/36` flow diagram: the three carries, larger text (#441).** New lane for
   Carry 1 (offline CLI and plug-in bundle to the admin host), a red CARRY 1 / 2 / 3

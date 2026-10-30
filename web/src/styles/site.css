@@ -468,6 +468,10 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
 /* The article fills the content column so wide fill-in tables get room to
    breathe; running text is held to a comfortable measure element-by-element. */
 .prose { max-width: none; }
+/* Images (diagrams) fill the article column instead of their intrinsic size. */
+.prose img { display: block; width: 100%; height: auto; }
+.prose p:has(> img),
+.prose p:has(> a > img) { max-width: none; }
 .prose p,
 .prose li,
 .prose blockquote {
