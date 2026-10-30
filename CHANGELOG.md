@@ -9,7 +9,13 @@
   connected site (tokens, licence service, VM classes, VCFA org, Quickstart,
   Private AI Services install). Written from the PAIF 9.1 PDF and
   [KB 388470](https://knowledge.broadcom.com/external/article/388470), read
-  2026-10-30; not yet run on a build. `docs/33` links to both.
+  2026-10-30; not yet run on a build. `docs/33` links to both. A follow-up pass
+  added the offline CLI/`pais` plug-in install for the admin host
+  ([KB 415112](https://knowledge.broadcom.com/external/article/415112/this-article-explains-how-to-install-vcf.html),
+  [KB 451356](https://knowledge.broadcom.com/external/article/451356/vcf-cli-plugin-installation-fails-with-m.html)),
+  the `--local-store` flag and the private-CA import for the mirroring tool
+  ([William Lam](https://williamlam.com/2026/09/vcf-9-1-1-setting-up-vcf-private-ai-services-pais-using-artifact-mirroring-tool-amt-for-air-gapped-environments.html)),
+  and the Supervisor registry fields.
 
 ## v6.6.3 — 2026-10-29
 - **Site: the NL/EN toggle only appears on pages that exist in both languages

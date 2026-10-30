@@ -138,8 +138,8 @@ the Workload Domain*):
    | Username | Support Portal login e-mail | Harbor username |
    | Password | Broadcom registry token | Harbor password |
 
-   (The PDF's table is garbled in extraction; the mapping above follows its
-   row order, so confirm against the page before relying on it.)
+   The PDF gives the password for both cases as *your OCI registry access
+   token*; for a Harbor registry that means the Harbor credential.
 
    When installing 3.0 from the depot, skip this: the regional Harbor connected
    to the depot must hold the package in its `vcf` project **and** be the

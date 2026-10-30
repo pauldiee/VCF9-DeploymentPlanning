@@ -96,12 +96,35 @@ vcf plugin install pais --version v3.0.0   # match the PAIS version you install 
 vcf plugin list                       # pais should show "installed"
 ```
 
-On the **admin host (inside the air gap)** the `apt` route is not available.
-Install the CLI from the vSphere Client instead (the PAIF 9.1 route), or carry
-the package across with the rest of the bundles. Broadcom does not describe a
-fully offline CLI install for the `pais` plug-in; **confirm how you will get
-`vcf pais` onto the admin host before the window**. Per PAIF 9.1 the `pais`
-plug-in (which contains the artifact mirroring tool) is needed on **both** hosts.
+**Inside the air gap (admin host), install the plug-ins from an offline bundle.**
+The online route fails there: `vcf plugin install pais` ends in
+`MANIFEST_UNKNOWN` because the CLI looks for plug-in metadata on
+`projects.packages.broadcom.com` ([KB 451356][kb451356]). Broadcom documents an
+offline method instead ([KB 415112][kb415112]; William Lam walks it through for
+9.1.1 in his [PAIS AMT post][lam-amt]):
+
+1. On the bastion, download from the Support Portal the **VCF Consumption CLI**
+   and the **VCF Consumption CLI Plugins** bundle
+   (`VCF-Consumption-CLI-PluginBundle-<OS>_<ARCH>-<release>.tar.gz`), matching
+   your VCF version. Direct 9.0.0 URLs are in [KB 415112][kb415112] and Lam's
+   [CLI download tip][lam-cli]; use the Support Portal for 9.1.x.
+2. Carry both files to the admin host. Put the `vcf` binary on the `PATH`.
+3. Clear the cached online metadata, extract the bundle, install from it:
+
+   ```bash
+   rm -rf ~/.local/vcf ~/.local/vcf-cli-telemetry
+   mkdir -p ~/vcf-plugin-bundle
+   tar -xvzf VCF-Consumption-CLI-PluginBundle-*.tar.gz -C ~/vcf-plugin-bundle/
+   vcf plugin install all --local-source ~/vcf-plugin-bundle/
+   vcf plugin list
+   ```
+
+   Use `vcf plugin install pais --local-source <bundle-root>` for just the
+   `pais` plug-in. The first-start error about the online discovery URL and a
+   timeout on the `telemetry` plug-in are **expected** and harmless
+   ([KB 415112][kb415112]).
+
+The same bundle route works on the bastion if it also lacks direct access.
 
 If the bastion reaches the internet through a **proxy**, set `HTTP_PROXY`,
 `HTTPS_PROXY`, `NO_PROXY` in the shell **and** give the Docker daemon a systemd
@@ -312,7 +335,7 @@ filled by the VCF Download Tool ([`09-binary-depot.md`](09-binary-depot.md)).
 
 Only if you use Private AI Services. The **artifact mirroring tool (AMT)** is
 part of the `pais` plug-in. Prerequisites on top of the earlier phases
-([PAIF 9.1][paif-pdf]): a Harbor project for Private AI Services with **40 GB**,
+([PAIF 9.1][paif-pdf]): a Harbor project for Private AI Services with **40 GB** (Lam budgets ~40-50 GB on the bastion and 60 GB free in the registry),
 `custom-repo.list` on the admin host, VCF Consumption CLI and Docker on both
 hosts. (2.1 uses a different procedure; it is only in the
 [PDF][paif-pdf], *Upload the Private AI Services 2.1 Components*.)
@@ -353,9 +376,16 @@ hosts. (2.1 uses a different procedure; it is only in the
 6. **Push**, passing the index file's *content*:
 
    ```bash
-   vcf pais amt push <harbor-fqdn>/<project> \
+   vcf pais amt push <harbor-fqdn>/<project> --local-store ./pais-store \
      --ubuntu-repo-list "$(cat ./custom-repo.list)"
    ```
+
+   `--local-store` defaults to `./pais-store` (Lam's walkthrough passes it
+   explicitly; the PDF omits it), so run the command from the parent directory.
+   If Harbor uses a **self-signed or private-CA certificate**, import that CA
+   into the Supervisor first (*Supervisor Management → Supervisor → Configure →
+   Container Registries*), or the service cannot pull
+   ([Lam][lam-amt]; also [`20` §4.8](20-supervisor-image-registry.md#48-harbor-for-user-images-only-if-you-need-one)).
 
 **Result:** the artifacts are in the Harbor project, and `pais-store` now holds
 an **updated `pais-3.0.0-external.yaml`** and a **`yaml-svc-cfg.yaml`**. Those two
@@ -398,7 +428,12 @@ only the difference ([`33` §4.2a](33-private-ai-foundation.md#42a-plan-the-outs
 [VMware Private AI Foundation with NVIDIA 9.1 (PDF)][paif-pdf] ·
 [KB 388470 — resource mirroring script][kb388470] ·
 [Local Harbor registry][td-harbor] ·
-[Ubuntu VKr content library (disconnected)][td-vkr]
+[Ubuntu VKr content library (disconnected)][td-vkr] ·
+[KB 415112 — offline CLI plug-ins][kb415112] ·
+[KB 451356 — MANIFEST_UNKNOWN][kb451356]
+
+**Community:** [William Lam — PAIS AMT for air-gapped][lam-amt] ·
+[Lam — CLI downloads][lam-cli]
 
 **NVIDIA:**
 [GPU Operator — air-gapped installs][nv-airgap] ·
@@ -417,3 +452,7 @@ only the difference ([`33` §4.2a](33-private-ai-foundation.md#42a-plan-the-outs
 [nv-airgap]: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/install-gpu-operator-air-gapped.html
 [ngc-keys]: https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#ngc-api-keys
 [docker-post]: https://docs.docker.com/engine/install/linux-postinstall/
+[kb415112]: https://knowledge.broadcom.com/external/article/415112/this-article-explains-how-to-install-vcf.html
+[kb451356]: https://knowledge.broadcom.com/external/article/451356/vcf-cli-plugin-installation-fails-with-m.html
+[lam-amt]: https://williamlam.com/2026/09/vcf-9-1-1-setting-up-vcf-private-ai-services-pais-using-artifact-mirroring-tool-amt-for-air-gapped-environments.html
+[lam-cli]: https://williamlam.com/2025/12/quick-tip-downloading-vmware-cloud-foundation-vcf-consumption-cli-for-air-gapped-environments.html
