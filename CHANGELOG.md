@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.6.4 — 2026-10-30
+- **Private AI Foundation: two step-by-step companions to `docs/33` (#441).**
+  `docs/36-paif-dark-site-walkthrough.md` is the ordered build for a disconnected
+  site (hosts, the KB 388470 mirroring script, Harbor, Ubuntu mirror and index
+  file, driver server, VKr library, Private AI Services 3.0 mirroring tool,
+  verify checklist); `docs/37-paif-connected-runbook.md` is the checklist for a
+  connected site (tokens, licence service, VM classes, VCFA org, Quickstart,
+  Private AI Services install). Written from the PAIF 9.1 PDF and
+  [KB 388470](https://knowledge.broadcom.com/external/article/388470), read
+  2026-10-30; not yet run on a build. `docs/33` links to both.
+
 ## v6.6.3 — 2026-10-29
 - **Site: the NL/EN toggle only appears on pages that exist in both languages
   (#440).** It used to show everywhere and, on an untranslated page, sent the
