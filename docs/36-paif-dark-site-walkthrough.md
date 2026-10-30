@@ -28,26 +28,48 @@ Read it left to right: **source → bastion (pull) → carry across the air gap 
 admin host (push) → destination**. Every lane repeats on each refresh. The
 numbers are the phases below.
 
-## The build at a glance
+## Where each phase runs, and what crosses the gap
 
-| Phase | What you end up with | Where you work |
-| --- | --- | --- |
-| [0. Prepare](#0-prepare-what-you-need-before-you-start) | Accounts, tokens, a capacity plan | Outside |
-| [1. Hosts](#1-bastion-and-admin-hosts) | Bastion and admin host with the same tooling | Both |
-| [2. Harbor](#2-harbor-the-platform-registry) | Platform Harbor, a project, a robot account | Inside |
-| [3. Mirror containers](#3-mirror-the-gpu-operator-and-dl-workload-images) | GPU Operator + DL workload images in Harbor | Bastion → admin |
-| [4. Ubuntu mirror](#4-ubuntu-package-mirror-and-index-file) | Package mirror + `custom-repo.list` in Harbor | Outside → inside |
-| [5. Driver server](#5-vgpu-and-data-center-drivers) | Guest drivers + index file on a web server | Outside → inside |
-| [6. VKr library](#6-vkr-content-library-ubuntu) | Ubuntu VKr images in a local content library | Inside |
-| [7. Private AI Services](#7-private-ai-services-30-artifacts) | PAIS 3.0 package, engines, GPU Operator in Harbor | Bastion → admin |
-| [8. Verify](#8-verify-before-the-quickstart) | A checklist that catches the common gaps | Inside |
+**Outside** is the bastion side (internet). **Inside** is the air-gapped side
+(admin host, Harbor, web servers, vCenter, Supervisor). Only the admin host
+reaches the inside, and nothing reaches the inside from the internet, so
+everything the inside needs has to be **carried across** after the bastion has
+pulled it.
 
-Phases 3, 4, 5 and 7 are independent once phases 1 and 2 are done; run them in
-parallel if the transfer path allows it.
+| Phase | What you end up with | Runs on | Crosses the gap? |
+| --- | --- | --- | --- |
+| [0. Prepare](#0-prepare-what-you-need-before-you-start) | Accounts, tokens, a capacity plan | Outside | No |
+| [1. Hosts](#1-bastion-and-admin-hosts) | Bastion and admin host with their tooling | Bastion: outside. Admin: inside | **Yes, Carry 1:** the offline CLI + plug-in bundle and the scripts |
+| [2. Harbor](#2-harbor-the-platform-registry) | Platform Harbor, a project, a robot account | Inside (Harbor admin) | No |
+| [3. Mirror containers](#3-mirror-the-gpu-operator-and-dl-workload-images) | GPU Operator + DL workload images in Harbor | **Pull:** bastion. **Push:** admin | **Yes, Carry 2:** the resources directory (and `.tar` files) |
+| [4. Ubuntu mirror](#4-ubuntu-package-mirror-and-index-file) | Package mirror + `custom-repo.list` in Harbor | **Build mirror:** bastion. **Serve + `oras push`:** inside | **Yes, Carry 2:** the mirror tree (the largest item) |
+| [5. Driver server](#5-vgpu-and-data-center-drivers) | Guest drivers + index file on a web server | **Download:** bastion. **Upload, index:** inside | **Yes, Carry 2:** the driver files (the index is written inside) |
+| [6. VKr library](#6-vkr-content-library-ubuntu) | Ubuntu VKr images in a local content library | **Download:** bastion. **Import:** vCenter, inside | **Yes, Carry 2:** the image files (depot route: with the depot transfer, [`09`](09-binary-depot.md)) |
+| [7. Private AI Services](#7-private-ai-services-30-artifacts) | PAIS 3.0 package, engines, GPU Operator in Harbor | **Pull:** bastion. **Push:** admin | **Yes, Carry 3:** `pais-store` |
+| [8. Verify](#8-verify-before-the-quickstart) | A checklist that catches the common gaps | Inside | No |
+
+### The three carries, and when each happens
+
+| Carry | When | What goes across | Size |
+| --- | --- | --- | --- |
+| **1 — Tooling** | **First**, before any push. The admin host can download nothing, so without this it cannot even run `vcf pais` | Offline VCF CLI + plug-in bundle, the KB 388470 zip, `config.env` template, the YAML files | Small (hundreds of MB, measure yours) |
+| **2 — Content** | After each pull finishes and its checksums are written. Phases 3 to 6 are independent: carry each when ready, do not wait for all | Resources directory / `.tar` files (3), Ubuntu mirror tree (4), driver files (5), VKr images and `.ova` (6) | **Large**: 180 GB+ for phase 3, ≥ 800 GB for the Ubuntu mirror |
+| **3 — Private AI Services** | After `vcf pais amt pull` finishes. Needs Carry 1 (the `pais` plug-in) already inside | The `pais-store` directory and the Ubuntu index content | About 40 GB ([PAIF 9.1][paif-pdf]) |
+
+Nothing goes **out** of the inside: the admin host never needs to send anything
+back. Files created inside (`index.txt`, the generated `pais.yml` and
+`yaml-svc-cfg.yaml`) stay there. **Every refresh repeats Carry 2 or 3** for the
+part that changed ([Refreshing](#refreshing)). For how to keep the volume down,
+see [`33` §4.2a](33-private-ai-foundation.md#42a-plan-the-outside-staging-first--it-is-the-hard-part).
+
+Phases 3, 4, 5, 6 and 7 are independent once phases 1 and 2 are done; run them
+in parallel if the transfer path allows it.
 
 ---
 
 ## 0. Prepare: what you need before you start
+
+> **Where:** outside. **Gap:** nothing crosses.
 
 Collect these **on the bastion side** before the window opens. A missing token
 costs more time than any install step.
@@ -68,6 +90,8 @@ variants, **vGPU (`nvaie`)** and **GPU passthrough (`oss`)**
 ---
 
 ## 1. Bastion and admin hosts
+
+> **Where:** you build both hosts; the bastion sits outside, the admin host inside. **Gap:** **Carry 1** crosses here: the offline CLI and plug-in bundle, because the admin host cannot download them.
 
 Roles and the single-machine shortcut are in [`33` §4.1](33-private-ai-foundation.md#41-bastion-and-admin-hosts).
 Build both from the **same Ubuntu image** ([PAIF 9.1][paif-pdf]); if you already
@@ -215,6 +239,8 @@ drop-in (`/etc/systemd/system/docker.service.d/proxy.conf`, then
 
 ## 2. Harbor: the platform registry
 
+> **Where:** inside, as the Harbor administrator. **Gap:** nothing crosses. Finish this before the first push in phase 3.
+
 Which Harbor route applies to you is the table in
 [`33` §7](33-private-ai-foundation.md#7-platform-harbor-registry). In short:
 
@@ -263,19 +289,21 @@ can push a small test image to the project.
 
 ## 3. Mirror the GPU Operator and DL workload images
 
+> **Where:** **pull on the bastion (outside)**, **push on the admin host (inside)**. **Gap:** **Carry 2** crosses between steps 4 and 5: carry once the pull has finished and you have checksums.
+
 This is the *resource mirroring utility* of the PAIF docs: a shell script from
 [KB 388470][kb388470]. It mirrors **container images, Helm charts and model
 profiles** for deep learning VMs and VKS clusters with GPU.
 
-1. **Download the zip that matches your VCF version** from the KB attachments
+1. **[Outside] Download the zip that matches your VCF version** from the KB attachments
    (`vpaifn-airgap-res-mirror-9.1.x.zip` for 9.1). Unzip it. You get
    `vpaifn-airgap-res-mirror.sh`, `config.env` and BOM files.
-2. **Pick the release.** The default `bom.json` is the **latest release in the
+2. **[Outside] Pick the release.** The default `bom.json` is the **latest release in the
    series** (for 9.1.x that is **9.1.1**). To mirror an older release, overwrite
    `bom.json` with the matching `bom-<release>.json`. Broadcom warns that
    resources in older BOMs may have been **removed from the source registry**,
    so pulls can fail.
-3. **Edit `config.env`:**
+3. **[Outside] Edit `config.env`:**
 
    | Variable | Value |
    | --- | --- |
@@ -285,17 +313,17 @@ profiles** for deep learning VMs and VKS clusters with GPU.
    | `LOCAL_RESOURCES_DIR` | Disk path for the downloaded resources |
    | `PACK_CONTAINER` | `true` if pull and push run on **different machines**: each image is saved as a `.tar` you can carry across (needs **+100 GB**). Default `false`. |
 
-4. **Pull on the bastion:**
+4. **[Outside, bastion] Pull:**
 
    ```bash
    ./vpaifn-airgap-res-mirror.sh --pull
    ```
 
-5. **Carry across.** Copy the package directory, `config.env` and
+5. **[Across the gap, Carry 2] Carry across.** Copy the package directory, `config.env` and
    `LOCAL_RESOURCES_DIR` to the admin host (with `PACK_CONTAINER=true`, that
    includes the `.tar` files). Checksum before and after
    (`sha256sum`, general practice).
-6. **Push on the admin host:**
+6. **[Inside, admin host] Push:**
 
    ```bash
    ./vpaifn-airgap-res-mirror.sh --push
@@ -357,18 +385,22 @@ DL workload images (PyTorch, TensorFlow, CUDA Sample, Triton, DCGM Exporter) and
 
 ## 4. Ubuntu package mirror and index file
 
+> **Where:** **build the mirror on the bastion (outside)**; **serve it and `oras push` the index from inside**. **Gap:** **Carry 2**: the mirror tree crosses after the mirror is built. It is the biggest transfer, so start it first.
+
 Required to **compile the guest driver** on the VKS GPU nodes
 ([PAIF 9.1][paif-pdf]). Capacity and trimming advice:
 [`33` §4.2a](33-private-ai-foundation.md#42a-plan-the-outside-staging-first--it-is-the-hard-part).
 
-1. **Build the mirror** (Broadcom: **≥ 800 GB** free on the machine) and serve
-   it from a **web server the VKS clusters with GPU can reach**. How you mirror
+1. **[Outside, bastion] Build the mirror** (Broadcom: **≥ 800 GB** free on the
+   machine). **Then carry the tree across** (Carry 2) and **[inside] serve it
+   from a web server the VKS clusters with GPU can reach**. How you mirror
    is up to you (`apt-mirror`, `debmirror`, or a registry-style tool; general
    practice, not Broadcom's text). For **GPU passthrough** only, a **partial
    mirror** with the packages needed to compile the GPU Operator driver is
    allowed. NVIDIA lists the required packages in
    [*Install NVIDIA GPU Operator in Air-Gapped Environments*][nv-airgap].
-2. **Write the index file** `custom-repo.list`, with your mirror's address:
+2. **[Inside] Write the index file** `custom-repo.list`, with your **inside**
+   mirror's address (not the bastion's):
 
    ```text
    deb [arch=amd64] http://<mirror-address>/ubuntu jammy main universe
@@ -378,7 +410,7 @@ Required to **compile the guest driver** on the VKS GPU nodes
 
    For Ubuntu 24.04 replace `jammy` with `noble`. Use the release your **VKr**
    runs ([phase 6](#6-vkr-content-library-ubuntu)).
-3. **Push it to Harbor** from the admin host, into a `resources` repository of
+3. **[Inside, admin host] Push it to Harbor**, into a `resources` repository of
    the PAIF project, so VCF Automation deployments find it:
 
    ```bash
@@ -446,15 +478,18 @@ project.
 
 ## 5. vGPU and data center drivers
 
+> **Where:** **download on the bastion (outside)**; **upload to the web server and write the index inside**. **Gap:** **Carry 2**: only the driver files cross; the index holds your internal URLs, so you write it inside.
+
 For **deep learning VMs** ([PAIF 9.1][paif-pdf]):
 
-1. Download the driver versions you support from the **NVIDIA Licensing Portal**
-   on the bastion side. Match them to the host driver in your vLCM image
+1. **[Outside, bastion]** Download the driver versions you support from the
+   **NVIDIA Licensing Portal**. Match them to the host driver in your vLCM image
    ([`32-gpu-hosts.md`](32-gpu-hosts.md)).
-2. Upload them to a local **web server** the deep learning VMs can reach:
+2. **[Carry 2, then inside]** Upload them to a local **web server** the deep
+   learning VMs can reach:
    - **vGPU guest drivers:** `.run` **or** `.zip`.
    - **Data center drivers (passthrough):** `.run`.
-3. **vGPU only: create an index file** next to them, in one of two forms:
+3. **[Inside] vGPU only: create an index file** next to them, in one of two forms:
    - a `.txt` file of pairs, **host driver version** then **guest driver URL**:
 
      ```text
@@ -511,6 +546,8 @@ host driver version you run in the index**: a cluster mid-upgrade has two.
 
 ## 6. VKr content library (Ubuntu)
 
+> **Where:** **download on the bastion (outside)** for the manual route; **import in the management vCenter (inside)**. **Gap:** **Carry 2**: the VKr image files cross. On the depot route nothing extra crosses: the images ride the depot transfer ([`09`](09-binary-depot.md)).
+
 Must be the **Ubuntu edition** of the vSphere Kubernetes releases
 ([TechDocs][td-vkr], page *Last Updated October 28, 2026*). The library is *"used
 across all vSphere namespaces in the Supervisor"*.
@@ -522,9 +559,10 @@ filled by the VCF Download Tool ([`09-binary-depot.md`](09-binary-depot.md)).
 
 **Option B — manual upload** (TechDocs procedure):
 
-1. Download the Ubuntu-based VKr images for the Kubernetes versions you need from
-   `https://wp-content.vmware.com/v2/latest/`.
-2. Sign in to the **management domain** vCenter.
+1. **[Outside, bastion]** Download the Ubuntu-based VKr images for the
+   Kubernetes versions you need from `https://wp-content.vmware.com/v2/latest/`,
+   then **carry them across** (Carry 2).
+2. **[Inside]** Sign in to the **management domain** vCenter.
 3. *Private AI Foundation* → switch the top selector to **Cloud disconnected** →
    *Set Up Environment* → **Start**.
 4. Create a **local content library** for VKr and import the images (same wizard
@@ -537,6 +575,8 @@ filled by the VCF Download Tool ([`09-binary-depot.md`](09-binary-depot.md)).
 ---
 
 ## 7. Private AI Services 3.0 artifacts
+
+> **Where:** **pull on the bastion (outside)**, **push on the admin host (inside)**. **Gap:** **Carry 3**: `pais-store` and `custom-repo.list` cross after the pull. The `pais` plug-in must already be inside (Carry 1).
 
 Only if you use Private AI Services. The **artifact mirroring tool (AMT)** is
 part of the `pais` plug-in. Prerequisites on top of the earlier phases
@@ -601,6 +641,8 @@ steps are in [`37` §6](37-paif-connected-runbook.md#6-install-private-ai-servic
 ---
 
 ## 8. Verify before the Quickstart
+
+> **Where:** inside, from the admin host and a node on the VKS / VM networks. **Gap:** nothing crosses; verify the carried files against your manifest checksums before pushing.
 
 | Check | How |
 | --- | --- |
