@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.7.2 — 2026-11-02
+- **`docs/36` §8: the verify list is now specific (#442).** 25 numbered checks in
+  eight groups (transfer integrity, Harbor, images, Ubuntu mirror, drivers, VKr
+  and Supervisor, Private AI Services, licensing), each with where it runs, the
+  exact command and what a pass looks like, linked back to the phase that
+  produced it.
+
 ## v6.7.1 — 2026-10-30
 - **`docs/36`: second diagram, the order and who does what (#441).** A swim-lane
   picture (`web/public/diagrams/paif-dark-site-order.svg`) of the whole dark-site

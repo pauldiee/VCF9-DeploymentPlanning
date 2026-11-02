@@ -660,20 +660,84 @@ steps are in [`37` §7](37-paif-connected-runbook.md#7-install-private-ai-servic
 
 > **Where:** inside, from the admin host and a node on the VKS / VM networks. **Gap:** nothing crosses; verify the carried files against your manifest checksums before pushing.
 
-| Check | How |
-| --- | --- |
-| Harbor project has the GPU Operator + DL images | Harbor UI → project → repositories |
-| `custom-repo.list` is in Harbor | `oras pull <harbor>/<project>/resources/custom-repo.list:1.0` |
-| Ubuntu mirror reachable from the VKS network | `curl` the `Release` file |
-| Driver URL and index reachable from the VM network | `curl -I` |
-| Ubuntu VKr library attached to the Supervisor | Test VKS cluster lists the versions |
-| Supervisor trusts Harbor's CA and can pull | Pull a test image in a namespace |
-| (PAIS) `yaml-svc-cfg.yaml` and updated install YAML present | `ls pais-store` |
-| DLS reachable, client token generated | [`33` §2](33-private-ai-foundation.md#2-nvidia-licensing-and-access) |
+Run the checks in order: each one assumes the one above it passed. Every row
+says **where** to run it, the **command**, and what a **pass** looks like.
+Placeholders follow the earlier phases (`harbor.sfo.rainpole.io`, project
+`paif`, `mirror.sfo.rainpole.io`, `drivers.sfo.rainpole.io`). The pass criteria
+come from the phases above; the commands are general practice (Broadcom's
+text names *what* to have in place, not how to test it).
 
-Then continue with the VCF Automation organization and the Quickstart
+**8.1 Transfer integrity (admin host)**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 1 | Carried files match the bastion | `sha256sum -c manifest.sha256` in each carried directory | Every line `OK`; no `FAILED` |
+| 2 | Harbor sizing still holds | Total of `du -sh <LOCAL_RESOURCES_DIR> ./pais-store` | Below the free space in the Harbor project(s) (≥ 180 GB script, ≥ 40 GB Private AI Services) |
+
+**8.2 Harbor ([phase 2](#2-harbor-the-platform-registry), admin host)**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 3 | Login works and the CA is trusted | `docker login harbor.sfo.rainpole.io` | `Login Succeeded`, no `x509: certificate signed by unknown authority` |
+| 4 | Project has quota headroom | Harbor UI → *Projects → paif → Summary* | Quota used below the limit, with room for the next refresh |
+| 5 | Robot account is valid | Harbor UI → *Robot Accounts* | Enabled, expiry date in the team calendar |
+| 6 | (9.1.1) Public project exists | Harbor UI → *Projects* | The `deep-learning-container` project shows access level **Public** |
+
+**8.3 GPU Operator and DL images ([phase 3](#3-mirror-the-gpu-operator-and-dl-workload-images), admin host)**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 7 | Script push completed | Exit status and log of `./vpaifn-airgap-res-mirror.sh --push` | Exit `0`; no image reported as failed |
+| 8 | Every BOM entry landed | Harbor UI → *paif → Repositories*; compare with the images in `bom.json` | Repository count matches the BOM; GPU Operator chart, PyTorch, TensorFlow, CUDA Sample, Triton, DCGM Exporter present |
+| 9 | (9.1.1) DL container present | `docker pull harbor.sfo.rainpole.io/<public-project>/deep-learning-container:9.1.1.0` | Pull completes |
+
+**8.4 Ubuntu mirror and index ([phase 4](#4-ubuntu-package-mirror-and-index-file), Ubuntu machine on the VKS network)**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 10 | Mirror serves the release you run | `curl -fsS http://mirror.sfo.rainpole.io/ubuntu/dists/<jammy\|noble>/Release \| head -5` | `Suite:` matches your VKr's Ubuntu release |
+| 11 | `apt` accepts the mirror | `sudo apt-get -o Dir::Etc::sourcelist=./custom-repo.list -o Dir::Etc::sourceparts=- update` | No `404`, no `NO_PUBKEY`, no `Release file … is not valid yet` |
+| 12 | Index file is in Harbor, with the inside address | `oras pull harbor.sfo.rainpole.io/paif/resources/custom-repo.list:1.0 && cat custom-repo.list` | File comes back with tag `1.0`; lines point at the **inside** mirror, not the bastion |
+
+**8.5 Drivers ([phase 5](#5-vgpu-and-data-center-drivers), machine on the deep learning VM network)**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 13 | Index is reachable | `curl -fsS http://drivers.sfo.rainpole.io/drivers/vgpu/index.txt` | Version / URL pairs print |
+| 14 | Every host driver in the vLCM image is listed | Compare the index with the NVIDIA host driver version on the ESX hosts (`esxcli software vib list \| grep -i nvd`) | Each host version has a line, including both versions mid-upgrade |
+| 15 | Every URL in the index resolves | `grep '^http' index.txt \| xargs -n1 curl -sfI -o /dev/null -w '%{http_code} %{url_effective}\n'` | `200` for every line |
+| 16 | (Passthrough) data center driver | `curl -fsI http://drivers.sfo.rainpole.io/drivers/datacenter/<file>.run` | `200`; this is the `gpu-driver-url` value |
+
+**8.6 VKr library and Supervisor ([phase 6](#6-vkr-content-library-ubuntu), [§2](#2-harbor-the-platform-registry) step 5)**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 17 | Library holds Ubuntu VKrs | vSphere Client → *Content Libraries* → the VKr library → *Templates* | Ubuntu-edition items for the Kubernetes versions you need; sync status complete |
+| 18 | Supervisor offers them | `kubectl get kubernetesreleases` in a vSphere namespace context | Ubuntu VKrs show `READY True` and `COMPATIBLE True` |
+| 19 | Supervisor trusts Harbor | *Supervisor Management → Supervisor → Configure → Container Registries* | Harbor's CA chain listed |
+| 20 | A namespace can pull from Harbor | `kubectl run pulltest --image=harbor.sfo.rainpole.io/paif/<small-image> -n <namespace>` then `kubectl get pod pulltest -n <namespace>` | Pod reaches `Running` (or `Completed`); no `ErrImagePull` / `ImagePullBackOff`. Delete the pod afterwards |
+
+**8.7 Private AI Services ([phase 7](#7-private-ai-services-30-artifacts), admin host) — only if you use it**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 21 | AMT push completed | Output of `vcf pais amt push` | No failed artifacts |
+| 22 | Install files were written | `ls -l pais-store/pais-3.0.0-external.yaml pais-store/yaml-svc-cfg.yaml` | Both present, timestamps from the push |
+| 23 | Updated YAML points inside | `grep -n harbor.sfo.rainpole.io pais-store/pais-3.0.0-external.yaml` | Image references name your Harbor project, not `pais-docker.packages.broadcom.com` |
+
+**8.8 Licensing ([`33` §2](33-private-ai-foundation.md#2-nvidia-licensing-and-access))**
+
+| # | Check | Command | Pass |
+| --- | --- | --- | --- |
+| 24 | DLS appliance is reachable from the workload networks | `curl -kfsI https://<dls-fqdn>/` from the VKS and VM networks | HTTP answer, no timeout |
+| 25 | Client configuration token exists | DLS portal → *Service Instance → Client Configuration Token* | A current `.tok` file is downloaded, ready for the Quickstart |
+
+All 25 pass (or don't apply to your build)? Then continue with the VCF
+Automation organization and the Quickstart
 ([`33` §6](33-private-ai-foundation.md#6-vcf-automation-organization),
 [§8](33-private-ai-foundation.md#8-catalog-items-the-private-ai-foundation-quickstart)).
+Keep the filled-in list with the build record: it is also the check list for
+every [refresh](#refreshing).
 
 ---
 
