@@ -149,6 +149,7 @@ before wiring a generator.
 | H13 | — (no named ranges; see the *Deploy Cluster* table) |
 | H14 | — (no named ranges; see the *Deploy Cluster* table) |
 | H15 | — (no named ranges; see the *Deploy Cluster* table) |
+| H16 | — (no named ranges; see the *Deploy Cluster* table) |
 | H12 | `input_wld_bf_vc_root_password`, `input_wld_administrator_vsphere_local_password`, `input_wld_esx_root_password`, `input_wld_bf_nsxt_{admin,audit,root}_password`, `input_wld_nsxt_en_{admin,root}_password` |
 
 **Not mapped (out of scope for a core WLD):** optional-solution prefixes —
@@ -266,6 +267,7 @@ Repeat per additional cluster. New VLANs/subnets per cluster come from
 | H13    | —                                      | — (**no visible workbook fields**: GPU hosts are captured in the intake and `32-gpu-hosts.md`. The 9.1 workbook keeps a **hidden**, legacy *Private AI Ready Infrastructure* sheet (TKG-era GPU VM class / GPU Operator rows) — don't transfer to it; the 9.1.1 workbook has no GPU fields) |
 | H14    | —                                      | — (**no visible workbook fields**: Private AI Foundation is captured in the intake and `33-private-ai-foundation.md`; same note on the hidden legacy *Private AI Ready Infrastructure* sheet as `H13`) |
 | H15    | —                                      | — (**no visible workbook fields**: HCX migration is captured in the intake and `38-hcx-migration.md`. The 9.1 workbook keeps a **hidden**, legacy *Cross Cloud Mobility* sheet (HCX Connector name / IP / passwords, service account, network profile IP ranges, remote HCX URL, licence key) from the VMware Cloud on AWS design — don't transfer to it; HCX 9.x has no licence key. The 9.1.1 workbook has no such sheet) |
+| H16    | —                                      | — (**no visible workbook fields**: DR is captured in the intake and `39-protection-and-recovery.md`. The 9.1 workbook keeps a **hidden**, legacy *Site Protection & DR* sheet from the older validated design that protects the **management applications** with separate vSphere Replication / VMware Live Recovery appliances (`<vrms_fqdn>`, `<vlr_fqdn>`, Aria naming) — don't transfer to it; it doesn't cover workload DR or the 9.1 single appliance) |
 
 ## Sheet: Deploy Fleet Management Day-N
 

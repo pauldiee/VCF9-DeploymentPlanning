@@ -1,5 +1,28 @@
 # Changelog
 
+## v6.7.4 — 2026-11-04
+- **New `docs/39-protection-and-recovery.md`: disaster recovery between two VCF
+  9.1 sites with VCF Protection and Recovery (#444).** The licence decision
+  (replication with an RPO above 5 minutes is included with VCF; recovery plans
+  need a standalone Site Recovery Manager licence or Advanced Cyber Compliance),
+  old vs new names, topologies and extension IDs, replication types (vSAN
+  replication needs a vSAN ESA recovery cluster; 9.1 is the last release with
+  vVols), appliance sizing, DNS, recovery-site networks and the firewall flows
+  (enhanced replication goes ESX to ESX on TCP 32032), the OVA deploy on both
+  sites, site and cluster pairing, replication, mappings, recovery plans, test /
+  planned migration / DR / reprotect, monitoring, the boundary with VCF Fleet
+  Disaster Recovery, converging from 9.0.x, the configmax limits (vSAN
+  replication 1,000 → 5,000 VMs in 9.1.1) and the release-note caveats.
+  TechDocs-sourced, not lab- or field-verified.
+- Prerequisites gate, intake `H16` (+ mapping note on the hidden, legacy *Site
+  Protection & DR* workbook sheet), `docs/07` §H, site nav entry, README and
+  CLAUDE.md file tables.
+- **Deployment-plan export tool: *Disaster recovery* per workload domain
+  (#444).** Two stories at the end of that domain's epic, *Protection and
+  Recovery: deploy and pair the sites* and *Protection and Recovery: replicate,
+  plan and test*, linked to the guide through `GUIDE_RULES`; described in
+  `docs/06`. Saved plans reload with the box off.
+
 ## v6.7.3 — 2026-11-04
 - **New `docs/38-hcx-migration.md`: HCX migration from a legacy environment
   into VCF 9.1 (#443).** VCF Operations HCX 9.x on both sides (HCX 4.x crashes

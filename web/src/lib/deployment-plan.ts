@@ -65,6 +65,11 @@ export interface Wld {
    * with VCF Operations HCX (intake H15, #443). HCX is installed per domain.
    */
   hcx: boolean;
+  /**
+   * Workloads in this domain protected to a second VCF 9.1 site with
+   * Protection and Recovery (intake H16, #444).
+   */
+  dr: boolean;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 'vpc';
@@ -236,7 +241,7 @@ export function defaultSelection(): Selection {
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
     aviLicensing: 'hub',
-    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none', paifConnectivity: 'connected', pais: false, hcx: false }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none', paifConnectivity: 'connected', pais: false, hcx: false, dr: false }],
   };
 }
 
@@ -1153,9 +1158,37 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
     });
   }
 
+  // Disaster recovery (#444): after any HCX migration, because it protects the
+  // workloads once they run in this domain.
+  if (w.dr) {
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Protection and Recovery: deploy and pair the sites',
+      tasks: [
+        'Licence: replication with an RPO above 5 minutes is included with VCF; recovery plans (test, planned migration, failover, reprotect) need a standalone Site Recovery Manager licence for VCF or Advanced Cyber Compliance; an RPO under 5 minutes with vSAN replication needs Advanced Cyber Compliance.',
+        'Design: the recovery site and its vCenter, DNS, NTP and AD run on their own; topology (1:1, or a shared site with a custom extension ID per pair); replication type per workload (vSphere Replication, vSAN replication: needs a vSAN ESA recovery cluster, or array-based through an SRA); no new vVols-based DR (9.1 is the last release that supports it); network strategy at the recovery site (re-IP or the same subnets) and an isolated test network; recovery-site capacity.',
+        'Firewall: TCP 32032 from the protected site ESX hosts to the recovery site ESX hosts (enhanced replication), 443 and 5480 between the appliances, 443 to both vCenters (full list on ports.broadcom.com, products Protection and Recovery and vSphere Replication).',
+        `Deploy one protection and recovery appliance per vCenter on both sites (vSphere Client: Deploy OVF Template; 8 vCPU, 24 GB RAM, about 800 GB; FQDN with forward and reverse DNS), the one on the protected site serving domain ${name}, and connect each to its own vCenter in the appliance management interface (port 5480).`,
+        'Pair the sites: vSphere Client, vCenter, Configure, Protection and Recovery, Pair Sites. For vSAN replication also pair the clusters (the target must be vSAN ESA).',
+      ],
+      acceptance: 'Appliances on both sites connected to their vCenters; site pair up; the protection and recovery and vSAN snapshots and replication plug-ins visible in the vSphere Client; replication firewall flows tested.',
+    });
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'Protection and Recovery: replicate, plan and test',
+      tasks: [
+        'Replication per workload: vSphere Replication (target datastore and policy, RPO, point-in-time instances; seed from existing replicas where possible), vSAN replication protection groups (schedules, retention, membership by VM tag), or array-based (SRA on both appliances, array pairs). Check each VM against the caveats: no PMem, disks under 62 TB, no 4Kn datastores, no shared VMDKs, no IO filter policies.',
+        'Inventory mappings in both directions: networks (NSX segments or VPC subnets at the recovery site must exist), test network, folders, resources, storage policies, placeholder datastores.',
+        'Protection groups and recovery plans: one plan per application or service plus a site-wide plan; priority groups and VM dependencies, IP customisation for re-IP, scripts and prompts for DNS and load balancer changes. Within the limits: 1,500 VMs per protection group, 2,000 VMs and 250 protection groups per plan, 250 plans, 5,000 protected VMs per appliance pair.',
+        'Run a test of every recovery plan (then cleanup), and one planned migration in a maintenance window before go-live; agree the test cadence and who signs off the report.',
+      ],
+      acceptance: 'Every in-scope VM replicating within its RPO; every recovery plan tested with a clean report; one planned migration and reprotect completed; test cadence and owner agreed.',
+    });
+  }
+
   return {
     id,
-    title: `Workload domain: ${name} — ${connectivityName(connectivity)}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${pais ? ' + Private AI Services' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}${w.hcx ? ' + HCX migration' : ''}`,
+    title: `Workload domain: ${name} — ${connectivityName(connectivity)}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${pais ? ' + Private AI Services' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}${w.hcx ? ' + HCX migration' : ''}${w.dr ? ' + DR' : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     stories,
   };
@@ -1254,6 +1287,15 @@ const GD = {
   hcxExtend: guide('HCX: extend networks', '38-hcx-migration', '8-extend-networks'),
   hcxTypes: guide('HCX: choose a migration type', '38-hcx-migration', '9-choose-a-migration-type-per-workload'),
   hcxDecom: guide('HCX: decommission', '38-hcx-migration', '11-decommission-hcx'),
+  dr: guide('Protection and Recovery: DR between two sites', '39-protection-and-recovery'),
+  drLicence: guide('Protection and Recovery: decide the licence', '39-protection-and-recovery', '1-decide-the-licence'),
+  drDesign: guide('Protection and Recovery: topology and replication type', '39-protection-and-recovery', '3-choose-the-topology-and-the-replication-type'),
+  drPlan: guide('Protection and Recovery: plan IPs, capacity, networks, firewall', '39-protection-and-recovery', '4-plan-ips-dns-capacity-networks-firewall'),
+  drPair: guide('Protection and Recovery: pair the sites', '39-protection-and-recovery', '6-pair-the-sites'),
+  drReplicate: guide('Protection and Recovery: configure replication', '39-protection-and-recovery', '7-configure-replication'),
+  drPlans: guide('Protection and Recovery: protection groups and recovery plans', '39-protection-and-recovery', '9-protection-groups-and-recovery-plans'),
+  drTest: guide('Protection and Recovery: test, migrate, recover, reprotect', '39-protection-and-recovery', '10-test-migrate-recover-reprotect'),
+  prereqDr: guide('Prerequisites: disaster recovery', 'prerequisites', 'disaster-recovery-with-protection-and-recovery-only-if-in-scope'),
   prereqHcx: guide('Prerequisites: HCX migration', 'prerequisites', 'hcx-migration-from-a-legacy-environment-only-if-in-scope'),
   paisStandalone: guide('PAIS without GPUs or the Quickstart', '33-private-ai-foundation', '91-without-gpus-or-without-the-quickstart'),
   prereqPaif: guide('Prerequisites: Private AI Foundation', 'prerequisites', 'private-ai-foundation-only-if-in-scope'),
@@ -1328,6 +1370,8 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E9', story: /^Private AI Services: install and activate/, guides: () => [GD.paifServices] },
   { epic: 'E9', story: /^HCX: deploy, pair/, guides: () => [GD.hcx, GD.prereqHcx, GD.hcxVersions, GD.hcxPlan, GD.hcxMesh] },
   { epic: 'E9', story: /^HCX: extend networks/, guides: () => [GD.hcxExtend, GD.hcxTypes, GD.hcxDecom] },
+  { epic: 'E9', story: /^Protection and Recovery: deploy and pair/, guides: () => [GD.dr, GD.prereqDr, GD.drLicence, GD.drDesign, GD.drPlan, GD.drPair] },
+  { epic: 'E9', story: /^Protection and Recovery: replicate, plan/, guides: () => [GD.drReplicate, GD.drPlans, GD.drTest] },
   { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
   { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
   { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
@@ -1452,6 +1496,7 @@ export function coerceSelection(data: unknown): Selection | null {
           // carried its story on a Private AI Foundation domain, so keep it there.
           pais: typeof w.pais === 'boolean' ? w.pais : w.gpu === 'paif',
           hcx: bool(w.hcx, false),
+          dr: bool(w.dr, false),
         }))
     : base.wlds;
   return normalizeSelection({

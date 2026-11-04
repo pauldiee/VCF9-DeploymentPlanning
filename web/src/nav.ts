@@ -309,6 +309,14 @@ export const NAV: NavItem[] = [
     icon: 'truck-moving',
     blurb: 'Moving workloads from a legacy vSphere or VCF environment into VCF 9.1 with VCF Operations HCX: versions on both sides, the deploy, licensing, service mesh, network extension and migration types.',
   },
+  {
+    slug: '39-protection-and-recovery',
+    step: 'Day-2 operations',
+    band: 'Day-2 operations',
+    label: 'Protection and Recovery',
+    icon: 'shield-halved',
+    blurb: 'Disaster recovery between two VCF 9.1 sites: the licence decision, replication types, deploying and pairing the appliances, mappings, recovery plans, and testing, failover and failback.',
+  },
 
   // --- Reference: VVF / Standalone --------------------------------------------
   {

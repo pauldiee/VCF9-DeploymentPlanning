@@ -210,6 +210,28 @@ below come from field experience and inference, and each row says which.
 
 ---
 
+## H. Disaster recovery — protected site ↔ recovery site (only if in scope)
+
+> Only with Protection and Recovery
+> ([`39-protection-and-recovery.md`](39-protection-and-recovery.md)). Source:
+> [Ports and Protocols](https://ports.broadcom.com/), products *Protection and
+> Recovery* and *vSphere Replication* (9.1.0 and 9.1.1 listings identical,
+> read 2026-11-04). Enhanced replication goes **ESX to ESX** across the sites.
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| Appliance (protected) | Appliance (recovery) | 443 | TCP | Site-to-site management |
+| Appliance | Local and remote vCenter | 443 | TCP | Management |
+| Local appliance | Remote appliance | 5480 | TCP | vSphere Replication management |
+| ESX (protected site) | ESX (recovery site) | 32032 | TCP | Enhanced vSphere Replication traffic |
+| ESX (protected site) | vSphere Replication server (recovery site) | 31031, 32032 | TCP | Legacy vSphere Replication traffic |
+| vSphere Replication server (recovery) | ESX (recovery, same site) | 902 | TCP/UDP | Intra-site replication management |
+| Appliance | vSphere Replication server / local vCenter | 8123 / 9084 | TCP | Intra-site management |
+| Recovery-site appliance | Recovery-site ESX | 902, 443 | TCP | Internal services |
+| Management workstations | Appliance | 443, 5480 | TCP | UI, appliance management |
+
+---
+
 ## Using this with the toolkit
 
 - The [firewall-request template](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv)

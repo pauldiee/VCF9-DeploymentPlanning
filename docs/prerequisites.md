@@ -725,6 +725,40 @@ Operations HCX; the full guide is [`38-hcx-migration.md`](38-hcx-migration.md).
 > workbook keeps a **hidden**, legacy *Cross Cloud Mobility* sheet).
 > TechDocs-sourced — not yet field-verified in this repo.
 
+## Disaster recovery with Protection and Recovery (only if in scope)
+
+*When needed: **Day-N (if in scope)**, once both VCF 9.1 sites exist.*
+Workload DR between a protected and a recovery site; the full guide is
+[`39-protection-and-recovery.md`](39-protection-and-recovery.md).
+
+- [ ] **Licence decided:** replication only (RPO above 5 minutes, included with
+      VCF), or orchestrated DR (standalone Site Recovery Manager licence for
+      VCF, or Advanced Cyber Compliance). RPO under 5 minutes with vSAN
+      replication needs Advanced Cyber Compliance
+      ([Welcome to Protection and Recovery](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/protection-and-recovery-installation/get-started-with-vmware-live-recovery.html)).
+- [ ] **Recovery site runs on its own:** its vCenter, DNS, NTP, AD and identity
+      provider don't depend on the protected site.
+- [ ] **Replication type per workload.** vSAN replication only if the recovery
+      cluster is **vSAN ESA**; array-based only with a supported SRA.
+- [ ] **No new vVols-based DR:** 9.1 is the last release that supports vVols
+      replication.
+- [ ] **FQDN + IP** (forward and reverse DNS) for one appliance per vCenter, on
+      both sites (8 vCPU, 24 GB RAM, about 800 GB each).
+- [ ] **Recovery-site capacity** for failed-over VMs, their replicas, and test
+      VMs.
+- [ ] **Network strategy** at the recovery site (re-IP or the same subnets) and
+      an isolated **test network**.
+- [ ] **Firewall flows** open, incl. TCP 32032 from the protected site's ESX
+      hosts to the recovery site's ESX hosts (see
+      [`07-firewall-ports.md`](07-firewall-ports.md) §H).
+- [ ] **Shared site?** Extension IDs chosen before the first deploy.
+
+> TechDocs: [Protection and Recovery 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1.html).
+> The visible sheets of the official P&P workbook have no workload-DR fields
+> (the 9.1 workbook keeps a **hidden**, legacy *Site Protection & DR* sheet for
+> the management applications). TechDocs-sourced — not yet field-verified in
+> this repo.
+
 ## Network
 
 | Requirement                         | When needed                | Why                                                                  |

@@ -302,6 +302,7 @@ const epics = selectedEpics(sel);
             ${PAIF_CONNECTIVITY.map((c) => `<option value="${c.value}"${w.paifConnectivity === c.value ? ' selected' : ''}>${c.label}</option>`).join('')}
           </select>
           <label class="planx__check" title="Migrate workloads into this domain from a legacy vSphere or VCF environment with VCF Operations HCX"><input type="checkbox" class="planx__wldhcx" ${w.hcx ? 'checked' : ''} /> HCX migration</label>
+          <label class="planx__check" title="Protect this domain's workloads to a second VCF 9.1 site with Protection and Recovery"><input type="checkbox" class="planx__wlddr" ${w.dr ? 'checked' : ''} /> Disaster recovery</label>
           <button type="button" class="planx__wlddel" aria-label="Remove workload domain">×</button>
         </div>`
       )
@@ -400,6 +401,7 @@ const epics = selectedEpics(sel);
       paifConnectivity: 'connected',
       pais: false,
       hcx: false,
+      dr: false,
     });
     renderWlds();
     render();
@@ -453,6 +455,8 @@ const epics = selectedEpics(sel);
       renderWlds(); // enable the connectivity select, refresh the Supervisor box
     } else if (t.classList.contains('planx__wldhcx')) {
       wlds[i].hcx = (<HTMLInputElement>t).checked;
+    } else if (t.classList.contains('planx__wlddr')) {
+      wlds[i].dr = (<HTMLInputElement>t).checked;
     } else if (t.classList.contains('planx__wldpaifconn')) {
       wlds[i].paifConnectivity = (<HTMLSelectElement>t).value as PaifConnectivity;
     }
