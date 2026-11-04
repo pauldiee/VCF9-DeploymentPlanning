@@ -363,6 +363,27 @@ Guide: [`38-hcx-migration.md`](38-hcx-migration.md); prerequisites:
 [`prerequisites.md` → HCX migration](prerequisites.md#hcx-migration-from-a-legacy-environment-only-if-in-scope).
 Numbered by selection, like the other optional E9 stories.
 
+**Disaster recovery (optional, per WLD, #444):** tick *Disaster recovery* on a
+workload domain (intake `H16`) to protect its workloads to a second VCF 9.1
+site with Protection and Recovery. Two stories are appended at the end of that
+domain's epic (after the HCX stories, if both are ticked):
+
+- **Protection and Recovery: deploy and pair the sites** — the licence decision
+  (replication with an RPO above 5 minutes is included; recovery plans need a
+  standalone Site Recovery Manager licence or Advanced Cyber Compliance), the
+  design (independent recovery site, topology and extension IDs, replication type
+  — vSAN replication needs a vSAN ESA recovery cluster — network strategy, test
+  network, capacity), the firewall flows (TCP 32032 ESX to ESX across the sites),
+  one appliance per vCenter on both sites, and the site pairing.
+- **Protection and Recovery: replicate, plan and test** — replication per
+  workload with the caveats checked, inventory mappings, protection groups and
+  recovery plans within the configmax limits, a test of every plan and one
+  planned migration before go-live, and the test cadence.
+
+Guide: [`39-protection-and-recovery.md`](39-protection-and-recovery.md);
+prerequisites:
+[`prerequisites.md` → Disaster recovery](prerequisites.md#disaster-recovery-with-protection-and-recovery-only-if-in-scope).
+
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
 to add an *Enable vSphere Supervisor* story to that WLD. Activation
