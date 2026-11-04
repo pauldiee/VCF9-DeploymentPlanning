@@ -60,6 +60,11 @@ export interface Wld {
    * or CPU-only on a domain without GPUs (llama.cpp). It always needs a Supervisor.
    */
   pais: boolean;
+  /**
+   * Workloads migrated into this domain from a legacy vSphere / VCF environment
+   * with VCF Operations HCX (intake H15, #443). HCX is installed per domain.
+   */
+  hcx: boolean;
 }
 
 export type AutomationPlacement = 'shared' | 'dedicated' | 'overlay' | 'vlan' | 'vpc';
@@ -231,7 +236,7 @@ export function defaultSelection(): Selection {
     day2Components: { logs: true, networks: true, identityBroker: true },
     vdefend: false,
     aviLicensing: 'hub',
-    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none', paifConnectivity: 'connected', pais: false }],
+    wlds: [{ name: 'wld01', stretched: false, connectivity: 'centralized', supervisor: false, supervisorLb: 'builtin', gpu: 'none', paifConnectivity: 'connected', pais: false, hcx: false }],
   };
 }
 
@@ -1120,9 +1125,37 @@ function wldEpic(w: Wld, index: number, supervisorSize: SupervisorSize, aviLicen
     });
   }
 
+  // HCX migration (#443): the last stories of the domain, because the target
+  // networks (Tier-1 / VPC) and capacity have to exist before workloads move in.
+  if (w.hcx) {
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'HCX: deploy, pair and build the service mesh',
+      tasks: [
+        'Versions: VCF Operations HCX 9.x on BOTH sides. Upgrade or replace any HCX 4.x on the legacy side first: HCX 4.x crashes the vCenter 9.1 gateway (KB 450437), and 4.10.x / 4.11.x cannot pair with 9.x although the UI allows it (KB 427904). Check the legacy vSphere / NSX versions are within Technical Guidance in the Interoperability Matrix (product VCF Operations HCX). VMware Cloud on AWS pairings stay on HCX 4.x: settle them first.',
+        'Plan: DNS records for both HCX Managers, IP ranges for the Management / Uplink / vMotion / Replication network profiles on both sides, the uplink MTU between the sites, capacity for the IX / NE (+ HA standby) / WAN-OPT appliances, and the firewall flows (UDP 4500 from the legacy uplinks to the VCF 9.1 uplinks; full list on ports.broadcom.com).',
+        `Deploy the VCF 9.1-side HCX Manager from VCF Operations: Build → Lifecycle → VCF Instances → Binary Management (download VCF Operations HCX), then domain ${name} → Software Versions → Manage Components → VCF Operations HCX → Install.`,
+        'Deploy the legacy-side HCX Manager from the same OVA and version, and connect it to the legacy vCenter (and to NSX only to extend NSX networks). No licence key: it inherits the VCF licence through the service mesh (KB 440126); Evaluation Mode until then is expected.',
+        'From the legacy HCX Manager: site pair, network profiles and compute profiles on both sides, then the service mesh (NE count per switch, NE HA if wanted). All tunnels up and diagnostics clean.',
+      ],
+      acceptance: 'Both HCX Managers on the same 9.x version; site pair and service mesh up with all tunnels green; the legacy side shows the inherited VCF licence.',
+    });
+    stories.push({
+      id: `9.${stories.length + 1}`,
+      title: 'HCX: extend networks and migrate the workloads',
+      tasks: [
+        'Network extension: legacy vDS port groups or NSX segments in the default project only, to a Tier-1 or VPC subnet in the default project of this domain (user-created NSX projects are not supported, KB 378638). MON once the gateway design allows it.',
+        'Migration type per workload: Bulk (reboot at switchover), HCX vMotion (no downtime, one at a time, VM hardware version 9+), Replication Assisted vMotion (no downtime, in parallel; no vVols target), Cold, OS Assisted. Check hardware version, VMware Tools, EVC / CPU, RDMs and snapshots before each wave.',
+        'Proof of concept (extend two test networks, live-migrate, test L2 over the extension, reverse-migrate, bulk-migrate), then the waves with switchover windows; keep legacy capacity until each wave is signed off.',
+        'Cutover and decommission: unextend each network (the gateway moves to NSX), delete the service mesh, remove the site pair, retire the legacy HCX Manager; keep or remove the VCF-side HCX Manager and close the HCX firewall rules.',
+      ],
+      acceptance: 'All in-scope workloads running in this domain; extended networks unextended with their gateways on NSX; service mesh and site pair removed, or kept on purpose and documented.',
+    });
+  }
+
   return {
     id,
-    title: `Workload domain: ${name} — ${connectivityName(connectivity)}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${pais ? ' + Private AI Services' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}`,
+    title: `Workload domain: ${name} — ${connectivityName(connectivity)}${w.stretched ? ', stretched' : ''}${paif ? ' + Private AI Foundation' : gpu ? ' + GPU hosts' : ''}${pais ? ' + Private AI Services' : ''}${w.supervisor ? ` + Supervisor${w.supervisorLb === 'avi' ? ' (Avi LB)' : ''}` : ''}${w.hcx ? ' + HCX migration' : ''}`,
     owner: `Platform + Network${w.stretched ? ' + Storage' : ''}`,
     stories,
   };
@@ -1214,6 +1247,14 @@ const GD = {
   paifServices: guide('PAIF: Private AI Services', '33-private-ai-foundation', '9-private-ai-services'),
   bringupJson: guide('Bring-up JSON: generate, validate, review', '35-bringup-json'),
   bringupJsonValidate: guide('Bring-up JSON: validate before bring-up', '35-bringup-json', '6-validate-before-bring-up'),
+  hcx: guide('HCX migration from a legacy environment', '38-hcx-migration'),
+  hcxVersions: guide('HCX: check the fit and the versions', '38-hcx-migration', '1-check-the-fit-and-the-versions'),
+  hcxPlan: guide('HCX: plan IPs, DNS, networks, sizing, firewall', '38-hcx-migration', '3-plan-ips-dns-networks-sizing-firewall'),
+  hcxMesh: guide('HCX: site pair, profiles and service mesh', '38-hcx-migration', '7-site-pair-profiles-and-service-mesh'),
+  hcxExtend: guide('HCX: extend networks', '38-hcx-migration', '8-extend-networks'),
+  hcxTypes: guide('HCX: choose a migration type', '38-hcx-migration', '9-choose-a-migration-type-per-workload'),
+  hcxDecom: guide('HCX: decommission', '38-hcx-migration', '11-decommission-hcx'),
+  prereqHcx: guide('Prerequisites: HCX migration', 'prerequisites', 'hcx-migration-from-a-legacy-environment-only-if-in-scope'),
   paisStandalone: guide('PAIS without GPUs or the Quickstart', '33-private-ai-foundation', '91-without-gpus-or-without-the-quickstart'),
   prereqPaif: guide('Prerequisites: Private AI Foundation', 'prerequisites', 'private-ai-foundation-only-if-in-scope'),
   prereqGpu: guide('Prerequisites: GPU hosts', 'prerequisites', 'gpu-hosts-only-if-in-scope'),
@@ -1285,6 +1326,8 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E9', story: /^Private AI Services: dark-site staging/, guides: () => [GD.paifDarkHosts, GD.paifDarkArtifacts, GD.paifMirror] },
   { epic: 'E9', story: /^Private AI Services: VM classes and Harbor/, guides: () => [GD.paifVmClasses, GD.paifHarbor] },
   { epic: 'E9', story: /^Private AI Services: install and activate/, guides: () => [GD.paifServices] },
+  { epic: 'E9', story: /^HCX: deploy, pair/, guides: () => [GD.hcx, GD.prereqHcx, GD.hcxVersions, GD.hcxPlan, GD.hcxMesh] },
+  { epic: 'E9', story: /^HCX: extend networks/, guides: () => [GD.hcxExtend, GD.hcxTypes, GD.hcxDecom] },
   { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
   { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
   { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
@@ -1408,6 +1451,7 @@ export function coerceSelection(data: unknown): Selection | null {
           // Scopes saved before Private AI Services was its own option (#424) always
           // carried its story on a Private AI Foundation domain, so keep it there.
           pais: typeof w.pais === 'boolean' ? w.pais : w.gpu === 'paif',
+          hcx: bool(w.hcx, false),
         }))
     : base.wlds;
   return normalizeSelection({

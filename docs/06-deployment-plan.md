@@ -341,6 +341,28 @@ Guide: [`32-gpu-hosts.md`](32-gpu-hosts.md); prerequisites:
 [`prerequisites.md` → GPU hosts](prerequisites.md#gpu-hosts-only-if-in-scope).
 Like the Avi stories below, the GPU and Private AI Foundation stories are **numbered by selection**.
 
+**HCX migration (optional, per WLD, #443):** tick *HCX migration* on a
+workload domain (intake `H15`) when workloads move into it from a legacy
+vSphere or VCF environment. Two stories are appended at the end of that
+domain's epic, after everything the workloads need is in place:
+
+- **HCX: deploy, pair and build the service mesh** — VCF Operations HCX 9.x on
+  **both** sides (HCX 4.x breaks vCenter 9.1,
+  [KB 450437](https://knowledge.broadcom.com/external/article/450437/vmware-hcx-compatibility-and-upgrade-req.html),
+  and can't pair with 9.x,
+  [KB 427904](https://knowledge.broadcom.com/external/article/427904)), the
+  IP / DNS / network-profile / firewall plan, the VCF-side manager from VCF
+  Operations *Manage Components*, the legacy-side manager from the OVA (no
+  licence key: it inherits), site pair, profiles and service mesh.
+- **HCX: extend networks and migrate the workloads** — network extension (vDS or
+  NSX default project only, to a Tier-1 or VPC in the default project),
+  migration type per workload, proof of concept and waves, then unextend and
+  decommission.
+
+Guide: [`38-hcx-migration.md`](38-hcx-migration.md); prerequisites:
+[`prerequisites.md` → HCX migration](prerequisites.md#hcx-migration-from-a-legacy-environment-only-if-in-scope).
+Numbered by selection, like the other optional E9 stories.
+
 **vSphere Supervisor (optional, per WLD):** tick *Supervisor* in the
 [export tool](https://vcf-planning.hollebollevsan.nl/tools/deployment-plan/)
 to add an *Enable vSphere Supervisor* story to that WLD. Activation

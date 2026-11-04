@@ -15,6 +15,11 @@
 - Prerequisites gate, intake `H15` (+ mapping note on the hidden, legacy *Cross
   Cloud Mobility* workbook sheet), `docs/07` §G HCX flows, site nav entry,
   README and CLAUDE.md file tables.
+- **Deployment-plan export tool: *HCX migration* per workload domain (#443).**
+  Ticking it appends two stories at the end of that domain's epic: *HCX:
+  deploy, pair and build the service mesh* and *HCX: extend networks and
+  migrate the workloads*, linked to the new guide through `GUIDE_RULES`.
+  Described in `docs/06`; saved plans reload with the box off.
 
 ## v6.7.2 — 2026-11-02
 - **`docs/36` §8: the verify list is now specific (#442).** 25 numbered checks in
