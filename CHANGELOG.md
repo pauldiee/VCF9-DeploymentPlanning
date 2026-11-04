@@ -1,5 +1,26 @@
 # Changelog
 
+## v6.7.3 — 2026-11-04
+- **New `docs/38-hcx-migration.md`: HCX migration from a legacy environment
+  into VCF 9.1 (#443).** VCF Operations HCX 9.x on both sides (HCX 4.x crashes
+  vCenter 9.1's gateway, KB 450437, and 4.10.x / 4.11.x can't pair with 9.x
+  although the UI allows it, KB 427904), the upgrade hops from 4.x, deploying
+  the destination manager from VCF Operations (Manage Components, per domain)
+  and the legacy one from the OVA, licence inheritance on the legacy side (KB
+  440126 and the licensing KBs), network profiles, sizing and firewall flows,
+  site pair and service mesh, the 9.1 move from PhotonOS to NSX Edge-based
+  appliances (KB 449280), network extension (vDS, NSX default project only,
+  VPC subnets), migration types, waves and decommissioning. TechDocs-sourced,
+  not lab- or field-verified.
+- Prerequisites gate, intake `H15` (+ mapping note on the hidden, legacy *Cross
+  Cloud Mobility* workbook sheet), `docs/07` §G HCX flows, site nav entry,
+  README and CLAUDE.md file tables.
+- **Deployment-plan export tool: *HCX migration* per workload domain (#443).**
+  Ticking it appends two stories at the end of that domain's epic: *HCX:
+  deploy, pair and build the service mesh* and *HCX: extend networks and
+  migrate the workloads*, linked to the new guide through `GUIDE_RULES`.
+  Described in `docs/06`; saved plans reload with the box off.
+
 ## v6.7.2 — 2026-11-02
 - **`docs/36` §8: the verify list is now specific (#442).** 25 numbered checks in
   eight groups (transfer integrity, Harbor, images, Ubuntu mirror, drivers, VKr

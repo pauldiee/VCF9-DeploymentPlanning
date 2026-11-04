@@ -301,6 +301,14 @@ export const NAV: NavItem[] = [
     icon: 'file-lines',
     blurb: 'Getting logs into Log Management on VCF and VVF 9.1: whether your platform can run it, the deploy, which sources send on their own and which need an agent, agent secrets, and the firewall flows.',
   },
+  {
+    slug: '38-hcx-migration',
+    step: 'Day-2 operations',
+    band: 'Day-2 operations',
+    label: 'HCX Migration',
+    icon: 'truck-moving',
+    blurb: 'Moving workloads from a legacy vSphere or VCF environment into VCF 9.1 with VCF Operations HCX: versions on both sides, the deploy, licensing, service mesh, network extension and migration types.',
+  },
 
   // --- Reference: VVF / Standalone --------------------------------------------
   {
