@@ -188,6 +188,28 @@ below come from field experience and inference, and each row says which.
 
 ---
 
+## G. HCX migration — legacy site ↔ VCF 9.1 (only if in scope)
+
+> Only when workloads move in with VCF Operations HCX
+> ([`38-hcx-migration.md`](38-hcx-migration.md)). The legacy side always starts
+> the tunnels, so the inbound rules sit on the VCF 9.1 side. Full list:
+> [Ports and Protocols](https://ports.broadcom.com/), product *VCF Operations HCX*
+> (9.1.0 and 9.1.1 listings differ).
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| Legacy HCX Manager | VCF 9.1 HCX Manager | 443 | TCP | Site pairing |
+| Legacy IX / NE (uplink) | VCF 9.1 IX / NE (uplink) | 4500 | UDP | Tunnels (IKEv2) |
+| Legacy IX / NE | VCF 9.1 IX / NE | 4500-4628 → 4500 | UDP | Application Path Resiliency (optional) |
+| HCX Manager (each side) | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
+| HCX Manager (each side) | ESX | 80, 902 | TCP | Service mesh deployment |
+| HCX-IX | ESX vMotion IPs | 8000 | TCP | vMotion |
+| ESX | HCX-IX | 902, 31031, 32032 | TCP | Migration and replication |
+| VCF 9.1 HCX Manager | VCF Identity Broker, License Server | 443 | TCP | VCF SSO, licensing |
+| Management workstations | HCX Manager (each side) | 443, 9443, 22 | TCP | UI, appliance management, SSH |
+
+---
+
 ## Using this with the toolkit
 
 - The [firewall-request template](https://vcf-planning.hollebollevsan.nl/templates/firewall-request-plan.csv)

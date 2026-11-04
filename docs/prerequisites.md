@@ -693,6 +693,38 @@ order.* The full guide is
 > P&P workbook has no visible PAIF fields. TechDocs-sourced — not yet
 > field-verified in this repo.
 
+## HCX migration from a legacy environment (only if in scope)
+
+*When needed: **Day-N (if in scope)**, after the target workload domain exists.*
+Moving workloads in from an existing vSphere / VCF environment with VCF
+Operations HCX; the full guide is [`38-hcx-migration.md`](38-hcx-migration.md).
+
+- [ ] **HCX 9.x on both sides.** Any existing HCX 4.x is upgraded or replaced
+      first: HCX 4.x crashes vCenter 9.1's gateway
+      ([KB 450437](https://knowledge.broadcom.com/external/article/450437/vmware-hcx-compatibility-and-upgrade-req.html)),
+      and 4.10.x / 4.11.x can't pair with 9.x, with no warning in the UI
+      ([KB 427904](https://knowledge.broadcom.com/external/article/427904)).
+- [ ] **Legacy vSphere and NSX versions within Technical Guidance**, checked in
+      the [Interoperability Matrix](https://interopmatrix.broadcom.com/)
+      (product *VCF Operations HCX*).
+- [ ] **No VMware Cloud on AWS HCX pairing** on the legacy side, or a decision
+      on it: VMware Cloud on AWS stays on HCX 4.x (KB 450437).
+- [ ] **DNS records** (forward and reverse) for both HCX Managers, and **IP
+      ranges** for each network profile on both sides.
+- [ ] **Uplink MTU** between the sites known end to end.
+- [ ] **Firewall flows** open, incl. UDP 4500 from the legacy uplinks to the
+      VCF 9.1 uplinks (see [`07-firewall-ports.md`](07-firewall-ports.md) §G).
+- [ ] **Networks to extend** are on a vDS or in the NSX **default project**,
+      and their targets (Tier-1 or VPC) are in the default project too.
+- [ ] **Capacity** for the HCX appliances on both sides (IX, NE, HA standby NE,
+      optional WAN-OPT).
+
+> TechDocs: [VCF Operations HCX Installations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/getting-started-with-vmware-hcx-vcf-9-0/introduction-to-hcx-site-manager-deployments/hcx-connector-and-hcx-cloud-sites.html)
+> and [Software Version Requirements](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/preparing-for-hcx-installations/software-version-requirements.html).
+> The visible sheets of the official P&P workbook have no HCX fields (the 9.1
+> workbook keeps a **hidden**, legacy *Cross Cloud Mobility* sheet).
+> TechDocs-sourced — not yet field-verified in this repo.
+
 ## Network
 
 | Requirement                         | When needed                | Why                                                                  |
