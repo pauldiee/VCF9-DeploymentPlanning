@@ -1,5 +1,35 @@
 # Changelog
 
+## v6.7.9 — 2026-11-05
+- **`docs/39` §4.5: static routes for a replication network in its own subnet
+  (#452).** vSphere Replication runs only on the ESX default TCP/IP stack
+  ([KB 432747](https://knowledge.broadcom.com/external/article/432747/failure-to-isolate-vsphere-replication-t.html)),
+  so a routed replication subnet needs static routes: on every ESX host (both
+  sites, `esxcli` / PowerCLI `New-VMHostRoute`; no vSphere Client UI) and on
+  the appliance replication NIC (`systemd-networkd`, lost on upgrade,
+  [KB 384776](https://knowledge.broadcom.com/external/article/384776/no-connection-to-vr-server-for-virtual-m.html)).
+  Field-verified: *Override default gateway for this adapter* on the vmk did
+  not fix it. Plus a *Tags: which vmk replication uses* subsection (no P&R
+  setting picks a vmk; ESX uses the service tags), the fallback to vmk0, and an ESX Shell
+  verify block (`traceroute`, `vmkping` incl. MTU, `nc -z` on 32032,
+  `esxcli network ip connection list`).
+
+## v6.7.8 — 2026-11-05
+- **`docs/12`: MFA with Entra ID (#450).** New *MFA: enforce it in Entra, not
+  in VCF* block: Conditional Access policy steps
+  ([KB 429082](https://knowledge.broadcom.com/external/article?articleNumber=429082)),
+  what MFA doesn't cover (local accounts, SDDC Manager UI, ESX, API/CLI and
+  the 9.1 OAuth token support), keep a tested local login
+  ([KB 442644](https://knowledge.broadcom.com/external/article/442644/http-500-error-in-vcf-operations-90x-aft.html)).
+  Plus the 9.1.1 advice to re-import the broker SP metadata into the IdP.
+- **SSO links moved to the 9.1 doc set (#451).** Broadcom republished the SSO
+  section for 9.1 under *Managing Identity and Access Using VCF Single
+  Sign-On*; 21 links in `docs/01`, `02`, `05`, `06`, `12`, `prerequisites.md`
+  and `deployment-plan.ts` now point there (VCF Operations / Automation child
+  pages map to the merged *Join or Add VCF Components* page, role assignment
+  to *Assign a VCF Role*), and the "9.1 does not republish SSO" notes are
+  gone. All new URLs checked HTTP 200.
+
 ## v6.7.7 — 2026-11-05
 - **`docs/12`: Identity Broker with Microsoft Entra ID (#449).** New subsection
   under Step 2: OIDC vs SAML, SCIM vs JIT vs AD/LDAP provisioning, network
