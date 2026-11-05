@@ -37,7 +37,7 @@ inventory mappings, recovery plans, and testing, failover and failback.
 8. [Inventory mappings](#8-inventory-mappings)
 9. [Protection groups and recovery plans](#9-protection-groups-and-recovery-plans)
 10. [Test, migrate, recover, reprotect](#10-test-migrate-recover-reprotect)
-11. [Monitor](#11-monitor)
+11. [Monitor and back up the configuration](#11-monitor-and-back-up-the-configuration)
 12. [The management components: VCF Fleet Disaster Recovery](#12-the-management-components-vcf-fleet-disaster-recovery)
 13. [Upgrading from 9.0.x](#13-upgrading-from-90x)
 14. [Limits, caveats and known issues](#14-limits-caveats-and-known-issues)
@@ -348,7 +348,9 @@ same time (configmax).
 
 ---
 
-## 11. Monitor
+## 11. Monitor and back up the configuration
+
+### 11.1 Monitor
 
 VCF Operations has Protection and Recovery dashboards
 ([Protection and Recovery Dashboards][dash]) and management packs for the
@@ -363,6 +365,84 @@ replication (see the [release notes index][rnindex]). Watch for:
 plug-ins for protection and recovery and for vSphere Replication. New
 automation should use the **Protection and Recovery REST API Gateway** and the
 **DR REST plug-in** ([9.1 release notes][rn91]).
+
+### 11.2 Back up the configuration (export / import)
+
+The appliance has no built-in scheduled backup of its own configuration, the
+way SDDC Manager, vCenter or NSX do. What Broadcom gives you is the
+**Configuration Import/Export Tool** ([Exporting and Importing Protection and
+Recovery Configuration Data][impex]). It ships with the appliance in
+`/opt/vmware/impex` and is also available as a standalone `.jar`.
+
+**What it exports** (to one XML file): version and build, local and remote site
+names, inventory mappings, placeholder datastores, advanced settings, array
+managers with SRA information, protection groups, recovery plans, power-on and
+power-off settings and shutdown actions. **Not** in that file: the replications
+themselves. vSphere Replication has its own export tool
+(`/opt/vmware/vr-impex-tool`), see [Exporting and Importing Replication
+Configuration Data][vrimpex] (9.0.3 page; no 9.1 page found yet).
+
+**Prerequisites:**
+- **Export:** a working site pair, with the appliance up on both sites.
+- **Import:** a **clean** installation, registered with the same vCenter or one
+  with the same inventory. Import the vSphere Replication data **first**, then
+  the Protection and Recovery data.
+- **Standalone tool:** Java 21.0.x or later on 9.1 (the 9.0 docs say 11.0.x),
+  and `JAVA_HOME` set. Use a service account or SSO administrator credentials;
+  solution-user authentication is not supported.
+
+**Three ways to export:**
+
+| Route | How | Credentials |
+| ----- | --- | ----------- |
+| UI | vSphere Client → **Site Recovery** → **Open Site Recovery** → site pair → **View Details** → **Summary** → **Export/Import SRM Configuration** → **Export** → **Download** ([UI export][impexui]) | your session |
+| Script on the appliance | As root (`su`): `sh /opt/vmware/impex/bin/export.sh`, which writes to `/opt/vmware/impex/exports/` ([script export][impexscript]) | none (script generated during pairing) |
+| Standalone `.jar` | `java -jar import-export.jar --exportInteractive` (or `--export` with options, `--exportPath <dir>`) ([syntax][impexsyntax]) | service account or SSO admin |
+
+#### Automate it
+
+The export is manual by default, but the documented way to automate it is a
+**cron job on the appliance** that runs the same script
+([cron export][impexcron]). As root on the appliance:
+
+```bash
+su
+crontab -e
+# hourly, Broadcom's example:
+0 * * * * /usr/bin/sudo /bin/bash /opt/vmware/impex/bin/export.sh
+```
+
+Daily is usually enough; export after every recovery-plan change as well. Two
+things the cron job does **not** do for you:
+
+1. **Get the file off the appliance.** The exports land in
+   `/opt/vmware/impex/exports/` on the appliance you would be restoring. Copy
+   them somewhere else, for example a second cron line that `scp`s the newest
+   file to the SFTP backup target from [`08-backup-target.md`](08-backup-target.md),
+   or pull them from that server on a schedule.
+2. **Prune old files.** Add a cleanup (for example `find ... -mtime +14 -delete`)
+   so the exports directory doesn't fill the appliance disk.
+
+Run it on **both** sites: each appliance holds its own side of the pair. For
+vSphere Replication, schedule its tool the same way if you rely on it.
+
+> **Untested here.** The cron route is documented on the 9.0 pages; the 9.1
+> parent page describes the same tool in the same location. A cron entry or
+> extra script on the appliance may not survive an appliance upgrade or
+> redeploy, so check it after every upgrade. Test a restore (import into a
+> clean appliance) at least once.
+
+**Restore** (UI or standalone):
+- UI: on a clean appliance, **Summary** → **Export/Import SRM Configuration** →
+  **Import**, browse to the XML. If a stage fails, download the CSV report
+  ([UI import][impexuiimport]).
+- Standalone, from `/opt/vmware/impex`:
+  `java -jar import-export.jar --importInteractive --path <exported.xml>`.
+  By default it retries VM recovery settings 5 times with a 10 000 ms delay;
+  raise with `--delay` / `--retries` ([import][impeximport]).
+- **9.1 caveat:** the import applies the recovery settings of a protected VM
+  **only once**, even if the VM is in several recovery plans. Check those VMs
+  in every plan after an import ([9.1 release notes][rn91]).
 
 ---
 
@@ -461,6 +541,11 @@ protected VM against these:
 - [Disaster Recovery (Using Site Recovery)][usingsr], [Dashboards][dash]
 - [Protection and Recovery 9.1 release notes][rn91], [release notes index][rnindex]
 - [VCF Fleet Disaster Recovery][fleetdr]
+- Configuration export / import: [overview (9.1)][impex], [UI export][impexui],
+  [script export][impexscript], [cron export][impexcron],
+  [UI import][impexuiimport], [standalone import][impeximport],
+  [tool syntax][impexsyntax], [vSphere Replication export / import][vrimpex]
+  (child pages and vSphere Replication: 9.0 / 9.0.3 docs)
 - [configmax][configmax], [Ports and Protocols][ports],
   [Interoperability Matrix][interop], [Broadcom Compatibility Guide][bcg]
 
@@ -477,6 +562,14 @@ protected VM against these:
 [rn91]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/release-notes/protection-and-recovery-91-release-notes.html
 [rnindex]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/release-notes.html
 [fleetdr]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/vcf-fleet-disaster-recovery.html
+[impex]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/using-site-recovery/about-vmware-live-site-recovery-installation-and-configuration/overview/exporting-and-importing-site-recovery-manager-configuration-data.html
+[impexui]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/export-site-recovery-manager-configuration-data-by-using-the-user-interface.html
+[impexscript]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/export-site-recovery-manager-configuration-data-by-using-a-script.html
+[impexcron]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/export-site-recovery-manager-configuration-data-by-using-a-cron-job.html
+[impexuiimport]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/import-the-site-recovery-manager-configuration-data-through-the-user-interface.html
+[impeximport]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/import-site-recovery-manager-configuration-data.html
+[impexsyntax]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/syntax-of-the-import-export-tool.html
+[vrimpex]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0-3/using-vsphere-replication/exporting-and-importing-replication-groups.html
 [configmax]: https://configmax.broadcom.com/
 [ports]: https://ports.broadcom.com/
 [interop]: https://interopmatrix.broadcom.com/

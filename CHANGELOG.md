@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.7.6 — 2026-11-05
+- **`docs/39` §11.2: back up the Protection and Recovery configuration (#448).**
+  §11 becomes *Monitor and back up the configuration*. The Configuration
+  Import/Export Tool: what the XML holds (and that replications need the
+  separate vSphere Replication tool), prerequisites, the three export routes
+  (UI, `export.sh`, standalone `.jar`), automating it with Broadcom's cron
+  example plus copying exports off the appliance and pruning them, restore by
+  import, and the 9.1 "recovery settings imported once" caveat. Sourced from
+  the [9.1 overview page](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/using-site-recovery/about-vmware-live-site-recovery-installation-and-configuration/overview/exporting-and-importing-site-recovery-manager-configuration-data.html)
+  and the 9.0 child pages
+  ([cron export](https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/live-site-recovery/9-0/overview/exporting-and-importing-site-recovery-manager-configuration-data/export-site-recovery-manager-configuration-data-by-using-a-cron-job.html));
+  not lab-verified.
+
 ## v6.7.5 — 2026-11-05
 - **`docs/07` §C.1: overlay / TEP flows (#447).** Host TEP ⇄ Edge TEP and host
   TEP ⇄ host TEP, bidirectional: Geneve UDP 6081, BFD UDP 3784 + 4784, ICMP for
