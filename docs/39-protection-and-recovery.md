@@ -264,11 +264,33 @@ Then `systemctl restart systemd-networkd` and check with `ip r`. Add
 upgrades can drop these routes**: back them up before an upgrade and re-add
 them afterwards ([KB 384776][kb384776]).
 
-**Tags:** on the source hosts, tag the replication vmk *vSphere Replication*;
-on the target hosts, *vSphere Replication NFC* (or both on the same vmk)
-([source][vrsrc], [target][vrtgt]). If the tag is missing, replication falls
-back to vmk0 ([KB 384776][kb384776]). Since either site can become the source
-after reprotect, tag both services on both sites.
+#### Tags: which vmk replication uses
+
+There is no setting in Protection and Recovery that picks a vmk. **ESX picks
+it from the VMkernel service tags** (vSphere Client: *Host → Configure →
+VMkernel adapters → Edit → Enabled services*):
+
+| Site | Tag on the replication vmk | Effect |
+| ---- | -------------------------- | ------ |
+| Source (protected) | **vSphere Replication** | outgoing replication data leaves via this vmk ([source][vrsrc]) |
+| Target (recovery) | **vSphere Replication NFC** | incoming data is written to the datastore via this vmk ([target][vrtgt]) |
+
+- Tag **both** services on **both** sites: after reprotect the roles swap.
+- No tag means replication falls back to **vmk0** ([KB 384776][kb384776]).
+- The tag picks the **source vmk**; the routing table still picks the
+  **gateway**. Tag and route together, as above.
+- With enhanced replication (ESX to ESX, TCP 32032) the tags and routes are all
+  there is. For legacy replication, or to separate the appliance's own traffic,
+  give the appliance a second vNIC in the replication network (a third for NFC
+  only if you want) ([isolation page][vriso]), set that NIC's IP as the
+  address for incoming replication traffic in the appliance management
+  interface (`https://<appliance>:5480`; older vSphere Replication called the
+  field *IP Address for Incoming Storage Traffic*, the 9.1 label is not
+  checked here), and add its routes as shown above.
+- Changing tags or routes affects **new** sessions. Check with step 5 below
+  whether the local IP has moved to the replication vmk; if a replication
+  still shows vmk0, a pause/resume or a sync starts a new session (not tested
+  here, not in Broadcom's docs).
 
 **Verify from the ESX Shell** (SSH). The tools are standard in the ESX
 shell; option sets vary by build, so check `traceroute --help` / `nc -h`.

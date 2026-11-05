@@ -9,7 +9,8 @@
   the appliance replication NIC (`systemd-networkd`, lost on upgrade,
   [KB 384776](https://knowledge.broadcom.com/external/article/384776/no-connection-to-vr-server-for-virtual-m.html)).
   Field-verified: *Override default gateway for this adapter* on the vmk did
-  not fix it. Plus the tags per site, the fallback to vmk0, and an ESX Shell
+  not fix it. Plus a *Tags: which vmk replication uses* subsection (no P&R
+  setting picks a vmk; ESX uses the service tags), the fallback to vmk0, and an ESX Shell
   verify block (`traceroute`, `vmkping` incl. MTU, `nc -z` on 32032,
   `esxcli network ip connection list`).
 
