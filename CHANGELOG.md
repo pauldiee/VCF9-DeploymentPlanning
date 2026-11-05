@@ -1,5 +1,20 @@
 # Changelog
 
+## v6.7.5 — 2026-11-05
+- **`docs/07` §C.1: overlay / TEP flows (#447).** Host TEP ⇄ Edge TEP and host
+  TEP ⇄ host TEP, bidirectional: Geneve UDP 6081, BFD UDP 3784 + 4784, ICMP for
+  path MTU. Notes on the "ping works, tunnels DOWN" symptom, the Ports &
+  Protocols portal's Edge filter not showing 6081/4784, required routing
+  between the TEP subnets, MTU across the routed hop (set Edge TEP MTU before
+  Edge deploy), scan scope, gateway-firewall BFD drops, and verify commands.
+  Sourced from Broadcom KBs [455157](https://knowledge.broadcom.com/external/article/455157/edge-to-host-transport-node-overlay-tunn.html),
+  [379112](https://knowledge.broadcom.com/external/article/379112),
+  [428238](https://knowledge.broadcom.com/external/article/428238/nsx-bfd-session-remains-down-when-tep-en.html),
+  [429885](https://knowledge.broadcom.com/external/article/429885/cluster-bootstrap-fails-with-ssl_error_s.html),
+  [422523](https://knowledge.broadcom.com/external/article/422523/unable-to-change-mtu-on-edge-fpeth-inter.html),
+  [317750](https://knowledge.broadcom.com/external/article?articleNumber=317750);
+  not lab-verified.
+
 ## v6.7.4 — 2026-11-04
 - **New `docs/39-protection-and-recovery.md`: disaster recovery between two VCF
   9.1 sites with VCF Protection and Recovery (#444).** The licence decision
