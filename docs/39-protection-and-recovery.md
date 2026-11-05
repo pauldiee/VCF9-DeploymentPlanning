@@ -222,7 +222,7 @@ default gateway, so the traffic leaves via management
 
 | Where | Route to | Via | Notes |
 | ----- | -------- | --- | ----- |
-| Every ESX host, protected site | the recovery site's replication subnet (enhanced replication: ESX to ESX, TCP 32032; legacy: the vSphere Replication server) | the local replication gateway | the gateway must be in a subnet where the host has a vmk ([KB 308786][kb308786]) |
+| Every ESX host, protected site | the recovery site's ESX replication subnet **and** the recovery site's appliance replication IP (both TCP 32032) | the local replication gateway | the gateway must be in a subnet where the host has a vmk ([KB 308786][kb308786]); why both: see below |
 | Every ESX host, recovery site | the protected site's replication subnet | the local replication gateway | the reverse routes, for reprotect and failback ([isolation page][vriso]) |
 | Appliance replication NIC, both sites | the other site's ESX replication subnet(s) | the replication NIC's gateway | *"Source VRMS appliance must have routes for the target ESXi cluster"* and the reverse ([KB 384776][kb384776]); missing routes show as error 31031 ([KB 395034][kb395034]) |
 
@@ -251,6 +251,26 @@ management.
 default gateway ([KB 384776][kb384776]). Add routes in the NIC's
 `systemd-networkd` file ([Configure a Static Route on an Additional VM
 Network Adapter][vrroute], 9.0):
+
+**Enhanced replication talks to the appliance too.** The data goes ESX to ESX,
+but the source host's `hbr-agent` first **logs in to the recovery site's
+replication appliance on TCP 32032** (the *brokered server*). [KB
+393268][kb393268] shows it failing as *"Failed to login to brokered server:
+##.##.##.## : 32032"*, alongside *"Ensure ports 32032 are open between source
+and destination ESXI hosts"*. So a healthy **enhanced** replication has two
+kinds of 32032 sessions from a source host:
+
+| Session | What | Volume |
+| ------- | ---- | ------ |
+| source ESX → recovery-site **appliance** | login / brokering (control) | small |
+| source ESX → recovery-site **ESX** | the replication data | the bulk |
+
+A session to the appliance on 32032 is therefore **not** proof of legacy
+replication. Only appliance sessions and **no** sessions to recovery-site
+hosts means the data is not going host to host: either a legacy replication,
+or the host-to-host path is broken (32032 not open between the hosts, [KB
+392287][kb392287]; or a missing route). Legacy replication uses the
+appliance as the data target (31031, 32032).
 
 ```ini
 # /etc/systemd/network/10-eth1.network   (eth<N> = the replication NIC)
@@ -327,6 +347,14 @@ Reading the results:
 - In step 5, a local address equal to the **vmk0 IP** means replication still
   runs over management; after the route is in place it should be the
   replication vmk's IP.
+- Also in step 5, look at the **remote** addresses: for an enhanced
+  replication expect one to the recovery-site appliance (broker) **and**
+  ones to recovery-site ESX hosts (data). Test both paths:
+  `nc -zv -s <repl-vmk-ip> <recovery-esx-repl-ip> 32032` and the same to the
+  appliance's replication IP.
+
+[kb393268]: https://knowledge.broadcom.com/external/article/393268/unable-to-convert-legacy-replication-to.html
+[kb392287]: https://knowledge.broadcom.com/external/article/392287/error-while-moving-the-vm-from-legacy-re.html
 
 [vriso]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network.html
 [vrsrc]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network/set-up-a-vmkernel-adapter-for-vr-traffic-on-source.html
