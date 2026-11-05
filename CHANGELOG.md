@@ -1,5 +1,20 @@
 # Changelog
 
+## v6.7.7 — 2026-11-05
+- **`docs/12`: Identity Broker with Microsoft Entra ID (#449).** New subsection
+  under Step 2: OIDC vs SAML, SCIM vs JIT vs AD/LDAP provisioning, network
+  paths (outbound to Entra, SCIM inbound via the Entra provisioning agent),
+  Entra-side app + case-sensitive claims, the broker wizard, the `oid` unique
+  identifier, and gotchas (login as `userName@domain`, no `[]` in names,
+  secret expiry, break-glass, one IdP per broker, VCFA 9.1 `ssoFailure`).
+  `prerequisites.md` links to it. Sourced from the 9.0 TechDocs
+  [Entra ID pages](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id.html)
+  and KBs [431031](https://knowledge.broadcom.com/external/article/431031/login-to-vcenter-9x-with-entra-account-f.html),
+  [441704](https://knowledge.broadcom.com/external/article/441704/error-access-denied-when-using-microsoft.html),
+  [428509](https://knowledge.broadcom.com/external/article/428509/entra-id-scim-provisioning-fails-with-er.html),
+  [419641](https://knowledge.broadcom.com/external/article/419641/first-name-and-last-name-shows-empty-for.html)
+  and others; not lab-verified.
+
 ## v6.7.6 — 2026-11-05
 - **`docs/39` §11.2: back up the Protection and Recovery configuration (#448).**
   §11 becomes *Monitor and back up the configuration*. The Configuration
