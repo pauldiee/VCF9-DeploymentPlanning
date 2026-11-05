@@ -30,7 +30,7 @@ inventory mappings, recovery plans, and testing, failover and failback.
 1. [Decide the licence: replication only, or orchestrated DR](#1-decide-the-licence)
 2. [Names, then and now](#2-names-then-and-now)
 3. [Choose the topology and the replication type](#3-choose-the-topology-and-the-replication-type)
-4. [Plan: IPs, DNS, capacity, networks, firewall](#4-plan-ips-dns-capacity-networks-firewall)
+4. [Plan: IPs, DNS, capacity, networks, firewall](#4-plan-ips-dns-capacity-networks-firewall) (incl. [static routes for a routed replication subnet](#45-a-replication-network-in-its-own-subnet-static-routes))
 5. [Deploy the appliance on both sites](#5-deploy-the-appliance-on-both-sites)
 6. [Pair the sites](#6-pair-the-sites)
 7. [Configure replication](#7-configure-replication)
@@ -195,6 +195,90 @@ Enhanced replication sends the data **from the protected site's ESX hosts
 straight to the recovery site's ESX hosts**. The rule you most often need to
 request is therefore between the two sites' ESX networks, not to an appliance.
 Add these flows to [`07-firewall-ports.md`](07-firewall-ports.md) §H.
+
+### 4.5 A replication network in its own subnet: static routes
+
+If replication runs over its own VLAN and subnet at each site, and the two
+sites' replication subnets are **different and routed**, you need static
+routes. Tagging the VMkernel adapter is not enough.
+
+**Why:** vSphere Replication runs only on the ESX **default TCP/IP stack**.
+*"You cannot enable the vSphere Replication traffic on a custom TCP/IP stack
+on the ESXi host"* ([Isolating the Network Traffic of vSphere
+Replication][vriso], 9.0; [KB 432747][kb432747]). The default stack has **one**
+default gateway, normally the management gateway. The *vSphere Replication* /
+*vSphere Replication NFC* tag says which vmk the service uses; it does not
+change routing. A destination outside the local replication subnet goes to the
+default gateway, so the traffic leaves via management
+([KB 430898][kb430898]). Broadcom's answer is tagging **and** static routes
+([KB 432747][kb432747]).
+
+> **Field-verified:** setting **Override default gateway for this adapter** on
+> the replication vmk (VMkernel adapter → Edit → IPv4 settings) did **not**
+> fix it; replication still needed static routes. Broadcom doesn't mention
+> that option for replication either.
+
+**Where the routes go:**
+
+| Where | Route to | Via | Notes |
+| ----- | -------- | --- | ----- |
+| Every ESX host, protected site | the recovery site's replication subnet (enhanced replication: ESX to ESX, TCP 32032; legacy: the vSphere Replication server) | the local replication gateway | the gateway must be in a subnet where the host has a vmk ([KB 308786][kb308786]) |
+| Every ESX host, recovery site | the protected site's replication subnet | the local replication gateway | the reverse routes, for reprotect and failback ([isolation page][vriso]) |
+| Appliance replication NIC, both sites | the other site's ESX replication subnet(s) | the replication NIC's gateway | *"Source VRMS appliance must have routes for the target ESXi cluster"* and the reverse ([KB 384776][kb384776]); missing routes show as error 31031 ([KB 395034][kb395034]) |
+
+**ESX hosts.** The vSphere Client has no screen for host static routes (only
+the stack's default gateway, which would move management too). Use `esxcli`
+or PowerCLI:
+
+```bash
+# per host
+esxcli network ip route ipv4 add -n 172.28.20.0/24 -g 172.27.20.1
+esxcli network ip route ipv4 list
+vmkping -I vmk3 172.28.20.11      # replication vmk -> remote host's replication vmk
+```
+
+```powershell
+# whole cluster (PowerCLI)
+Get-Cluster sfo-w01-cl01 | Get-VMHost |
+  New-VMHostRoute -Destination 172.28.20.0 -PrefixLength 24 -Gateway 172.27.20.1 -Confirm:$false
+```
+
+Routes are per host: add them to your host-prep for every host you add later
+(cluster expansion, host replacement), or new hosts replicate over
+management.
+
+**Appliance.** The appliance management interface (VAMI) supports only one
+default gateway ([KB 384776][kb384776]). Add routes in the NIC's
+`systemd-networkd` file ([Configure a Static Route on an Additional VM
+Network Adapter][vrroute], 9.0):
+
+```ini
+# /etc/systemd/network/10-eth1.network   (eth<N> = the replication NIC)
+[Route]
+Gateway=172.27.20.1
+Destination=172.28.20.0/24
+```
+
+Then `systemctl restart systemd-networkd` and check with `ip r`. Add
+`GatewayOnLink=yes` in `[Route]` if the route doesn't validate. **Appliance
+upgrades can drop these routes**: back them up before an upgrade and re-add
+them afterwards ([KB 384776][kb384776]).
+
+**Tags:** on the source hosts, tag the replication vmk *vSphere Replication*;
+on the target hosts, *vSphere Replication NFC* (or both on the same vmk)
+([source][vrsrc], [target][vrtgt]). If the tag is missing, replication falls
+back to vmk0 ([KB 384776][kb384776]). Since either site can become the source
+after reprotect, tag both services on both sites.
+
+[vriso]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network.html
+[vrsrc]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network/set-up-a-vmkernel-adapter-for-vr-traffic-on-source.html
+[vrtgt]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network/set-up-a-vmkernel-adapter-for-vr-traffic-on-target.html
+[vrroute]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network/configure-a-static-route-on-an-additional-vm-network-adapter.html
+[kb308786]: https://knowledge.broadcom.com/external/article/308786/configuring-static-routes-for-vmkernel-p.html
+[kb384776]: https://knowledge.broadcom.com/external/article/384776/no-connection-to-vr-server-for-virtual-m.html
+[kb395034]: https://knowledge.broadcom.com/external/article/395034/no-connection-to-vr-server-unknown.html
+[kb430898]: https://knowledge.broadcom.com/external/article/430898
+[kb432747]: https://knowledge.broadcom.com/external/article/432747/failure-to-isolate-vsphere-replication-t.html
 
 ---
 

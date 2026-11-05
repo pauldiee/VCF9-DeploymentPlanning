@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.7.9 — 2026-11-05
+- **`docs/39` §4.5: static routes for a replication network in its own subnet
+  (#452).** vSphere Replication runs only on the ESX default TCP/IP stack
+  ([KB 432747](https://knowledge.broadcom.com/external/article/432747/failure-to-isolate-vsphere-replication-t.html)),
+  so a routed replication subnet needs static routes: on every ESX host (both
+  sites, `esxcli` / PowerCLI `New-VMHostRoute`; no vSphere Client UI) and on
+  the appliance replication NIC (`systemd-networkd`, lost on upgrade,
+  [KB 384776](https://knowledge.broadcom.com/external/article/384776/no-connection-to-vr-server-for-virtual-m.html)).
+  Field-verified: *Override default gateway for this adapter* on the vmk did
+  not fix it. Plus the tags per site and the fallback to vmk0.
+
 ## v6.7.8 — 2026-11-05
 - **`docs/12`: MFA with Entra ID (#450).** New *MFA: enforce it in Entra, not
   in VCF* block: Conditional Access policy steps
