@@ -36,7 +36,7 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 | - | ------- | ----------- |
 | 1 | [Overview — what federates and what doesn't](#1-overview--what-federates-and-what-doesnt) | Deciding what this page will actually change for each product |
 | 2 | [Step 1 — Deployment mode](#step-1--deployment-mode) | Embedded vs. appliance-mode broker |
-| 3 | [Step 2 — Configure the identity provider](#step-2--configure-the-identity-provider) | Pointing the broker at AD/LDAP; [on-demand lookup (9.1.1+)](#pre-provisioning-or-on-demand-lookup-911) and [getting the LDAPS certificate](#ldaps--the-domain-controller-certificate-and-the-pem-root-ca) |
+| 3 | [Step 2 — Configure the identity provider](#step-2--configure-the-identity-provider) | Pointing the broker at AD/LDAP; [on-demand lookup (9.1.1+)](#pre-provisioning-or-on-demand-lookup-911), [getting the LDAPS certificate](#ldaps--the-domain-controller-certificate-and-the-pem-root-ca) and [Microsoft Entra ID](#microsoft-entra-id-instead-of-adldap) |
 | 4 | [Step 3 — Federate vCenter and NSX](#step-3--federate-vcenter-and-nsx) | Both need an explicit click — neither auto-configures |
 | 5 | [Step 4 — Federate VCF Operations and VCF Automation](#step-4--federate-vcf-operations-and-vcf-automation) | Both need an explicit connect step |
 | 6 | [Step 5 — Federate everything else](#step-5--federate-everything-else) | Supervisor, Log Management, and the unsettled VCF Operations for Networks question |
@@ -281,6 +281,145 @@ a new key, update the certificate in the directory configuration **before**
 the DCs switch. Otherwise every AD login fails at once (see
 [§8](#8-verification--troubleshooting)). Firewall: management → DCs on TCP 636
 and, with Global Catalog, 3269 ([`07-firewall-ports.md`](07-firewall-ports.md)).
+
+### Microsoft Entra ID instead of AD/LDAP
+
+The wizard above is the AD/LDAP path. With **Microsoft Entra ID** the broker
+federates to a cloud IdP instead of binding to a domain controller. On **Choose
+Identity Provider** you pick **Microsoft Entra ID**, then make two separate
+choices: the **authentication protocol** and the **user/group provisioning
+method**.
+
+> **Evidence level:** TechDocs (the 9.0 SSO pages, still the newest
+> published, last updated 2026-11-02) and Broadcom KBs, read 2026-11-05.
+> **Not lab- or field-verified in this repo.**
+
+#### Decide: protocol and provisioning
+
+| Choice | Options | Our take |
+| ------ | ------- | -------- |
+| Authentication protocol | **OIDC** or **SAML 2.0** ([Entra ID as IdP][entra]) | OIDC is the path most Entra KBs describe; pick SAML only if your Entra team standardises on it |
+| Provisioning | **SCIM 2.0** (Entra pushes users and groups), **JIT** (created at first login from the token), or **AD/LDAP** (sync from an on-prem AD that Entra also syncs from) ([protocols][protocols]) | See below |
+
+- **SCIM**: users and groups exist in the broker **before** anyone logs in, so
+  you can assign roles to Entra groups up front. vCenter needs the user
+  provisioned: a user who authenticates in Entra but wasn't pushed fails with
+  *Access denied*, including when SCIM is scoped to a group and that member
+  hasn't been pushed yet ([KB 451058][kb451058], written for AVS, same
+  mechanism). Entra's SCIM push has to **reach** the broker / vCenter
+  endpoint. For an internal endpoint that means the **Entra provisioning
+  agent** on a Windows Server on-prem, which must resolve the FQDN, **trust
+  your internal CA**, and bypass any web proxy for it ([KB 428509][kb428509]).
+- **JIT**: no inbound path from Entra needed. Users and groups appear only
+  after a first login, unless you **pre-provision the groups** in the wizard
+  (*Groups Pre-Provisioning*). Only pre-provisioned groups can be used for
+  role assignments before first login ([protocols][protocols]).
+- **AD/LDAP with Entra login**: if your Entra tenant is synced from on-prem
+  AD anyway, provisioning from AD keeps group sync independent of Entra. The
+  OIDC **unique identifier** must then match the AD value exactly
+  ([OIDC page][entraoidc]).
+
+#### Network: the broker needs Entra, Entra may need the broker
+
+- The broker (or vCenter, in embedded mode) talks **outbound** to
+  `login.microsoftonline.com:443` for the OIDC token exchange (visible in the
+  log excerpt of [KB 431031][kb431031]). Plan internet egress or a proxy. In
+  **appliance mode** without direct internet access you must set up an HTTP
+  proxy ([KB 393078][kb393078], linked from the [OIDC page][entraoidc]). On
+  VCF Operations **9.0.2** the broker's proxy script has a known defect
+  ([KB 436607][kb436607]).
+- SCIM needs the inbound path described above. JIT does not.
+- SAML: if the metadata URL isn't publicly reachable, or its certificate isn't
+  signed by a recognised CA, paste the metadata **XML** instead
+  ([SAML page][entrasaml]).
+
+#### Entra side
+
+1. Create the application in Entra: an **app registration** for OIDC. For
+   SAML, Broadcom links to Microsoft's
+   [Register a SAML app](https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-register-saml-app),
+   which is an External ID page, so check that it fits a workforce tenant.
+2. Use the **Redirect URI** (OIDC) or **Entity ID / ACS URL** (SAML) that the
+   broker wizard shows you; don't type them by hand. Use FQDNs, not IPs (see
+   [§9](#9-field-notes)).
+3. Add the claims the broker expects. They are **case-sensitive**:
+   - OIDC: `preferred_username`, `email`, `family_name`, `given_name`,
+     `groups`, `domain` ([OIDC page][entraoidc])
+   - SAML: `userName`, `email`, `domain`, `firstName`, `lastName`, `groups`,
+     plus group claims ([SAML page][entrasaml])
+   - With JIT, add `given_name` and `family_name` as **optional claims**
+     (Token configuration → ID token), or users show up with blank names
+     ([KB 419641][kb419641]).
+4. Note the **client ID**, the **client secret** and the OpenID configuration
+   address. The secret **expires** in Entra; put its expiry date in your
+   operations calendar, because an expired secret stops every federated
+   login.
+5. For SCIM: after the broker wizard, create the provisioning in Entra with
+   the **SCIM URL + bearer token** (or OAuth client ID / secret / token
+   endpoint) that the wizard shows on *Configure SCIM push in your identity
+   provider*. Push `userName` and `domain` as separate attributes
+   ([OIDC page][entraoidc]). You can regenerate the SCIM values later under
+   the VCF instance → **Identity Source** → *Directory Information*.
+
+#### Broker side
+
+Same place as AD/LDAP (VCF Operations → Fleet Management → Identity & Access):
+**Choose Identity Provider → Microsoft Entra ID → Configure → OIDC or SAML →**
+display name, client ID, secret, OpenID address, redirect URI (OIDC) or
+metadata, Name ID format/value (SAML) **→ provisioning method → Review →
+Finish → SCIM push values → Done → Finish Setup**. Then follow Steps 3–6
+below, as for AD.
+
+**Set the unique identifier to `oid`.** Entra identifies a user by the
+Object ID in the `oid` claim. With `sub` (or `email`, or a SCIM `externalId`
+mapped to `mailNickname`), authentication succeeds in Entra but VCF answers
+*"Access denied. Unable to authenticate the user"* ([KB 431031][kb431031],
+[KB 412511][kb412511], [KB 441704][kb441704]). KB 441704's fix is to reset
+and reconfigure SSO, so get this right the first time.
+
+#### Gotchas specific to Entra
+
+- **Login name:** users sign in as `userName@domain` as configured in the
+  broker, not with an email address that differs from it
+  ([KB 393150][kb393150]).
+- **No `[` `]` in names:** square brackets in display names or attributes
+  aren't supported in 9.0.x and 9.1 and can break authentication
+  ([KB 441704][kb441704]). Other special characters, such as `#` in
+  usernames, aren't allowed either ([SAML page][entrasaml]).
+- **MFA / Conditional Access** are enforced by Entra at sign-in; the broker
+  only sees the result. Broadcom documents nothing specific about them, so
+  test your Conditional Access policies (device compliance, location) from
+  the admin workstations before go-live.
+- **Entra unreachable means no federated login.** Keep the local break-glass
+  accounts (`administrator@vsphere.local`, `admin` on NSX, the VCF
+  Operations local admin) documented and tested. The **SDDC Manager UI**
+  takes local accounts only, and **ESX** is not federated at all
+  ([points to consider][ptc]).
+- **One IdP per broker** ([protocols][protocols]). Entra plus a separate AD
+  for other admins needs a second broker.
+- **Moving from an existing vCenter Entra federation:** in embedded mode the
+  existing OIDC configuration is imported (as OIDC + SCIM); in appliance mode
+  you re-enter the shared secret, and users and groups must be provisioned
+  again ([OIDC page][entraoidc], [points to consider][ptc]).
+- **VCF Automation 9.1:** logins via the broker end at `/login/ssoFailure`
+  unless VCF SSO is joined and configured from VCF Operations
+  ([KB 451738][kb451738]).
+
+[entra]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id.html
+[entraoidc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id/configure-identity-provider-for-microsoft-entra-id-for-oidc.html
+[entrasaml]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id/configure-identity-provider-for-microsoft-entra-id-using-saml.html
+[protocols]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/protocols-suported-for--sso.html
+[ptc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/points-to-consider-while-setting-up-vmware-cloud-foundation-sso.html
+[kb393150]: https://knowledge.broadcom.com/external/article/393150/vcf-sso-login-requires-upndomain.html
+[kb393078]: https://knowledge.broadcom.com/external/article/393078
+[kb412511]: https://knowledge.broadcom.com/external/article/412511/microsoft-entra-sso-with-oidc-and-scim-d.html
+[kb419641]: https://knowledge.broadcom.com/external/article/419641/first-name-and-last-name-shows-empty-for.html
+[kb428509]: https://knowledge.broadcom.com/external/article/428509/entra-id-scim-provisioning-fails-with-er.html
+[kb431031]: https://knowledge.broadcom.com/external/article/431031/login-to-vcenter-9x-with-entra-account-f.html
+[kb436607]: https://knowledge.broadcom.com/external/article/436607/vcf-identity-broker-proxy-configuration.html
+[kb441704]: https://knowledge.broadcom.com/external/article/441704/error-access-denied-when-using-microsoft.html
+[kb451058]: https://knowledge.broadcom.com/external/article/451058/vcenter-oidc-access-denied-troubleshooti.html
+[kb451738]: https://knowledge.broadcom.com/external/article/451738/authentication-failure-in-vcfa-91-when-u.html
 
 ---
 

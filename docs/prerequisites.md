@@ -1157,7 +1157,8 @@ identity source up front; it has specific inputs and well-known gotchas.
   will quietly stop group updates.
 
 > Other supported identity sources: **OpenLDAP**, and external IdPs — **Microsoft
-> Entra ID** (OIDC / SAML) and **AD FS**. Those need different prep; see Broadcom's
+> Entra ID** (OIDC / SAML) and **AD FS**. Those need different prep (for Entra ID,
+> see [`12-sso-configuration.md`](12-sso-configuration.md#microsoft-entra-id-instead-of-adldap)); see Broadcom's
 > [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html)
 > (per-IdP sub-pages) and [Configure Active Directory as an Identity Provider
 > Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)
