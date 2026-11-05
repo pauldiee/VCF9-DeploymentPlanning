@@ -489,7 +489,7 @@ same shape.
 | Users to pre-create           | per *Active Directory Inputs* sheet            |
 
 > TechDocs: AD is bound fleet-wide via the VCF Identity Broker —
-> [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html);
+> [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html);
 > prep details + gotchas in [`prerequisites.md`](prerequisites.md#identity-source-for-the-vcf-identity-broker).
 
 ---

@@ -1,5 +1,21 @@
 # Changelog
 
+## v6.7.8 — 2026-11-05
+- **`docs/12`: MFA with Entra ID (#450).** New *MFA: enforce it in Entra, not
+  in VCF* block: Conditional Access policy steps
+  ([KB 429082](https://knowledge.broadcom.com/external/article?articleNumber=429082)),
+  what MFA doesn't cover (local accounts, SDDC Manager UI, ESX, API/CLI and
+  the 9.1 OAuth token support), keep a tested local login
+  ([KB 442644](https://knowledge.broadcom.com/external/article/442644/http-500-error-in-vcf-operations-90x-aft.html)).
+  Plus the 9.1.1 advice to re-import the broker SP metadata into the IdP.
+- **SSO links moved to the 9.1 doc set (#451).** Broadcom republished the SSO
+  section for 9.1 under *Managing Identity and Access Using VCF Single
+  Sign-On*; 21 links in `docs/01`, `02`, `05`, `06`, `12`, `prerequisites.md`
+  and `deployment-plan.ts` now point there (VCF Operations / Automation child
+  pages map to the merged *Join or Add VCF Components* page, role assignment
+  to *Assign a VCF Role*), and the "9.1 does not republish SSO" notes are
+  gone. All new URLs checked HTTP 200.
+
 ## v6.7.7 — 2026-11-05
 - **`docs/12`: Identity Broker with Microsoft Entra ID (#449).** New subsection
   under Step 2: OIDC vs SAML, SCIM vs JIT vs AD/LDAP provisioning, network

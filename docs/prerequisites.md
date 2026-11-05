@@ -1159,11 +1159,11 @@ identity source up front; it has specific inputs and well-known gotchas.
 > Other supported identity sources: **OpenLDAP**, and external IdPs — **Microsoft
 > Entra ID** (OIDC / SAML) and **AD FS**. Those need different prep (for Entra ID,
 > see [`12-sso-configuration.md`](12-sso-configuration.md#microsoft-entra-id-instead-of-adldap)); see Broadcom's
-> [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html)
+> [Configure an Identity Provider](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider.html)
 > (per-IdP sub-pages) and [Configure Active Directory as an Identity Provider
-> Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)
-> on TechDocs. These are deliberately the **9.0** pages — the 9.1 doc set does
-> not republish the SSO setup section, so 9.0 is the newest published version.
+> Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)
+> on TechDocs (9.1 doc set; Broadcom republished the SSO section for 9.1 under
+> *Managing Identity and Access Using VCF Single Sign-On*).
 
 Once this prep is done, the actual configuration — the identity-provider
 wizard, federating vCenter/NSX/VCF Operations/VCF Automation/Supervisor/Log

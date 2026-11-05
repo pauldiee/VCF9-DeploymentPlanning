@@ -172,7 +172,7 @@ Ticking **Encrypted Connection** turns on LDAPS *"for all the connections to
 this directory"*, and the wizard then asks for *"the root certificate(s)
 required to access the domain controllers over SSL"*, in **PEM** with the
 `BEGIN CERTIFICATE` / `END CERTIFICATE` lines
-([Configure Active Directory as an Identity Provider Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)).
+([Configure Active Directory as an Identity Provider Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html)).
 With DNS Server Location, one field takes all root certificates (they're merged
 into `{directory-name}-concatenated.pem`). With a primary/secondary DC, each DC
 has its own certificate field. Two things have to be true: the DCs actually
@@ -290,8 +290,8 @@ Identity Provider** you pick **Microsoft Entra ID**, then make two separate
 choices: the **authentication protocol** and the **user/group provisioning
 method**.
 
-> **Evidence level:** TechDocs (the 9.0 SSO pages, still the newest
-> published, last updated 2026-11-02) and Broadcom KBs, read 2026-11-05.
+> **Evidence level:** TechDocs (the 9.0 SSO pages, re-checked against the
+> 9.1 set, both last updated 2026-11-02) and Broadcom KBs, read 2026-11-05.
 > **Not lab- or field-verified in this repo.**
 
 #### Decide: protocol and provisioning
@@ -377,6 +377,48 @@ mapped to `mailNickname`), authentication succeeds in Entra but VCF answers
 [KB 412511][kb412511], [KB 441704][kb441704]). KB 441704's fix is to reset
 and reconfigure SSO, so get this right the first time.
 
+#### MFA: enforce it in Entra, not in VCF
+
+VCF has no MFA setting of its own. The broker hands authentication to the IdP,
+so MFA is whatever Entra demands at sign-in. For vCenter federated to Entra,
+Broadcom puts it plainly: MFA *"cannot be enabled directly within the vSphere
+Client. Instead, it must be configured at the external Identity Provider level
+using Conditional Access Policies"*. Without such a policy, users are simply
+not prompted ([KB 429082][kb429082]).
+
+1. In the Microsoft Entra admin center (at least *Conditional Access
+   Administrator*): **Entra ID → Conditional Access → Create new policy**.
+2. **Users:** the VCF admin groups (start with a pilot group). Exclude your
+   Entra emergency-access accounts.
+3. **Target resources:** the app registration (OIDC) or enterprise app (SAML)
+   you created for the **broker**. KB 429082 targets the vCenter app
+   registration because it predates the broker; with the broker, the one app
+   covers every federated component (our reading, not stated by Broadcom).
+4. **Grant → Require multifactor authentication** (or an authentication
+   strength). Start in **Report-only**, check the sign-in logs, then switch on.
+
+**What MFA does not cover**, so secure it another way (vault, rotation,
+monitoring):
+
+- local accounts: `administrator@vsphere.local`, NSX `admin`, the VCF
+  Operations local admin, appliance `root`
+- the **SDDC Manager UI** (local accounts only) and **ESX** (not federated)
+  ([points to consider][ptc])
+- API / CLI automation: an interactive MFA prompt can't be answered by a
+  script. Plan service accounts and the 9.1
+  [OAuth token support for API and CLI access][oauth] before you switch a
+  policy on, so it doesn't break scheduled jobs.
+
+**Keep a tested local way in.** [KB 442644][kb442644] (VCF Operations 9.0.x,
+embedded broker, Duo MFA through vCenter SSO, ELM) ends in an HTTP 500
+redirect loop with no option to log in as the VCF Operations local admin.
+Different IdP, same lesson: know how to reach each product's local login
+before you enforce MFA.
+
+[kb429082]: https://knowledge.broadcom.com/external/article?articleNumber=429082
+[kb442644]: https://knowledge.broadcom.com/external/article/442644/http-500-error-in-vcf-operations-90x-aft.html
+[oauth]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/administration-sdks-cli-and-tools/about-vmware-cloud-foundation-development/oauth-token-support-for-api-and-cli-access.html
+
 #### Gotchas specific to Entra
 
 - **Login name:** users sign in as `userName@domain` as configured in the
@@ -401,15 +443,19 @@ and reconfigure SSO, so get this right the first time.
   existing OIDC configuration is imported (as OIDC + SCIM); in appliance mode
   you re-enter the shared secret, and users and groups must be provisioned
   again ([OIDC page][entraoidc], [points to consider][ptc]).
+- **After upgrading to 9.1.1 (SAML):** re-import the broker's service
+  provider metadata into Entra. Broadcom recommends it so the IdP *"reads the
+  new encryption hint and switches to SHA-256 OAEP for all subsequent SAML
+  assertion encryption"* ([SAML page][entrasaml]).
 - **VCF Automation 9.1:** logins via the broker end at `/login/ssoFailure`
   unless VCF SSO is joined and configured from VCF Operations
   ([KB 451738][kb451738]).
 
-[entra]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id.html
-[entraoidc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id/configure-identity-provider-for-microsoft-entra-id-for-oidc.html
-[entrasaml]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id/configure-identity-provider-for-microsoft-entra-id-using-saml.html
-[protocols]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/protocols-suported-for--sso.html
-[ptc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/points-to-consider-while-setting-up-vmware-cloud-foundation-sso.html
+[entra]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id.html
+[entraoidc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id/configure-identity-provider-for-microsoft-entra-id-for-oidc.html
+[entrasaml]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-identity-provider-using-microsoft-entra-id/configure-identity-provider-for-microsoft-entra-id-using-saml.html
+[protocols]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/protocols-suported-for--sso.html
+[ptc]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/points-to-consider-while-setting-up-vmware-cloud-foundation-sso.html
 [kb393150]: https://knowledge.broadcom.com/external/article/393150/vcf-sso-login-requires-upndomain.html
 [kb393078]: https://knowledge.broadcom.com/external/article/393078
 [kb412511]: https://knowledge.broadcom.com/external/article/412511/microsoft-entra-sso-with-oidc-and-scim-d.html
@@ -686,18 +732,20 @@ table; not yet exercised end-to-end in this repo.
   (§6), that VCF Roles is the actual mechanism granting vCenter and NSX
   access — not merely per-product logins (§3, §6), and that **vCenter needs
   its own explicit click same as NSX — it does not auto-configure** (§1, §3).
-- TechDocs (the 9.1 doc set does not republish the SSO setup section, so
-  these are the newest published pages — 9.0 is current for this workflow):
-  [Setting Up SSO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso.html),
-  [Configure Active Directory as an Identity Provider Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html),
-  [Configure VCF SSO for NSX and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/connect-components.html),
-  [Configure VCF SSO for the Operations and Automation Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso-for-the-operations-and-automation-appliance(1).html)
+- TechDocs (9.1 doc set, *Managing Identity and Access Using VCF Single
+  Sign-On*; until late 2026 only the 9.0 set had these pages — the VCF
+  Operations / Automation child pages are merged into one *Join or Add VCF
+  Components* page in 9.1):
+  [Setting Up SSO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso.html),
+  [Configure Active Directory as an Identity Provider Using AD/LDAP](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/cofigure-vmware-cloud-foundation-identity-provider/configure-vmware-cloud-foundation-identity-provider-for-ad-ldap(2).html),
+  [Configure VCF SSO for NSX and vCenter](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/connect-components.html),
+  [Configure VCF SSO for the Operations and Automation Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso-for-the-operations-and-automation-appliance(1).html)
   (with per-product child pages for
-  [VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso-for-the-operations-and-automation-appliance(1)/configure-vmware-cloud-foundation-sso-for-operations-appliance.html)
+  [VCF Operations](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso-for-the-operations-and-automation-appliance(1)/join-or-add-vcf-components-to-vcf-single-sign-on.html)
   and
-  [VCF Automation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso-for-the-operations-and-automation-appliance(1)/configure-vmware-cloud-foundation-sso-for-the--automation-appliance.html)),
-  [Configure VCF SSO as a Client for Other Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso--as-a-client-for-other-components.html),
-  [Assigning Roles and Permissions](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/setting-up-sso/assigning-roles-and-permissions.html),
+  [VCF Automation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso-for-the-operations-and-automation-appliance(1)/join-or-add-vcf-components-to-vcf-single-sign-on.html)),
+  [Configure VCF SSO as a Client for Other Components](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/configure-vmware-cloud-foundation-sso--as-a-client-for-other-components.html),
+  [Assigning Roles and Permissions](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/setting-up-sso/assign-a-vcf-role.html),
   [VCF 9.1 Release Notes — What's New (VCF Operations)](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/what-s-new/whats-new-vcf-ops.html).
 - Broadcom KBs (VCF Operations for Networks' own separate LDAP path):
   [Aria/VCF Operations for Networks LDAP authentication troubleshooting (KB 306857)](https://knowledge.broadcom.com/external/article/306857/aria-operations-for-networks-ldap-authen.html),
