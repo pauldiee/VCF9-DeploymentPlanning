@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.8.0 — 2026-11-05
+- **`docs/39` §4.5 correction (#452): enhanced replication also connects to
+  the recovery-site appliance on 32032.** The source host's `hbr-agent` logs
+  in to the appliance as *brokered server* before the data goes ESX to ESX
+  ([KB 393268](https://knowledge.broadcom.com/external/article/393268/unable-to-convert-legacy-replication-to.html)),
+  so source hosts need a route to the appliance's replication IP too, and a
+  32032 session to the appliance is not proof of legacy replication. Route
+  table, a broker-vs-data table and the verify notes updated
+  ([KB 392287](https://knowledge.broadcom.com/external/article/392287/error-while-moving-the-vm-from-legacy-re.html)).
+
 ## v6.7.9 — 2026-11-05
 - **`docs/39` §4.5: static routes for a replication network in its own subnet
   (#452).** vSphere Replication runs only on the ESX default TCP/IP stack
