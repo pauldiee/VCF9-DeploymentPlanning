@@ -9,7 +9,9 @@
   the appliance replication NIC (`systemd-networkd`, lost on upgrade,
   [KB 384776](https://knowledge.broadcom.com/external/article/384776/no-connection-to-vr-server-for-virtual-m.html)).
   Field-verified: *Override default gateway for this adapter* on the vmk did
-  not fix it. Plus the tags per site and the fallback to vmk0.
+  not fix it. Plus the tags per site, the fallback to vmk0, and an ESX Shell
+  verify block (`traceroute`, `vmkping` incl. MTU, `nc -z` on 32032,
+  `esxcli network ip connection list`).
 
 ## v6.7.8 — 2026-11-05
 - **`docs/12`: MFA with Entra ID (#450).** New *MFA: enforce it in Entra, not

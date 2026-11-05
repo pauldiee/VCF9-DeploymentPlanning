@@ -270,6 +270,42 @@ on the target hosts, *vSphere Replication NFC* (or both on the same vmk)
 back to vmk0 ([KB 384776][kb384776]). Since either site can become the source
 after reprotect, tag both services on both sites.
 
+**Verify from the ESX Shell** (SSH). The tools are standard in the ESX
+shell; option sets vary by build, so check `traceroute --help` / `nc -h`.
+
+```bash
+# 1. Routes and vmk IPs
+esxcli network ip route ipv4 list
+esxcli network ip interface ipv4 get
+
+# 2. Which path does ESX itself pick? (no -i/-s = the default-stack routing)
+traceroute 172.28.20.11
+traceroute -i vmk3 172.28.20.11            # forced out of the replication vmk
+
+# 3. Reachability and MTU via the replication vmk
+vmkping -I vmk3 172.28.20.11
+vmkping -I vmk3 -d -s 8972 172.28.20.11    # jumbo frames end to end
+
+# 4. Is the replication port open? (from the replication vmk's IP)
+nc -z -v -w 3 -s 172.27.20.21 172.28.20.11 32032
+
+# 5. Which local IP do live replication sessions use?
+esxcli network ip connection list | grep 32032
+```
+
+Reading the results:
+
+- A plain `traceroute` whose first hop is the **management gateway** means
+  the static route is missing or wrong.
+- `nc` **succeeded** = path and port open; **timeout** = firewall, missing
+  route or asymmetric return path; **refused** = path works, nothing listens.
+  The ESX firewall filters **outbound** too: if `nc` times out, check
+  `esxcli network firewall ruleset rule list | grep 32032` before blaming the
+  network.
+- In step 5, a local address equal to the **vmk0 IP** means replication still
+  runs over management; after the route is in place it should be the
+  replication vmk's IP.
+
 [vriso]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network.html
 [vrsrc]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network/set-up-a-vmkernel-adapter-for-vr-traffic-on-source.html
 [vrtgt]: https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0/vr-help-plug-in-9-0/isolating-the-vr-traffic-from-the-data-center-network/set-up-a-vmkernel-adapter-for-vr-traffic-on-target.html
