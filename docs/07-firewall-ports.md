@@ -83,6 +83,65 @@ Air-gapped: only the **VCF Download Tool** host needs these.
 | NSX Edge nodes | ToR switches | 179 | TCP | BGP peering |
 | NSX Edge nodes | ToR switches | 3784/3785 | UDP | BFD (if enabled) |
 
+### C.1 Overlay — host TEP ↔ host TEP ↔ Edge TEP
+
+The host TEP VLAN and the Edge TEP VLAN are separate, routed subnets. Every
+firewall, router ACL or switch policy **between** them must pass the overlay,
+in both directions, between **all** host TEP and Edge TEP subnets (including
+each AZ's TEP subnets in a stretched design):
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
+| Host TEPs ⇄ Edge TEPs, Host TEPs ⇄ Host TEPs | same (bidirectional) | 6081 | UDP | Geneve encapsulation — the overlay data itself |
+| Host TEPs ⇄ Edge TEPs, Host TEPs ⇄ Host TEPs | same (bidirectional) | 3784 | UDP | BFD control — tunnel up/down detection |
+| Host TEPs ⇄ Edge TEPs, Host TEPs ⇄ Host TEPs | same (bidirectional) | 4784 | UDP | BFD echo |
+| Host TEPs ⇄ Edge TEPs | same (bidirectional) | ICMP echo, type 3 code 4, type 11 | ICMP | Path MTU discovery + troubleshooting (`vmkping`) |
+
+Source: [KB 455157](https://knowledge.broadcom.com/external/article/455157/edge-to-host-transport-node-overlay-tunn.html)
+(the KB names no NSX version — it states "VMware NSX" only — so treat it as
+general NSX guidance, not 9.1-specific).
+
+> **Why this is easy to miss:**
+> - **Ping works, tunnels stay DOWN.** The KB's exact symptom: ICMP between
+>   TEPs succeeds, BFD never completes, so the host ↔ Edge tunnels show
+>   **DOWN**. A successful ping is not proof the firewall change is done.
+> - **The Ports & Protocols portal hides part of it.** Filtering the
+>   [portal](https://ports.broadcom.com/) on destination *Edge* (VCF 9.1, NSX)
+>   shows *Host Transport Node → NSX Edge nodes, UDP 3784* but **not** Geneve
+>   UDP 6081 or BFD echo UDP 4784 (checked 2026-11-05). Use the table above for
+>   the TEP change request.
+> - **Routing is required.** Without an inter-VLAN route between the host TEP
+>   and Edge TEP subnets the tunnels never come up; don't put both on one
+>   subnet either — with the Edge TEP on a host-switch segment in the host TEP
+>   network, BFD stays down ([KB 428238](https://knowledge.broadcom.com/external/article/428238/nsx-bfd-session-remains-down-when-tep-en.html)).
+> - **MTU has to hold across the routed hop, not just inside each VLAN.**
+>   Overlay needs ≥ 1600, 1700 recommended (see [`prerequisites.md`](prerequisites.md));
+>   an undersized router interface drops large packets silently — e.g. a
+>   Supervisor cluster bootstrap failing with `SSL_ERROR_SYSCALL`
+>   ([KB 429885](https://knowledge.broadcom.com/external/article/429885/cluster-bootstrap-fails-with-ssl_error_s.html)).
+>   Set the Edge TEP MTU in NSX **Global Fabric Settings before** the Edges are
+>   deployed — changing it afterwards does not update existing Edges' `fp-eth`
+>   interfaces ([KB 422523](https://knowledge.broadcom.com/external/article/422523/unable-to-change-mtu-on-edge-fpeth-inter.html)).
+> - **Keep TEP subnets out of vulnerability-scan scope.** Scan traffic aimed at
+>   bare-metal Edge TEPs makes BFD flap ([KB 317750](https://knowledge.broadcom.com/external/article?articleNumber=317750)).
+> - **The NSX gateway firewall can drop BFD too.** If Edge BFD counters stay at
+>   0, check the Tier-0 uplink gateway firewall rules for the BFD ports (the KB
+>   lists 3784, 9785 and 4784) — [KB 379112](https://knowledge.broadcom.com/external/article/379112).
+
+**Verify after the change** ([KB 379112](https://knowledge.broadcom.com/external/article/379112)):
+
+```text
+# ESX: full-size, don't-fragment ping host TEP -> Edge TEP (1572 = max payload on a 1600 MTU path;
+# use 1672 for 1700, 8972 for 9000)
+# vmk10 = your host TEP vmkernel (check: esxcli network ip interface list)
+vmkping -I vmk10 -S vxlan -d -s 1572 <edge-tep-ip>
+nsxdp-cli bfd sessions list
+
+# Edge (admin): VRF ID = the TUNNEL entry in "get logical-routers"
+ping <host-tep-ip> source <edge-tep-ip> vrfid <id> size 1572 dfbit enable
+get bfd-sessions
+```
+
 ## D. Multi-AZ / stretched — inter-AZ + witness
 
 Only if the cluster is stretched (see `03-multi-az-prep.md`).
