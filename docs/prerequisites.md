@@ -732,9 +732,12 @@ Workload DR between a protected and a recovery site; the full guide is
 [`39-protection-and-recovery.md`](39-protection-and-recovery.md).
 
 - [ ] **Licence decided:** replication only (RPO above 5 minutes, included with
-      VCF), or orchestrated DR (standalone Site Recovery Manager licence for
-      VCF, or Advanced Cyber Compliance). RPO under 5 minutes with vSAN
-      replication needs Advanced Cyber Compliance
+      VCF), or orchestrated DR (Site Recovery Manager: included with an active
+      VCF or VVF subscription since 2 November 2026, not with perpetual
+      licences; until 9.1.3 it needs the term-limited key from the Support
+      Portal, which expires 2 May 2027,
+      [KB 461219](https://knowledge.broadcom.com/external/article/461219/access-to-vmware-site-recovery-manager-f.html)).
+      RPO under 5 minutes with vSAN replication needs Advanced Cyber Compliance
       ([Welcome to Protection and Recovery](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/protection-and-recovery-installation/get-started-with-vmware-live-recovery.html)).
 - [ ] **Recovery site runs on its own:** its vCenter, DNS, NTP, AD and identity
       provider don't depend on the protected site.

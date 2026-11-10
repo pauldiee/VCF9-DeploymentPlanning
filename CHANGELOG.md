@@ -1,5 +1,20 @@
 # Changelog
 
+## v6.8.2 — 2026-11-10
+- **Site Recovery Manager is now included with a VCF/VVF subscription
+  (#444).** Broadcom stopped selling SRM standalone on 2 November 2026
+  ([KB 461219](https://knowledge.broadcom.com/external/article/461219/access-to-vmware-site-recovery-manager-f.html)),
+  so the "standalone Site Recovery Manager licence" advice was out of date.
+  `docs/39` §1: orchestrated DR row now *included with an active VCF or VVF
+  subscription, not with perpetual licences*; new §1.1 with the dated source
+  conflict (TechDocs *Welcome to Protection and Recovery*, last updated
+  2026-10-20, still says buy standalone), the term-limited key (10,000 VMs,
+  expires 2 May 2027, Support Portal → My Downloads, replaces existing SRM
+  keys) and the 9.1.3 upgrade it bridges to. Advanced Cyber Compliance rows
+  (RPO under 5 minutes, cyber recovery) unchanged: the KB covers SRM only.
+  Same correction in `prerequisites.md`, `02-intake.md` `H16`,
+  `06-deployment-plan.md`, the export tool's DR story, `README.md`.
+
 ## v6.8.1 — 2026-11-10
 - **`docs/12`: switching an existing AD/LDAP broker to Microsoft Entra ID
   (#453).** New top-level section (own row *7a* in the contents table, linked
