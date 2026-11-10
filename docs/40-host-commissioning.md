@@ -27,7 +27,8 @@ iSCSI, FCoE or NVMe over Fabrics** can't be commissioned at all; see
 > Hosts*, *Network Pool Management*, all last updated 2026-11-09), the SDDC
 > Manager API 9.1.1 reference, the configmax tool and Broadcom KBs, read
 > verbatim on 2026-11-10. The `SDDCAdmins` fix (KB 415254) is
-> **field-verified 2026-10-22**. The *Commission Hosts* wizard in the vSphere
+> **field-verified 2026-10-22**; `administrator@vsphere.local` as the
+> break-glass account (§1.5) is **field-verified 2026-11-10**. The *Commission Hosts* wizard in the vSphere
 > Client (§2: the pages and fields of *Host Addition and Validation*) is
 > **lab-verified 2026-11-10**. Everything else on this page is
 > **not lab- or field-verified in this repo**.
@@ -216,7 +217,15 @@ fleet SSO: [`12-sso-configuration.md`](12-sso-configuration.md).
 page you are trying to reach and it cannot be displayed."* *Assigned Hosts*
 still works, and being a vCenter administrator isn't enough. SDDC Manager's
 `/var/log/vmware/vcf/commonsvcs/vcf-commonsvcs.log` shows
-`PERMISSION_NOT_FOUND`. Pick the fix by who is logged in:
+`PERMISSION_NOT_FOUND`.
+
+**Fallback: `administrator@vsphere.local`.** The management vCenter's own
+`administrator@vsphere.local` always has access to *Unassigned Hosts* and the
+*Commission Hosts* wizard. Use it as the break-glass account when a named
+user hits the error, then fix that user's access with the table below.
+**Field-verified 2026-11-10.**
+
+Pick the fix by who is logged in:
 
 | Who / where | Fix | Source |
 | --- | --- | --- |

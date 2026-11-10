@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.8.4 — 2026-11-10
+- `docs/40` §1.5 (#454): the management vCenter's `administrator@vsphere.local`
+  always has access to *Unassigned Hosts* and the *Commission Hosts* wizard;
+  use it as the break-glass account when a named user gets the authorization
+  error, then fix that user's access. Field-verified 2026-11-10.
+
 ## v6.8.3 — 2026-11-10
 - **New `docs/40-host-commissioning.md`: commissioning ESX hosts as one page
   (#454).** Until now the topic was spread over prerequisite bullets in 23, 24,
