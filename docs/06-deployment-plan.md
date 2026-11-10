@@ -369,8 +369,9 @@ site with Protection and Recovery. Two stories are appended at the end of that
 domain's epic (after the HCX stories, if both are ticked):
 
 - **Protection and Recovery: deploy and pair the sites** — the licence decision
-  (replication with an RPO above 5 minutes is included; recovery plans need a
-  standalone Site Recovery Manager licence or Advanced Cyber Compliance), the
+  (replication with an RPO above 5 minutes is included; recovery plans need Site
+  Recovery Manager, included with an active VCF or VVF subscription since
+  2 November 2026, with a term-limited key until 9.1.3), the
   design (independent recovery site, topology and extension IDs, replication type
   — vSAN replication needs a vSAN ESA recovery cluster — network strategy, test
   network, capacity), the firewall flows (TCP 32032 ESX to ESX across the sites),

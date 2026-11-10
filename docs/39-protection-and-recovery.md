@@ -49,20 +49,55 @@ so take it first.
 
 ## 1. Decide the licence
 
-From [Welcome to Protection and Recovery][welcome]:
+From [Welcome to Protection and Recovery][welcome] and, for Site Recovery
+Manager, [KB 461219][kb461219]:
 
 | You want | Licence | Notes |
 | --- | --- | --- |
 | Replication with an RPO **above 5 minutes**, recovered by hand | **Included with VCF** | *"replicate with RPO higher than 5 minutes using standalone vSphere Replication"* |
 | Local vSAN snapshots | **Included with VCF** | Out of scope here |
-| **Orchestrated DR**: recovery plans, non-disruptive tests, planned migration, failover, reprotect | **Standalone Site Recovery Manager licence for VCF**, or an **Advanced Cyber Compliance** subscription | *"If you want to use disaster recovery without cyber recovery, you can purchase a standalone VMware Site Recovery Manager license for VCF"* |
-| An RPO **under 5 minutes** with vSAN snapshots and replication | **Advanced Cyber Compliance** (per core) | |
-| Cyber recovery (clean room, isolated recovery) | **Advanced Cyber Compliance** | Out of scope here |
+| **Orchestrated DR**: recovery plans, non-disruptive tests, planned migration, failover, reprotect | **Included with an active VCF or VVF subscription** since 2 November 2026; not with perpetual licences | Site Recovery Manager only; see [1.1](#11-site-recovery-manager-is-now-included) for the key you need until 9.1.3 |
+| An RPO **under 5 minutes** with vSAN snapshots and replication | **Advanced Cyber Compliance** (per core) | Not changed by KB 461219 |
+| Cyber recovery (clean room, isolated recovery) | **Advanced Cyber Compliance** | Out of scope here; not changed by KB 461219 |
 
 Replication without a recovery plan protects the data, not the service: failover
 then means registering and powering on every VM by hand, in the right order,
 with the right networks. For anything beyond a handful of VMs, plan for
-orchestrated DR and buy the licence for it.
+orchestrated DR: with a subscription it no longer costs extra.
+
+### 1.1 Site Recovery Manager is now included
+
+The sources disagree, so here is the timeline:
+
+| Date | Source | Says |
+| --- | --- | --- |
+| Last updated 20 October 2026 | [Welcome to Protection and Recovery][welcome] | *"If you want to use disaster recovery without cyber recovery, you can purchase a standalone VMware Site Recovery Manager license for VCF, VMware vSphere Foundation (VVF) or legacy vSphere software"* |
+| Effective 2 November 2026 | [KB 461219][kb461219] | *"VMware Site Recovery Manager (SRM)—formerly VMware Live Site Recovery (VLSR)—is no longer sold standalone. SRM is now included in VMware Cloud Foundation (VCF) and VMware vSphere Foundation (VVF). All existing active VCF and VVF subscription customers are entitled to SRM."* |
+
+The KB is the newer source; follow it. What it means in practice:
+
+- **Who:** active VCF and VVF **subscriptions** only. *"Customers with perpetual
+  VMware Cloud Foundation licenses, with or without active Support and
+  Subscription (SnS), are not entitled"* to it.
+- **What:** only Site Recovery Manager, the orchestration layer. The KB says
+  nothing about vSAN replication with an RPO under 5 minutes or cyber recovery;
+  those still need Advanced Cyber Compliance.
+- **From 9.1.3:** the entitlement comes with the subscription automatically
+  (the KB expects 9.1.3 *"between February 2027 - April 2027"*), and then
+  needs the protection and recovery appliance at **9.1.3** and vCenter at
+  **9.1 or later**.
+- **Until then: a term-limited key.** Up to 10,000 protected VMs, **expires
+  2 May 2027**. Get it from the Support Portal, not the Licensing Portal:
+  **My Downloads** → *VMware Cloud Foundation* (or *VMware vSphere
+  Foundation*) → *VMware Cloud Foundation 9* → version 9.1 or later → search
+  *Protection and Recovery* → **View Group** → under *Protection and Recovery
+  (Key)* → **View Group** → download the PDF that contains the key.
+- **The key replaces existing ones.** It *"cannot be split, combined,
+  upgraded, or downgraded"*, so you replace any existing SRM keys in vCenter
+  with it, including in an existing site pair. It is a version 8.1 key, which
+  *"works on all supported SRM versions"*.
+- **Plan the upgrade before 2 May 2027:** move the appliances to 9.1.3 and
+  vCenter to 9.1 or later before the key expires, or DR stops working.
 
 ---
 
@@ -703,6 +738,7 @@ protected VM against these:
 ## References
 
 - [Welcome to Protection and Recovery][welcome] (licensing)
+- [KB 461219: Access to VMware Site Recovery Manager for existing VCF and VVF subscription customers][kb461219] (Site Recovery Manager included since 2 November 2026)
 - [Deploying and Configuring the Appliance][deploycfg],
   [System Requirements][sysreq], [Deployment Models][models],
   [Deploy Protection and Recovery][deploy]
@@ -720,6 +756,7 @@ protected VM against these:
   [Interoperability Matrix][interop], [Broadcom Compatibility Guide][bcg]
 
 [welcome]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/protection-and-recovery-installation/get-started-with-vmware-live-recovery.html
+[kb461219]: https://knowledge.broadcom.com/external/article/461219/access-to-vmware-site-recovery-manager-f.html
 [deploycfg]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/protection-and-recovery-installation/setting-up-vmware-live-site-recovery-overview/site-recovery-manager-appliance-overview.html
 [sysreq]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/protection-and-recovery-installation/setting-up-vmware-live-site-recovery-overview/site-recovery-manager-appliance-overview/site-recovery-manager-system-requirements.html
 [models]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/protection-and-recovery/9-1/protection-and-recovery-installation/setting-up-vmware-live-site-recovery-overview/site-recovery-manager-appliance-overview/site-recovery-manager-and-vcenter-server-deployment-models.html
