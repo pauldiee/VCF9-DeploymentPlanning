@@ -52,11 +52,16 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
 - The **network pool** and the hosts you're adding must **already exist** —
   same ordering rule as `22-stretch-execution.md` and
   `23-workload-domain-creation.md`: build the pool, then commission.
-- **Image and commission the new hosts before this step** — use
+- **Image and commission the new hosts before this step:**
+  [`40-host-commissioning.md`](40-host-commissioning.md) covers the host
+  prep, the wizard, the API and the
   [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)
-  to prep and commission quickly.
+  scripts
+  ([blog post](https://www.hollebollevsan.nl/automating-esxi-host-preparation-for-vcf-9-with-powershell/)).
 - Hosts must be **in active state**, commissioned, and use the **same
-  principal storage type as the cluster** you're creating.
+  principal storage type as the cluster** you're creating (for vSAN, also
+  the same OSA or ESA choice:
+  [`40` §1.3](40-host-commissioning.md#13-pick-the-storage-type-per-host)).
 - If this cluster's NSX Host Overlay uses **DHCP** rather than a static IP
   pool, a DHCP server must already be configured and advertising on that
   VLAN — the wizard does not configure DHCP for you.
@@ -64,8 +69,8 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
   vCenter linking) to run the wizard against this domain. Your user, or a
   group it's in, must be a member of **`SDDCAdmins`** in that vCenter's SSO.
   Otherwise the VCF host views show *"Authorization Error : Unauthorized
-  access"* ([KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html), field-verified 2026-10-22; a VCF SSO user with vCenter linking needs the ADMIN role in each SDDC Manager instead, [KB 440968](https://knowledge.broadcom.com/external/article/440968/unassigned-hosts-page-fails-to-load-or-r.html); see
-  [`25-cluster-expansion.md` §1](25-cluster-expansion.md#1-manual--before-you-add-anything)).
+  access"* ([KB 415254](https://knowledge.broadcom.com/external/article/415254/failed-to-load-host-details-error-under.html), field-verified 2026-10-22; a VCF SSO user with vCenter linking needs the ADMIN role in each SDDC Manager instead, [KB 440968](https://knowledge.broadcom.com/external/article/440968/unassigned-hosts-page-fails-to-load-or-r.html); all cases in
+  [`40-host-commissioning.md` §1.5](40-host-commissioning.md#15-who-can-commission-and-from-where)).
 
 ### Reusing an existing vDS (9.1.1+)
 

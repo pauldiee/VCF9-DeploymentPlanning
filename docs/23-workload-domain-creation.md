@@ -61,18 +61,23 @@ From `01-network-dns-plan.md` and this domain's intake answers (`H1`-`H4`):
 
 ## 2. Manual — commission the hosts
 
+How to prepare and commission a host (prerequisites, the vSphere Client
+wizard, the API, the [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)
+scripts and their [blog post](https://www.hollebollevsan.nl/automating-esxi-host-preparation-for-vcf-9-with-powershell/), failures) is [`40-host-commissioning.md`](40-host-commissioning.md).
+What this domain adds:
+
+- **Commission into the network pool from step 1.**
 - **Hosts must be commissioned with the target principal storage type** —
-  vSAN, NFS, VMFS on FC, or **vVol (deprecated as of VCF/VVF 9.0 — see
-  `02-intake.md` `H6`; don't default a new design to it)**. Mixing storage
-  types within one cluster is not supported.
+  vSAN (OSA or ESA), NFS, VMFS on FC, or **vVol (deprecated as of VCF/VVF
+  9.0 — see `02-intake.md` `H6`; don't default a new design to it)**. Mixing
+  storage types within one cluster is not supported, and the wizard's Hosts
+  page (step 4, page 7) only lists hosts commissioned with the type you pick
+  ([`40` §1.3](40-host-commissioning.md#13-pick-the-storage-type-per-host)).
 - For vSAN: SSD/NVMe disks with **no pre-existing partitions**, and a
   vSphere Lifecycle Manager image already present in the VCF image library.
 - For vVols: a VASA provider added to the inventory first.
 - If the management domain hosts have an **express patch** applied, this
   domain's hosts must be imaged with the **same** express patch.
-- Image with the supported ESXi ISO — [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)
-  — configure the management network, DNS, NTP, root; then **commission**
-  into SDDC Manager, into the network pool from step 1.
 
 ## 3. Manual — DNS records
 

@@ -155,6 +155,7 @@ stretch** (the same order a stretched workload domain follows in E9).
 - **Story 7.1 — Inter-AZ fabric.** Verify <5 ms RTT, ≥10 Gbps, MTU 9000, HA L3 gateway between AZs.
   - *Acceptance:* inter-AZ link measured under 5 ms RTT, at least 10 Gbps, MTU 9000 end-to-end; HA L3 gateway between AZs verified.
 - **Story 7.2 — Build the AZ2 network pool, then install, configure & commission the second-AZ hosts.** Broadcom lists these as two separate, ordered prerequisites — create the network pool for AZ2 (vMotion + vSAN VMkernel networks) **before** commissioning, since the commission call binds each host to a pool by ID. Image the AZ2 hosts with the supported **ESXi ISO** (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) to prep + commission hosts quickly); configure the per-AZ management network (IP / VLAN / gateway), DNS, NTP, and root; then **commission** them into SDDC Manager, into the AZ2 network pool, ready for the stretch.
+  - *Guide:* [`40-host-commissioning.md`](40-host-commissioning.md)
   - *Acceptance:* AZ2 network pool created; AZ2 hosts reachable on their per-AZ management network with the matched ESXi build; commissioned into that pool and available in SDDC Manager.
 - **Story 7.3 — Witness site (management).** Deploy the vSAN witness appliance for the **management** cluster at the third site (its **own** — a vSAN witness serves **only one** stretched cluster); route it to both AZ ESX-management networks. Ref: [Deploying a Witness Appliance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/vsan-deployment-administration-and-monitoring/vsan-planning-and-deployment/working-with-virtual-san-stretched-cluster/deploying-a-witness-appliance.html).
   - *Acceptance:* management witness appliance deployed at the third site and reachable from both AZ ESX-management networks.
@@ -456,6 +457,7 @@ Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-ci
 - **Story 9.1 — WLD network prep.** Provision the per-WLD VLANs/subnets (Step 1) and the 5 IPs the WLD consumes on the mgmt VM-mgmt subnet.
   - *Acceptance:* per-WLD VLANs/subnets provisioned; the 5 mgmt-subnet IPs reserved; DNS in place.
 - **Story 9.2 — Prepare & commission the WLD hosts.** Image the WLD hosts with the supported **ESXi ISO** (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)); configure the management network, DNS, NTP; then **commission** them into SDDC Manager.
+  - *Guide:* [`40-host-commissioning.md`](40-host-commissioning.md)
   - *Acceptance:* WLD hosts reachable, matched ESXi build, commissioned in SDDC Manager.
 - **Story 9.3 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster. Optionally build the domain spec with [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators) (`New-VCFWorkloadDomain.ps1`; `New-VCFNetworkPool.ps1` for the domain's network pool, `New-VCFClusterSpec.ps1` to add further clusters), which validates each payload against SDDC Manager before submit.
   - *Acceptance:* WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.
@@ -470,6 +472,7 @@ Ref: [vSphere Supervisor Platform](https://techdocs.broadcom.com/us/en/vmware-ci
 - **Story 9.1 — WLD network prep (per-AZ).** Provision the per-WLD VLANs/subnets across **both AZs** (per-AZ networks) and the 5 mgmt-subnet IPs.
   - *Acceptance:* per-WLD VLANs/subnets provisioned across both AZs; the 5 mgmt-subnet IPs reserved; DNS in place.
 - **Story 9.2 — Build the AZ2 network pool, then prepare & commission the WLD hosts (both AZs).** Create the AZ2 network pool (vMotion + vSAN VMkernel networks) before commissioning — the commission call binds each host to a pool by ID. Image the WLD hosts in both AZs (see [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)); configure the per-AZ management networks, DNS, NTP; then **commission** them into SDDC Manager, into the AZ2 network pool.
+  - *Guide:* [`40-host-commissioning.md`](40-host-commissioning.md)
   - *Acceptance:* AZ2 network pool created; WLD hosts in both AZs reachable, matched ESXi build, commissioned into that pool in SDDC Manager.
 - **Story 9.3 — Deploy the WLD.** vCenter + NSX (shared or dedicated) + first cluster. Optionally build the domain spec with [**VCFJsonSpecCreators**](https://github.com/pauldiee/VCFJsonSpecCreators) (`New-VCFWorkloadDomain.ps1`; `New-VCFNetworkPool.ps1` for the domain's network pool, `New-VCFClusterSpec.ps1` to add further clusters), which validates each payload against SDDC Manager before submit.
   - *Acceptance:* WLD deployed; its vCenter + NSX healthy; first cluster online in SDDC Manager.

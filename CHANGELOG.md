@@ -1,5 +1,37 @@
 # Changelog
 
+## v6.8.3 — 2026-11-10
+- **New `docs/40-host-commissioning.md`: commissioning ESX hosts as one page
+  (#454).** Until now the topic was spread over prerequisite bullets in 23, 24,
+  25 and `prerequisites.md`, plus the VCFHostPreparation README. The page
+  covers the network pool first (required networks per storage type), the host
+  criteria from TechDocs 9.1 *Commission ESX Hosts* (DNS, hostname = FQDN,
+  regenerated certificate, one NIC on the standard switch, gateway, clean
+  disks, express patch parity; the 9.0 page's 10 Gbps line is gone in 9.1),
+  the storage type per host (UI choice vs JSON value, OSA vs ESA can't be
+  detected, VMFS on FC datastore before commissioning, converge-only types
+  can't be commissioned), external-CA hosts, who can commission (the
+  `SDDCAdmins` / ADMIN role table, moved here from 25 §1), the configmax limits
+  (50 hosts per operation, 10 concurrent), the vSphere Client click path
+  (fingerprint confirmation, Validate All, skip failed hosts), the SDDC Manager
+  API 9.1.1 calls (`POST /v1/hosts/validations` → `POST /v1/hosts`,
+  `HostCommissionSpec` fields, `/v1/hosts/validations/commissions` deprecated,
+  `GET /v1/hosts?status=UNASSIGNED_USEABLE`), VCFHostPreparation, decommission
+  and recommission (re-image, wiping old vSAN partitions, `HostPrep.ps1
+  -WipeDisk`) and a failure table with KBs 399567, 408300, 412127, 415767,
+  423908, 424242, 432318, 432391, 453788 and 388823. TechDocs/KB/API-sourced;
+  KB 415254 is field-verified; the vSphere Client wizard (pages, fields,
+  *Hosts Added* columns) and the absence of a VCF Operations route are
+  lab-verified 2026-11-10. configmax limits re-checked live the same day.
+- `docs/23` §2, `docs/24` §1 and `docs/25` §1 now point to 40 instead of each
+  carrying their own commissioning fragment; their runbook-specific notes
+  stay. Site nav entry (*Build & expand*), export-tool guide links on the
+  commission stories (E7 7.2, E9 9.2), matching *Guide* lines in `docs/06`,
+  README and CLAUDE.md file tables.
+- `docs/22` §2 and `prerequisites.md` (FC note) also point to 40. Where the
+  host-prep scripts are linked (22, 23, 24, 25, 40), the VCFHostPreparation
+  blog post is linked too.
+
 ## v6.8.2 — 2026-11-10
 - **Site Recovery Manager is now included with a VCF/VVF subscription
   (#444).** Broadcom stopped selling SRM standalone on 2 November 2026

@@ -493,6 +493,8 @@ host before bring-up.
 > The same "zoned, masked, formatted and mounted first" rule applies later to
 > every host you **commission** for an FC workload domain or cluster, and to
 > cluster expansion; see [`25-cluster-expansion.md`](25-cluster-expansion.md).
+> Commissioning itself (host prep, the wizard, the API, VCFHostPreparation):
+> [`40-host-commissioning.md`](40-host-commissioning.md).
 > TechDocs: [Deploy a New VCF Fleet or VCF Instance](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/deploy-a-new-vcf-fleet-or-a-new-vcf-instance.html)
 > (storage page). TechDocs-sourced — not yet field-verified in this repo.
 

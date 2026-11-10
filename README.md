@@ -52,6 +52,7 @@ sidebar mirrors these bands.
 
 | Path                                | Purpose                                                |
 | ----------------------------------- | ------------------------------------------------------ |
+| `docs/40-host-commissioning.md`    | Host commissioning — network pool first, host prep (DNS, hostname, certificate CN = FQDN, clean disks), the storage type per host (vSAN OSA vs ESA is your choice), who can commission (`SDDCAdmins`), the vSphere Client wizard, the SDDC Manager API (`POST /v1/hosts/validations` → `POST /v1/hosts`), VCFHostPreparation, decommission/recommission and common failures. TechDocs/KB-sourced (#454) |
 | `docs/23-workload-domain-creation.md` | Workload domain creation runbook — manual prep (network pool, commissioned hosts, DNS) vs the creation wizard, page by page, plus the DomainCreationSpec API path for LACP or no-cluster domains |
 | `docs/24-cluster-creation.md`       | Cluster creation runbook — adding a cluster to an existing workload domain: network pool + commissioned hosts, then the vSphere Client Create SDDC Cluster wizard, page by page (or the API), including the 9.1.1+ vDS-reuse rules |
 | `docs/25-cluster-expansion.md`      | Cluster expansion runbook — adding hosts to an existing cluster via the vSphere Client Add Unassigned Hosts wizard, and what it does (and doesn't) automate per storage type |

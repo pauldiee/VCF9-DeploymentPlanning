@@ -1258,6 +1258,7 @@ const GD = {
   hub: guide('License Hub deployment', '15-license-hub'),
   hub20: guide('License Hub 2.0 (standalone OVA)', '15-license-hub', 'license-hub-20-standalone-ova'),
   vdefend: guide('vDefend Security Services Platform', '18-vdefend-ssp'),
+  hostCommission: guide('Host commissioning', '40-host-commissioning'),
   wldCreate: guide('Workload domain creation runbook', '23-workload-domain-creation'),
   wldNet: guide('WLD runbook: network prep', '23-workload-domain-creation', '1-manual--network-prep'),
   wldHosts: guide('WLD runbook: commission the hosts', '23-workload-domain-creation', '2-manual--commission-the-hosts'),
@@ -1340,7 +1341,7 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E6', story: /^Backup & lifecycle/, guides: () => [GD.backup, GD.depot, GD.shutdown] },
   { epic: 'E7', guides: () => [GD.multiAz, GD.stretch] },
   { epic: 'E7', story: /^Inter-AZ fabric/, guides: () => [GD.stretchFabric] },
-  { epic: 'E7', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
+  { epic: 'E7', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool, GD.hostCommission] },
   { epic: 'E7', story: /^Witness site/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
   { epic: 'E7', story: /^Stretch the cluster/, guides: () => [GD.stretchCall] },
   { epic: 'E8', guides: (sel) => [GD.day2, ...(sel.vdefend ? [GD.vdefend] : [])] },
@@ -1352,7 +1353,7 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E8', story: /^License Hub — deploy/, guides: (sel) => [GD.hub20, ...(sel.vdefend ? [GD.vdefend] : [])] },
   { epic: 'E9', guides: () => [GD.intakeWld, GD.wldCreate] },
   { epic: 'E9', story: /^WLD network prep/, guides: () => [GD.wldNet] },
-  { epic: 'E9', story: /commission the WLD hosts/i, guides: () => [GD.wldHosts] },
+  { epic: 'E9', story: /commission the WLD hosts/i, guides: () => [GD.wldHosts, GD.hostCommission] },
   // The GPU image itself is a task in the host story (it must exist before the
   // domain is deployed); its links live on the GPU story, since a rule sees the
   // whole selection and can't tell which WLD has GPUs.
@@ -1372,7 +1373,7 @@ const GUIDE_RULES: GuideRule[] = [
   { epic: 'E9', story: /^HCX: extend networks/, guides: () => [GD.hcxExtend, GD.hcxTypes, GD.hcxDecom] },
   { epic: 'E9', story: /^Protection and Recovery: deploy and pair/, guides: () => [GD.dr, GD.prereqDr, GD.drLicence, GD.drDesign, GD.drPlan, GD.drPair] },
   { epic: 'E9', story: /^Protection and Recovery: replicate, plan/, guides: () => [GD.drReplicate, GD.drPlans, GD.drTest] },
-  { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool] },
+  { epic: 'E9', story: /^Build the AZ2 network pool/, guides: () => [GD.stretchPool, GD.hostCommission] },
   { epic: 'E9', story: /^Deploy the WLD/, guides: () => [GD.wldDeploy] },
   { epic: 'E9', story: /^WLD witness/, guides: () => [GD.multiAzWitness, GD.stretchWitness] },
   { epic: 'E9', story: /^Stretch the WLD/, guides: () => [GD.stretchWld] },

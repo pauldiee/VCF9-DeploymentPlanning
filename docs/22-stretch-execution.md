@@ -49,13 +49,16 @@ to until it exists.
   a distinct object from the AZ2 host TEP (overlay) subnet below —
   vMotion/vSAN and the NSX host overlay are configured and validated
   separately, don't treat "network pool" as covering both.
-- Image the AZ2 hosts with the supported ESXi ISO. Use
-  [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation) to
-  prep and commission quickly.
+- Image the AZ2 hosts with the supported ESXi ISO.
 - Configure the per-AZ management network on each host (IP / VLAN / gateway),
   DNS, NTP, root credentials.
 - **Commission** them into SDDC Manager, into the AZ2 network pool you just
-  built. They now sit as available/unassigned hosts, ready for the stretch —
+  built. How to prepare and commission (prerequisites, the vSphere Client
+  wizard, the API, the
+  [**VCFHostPreparation**](https://github.com/pauldiee/VCFHostPreparation)
+  scripts and their
+  [blog post](https://www.hollebollevsan.nl/automating-esxi-host-preparation-for-vcf-9-with-powershell/)):
+  [`40-host-commissioning.md`](40-host-commissioning.md). They now sit as available/unassigned hosts, ready for the stretch —
   SDDC Manager does not touch them until step 4.
 
 Separately, this is where the most common failure mode lives — not the

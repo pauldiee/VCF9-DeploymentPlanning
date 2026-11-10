@@ -126,6 +126,14 @@ export const NAV: NavItem[] = [
 
   // --- Reference: Build & expand ----------------------------------------------
   {
+    slug: '40-host-commissioning',
+    step: 'Build & expand',
+    band: 'Build & expand',
+    label: 'Host Commissioning',
+    icon: 'server',
+    blurb: 'Commissioning ESX hosts into a VCF instance: network pool and host prep, the storage type per host, the vSphere Client wizard, the SDDC Manager API, VCFHostPreparation, decommission/recommission and common failures.',
+  },
+  {
     slug: '23-workload-domain-creation',
     step: 'Build & expand',
     band: 'Build & expand',
