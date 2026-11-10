@@ -41,6 +41,7 @@ do that first. Deployment-plan pointer: story **E8 8.5**
 | 5 | [Step 4 — Federate VCF Operations and VCF Automation](#step-4--federate-vcf-operations-and-vcf-automation) | Both need an explicit connect step |
 | 6 | [Step 5 — Federate everything else](#step-5--federate-everything-else) | Supervisor, Log Management, and the unsettled VCF Operations for Networks question |
 | 7 | [Step 6 — Assign roles per product](#step-6--assign-roles-per-product) | The step every product needs, done separately, every time |
+| 7a | [Switching an existing broker from AD/LDAP to Microsoft Entra ID](#switching-an-existing-broker-from-adldap-to-microsoft-entra-id) | The broker already runs on AD/LDAP and you want Entra ID: what's kept, what's lost, procedure, known failures |
 | 8 | [Verification & troubleshooting](#8-verification--troubleshooting) | Login loops, invalid redirect URL, all-AD-fails-at-once |
 | 9 | [Field notes](#9-field-notes) | Gotchas that don't fit anywhere else above |
 | 10 | [References](#10-references) | The TechDocs and community walkthroughs behind the above |
@@ -290,6 +291,11 @@ Identity Provider** you pick **Microsoft Entra ID**, then make two separate
 choices: the **authentication protocol** and the **user/group provisioning
 method**.
 
+**Broker already configured with AD/LDAP?** Then start at
+[Switching an existing broker from AD/LDAP to Microsoft Entra ID](#switching-an-existing-broker-from-adldap-to-microsoft-entra-id):
+it's a partial reset first, and the provisioning choice changes which unique
+identifier you set.
+
 > **Evidence level:** TechDocs (the 9.0 SSO pages, re-checked against the
 > 9.1 set, both last updated 2026-11-02) and Broadcom KBs, read 2026-11-05.
 > **Not lab- or field-verified in this repo.**
@@ -375,7 +381,9 @@ Object ID in the `oid` claim. With `sub` (or `email`, or a SCIM `externalId`
 mapped to `mailNickname`), authentication succeeds in Entra but VCF answers
 *"Access denied. Unable to authenticate the user"* ([KB 431031][kb431031],
 [KB 412511][kb412511], [KB 441704][kb441704]). KB 441704's fix is to reset
-and reconfigure SSO, so get this right the first time.
+and reconfigure SSO, so get this right the first time. This applies to SCIM
+and JIT. With **AD/LDAP provisioning** `oid` doesn't exist on the AD side; use
+an attribute both share, such as `email` ↔ `mail` ([KB 386870][kb386870]).
 
 #### MFA: enforce it in Entra, not in VCF
 
@@ -673,6 +681,128 @@ instance (via **IMPORT & PROVISION ROLES**) — e.g. so a bespoke vCenter role
 you built by hand gets pushed to every new vCenter automatically, rather than
 recreating it each time. Confirmed to exist as a real, working provisioning
 table; not yet exercised end-to-end in this repo.
+
+---
+
+## Switching an existing broker from AD/LDAP to Microsoft Entra ID
+
+Your broker already runs against AD/LDAP, with products federated and roles
+assigned, and you now want Entra ID as the identity provider. There is no
+migration wizard: you **change the identity provider**, which is a partial
+reset of VCF SSO followed by a fresh Step 2 with Entra
+([Change the Identity Provider, 9.1][changeidp91]).
+
+> **Evidence level:** TechDocs (9.1 page, Last Updated 2026-11-09) and
+> Broadcom KBs, read verbatim 2026-11-10. **Not lab- or field-verified in
+> this repo** (#453).
+
+### What you keep and what you lose
+
+| Kept | Lost |
+| ---- | ---- |
+| The broker's deployment mode (embedded / appliance) | The AD/LDAP identity provider configuration (bind account, base DN, LDAPS certificate) |
+| The component configuration: vCenter, NSX, VCF Operations, VCF Automation, HCX, VCF Operations for Networks and Log Management stay connected to the broker, so Steps 3–5 are **not** repeated | All users and groups the broker provisioned from AD |
+| | Every role assignment made to those users and groups: VCF Roles and per-product roles must be assigned again ([Step 6](#step-6--assign-roles-per-product)) |
+
+Per TechDocs: *"Since this is a partial reset, the deployment mode and client
+component configuration are retained. Therefore, you do not have to
+reconfigure the client for vCenter, VCF Operations HCX, VCF Operations, VCF
+Automation, VCF Operations for networks, or log management to the specific
+identity broker"* ([9.1][changeidp91]).
+
+> **Open point — the confirmation text contradicts the page.** The 9.1 dialog
+> asks you to confirm deletion of *"...the provisioned users and groups, **and
+> the component configuration**"*, while the sentence under it says *"The
+> components that are configured against this identity broker are
+> retained."* The 9.0 dialog text doesn't mention component configuration at
+> all ([9.0][changeidp90]). Until this is tested, plan a window in which you
+> could repeat Steps 3–5 if a component turns out to be disconnected.
+
+**Use *Change the Identity Provider*, not *Delete* or a full reset.** Deleting
+the SSO configuration also drops the component side, and KB 438369 describes
+what happens when vCenter and NSX keep a stale SSO state after that: the new
+configuration won't save (*"The configured credentials do not have sufficient
+privileges"*), and the cleanup needs vCenter ownership cleared, an NSX API
+call and appliance reboots ([KB 438369][kb438369]).
+
+### Before you start
+
+1. **Build the Entra side first**: app registration, claims, client secret
+   with its expiry date, and (for SCIM) the provisioning agent path. See
+   [Entra side](#entra-side) and [Network](#network-the-broker-needs-entra-entra-may-need-the-broker).
+   Everything you can prepare before the reset shortens the time nobody can
+   log in.
+2. **Write down the current role assignments**: which AD groups hold which
+   VCF Role (*Identity & Access → VCF SSO Overview → identity broker → Access
+   Management*) and which per-product roles. You assign them again,
+   to the new Entra (or re-provisioned AD) groups, afterwards.
+3. **Test the break-glass accounts** on every product
+   (`administrator@vsphere.local`, `admin` on NSX, the VCF Operations local
+   admin). Between the reset and the first working Entra login there is no
+   federated access at all.
+4. **Has a certificate been replaced on the broker or VCF Operations since
+   SSO was set up?** KB 411917 describes a reset that then fails with error
+   `150003`, and a cleanup path via snapshots and deleting the broker
+   ([KB 411917][kb411917]). Check first, and take a VCF Operations snapshot
+   or backup either way.
+5. **Pick the provisioning method** (next section).
+
+### Provisioning: keep AD, or move groups to Entra too
+
+Entra login doesn't force Entra provisioning. The choice decides how much
+role work you redo and which unique identifier you set:
+
+| Provisioning after the switch | Groups you assign roles to | Unique identifier |
+| ----------------------------- | -------------------------- | ----------------- |
+| **AD/LDAP** (login via Entra, users and groups still read from on-prem AD) | The same AD groups as before, but they're re-provisioned, so the role assignments are still redone | An attribute that exists **in both** Entra and AD with equal values, e.g. `email` ↔ `mail` or `username` ↔ `sAMAccountName`. **Not `sub`**, and not `oid` either: neither exists in on-prem AD ([KB 386870][kb386870]) |
+| **SCIM** or **JIT** | Entra groups (cloud groups, or AD groups synced into Entra) | `oid` ([KB 431031][kb431031], see [Broker side](#broker-side)) |
+
+AD/LDAP provisioning is the smallest change if your Entra tenant is synced
+from the same AD: the group names stay the same and no inbound SCIM path is
+needed. You do enter the bind account, base DN and LDAPS certificate again,
+because the reset removed them ([prerequisites](prerequisites.md#identity-source-for-the-vcf-identity-broker)).
+
+### Procedure (9.1)
+
+From [Change the Identity Provider in VCF Single Sign-On][changeidp91]:
+
+1. In VCF Operations: **Manage → Fleet Management → Identity & Access**.
+2. Click **VCF SSO Overview**, then, under **VCF SSO**, the identity broker
+   you configured.
+3. **Actions → Change the Identity Provider** (top right).
+4. Tick *"I confirm to delete of all SSO-related configurations, including
+   the identity provider configuration, the provisioned users and groups,
+   and the component configuration"* and click **Change**.
+5. On **Configure VCF SSO**, go to the second step, **Configure Identity
+   Provider**, choose **Microsoft Entra ID** and continue as in
+   [Broker side](#broker-side).
+6. For SCIM: create the provisioning in Entra with the new SCIM URL and
+   token, and wait for the first push.
+7. Assign roles again ([Step 6](#step-6--assign-roles-per-product)).
+
+**9.0** has a different click-path: **Fleet Management → Identity & Access →**
+pick the VCF instance → **Identity Source** tab → **Reset SSO** → the first
+option, *"I confirm to delete the identity provider configuration including
+the provisioned users and groups"* → **Reset** → **Configure Identity
+Provider** ([9.0][changeidp90]).
+
+### After the switch: test and known failures
+
+Log in with an Entra account on **every** product, not just VCF Operations.
+
+| Symptom | Cause / fix |
+| ------- | ----------- |
+| Entra login succeeds, vCenter says *"Access denied. Unable to authenticate the user"* | Unique identifier set to `sub` instead of `oid` (SCIM/JIT) ([KB 431031][kb431031]); or, with AD/LDAP provisioning, the identifier values differ between Entra and AD ([KB 386870][kb386870]) |
+| Management domain vCenter: *"VCF Identity Broker encountered an issue during authentication. Message: Invalid access policy."* | The broker kept the old access policy. Deregister the management domain under **Identity & Access → VCF Instances** and configure VCF SSO for it again ([KB 423152][kb423152], written for VCF Operations 9.0.x) |
+| New SSO configuration won't save: *"The configured credentials do not have sufficient privileges"* | Stale SSO state on vCenter / NSX after a full reset or delete ([KB 438369][kb438369]) |
+| Users show up with empty first/last names (JIT) | Add `given_name` / `family_name` as optional claims ([KB 419641][kb419641]) |
+
+[changeidp91]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/managing-vmware-cloud-foundation-operations-sso/change-the-identity-provider-in-vcf-sso.html
+[changeidp90]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/what-is/managing-vmware-cloud-foundation-operations-sso/change-the-identity-provider-in-vcf-sso.html
+[kb386870]: https://knowledge.broadcom.com/external/article/386870
+[kb411917]: https://knowledge.broadcom.com/external/article/411917/replacing-the-certificate-breaks-the-ide.html
+[kb423152]: https://knowledge.broadcom.com/external/article/423152/error-vcf-identity-broker-encountered-an.html
+[kb438369]: https://knowledge.broadcom.com/external/article/438369/unable-to-reconfigure-sso-after-sso-rese.html
 
 ---
 

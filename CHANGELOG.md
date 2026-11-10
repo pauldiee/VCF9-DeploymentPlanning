@@ -1,5 +1,22 @@
 # Changelog
 
+## v6.8.1 — 2026-11-10
+- **`docs/12`: switching an existing AD/LDAP broker to Microsoft Entra ID
+  (#453).** New top-level section (own row *7a* in the contents table, linked
+  from the Entra subsection): *Change the Identity Provider* is a partial reset
+  ([TechDocs 9.1](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/managing-identity-and-access-using-vcf-single-sign-on/what-is/managing-vmware-cloud-foundation-operations-sso/change-the-identity-provider-in-vcf-sso.html)),
+  kept-vs-lost table, use Change rather than Delete
+  ([KB 438369](https://knowledge.broadcom.com/external/article/438369/unable-to-reconfigure-sso-after-sso-rese.html)),
+  pre-checks incl. the cert-replacement reset failure
+  ([KB 411917](https://knowledge.broadcom.com/external/article/411917/replacing-the-certificate-breaks-the-ide.html)),
+  AD/LDAP vs SCIM/JIT provisioning after the switch with the matching unique
+  identifier (`oid` only for SCIM/JIT; a shared attribute for AD/LDAP,
+  [KB 386870](https://knowledge.broadcom.com/external/article/386870)),
+  9.1 and 9.0 click-paths, and a symptom table
+  ([KB 423152](https://knowledge.broadcom.com/external/article/423152/error-vcf-identity-broker-encountered-an.html)).
+  Open point: the 9.1 confirmation text mentions deleting the component
+  configuration while the page says components are retained.
+
 ## v6.8.0 — 2026-11-05
 - **`docs/39` §4.5 correction (#452): enhanced replication also connects to
   the recovery-site appliance on 32032.** The source host's `hbr-agent` logs
