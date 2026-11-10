@@ -280,8 +280,12 @@ TechDocs 9.1
    fingerprint is correct for each host and then activate the Confirm All
    Finger Prints toggle."* Compare against a value you read from the host
    yourself rather than clicking through: a wrong fingerprint means you are
-   not talking to the host you think. This repo hasn't verified which of the
-   host's fingerprints (SSL or SSH) the wizard displays.
+   not talking to the host you think. The wizard shows the SHA-256
+   fingerprint of the host's SSL certificate (port 443), in the form
+   `SHA256:<base64>`. `HostPrep.ps1` ([§4](#4-scripted-vcfhostpreparation))
+   writes exactly that value per host into its HTML report, so you can
+   compare them one to one. If you regenerated the certificate (§1.2), the
+   report shows the new one.
 6. Click **Validate All**. *"Each host is marked as Valid or Invalid. For
    invalid hosts, you can correct the problem and validate again, or select
    the host and click Remove to proceed with commissioning the valid hosts."*
@@ -401,7 +405,8 @@ Run them in order:
    root password to a VCF 9 compliant value. `-WipeDisk` clears old
    partitions on vSAN hosts ([§6.2](#62-recommission-a-former-vsan-host));
    `-DryRun` and `-WhatIfReport` change nothing. Output: an HTML report with
-   each host's SHA256 thumbprint and a commissioning CSV.
+   each host's SSL thumbprint in the `SHA256:<base64>` format the wizard
+   shows (§2 step 5), and a commissioning CSV.
 2. **`Commission-VCFHosts.ps1`** reads that CSV, asks for the SDDC Manager,
    the network pool and the root password, runs `POST /v1/hosts/validations`
    (with an HTML validation report; it stops on a failure), then `POST

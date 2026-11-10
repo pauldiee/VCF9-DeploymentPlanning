@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.8.5 — 2026-11-10
+- `docs/40` §2 step 5 and §4 (#454): the wizard's fingerprint is the SHA-256
+  of the host's SSL certificate in `SHA256:<base64>` form, the same value
+  `HostPrep.ps1` writes into its HTML report (format matched to the
+  commissioning UI since HostPrep 3.3.1). Replaces the "not verified which
+  fingerprint" note.
+
 ## v6.8.4 — 2026-11-10
 - `docs/40` §1.5 (#454): the management vCenter's `administrator@vsphere.local`
   always has access to *Unassigned Hosts* and the *Commission Hosts* wizard;
