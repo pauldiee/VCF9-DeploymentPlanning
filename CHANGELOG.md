@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.9.0 — 2026-11-11
+- `docs/32` §3.3 (#457): vGPU branch table now has the branch type, latest
+  release and EOL per branch: 19.7 (LTS, EOL Jul 2028), 20.3 (Production,
+  EOL Mar 2027) and the new **21.0** (R620, LTS, EOL Nov 2029) with VCF 9.1
+  and 9.0 packages; NVIDIA's advice to use an LTS branch in production;
+  21.0 lists the same cards as 20.0. 20.x links pinned to `20.0` because
+  `latest` now points at 21.x. §4.1 adds the LTS advice and a Private AI
+  Foundation note (DLVM names 595.x, R620 not yet). `02-intake` H13 and
+  `prerequisites` mention 21.x. NVIDIA vGPU docs, read 2026-11-11.
+
 ## v6.8.9 — 2026-11-11
 - `docs/24` *Reusing an existing vDS (9.1.1+)* (#455): added the
   same-workload-domain condition, the three sharing modes (same network

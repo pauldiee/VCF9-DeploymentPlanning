@@ -14,8 +14,8 @@ is covered by Broadcom's
 > **Evidence level:** sourced from Broadcom TechDocs (the
 > [*VMware Private AI Foundation with NVIDIA 9.1*][paif-pdf] PDF, generated
 > 2026-09-21, and the VCF 9.1 lifecycle pages), the Broadcom Compatibility
-> Guide (queried 2026-10-16) and NVIDIA's vGPU documentation (pages last
-> updated 2026-09-29). **Not lab- or field-verified in this repo yet.**
+> Guide (queried 2026-10-16) and NVIDIA's vGPU documentation (release
+> branches re-checked 2026-11-11). **Not lab- or field-verified in this repo yet.**
 > NVIDIA ships vGPU releases often and Broadcom updates the compatibility
 > guide constantly, so re-check both lists ([§3](#3-check-the-card-on-both-lists))
 > on the day you order hardware.
@@ -153,30 +153,39 @@ NVIDIA's [product support matrix for VMware vSphere][nv-matrix] lists the
 supported GPUs per vGPU release. Since vGPU 19.x it lists **VCF 9.1** and
 **VCF 9.0** as their own platform rows, separate from *vSphere 8.0*:
 
-| vGPU branch | VCF 9.0 / ESXi 9.0 | VCF 9.1 / ESXi 9.1 | Source |
-| --- | --- | --- | --- |
-| **18.x** (archived) | Since **18.3** | Not listed | [18.x release notes][nv-18] |
-| **19.x** | Yes | Since **19.4** | [19.x matrix][nv-19] |
-| **20.x** (current, R595, up to 20.2) | Yes | Yes | [20.x matrix][nv-matrix] |
+| vGPU branch | Type, latest, EOL | VCF 9.0 / ESXi 9.0 | VCF 9.1 / ESXi 9.1 | Source |
+| --- | --- | --- | --- | --- |
+| **18.x** (archived) | EOL | Since **18.3** | Not listed | [18.x release notes][nv-18] |
+| **19.x** (R580) | Long-Term Support, **19.7** (Oct 2026), EOL Jul 2028 | Yes | Since **19.4** | [19.x matrix][nv-19] |
+| **20.x** (R595) | Production, **20.3** (Oct 2026), EOL Mar 2027 | Yes | Yes | [20.x matrix][nv-20] |
+| **21.x** (R620) | Long-Term Support, **21.0** (Nov 2026), EOL Nov 2029 | Yes | Yes | [21.x matrix][nv-matrix] |
 
-Footnotes worth knowing ([20.x matrix][nv-matrix]):
+Branch types, latest release and EOL dates from NVIDIA's
+[vGPU documentation index][nv-index] (read 2026-11-11). NVIDIA's advice:
+production environments use the latest release of a **Long-Term Support**
+branch; a Production branch is for getting new features early. The 21.0
+matrix lists the same cards as 20.0 (only the Windows 11 guest moved from
+25H2 to 26H2).
+
+Footnotes worth knowing ([20.x matrix][nv-20], unchanged in 21.0):
 
 - **RTX PRO 6000 Blackwell Server Edition** (incl. liquid-cooled) and **RTX
   PRO 4500 Blackwell Server Edition** need **VCF 9.0.1 or later** on the 9.0
   line.
 - **20.x dropped** the Tesla M10, several Tesla V100 variants, and the Quadro
-  RTX 6000 / RTX 8000. On VCF 9.1 those cards stay on 19.x at best.
+  RTX 6000 / RTX 8000, and 21.0 doesn't bring them back. On VCF 9.1 those
+  cards stay on 19.x at best.
 - vGPU needs ESX licensed as **vSphere Foundation** (or vSphere Enterprise
   Plus), which VCF covers.
 - 20.x adds **MIG-backed vGPUs for graphics** on vSphere 9 Update 1, and (20.2)
   **multiple MIG-backed vGPUs on the same physical GPU** on VCF 9.1 or later
-  ([20.2 release notes][nv-whatsnew]).
+  ([20.x release notes][nv-whatsnew]).
 
 ### 3.4 The two lists disagree
 
 Captured **2026-10-16**:
 
-| Card | Broadcom Compatibility Guide, ESXi 9.1, *NVIDIA vGPU* | NVIDIA vGPU 20.x (current) |
+| Card | Broadcom Compatibility Guide, ESXi 9.1, *NVIDIA vGPU* | NVIDIA vGPU 20.x and 21.0 |
 | --- | --- | --- |
 | Tesla M10 | Listed | **Dropped** |
 | Tesla V100 / V100S | Listed | **Several variants dropped** |
@@ -194,8 +203,12 @@ that branch.
 ### 4.1 Which release
 
 - **Use a release that ships a "NVIDIA vGPU for VCF 9.1" package**: 19.4 or
-  later on the 19.x branch, or 20.x. Don't use the *vSphere 8.0* package on
-  VCF 9.1.
+  later on the 19.x branch, 20.x, or 21.x. Don't use the *vSphere 8.0*
+  package on VCF 9.1.
+- **For production, prefer a Long-Term Support branch** (19.x or 21.x, see
+  §3.3). A host already on 19.x doesn't have to move until 19.x reaches EOL
+  (Jul 2028). **With Private AI Foundation, check the DLVM window below
+  first**: it names 595.x (20.x) and doesn't mention R620 (21.x) yet.
 - **Host and guest drivers come from the same release.** The host driver
   must be *"compatible with your VCF version"* ([PAIF 9.1][paif-pdf]), and the
   guest driver must match the host driver. Private AI Foundation's deep
@@ -471,8 +484,10 @@ owner: it is a new piece of infrastructure, with its own backups and renewals.
 [bcg-l40s]: https://compatibilityguide.broadcom.com/detail?program=gpu&productId=39&persona=live
 [nv-matrix]: https://docs.nvidia.com/vgpu/latest/product-support-matrix/vmware-vsphere.html
 [nv-19]: https://docs.nvidia.com/vgpu/19.0/product-support-matrix/vmware-vsphere.html
+[nv-20]: https://docs.nvidia.com/vgpu/20.0/product-support-matrix/vmware-vsphere.html
+[nv-index]: https://docs.nvidia.com/vgpu/index.html
 [nv-18]: https://archive.docs.nvidia.com/vgpu/18.0/grid-vgpu-release-notes-vmware-vsphere/index.html
-[nv-whatsnew]: https://docs.nvidia.com/vgpu/latest/whats-new-vgpu/release-notes.html
+[nv-whatsnew]: https://docs.nvidia.com/vgpu/20.0/whats-new-vgpu/release-notes.html
 [nv-get]: https://docs.nvidia.com/vgpu/latest/grid-software-quick-start-guide/getting-your-nvidia-grid-software.html
 [nv-hub]: http://nvid.nvidia.com/dashboard/
 [nv-eval]: https://www.nvidia.com/en-us/data-center/resources/vgpu-evaluation/
