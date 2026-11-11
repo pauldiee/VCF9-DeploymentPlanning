@@ -605,7 +605,7 @@ is created.* NVIDIA GPUs for vGPU or passthrough; the full guide is
       SSID: the [Broadcom Compatibility Guide](https://compatibilityguide.broadcom.com/)
       for **ESXi 9.1** in that mode, **and** (vGPU) NVIDIA's
       [vGPU support matrix](https://docs.nvidia.com/vgpu/latest/product-support-matrix/vmware-vsphere.html)
-      for a release with a **VCF 9.1** package (19.4+ or 20.x). The two lists
+      for a release with a **VCF 9.1** package (19.4+, 20.x or 21.x). The two lists
       disagree on older cards — see
       [`32-gpu-hosts.md` §3.4](32-gpu-hosts.md#34-the-two-lists-disagree).
 - [ ] **Licences owned:** **NVAIE** (or another NVIDIA vGPU licence) for vGPU
