@@ -1,5 +1,23 @@
 # Changelog
 
+## v6.8.7 — 2026-11-11
+- `docs/12` new *JIT: pre-provision the groups or not* (#449): comparison of
+  the wizard's two JIT group options (Just-In-Time Group Provisioning vs
+  Groups Pre-provisioning): when groups exist, when roles can be assigned,
+  first-login behaviour, risks, what both share (no automatic user cleanup,
+  no inbound path). Recommends pre-provisioning and flags the Entra
+  `groups` claim sending GUIDs by default. TechDocs 9.1, read 2026-11-11.
+- `docs/12` new *The Entra provisioning agent (internal SCIM endpoint)*
+  (#449): licence (Entra ID P1), server (Windows Server 2016+, 3 GB RAM),
+  outbound-only network, CA trust / DNS / proxy bypass to the broker
+  (KB 428509), Entra roles, install and assign steps, no auto-update, and
+  redundancy with two active agents. Microsoft Learn, read 2026-11-11.
+- `docs/12` *Entra side*: corrected v6.8.6. For an internal SCIM endpoint
+  the SCIM app is the gallery app **"On-premises SCIM app"** (via the
+  agent); the empty non-gallery app is only for an internet-reachable
+  endpoint. Step 5 adds Microsoft's position on long-lived bearer tokens
+  vs OAuth client credentials.
+
 ## v6.8.6 — 2026-11-11
 - `docs/12` *Entra side* (#449): SCIM needs **two** Entra objects. The OIDC
   login runs on an app registration, but the enterprise app Entra creates

@@ -326,6 +326,48 @@ identifier you set.
   OIDC **unique identifier** must then match the AD value exactly
   ([OIDC page][entraoidc]).
 
+#### JIT: pre-provision the groups or not
+
+With JIT, the wizard's **Group Provisioning** screen offers two options. In
+both, users are created only at their first login, from the token. The
+difference is the **groups** ([protocols][protocols], [OIDC page][entraoidc],
+[provisioning design][provdesign]).
+
+| | **Just-In-Time Group Provisioning** | **Groups Pre-provisioning** |
+| --- | --- | --- |
+| When a group exists in VCF | Only after a member of that group logs in for the first time | Immediately: you create the groups in the wizard |
+| Role assignments | Only **after** a group member's first login (*"must be applied post-login"*) | **Up front**, on the pre-provisioned groups (*"enabling group-based role assignments before first access"*) |
+| A new admin's first login | Succeeds, but without a role: someone with rights (break-glass) then assigns the role to the group | Succeeds **with** the role, if the group matches |
+| Which groups end up in VCF | Every group in the `groups` claim of a user who logs in | The groups you created (at least one). TechDocs doesn't say what happens to other groups in the claim |
+| What you need to know beforehand | Nothing | The exact group names (*"if you know the group names from the identity provider"*) |
+| Wizard | No extra screen | Extra screen *Pre-provisioning Domains and Groups* → **Add Group** per domain |
+| Risk | The group list can fill up with every group your users belong to, and the first login of each new group has no rights | A name that doesn't match the claim means no membership and no role, without an error |
+
+Same for both:
+
+- Group membership follows the `groups` claim at login.
+- Users removed from Entra are **not** deleted automatically (*"the
+  JIT-provisioned user is not automatically deleted"*). Plan a cleanup
+  process; Broadcom recommends automatically disabling inactive users.
+- No inbound path from Entra and no provisioning agent.
+- Unique identifier `oid`, plus `given_name` / `family_name` as optional
+  claims ([KB 419641][kb419641]).
+
+**Our take: Groups Pre-provisioning.** For a management platform you want
+roles in place before anyone logs in, and you don't want every Entra group
+your admins belong to showing up in VCF. The catch is the match between the
+group name in the wizard and what Entra puts in the `groups` claim. By
+default Entra sends group **Object IDs (GUIDs)**, not names; change that
+under the app registration's **Token configuration → Add groups claim**
+(e.g. `sAMAccountName` for groups synced from AD). Broadcom doesn't say
+which value the broker matches on, so test with one user in one group
+before you assign the rest.
+
+> **Evidence level:** the table and the quotes are from TechDocs 9.1 (pages
+> last updated 2026-11-09, read 2026-11-11). The "risk" row and the Entra
+> GUID behaviour are our reading, not stated by Broadcom. Not lab- or
+> field-verified in this repo.
+
 #### Network: the broker needs Entra, Entra may need the broker
 
 - The broker (or vCenter, in embedded mode) talks **outbound** to
@@ -344,7 +386,8 @@ identifier you set.
 
 > **With SCIM you need two applications in Entra, not one.** The OIDC login
 > runs on an **app registration**; the SCIM push runs on a separate
-> **non-gallery enterprise application**. The enterprise app that Entra
+> **enterprise application** (for an internal endpoint the gallery app
+> *On-premises SCIM app*, see the table). The enterprise app that Entra
 > creates automatically next to an app registration has no working
 > **Provisioning** page. Microsoft: *"If you create an app registration, the
 > corresponding service principal in enterprise apps won't be enabled for
@@ -356,15 +399,16 @@ identifier you set.
 | Entra object | Created via | Used for |
 | ------------ | ----------- | -------- |
 | App registration | **Entra ID → App registrations → New registration** | OIDC login: redirect URI, client ID, client secret, claims. Also the target for Conditional Access / MFA |
-| Non-gallery enterprise application (SCIM only) | **Entra ID → Enterprise applications → New application → Create your own application →** *"Integrate any other application you don't find in the gallery (Non-gallery)"* ([Microsoft SCIM guide][msscim]) | SCIM provisioning: tenant URL, credentials, attribute mappings, scope, and the **users and groups assigned** to it, which are what gets pushed |
+| Enterprise application for SCIM, **internal** SCIM endpoint (the usual case: the SCIM Base URL points at the broker's internal FQDN) | **Entra ID → Enterprise applications → New application →** search the gallery for **"On-premises SCIM app"** → Create ([on-premises SCIM][msonprem]) | SCIM provisioning through the **Entra provisioning agent** (see [The Entra provisioning agent](#the-entra-provisioning-agent-internal-scim-endpoint)): tenant URL, credentials, mappings, scope, and the **users and groups assigned** to it, which are what gets pushed |
+| Enterprise application for SCIM, SCIM endpoint **reachable from the internet** | **Entra ID → Enterprise applications → New application → Create your own application →** *"Integrate any other application you don't find in the gallery (Non-gallery)"* ([Microsoft SCIM guide][msscim]) | Same, but Entra calls the endpoint directly. Publishing the broker's SCIM endpoint to the internet is not a path Broadcom describes, and it exposes an endpoint that can create users and groups in your VCF management plane |
 
 1. Create the **app registration** for OIDC. For SAML, Broadcom links to
    Microsoft's
    [Register a SAML app](https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-register-saml-app),
    which is an External ID page, so check that it fits a workforce tenant.
-   For SCIM, also create the **non-gallery enterprise application** from the
-   table above now, so it's ready when the broker wizard hands you the SCIM
-   values.
+   For SCIM, also create the **SCIM enterprise application** from the table
+   above now and install the provisioning agent(s), so both are ready when
+   the broker wizard hands you the SCIM values.
 2. Use the **Redirect URI** (OIDC) or **Entity ID / ACS URL** (SAML) that the
    broker wizard shows you; don't type them by hand. Use FQDNs, not IPs (see
    [§9](#9-field-notes)).
@@ -380,14 +424,19 @@ identifier you set.
    address. The secret **expires** in Entra; put its expiry date in your
    operations calendar, because an expired secret stops every federated
    login.
-5. For SCIM: after the broker wizard, open the **non-gallery enterprise
+5. For SCIM: after the broker wizard, open the **SCIM enterprise
    application** (not the one that belongs to the app registration) →
    **Provisioning** → mode **Automatic**, and enter the values the wizard
    shows on *Configure SCIM push in your identity provider*: the **SCIM Base
    URL** as *Tenant URL*, plus either the **SCIM bearer token** as *Secret
    Token* or the OAuth **client ID / client secret / token endpoint**. The
    broker offers both and says to use OAuth if the IdP supports it, else the
-   bearer token. Run **Test Connection**. Push `userName` and `domain` as
+   bearer token. Microsoft lists a long-lived bearer token as *"Not
+   supported for new apps"* on its general SCIM page and prefers OAuth 2.0
+   client credentials, while its on-premises SCIM steps still use the
+   Secret Token; use whichever the app's *Admin Credentials* actually
+   offers, OAuth first. A bearer token is a long-lived secret: note when you
+   generated it and rotate it via *Generate New*. Run **Test Connection**. Push `userName` and `domain` as
    separate attributes ([OIDC page][entraoidc]). Set the scope to assigned
    users and groups, **assign the VCF groups to this enterprise app**, and
    switch provisioning on. You can regenerate the SCIM values later under
@@ -398,6 +447,50 @@ identifier you set.
    doesn't arrive ([Microsoft SCIM guide][msscim],
    [known issues][msknown]). A user not yet pushed can't log in to vCenter
    ([KB 451058][kb451058]).
+
+#### The Entra provisioning agent (internal SCIM endpoint)
+
+Entra's SCIM push comes from the cloud; the broker's SCIM Base URL is an
+internal address. The **Microsoft Entra provisioning agent** bridges that:
+it polls Entra over an **outbound** connection and calls the internal SCIM
+URL itself, so no inbound port is opened (*"You don't need to open inbound
+connections to the corporate network"*). Requirements per Microsoft
+([on-premises SCIM][msonprem], [architecture][msonpremarch]) and Broadcom
+([KB 428509][kb428509]):
+
+| Item | Requirement |
+| ---- | ----------- |
+| Licence | Microsoft Entra ID **P1** or P2 (or EMS E3/E5): *"Using this feature requires Microsoft Entra ID P1 licenses."* |
+| Server | **Windows Server 2016** or later, at least **3 GB RAM**. Microsoft states no domain-join, .NET or CPU requirement for this scenario |
+| Outbound to Azure | **443** (all traffic), **80** (CRL/OCSP for Microsoft's certificates), 8080 optional. URLs include `*.msappproxy.net`, `*.servicebus.windows.net`, `*.microsoftonline.com`, `login.windows.net`. A proxy is supported, but no TLS inspection on this traffic |
+| To the broker | **443** to the SCIM Base URL. The agent server must resolve the broker FQDN, **trust your internal CA** (root and intermediates in the Windows trust store) and reach the broker **without** a web proxy; otherwise Test Connection fails with *CredentialValidationUnavailable* ([KB 428509][kb428509]) |
+| Entra roles | **Hybrid Identity Administrator** to install and register the agent; **Application Administrator** (or Cloud Application Administrator) to configure the app |
+| Updates | The agent does **not** update itself in this scenario; Microsoft supports the latest version and the one before. Put agent updates in your operations process |
+
+**Install:** SCIM enterprise app → **Provisioning** → Get started → mode
+**Automatic** → **On-Premises Connectivity** → **Download and install**. In
+the installer, choose the extension **"On-premises application
+provisioning"** and sign in as Hybrid Identity Administrator. Back in the
+portal, select the agent → **Assign Agent(s)**, then restart the agent
+service or wait 10 minutes. Continue with step 5 above.
+
+**Redundancy:** run **two agents**, both active: *"For on-premises apps
+using the SCIM connector: The recommendation is having two active agents per
+application."* Install the second one on another server, assign both to the
+app, and place the two VMs on different hosts (preferably different
+storage). Both servers need the same CA trust, DNS and proxy bypass; if one
+lacks them, roughly half the pushes fail and provisioning looks
+intermittent. Update them one at a time.
+
+If no agent can reach the broker, only **provisioning** stops: users already
+pushed keep logging in, because OIDC login doesn't go through the agent. New
+users and membership changes don't arrive until it's fixed; check the
+**Provisioning logs** (our reading, not stated by Microsoft or Broadcom).
+The agents make the Entra-to-broker path redundant, not the broker itself.
+
+If you want to avoid the agent altogether, use **JIT** (see
+[JIT: pre-provision the groups or not](#jit-pre-provision-the-groups-or-not))
+or **AD/LDAP** provisioning: neither needs an inbound path from Entra.
 
 #### Broker side
 
@@ -506,6 +599,9 @@ before you enforce MFA.
 [kb441704]: https://knowledge.broadcom.com/external/article/441704/error-access-denied-when-using-microsoft.html
 [kb451058]: https://knowledge.broadcom.com/external/article/451058/vcenter-oidc-access-denied-troubleshooti.html
 [msknown]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/known-issues
+[msonprem]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/on-premises-scim-provisioning
+[msonpremarch]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/on-premises-application-provisioning-architecture
+[provdesign]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/infrastructure-modernization/fleet-management-blueprint/identity-and-access-management/choose-a-user-and-group-provisioning-method-for-vcf-sso.html
 [msscim]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/use-scim-to-provision-users-and-groups
 [kb451738]: https://knowledge.broadcom.com/external/article/451738/authentication-failure-in-vcfa-91-when-u.html
 
@@ -766,8 +862,9 @@ call and appliance reboots ([KB 438369][kb438369]).
 ### Before you start
 
 1. **Build the Entra side first**: app registration, claims, client secret
-   with its expiry date, and (for SCIM) the separate non-gallery enterprise
-   application plus the provisioning agent path. See
+   with its expiry date, and (for SCIM) the separate SCIM enterprise
+   application plus the provisioning agents
+   ([agent](#the-entra-provisioning-agent-internal-scim-endpoint)). See
    [Entra side](#entra-side) and [Network](#network-the-broker-needs-entra-entra-may-need-the-broker).
    Everything you can prepare before the reset shortens the time nobody can
    log in.
@@ -827,7 +924,7 @@ From [Change the Identity Provider in VCF Single Sign-On][changeidp91]:
 5. On **Configure VCF SSO**, go to the second step, **Configure Identity
    Provider**, choose **Microsoft Entra ID** and continue as in
    [Broker side](#broker-side).
-6. For SCIM: set up provisioning on the non-gallery enterprise application
+6. For SCIM: set up provisioning on the SCIM enterprise application
    with the new SCIM URL and token (see [Entra side](#entra-side), step 5),
    and wait for the first push or use *Provision on demand*.
 7. Assign roles again ([Step 6](#step-6--assign-roles-per-product)).
