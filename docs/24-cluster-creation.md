@@ -75,17 +75,61 @@ network pool  →  commission hosts  →  create the cluster (vSphere Client)
 ### Reusing an existing vDS (9.1.1+)
 
 If you want the new cluster to **join an existing vDS** rather than get its
-own, four conditions all apply:
+own, these conditions apply
+([Add an SDDC Cluster to a VCF Domain](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/building-your-private-cloud-infrastructure/working-with-workload-domains/expand-a-workload-domain/add-a-cluster-to-a-workload-domain-using-the-sddc-manager-ui.html),
+TechDocs 9.1, read verbatim 2026-11-11):
 
-- The source cluster (already on that vDS) and the new cluster must be in
-  the **same network pool** and the **same data center**.
-- Neither cluster may be **configured as a stretched cluster**.
+- The environment runs **9.1.1 or later**: *"Starting with version 9.1.1,
+  you can create an SDDC cluster that shares a vSphere Distributed Switch
+  (VDS) with an existing cluster in the same workload domain."* An instance
+  first built on 9.0 qualifies once it's upgraded.
+- The source cluster (already on that vDS) is in the **same workload
+  domain** and the **same data center** as the new cluster. You can't share
+  a management domain vDS with a cluster in a VI workload domain.
+- Neither cluster may be **configured as a vSAN stretched cluster**.
 - Total vDS count must stay under **128 per vCenter** and **16 per ESX
   host** — reusing a vDS doesn't bypass these ceilings, it just avoids
   adding a new one.
+- **Same network pool only for full reuse** (see the modes below).
 
-Get any of these wrong and the wizard's vDS step won't offer the existing
-switch as a reuse target — it isn't a soft warning, it's a hard filter.
+The wizard offers three sharing modes:
+
+| Mode | What's shared | Network pool |
+| --- | --- | --- |
+| Reuse the existing VDS as is | The vDS **and all its port groups**, unchanged | Must be the **same** as the source cluster |
+| Reuse the existing VDS and create new port groups | The vDS; the new cluster gets its own, distinct port groups | May differ |
+| Reuse the existing VDS and create a new VDS | The shared vDS for some traffic types (with new port groups), a new vDS for the rest | May differ |
+
+- *"Partial reuse of port groups is not supported. All port groups within a
+  VDS must either be shared or distinct."*
+- Uplink names must match the existing vDS's uplink names; the
+  uplink-to-vmnic mapping may differ.
+- Need a different LAG on the shared vDS: pick **Create New VDS** and enter
+  the existing vDS's name (policy reuse, all port groups new).
+
+**Field-verified (2026-11-11, upgraded from 9.0):** the wizard offered every
+existing cluster vDS in the domain for reuse, including the one carrying the
+NSX Edge uplinks. Being listed doesn't mean it will work: see the Edge bug
+below.
+
+#### Source cluster with an NSX Edge: the wizard hangs (KB 449954)
+
+If the source cluster has an NSX Edge, reusing its network configuration
+stalls the wizard on the Distributed Switch step: **NEXT stays disabled, no
+error in the UI**. The Edge uplink port groups are VLAN trunks
+(`TrunkVlanSpec`) and SDDC Manager expects a single VLAN ID; the backend
+logs *"Unable to get vlanId for portgroup"* with a `ClassCastException` in
+`/var/log/vmware/vcf/domainmanager/domainmanager.log`. Listed for SDDC
+Manager 5.2.x and 9.1.1; *"addressed in a future release"*
+([KB 449954](https://knowledge.broadcom.com/external/article/449954/sddc-manager-add-cluster-wizard-hangs-wh.html),
+read verbatim 2026-11-11).
+
+Workaround: don't pick *Reuse existing cluster network configuration*; pick
+the custom vDS option and either re-create the source configuration with
+the exact port group names (method A) or reuse the vDS with **new port
+groups** (method B). Simpler still: reuse the vDS of a cluster **without**
+an Edge, or create a new vDS. The KB doesn't say whether a reuse that gets
+past NEXT fails later in the deployment.
 
 ## 2. Create the cluster — vSphere Client
 
@@ -112,7 +156,8 @@ configured with VCF SSO and vCenter linking."*
    step 1 above.
 5. **Distributed Switch** — *"Enter the Distributed Switch details and
    click Next"* — create a new vDS, or **reuse an existing one** if the
-   four conditions above are met.
+   conditions in §1 are met (source cluster with an NSX Edge: KB 449954,
+   §1).
    > **For a new vDS with your own switch name, port group names or other
    > settings: pick Custom, then copy in the Default profile.** Same page
    > and same approach as workload domain creation
@@ -230,7 +275,7 @@ Field-by-field, the parts specific to cluster creation (everything else —
   the concrete reasons to reach for the API path even when you don't need
   LACP or a reused vDS.
 - **`networkSpec.vdsSpecs[]`** — one entry per vDS; **to reuse an existing
-  vDS** (the four-condition check in §1 above) instead of creating a new
+  vDS** (the conditions in §1 above) instead of creating a new
   one, reference the existing vDS's `name` here rather than a new one —
   the API doesn't have a separate "reuse" flag, reuse is just naming an
   object that already exists.

@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.8.9 — 2026-11-11
+- `docs/24` *Reusing an existing vDS (9.1.1+)* (#455): added the
+  same-workload-domain condition, the three sharing modes (same network
+  pool only for full reuse), port-group and uplink-name rules and the LAG
+  route, all from TechDocs 9.1 read verbatim. New subsection on KB 449954:
+  the wizard hangs (NEXT disabled, no UI error) when the source cluster has
+  an NSX Edge, with the workaround. Field-verified: an upgraded 9.0 instance
+  offers every cluster vDS for reuse, the Edge one included. Fixed "four
+  conditions" over three bullets.
+
 ## v6.8.8 — 2026-11-11
 - `docs/12` *JIT: pre-provision the groups or not* (#449): matching on the
   group name now sourced (William Lam, 9.1 SSO automation and 9.0 Keycloak
