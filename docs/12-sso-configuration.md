@@ -298,6 +298,7 @@ identifier you set.
 
 > **Evidence level:** TechDocs (the 9.0 SSO pages, re-checked against the
 > 9.1 set, both last updated 2026-11-02) and Broadcom KBs, read 2026-11-05.
+> Entra-side provisioning behaviour from Microsoft Learn, read 2026-11-11.
 > **Not lab- or field-verified in this repo.**
 
 #### Decide: protocol and provisioning
@@ -341,10 +342,29 @@ identifier you set.
 
 #### Entra side
 
-1. Create the application in Entra: an **app registration** for OIDC. For
-   SAML, Broadcom links to Microsoft's
+> **With SCIM you need two applications in Entra, not one.** The OIDC login
+> runs on an **app registration**; the SCIM push runs on a separate
+> **non-gallery enterprise application**. The enterprise app that Entra
+> creates automatically next to an app registration has no working
+> **Provisioning** page. Microsoft: *"If you create an app registration, the
+> corresponding service principal in enterprise apps won't be enabled for
+> automatic user provisioning"*, and the remedy is to *"create a second
+> non-gallery app for provisioning"*
+> ([Entra provisioning known issues][msknown]). JIT and AD/LDAP
+> provisioning only need the app registration.
+
+| Entra object | Created via | Used for |
+| ------------ | ----------- | -------- |
+| App registration | **Entra ID → App registrations → New registration** | OIDC login: redirect URI, client ID, client secret, claims. Also the target for Conditional Access / MFA |
+| Non-gallery enterprise application (SCIM only) | **Entra ID → Enterprise applications → New application → Create your own application →** *"Integrate any other application you don't find in the gallery (Non-gallery)"* ([Microsoft SCIM guide][msscim]) | SCIM provisioning: tenant URL, credentials, attribute mappings, scope, and the **users and groups assigned** to it, which are what gets pushed |
+
+1. Create the **app registration** for OIDC. For SAML, Broadcom links to
+   Microsoft's
    [Register a SAML app](https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-register-saml-app),
    which is an External ID page, so check that it fits a workforce tenant.
+   For SCIM, also create the **non-gallery enterprise application** from the
+   table above now, so it's ready when the broker wizard hands you the SCIM
+   values.
 2. Use the **Redirect URI** (OIDC) or **Entity ID / ACS URL** (SAML) that the
    broker wizard shows you; don't type them by hand. Use FQDNs, not IPs (see
    [§9](#9-field-notes)).
@@ -360,12 +380,24 @@ identifier you set.
    address. The secret **expires** in Entra; put its expiry date in your
    operations calendar, because an expired secret stops every federated
    login.
-5. For SCIM: after the broker wizard, create the provisioning in Entra with
-   the **SCIM URL + bearer token** (or OAuth client ID / secret / token
-   endpoint) that the wizard shows on *Configure SCIM push in your identity
-   provider*. Push `userName` and `domain` as separate attributes
-   ([OIDC page][entraoidc]). You can regenerate the SCIM values later under
+5. For SCIM: after the broker wizard, open the **non-gallery enterprise
+   application** (not the one that belongs to the app registration) →
+   **Provisioning** → mode **Automatic**, and enter the values the wizard
+   shows on *Configure SCIM push in your identity provider*: the **SCIM Base
+   URL** as *Tenant URL*, plus either the **SCIM bearer token** as *Secret
+   Token* or the OAuth **client ID / client secret / token endpoint**. The
+   broker offers both and says to use OAuth if the IdP supports it, else the
+   bearer token. Run **Test Connection**. Push `userName` and `domain` as
+   separate attributes ([OIDC page][entraoidc]). Set the scope to assigned
+   users and groups, **assign the VCF groups to this enterprise app**, and
+   switch provisioning on. You can regenerate the SCIM values later under
    the VCF instance → **Identity Source** → *Directory Information*.
+6. Entra pushes on a fixed cycle of about **40 minutes** that you can't
+   change; use **Provision on demand** on the enterprise app to push a
+   user or group right away, and the **Provisioning logs** when something
+   doesn't arrive ([Microsoft SCIM guide][msscim],
+   [known issues][msknown]). A user not yet pushed can't log in to vCenter
+   ([KB 451058][kb451058]).
 
 #### Broker side
 
@@ -473,6 +505,8 @@ before you enforce MFA.
 [kb436607]: https://knowledge.broadcom.com/external/article/436607/vcf-identity-broker-proxy-configuration.html
 [kb441704]: https://knowledge.broadcom.com/external/article/441704/error-access-denied-when-using-microsoft.html
 [kb451058]: https://knowledge.broadcom.com/external/article/451058/vcenter-oidc-access-denied-troubleshooti.html
+[msknown]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/known-issues
+[msscim]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/use-scim-to-provision-users-and-groups
 [kb451738]: https://knowledge.broadcom.com/external/article/451738/authentication-failure-in-vcfa-91-when-u.html
 
 ---
@@ -710,13 +744,17 @@ reconfigure the client for vCenter, VCF Operations HCX, VCF Operations, VCF
 Automation, VCF Operations for networks, or log management to the specific
 identity broker"* ([9.1][changeidp91]).
 
-> **Open point — the confirmation text contradicts the page.** The 9.1 dialog
+> **Confirmation text: fixed in the 9.1.1 UI.** The 9.1 TechDocs dialog
 > asks you to confirm deletion of *"...the provisioned users and groups, **and
 > the component configuration**"*, while the sentence under it says *"The
 > components that are configured against this identity broker are
 > retained."* The 9.0 dialog text doesn't mention component configuration at
-> all ([9.0][changeidp90]). Until this is tested, plan a window in which you
-> could repeat Steps 3–5 if a component turns out to be disconnected.
+> all ([9.0][changeidp90]). The **9.1.1 UI** (seen 2026-11-11) has reworded
+> the checkbox to *"change the identity provider configuration including the
+> provisioned users and groups"* and states the components are retained, so
+> the contradiction is gone there. Whether every component really stays
+> connected after the switch is not yet tested here, so still plan a window
+> in which you could repeat Steps 3–5 if one turns out to be disconnected.
 
 **Use *Change the Identity Provider*, not *Delete* or a full reset.** Deleting
 the SSO configuration also drops the component side, and KB 438369 describes
@@ -728,7 +766,8 @@ call and appliance reboots ([KB 438369][kb438369]).
 ### Before you start
 
 1. **Build the Entra side first**: app registration, claims, client secret
-   with its expiry date, and (for SCIM) the provisioning agent path. See
+   with its expiry date, and (for SCIM) the separate non-gallery enterprise
+   application plus the provisioning agent path. See
    [Entra side](#entra-side) and [Network](#network-the-broker-needs-entra-entra-may-need-the-broker).
    Everything you can prepare before the reset shortens the time nobody can
    log in.
@@ -770,14 +809,27 @@ From [Change the Identity Provider in VCF Single Sign-On][changeidp91]:
 2. Click **VCF SSO Overview**, then, under **VCF SSO**, the identity broker
    you configured.
 3. **Actions → Change the Identity Provider** (top right).
-4. Tick *"I confirm to delete of all SSO-related configurations, including
-   the identity provider configuration, the provisioned users and groups,
-   and the component configuration"* and click **Change**.
+4. Tick the confirmation and click **Change**. The wording differs by
+   release:
+   - TechDocs 9.1: *"I confirm to delete of all SSO-related configurations,
+     including the identity provider configuration, the provisioned users
+     and groups, and the component configuration"*.
+   - The 9.1.1 UI (seen 2026-11-11): *"I confirm to change the identity
+     provider configuration including the provisioned users and groups."*,
+     followed by *"The components that are configured against this identity
+     broker will be retained. After you configure a new identity provider,
+     you may need to assign roles to the newly provisioned users and
+     groups."*
+
+   The 9.1.1 text matches what the same TechDocs page says elsewhere: the
+   component configuration is kept, users, groups and role assignments are
+   not.
 5. On **Configure VCF SSO**, go to the second step, **Configure Identity
    Provider**, choose **Microsoft Entra ID** and continue as in
    [Broker side](#broker-side).
-6. For SCIM: create the provisioning in Entra with the new SCIM URL and
-   token, and wait for the first push.
+6. For SCIM: set up provisioning on the non-gallery enterprise application
+   with the new SCIM URL and token (see [Entra side](#entra-side), step 5),
+   and wait for the first push or use *Provision on demand*.
 7. Assign roles again ([Step 6](#step-6--assign-roles-per-product)).
 
 **9.0** has a different click-path: **Fleet Management → Identity & Access →**

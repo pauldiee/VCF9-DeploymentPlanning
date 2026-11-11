@@ -1,5 +1,19 @@
 # Changelog
 
+## v6.8.6 — 2026-11-11
+- `docs/12` *Entra side* (#449): SCIM needs **two** Entra objects. The OIDC
+  login runs on an app registration, but the enterprise app Entra creates
+  next to it isn't enabled for automatic provisioning, so SCIM goes on a
+  separate **non-gallery enterprise application** (Microsoft Learn,
+  provisioning known issues). New table of both objects with click paths;
+  step 5 now names the enterprise app, the SCIM Base URL / bearer token or
+  OAuth choice, Test Connection, scope and group assignment; new step 6 on
+  the fixed ~40-minute cycle, *Provision on demand* and the provisioning
+  logs. *Before you start* and the 9.1 procedure point to the same app.
+- `docs/12` *Procedure (9.1)* step 4 (#453): the 9.1.1 UI's confirmation
+  text no longer mentions deleting the component configuration and says
+  the components are retained; both wordings are now quoted.
+
 ## v6.8.5 — 2026-11-10
 - `docs/40` §2 step 5 and §4 (#454): the wizard's fingerprint is the SHA-256
   of the host's SSL certificate in `SHA256:<base64>` form, the same value
