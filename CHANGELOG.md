@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.8.8 — 2026-11-11
+- `docs/12` *JIT: pre-provision the groups or not* (#449): matching on the
+  group name now sourced (William Lam, 9.1 SSO automation and 9.0 Keycloak
+  lab; not tested with Entra); the Entra groups-claim settings per group
+  type (Cloud-only group display names for assigned groups,
+  `sAMAccountName` for synced groups) and the 200 (JWT) / 150 (SAML) group
+  limit from Microsoft Learn; a go-live check with a negative control.
+- `docs/12` *Change the Identity Provider* open point (#453): no field
+  report found; added a post-switch check (Component Configuration tab,
+  Entra login on each component).
+
 ## v6.8.7 — 2026-11-11
 - `docs/12` new *JIT: pre-provision the groups or not* (#449): comparison of
   the wizard's two JIT group options (Just-In-Time Group Provisioning vs

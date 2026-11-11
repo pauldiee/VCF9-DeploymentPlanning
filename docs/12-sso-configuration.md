@@ -356,16 +356,42 @@ Same for both:
 **Our take: Groups Pre-provisioning.** For a management platform you want
 roles in place before anyone logs in, and you don't want every Entra group
 your admins belong to showing up in VCF. The catch is the match between the
-group name in the wizard and what Entra puts in the `groups` claim. By
-default Entra sends group **Object IDs (GUIDs)**, not names; change that
-under the app registration's **Token configuration → Add groups claim**
-(e.g. `sAMAccountName` for groups synced from AD). Broadcom doesn't say
-which value the broker matches on, so test with one user in one group
-before you assign the rest.
+group name in the wizard and what Entra puts in the `groups` claim.
+
+- **The broker matches on the group name.** Broadcom's page only says to
+  pre-provision *"if you know the group names"*. William Lam's 9.1 SSO
+  automation defines the pre-provisioned group as *"the name of the group
+  that has been provisioned in IdP"*, and his 9.0 lab walkthrough
+  pre-creates `vcf-admins` with the same value the IdP sends in `groups`
+  (with *Full group path* switched off) ([9.1 post][lam91], [9.0 Keycloak
+  post][lam90]). That's a working lab with Keycloak; nobody has published it
+  for Entra.
+- **Entra sends GUIDs unless you change it:** *"By default, group
+  `ObjectID` attributes will be emitted in the group claim value"*
+  ([Entra group claims][msgroups]). In the app registration, **Token
+  configuration → Add groups claim**, pick the **Source attribute**:
+  - cloud-only groups: **Cloud-only group display names**. It works only
+    for groups **assigned to the application** (*"You can only add
+    cloud-group names of assigned groups to an application"*), so assign
+    the VCF groups to the app and enter the display names in the wizard.
+  - groups synced from AD: `sAMAccountName` (or the `NetbiosDomain\` /
+    `DNSDomainName\` variants; Entra Connect 1.2.70 or later).
+- **Group limit:** *"The number of groups emitted in a token is limited to
+  150 for SAML assertions and 200 for JWT, including nested groups."* Above
+  that the group claim is dropped, and an admin in many groups logs in
+  without a role. Restrict the claim to **Groups assigned to the
+  application** ([Entra group claims][msgroups]).
+
+**Check before go-live** (not tested in this repo): put one test user in
+one pre-provisioned group with a role, log in, and confirm the role
+arrives. For a negative control, leave the claim on Object IDs and confirm
+the role does **not** arrive; that proves what the broker matches on.
 
 > **Evidence level:** the table and the quotes are from TechDocs 9.1 (pages
-> last updated 2026-11-09, read 2026-11-11). The "risk" row and the Entra
-> GUID behaviour are our reading, not stated by Broadcom. Not lab- or
+> last updated 2026-11-09, read 2026-11-11). Matching on the name comes
+> from William Lam's Keycloak lab, not from Broadcom and not tested with
+> Entra. The Entra claim behaviour and group limit are from Microsoft Learn
+> (read 2026-11-11). The "risk" row is our reading. Not lab- or
 > field-verified in this repo.
 
 #### Network: the broker needs Entra, Entra may need the broker
@@ -600,6 +626,9 @@ before you enforce MFA.
 [kb451058]: https://knowledge.broadcom.com/external/article/451058/vcenter-oidc-access-denied-troubleshooti.html
 [msknown]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/known-issues
 [msonprem]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/on-premises-scim-provisioning
+[msgroups]: https://learn.microsoft.com/en-us/entra/identity/hybrid/connect/how-to-connect-fed-group-claims
+[lam91]: https://williamlam.com/2026/05/vcf-9-1-automating-vcf-single-sign-on-sso-with-oidc-based-identity-provider.html
+[lam90]: https://williamlam.com/2025/06/vcf-9-0-single-sign-on-sso-with-keycloak-idp.html
 [msonpremarch]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/on-premises-application-provisioning-architecture
 [provdesign]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/design/design-blueprints-for/infrastructure-modernization/fleet-management-blueprint/identity-and-access-management/choose-a-user-and-group-provisioning-method-for-vcf-sso.html
 [msscim]: https://learn.microsoft.com/en-us/entra/identity/app-provisioning/use-scim-to-provision-users-and-groups
@@ -849,8 +878,12 @@ identity broker"* ([9.1][changeidp91]).
 > the checkbox to *"change the identity provider configuration including the
 > provisioned users and groups"* and states the components are retained, so
 > the contradiction is gone there. Whether every component really stays
-> connected after the switch is not yet tested here, so still plan a window
-> in which you could repeat Steps 3–5 if one turns out to be disconnected.
+> connected after the switch is not yet tested here, and no published field
+> report confirms it, so still plan a window in which you could repeat
+> Steps 3–5 if one turns out to be disconnected. **Check after the switch:**
+> on the broker's **Component Configuration** tab every component should
+> still show as configured, and an Entra account should log in to each of
+> them (vCenter, NSX, VCF Operations, VCF Automation).
 
 **Use *Change the Identity Provider*, not *Delete* or a full reset.** Deleting
 the SSO configuration also drops the component side, and KB 438369 describes
