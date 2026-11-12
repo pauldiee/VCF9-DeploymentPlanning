@@ -1,8 +1,8 @@
 ---
 lang: nl
 source: ../11-esx-coredump.md
-source_hash: "75ab7c723e5888e1"
-synced: "2026-09-30"
+source_hash: "3c28c5c36d9ba3ea"
+synced: "2026-11-12"
 reviewed: "no"
 ---
 
@@ -19,8 +19,12 @@ de hosts ná bring-up, in dezelfde categorie als NTP of DNS, maar makkelijk te
 missen omdat niets in de fleet-tooling erom vraagt.
 
 **Wat het is.** Standaard schrijft een ESX-host die een PSOD (Purple Screen of
-Death) krijgt zijn coredump naar **lokale** schijf (een coredump-partitie, of
-een bestand op VMFS/vSAN). Voor één host is dat prima, maar op fleet-schaal —
+Death) krijgt zijn coredump naar **lokale** schijf: sinds ESXi 7.0 een
+dumpbestand op het ESX-OSData-volume, op oudere of geüpgradede builds
+mogelijk een coredump-partitie (wat de host standaard doet en hoe je de dump
+na de reboot terugvindt:
+[§6](#6-de-lokale-standaard-psod-gedrag-en-de-dump-terugvinden)). Voor één
+host is dat prima, maar op fleet-schaal —
 en zeker bij hosts die van een klein lokaal device booten — wil je crashdumps
 centraal hebben, op een plek waar Broadcom Support er ook echt bij kan zonder
 dat je achteraf op de console van elke host moet inloggen. De service
@@ -52,6 +56,10 @@ daarna de hosts ernaar wijzen. Elke stap verwijst naar de sectie met de details.
    vCenter zodra hij zich heeft gemeld.
 5. **Als een host zich niet registreert** ([§5](#5-praktijknotities)) — de
    valkuilen uit de praktijk.
+6. **Controleer ook de lokale standaard**
+   ([§6](#6-de-lokale-standaard-psod-gedrag-en-de-dump-terugvinden)) — een
+   actief lokaal dumpdoel op elke host, en de keuze of hosts na een PSOD zelf
+   herstarten.
 
 ---
 
@@ -204,12 +212,135 @@ voor een herstart, niet als een routinecontrole.
   die geen crashverkeer op de vCenter-appliance zelf willen laten binnenkomen.
   Draait jouw omgeving een standalone collector, laat `--server-ip` dan
   daarnaar wijzen in plaats van naar vCenter.
-- **Dit vervangt de lokale coredump-partities niet.** Netwerk-coredump komt er
+- **Dit vervangt het lokale coredump-doel niet.** Netwerk-coredump komt er
   bovenop — als de host de collector niet kan bereiken op het moment van de
   PSOD (netwerk plat, wat goed denkbaar is op precies de machine die net is
-  gecrasht), is de lokale partitie nog steeds de terugvaloptie. Verwijder de
-  lokale coredump-voorziening niet in de veronderstelling dat het netwerkpad
-  altijd werkt.
+  gecrasht), is het lokale dumpbestand (of de partitie) nog steeds de
+  terugvaloptie. Verwijder de lokale coredump-voorziening niet in de
+  veronderstelling dat het netwerkpad altijd werkt; zie §6 om te controleren
+  dat die echt actief is.
+
+---
+
+## 6. De lokale standaard: PSOD-gedrag en de dump terugvinden
+
+Wat een host uit zichzelf doet, nog vóór de netwerkconfiguratie hierboven.
+De bronnen zijn de Broadcom-KB's onder *Referenties*; de meeste noemen ESXi
+7.x en 8.x, KB 313264 noemt ook ESX 9.0. Citaten staan in het Engels, zoals
+in de bron.
+
+### 6.1 De host blijft op het paarse scherm staan
+
+De advanced setting `Misc.BlueScreenTimeout` bepaalt of een host na een PSOD
+zelf herstart. KB 345100: *"The default value is set to "0""*, en *"The
+default and Broadcom recommended setting is to leave the host in an
+unresponsive state with the purple diagnostic screen displayed on the console
+screen to aid in troubleshooting."*
+
+Standaard **herstart de host dus niet**: iemand moet het scherm lezen of
+fotograferen en de host resetten. vSphere HA herstart de VM's hoe dan ook op
+een andere host. Wil je liever een automatische herstart, stel dan het aantal
+seconden in:
+
+```bash
+esxcfg-advcfg -s 120 /Misc/BlueScreenTimeout
+esxcfg-advcfg -g /Misc/BlueScreenTimeout
+```
+
+of in de Host Client: **Manage → System → Advanced settings**, zoek
+`Misc.BlueScreenTimeout`, bewerk, sla op (*"This does not need a host
+reboot."*). De afweging: met een automatische herstart is de host sneller
+terug, maar niemand ziet het paarse scherm. Zorg dat het dumpdoel werkt
+(6.2) voordat je daarvoor kiest.
+
+### 6.2 Waar de dump standaard heen gaat
+
+Sinds ESXi 7.0 gaat de dump naar een **bestand**, niet naar een partitie.
+KB 314320: *"ESXi 7.0 creates a VMFS-L based ESX-OSData volume and configures
+a coredump file to be stored in it if the volume is larger than 4GB"*. De
+bootoptie die daarachter zit (KB 313264, die ESX 9.0 noemt) is
+`autoCreateDumpFile`, standaard `TRUE`: *"The attempted order of creating the
+coredump file is first to the VMFS-L ESX-OSData, then to USB VMFS-L, and
+finally a local VMFS datastore."* Het bestand krijgt automatisch een grootte
+(`dumpSize` standaard 0) en is *"limited to half of the available space on
+the VMFS-L volume."*
+
+Controleer het op elke host:
+
+```bash
+esxcli system coredump file list        # Active en Configured allebei true
+esxcli system coredump partition list   # een partitie in de oude stijl, als die er is
+esxcli system coredump network get      # het netwerkdoel uit §2
+```
+
+Is er geen actief bestand, maak er dan een aan en activeer het (KB 314320;
+`-d` en `-f` zijn optioneel, de host kiest dan zelf een datastore en naam):
+
+```bash
+esxcli storage filesystem list                              # noteer de datastore-UUID
+esxcli system coredump file add -d <datastore_UUID> -f <naam>
+esxcli system coredump file set --smart --enable true
+esxcli system coredump file list
+```
+
+KB 314320: *"Software iSCSI and Software FCoE are not supported for coredump
+locations."* Op hosts die van software iSCSI booten is het netwerkdoel uit
+§2 daarom niet optioneel.
+
+### 6.3 De dump terugvinden na de reboot
+
+Zoek na de herstart naar een `vmkernel-zdump`-bestand. KB 310769: *"Find the
+`vmkernel-zdump` file in the `/root/` or `/var/core/` directory"*.
+
+```bash
+ls -lh /var/core/ /root/
+```
+
+Een `vm-support`-bundel neemt hem mee, en om die bundel vraagt Broadcom
+Support. Wil je de crash zelf lezen, haal dan de vmkernel-log uit de zdump
+(KB 310769, *"Use the `vmkdump` or `esxcfg-dumppart` utility to extract the
+log."*):
+
+```bash
+esxcfg-dumppart -L /var/core/vmkernel-zdump.1
+```
+
+Dat schrijft een platte tekst `vmkernel-log.<n>` met wat het paarse scherm
+liet zien en de logregels daarvoor.
+
+**Versleutelde dumps.** Met vSphere VM Encryption aan, KB 374266: *"ESXi core
+dumps are automatically encrypted to protect sensitive customer data"*, ook
+de kopieën in een `vm-support`-bundel. Ontsleutel ze op de host voordat je ze
+analyseert; de host heeft na de reboot zijn sleutel van de key provider
+nodig:
+
+```bash
+crypto-util envelope describe --offset 4096 /var/core/vmkernel-zdump.1
+crypto-util envelope extract --offset 4096 /var/core/vmkernel-zdump.1 /var/core/unenc-vmkernel-zdump.1
+```
+
+### 6.4 Als er geen dump is
+
+- **Geen actief doel na een upgrade.** KB 437765: na een upgrade naar een
+  nieuwe hoofdversie kan het dumpbestand nog bestaan terwijl *"the kernel
+  drops the active configuration pointer"*. vCenter geeft dan *"No coredump
+  target has been configured. Host core dumps cannot be saved."* Herstel het
+  met `esxcli system coredump file set --smart --enable true` (6.2).
+  Controleer dit na elke upgrade, niet pas na de volgende crash.
+- **De host herstartte zonder PSOD.** Een hardwarefout, een BMC-reset of
+  stroomuitval laat geen zdump achter. De oorzaak staat dan in het eigen
+  eventlog van de server (IPMI SEL, iDRAC, iLO, XCC).
+- **De dump kon niet worden geschreven.** Viel het bootdevice zelf weg
+  (bijvoorbeeld APD/PDL op een SAN-boot-LUN), dan was ook het lokale bestand
+  op ESX-OSData onbereikbaar. Precies daarvoor is het netwerkdoel uit §2.
+- **De host is te vroeg gereset.** Met de standaardtimeout van 0 toont het
+  scherm de voortgang van de dump; laat die afmaken voordat iemand de host
+  uit- en aanzet.
+
+**Niet geverifieerd:** we vonden geen Broadcom-pagina die zegt dat de host de
+dump bij de volgende boot automatisch naar `/var/core` kopieert, of hoe dat
+specifiek op ESX 9 werkt. Wil je het op jouw build bewijzen, geef dan een
+test-PSOD op een host die je kunt missen (§4) en kijk daarna in `/var/core`.
 
 ---
 
@@ -221,3 +352,17 @@ voor een herstart, niet als een routinecontrole.
   Broadcom TechDocs
 - [VMware ESXi Dump Collector Support](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/7-0/vsphere-networking/introduction-to-vsphere-networking/esxi-dump-collector-support.html) —
   Broadcom TechDocs
+- [KB 345100 — Configuring an ESXi host to restart after becoming unresponsive with a purple diagnostic screen](https://knowledge.broadcom.com/external/article/345100/configuring-an-esxesxi-host-to-restart-a.html) —
+  Broadcom KB (§6.1)
+- [KB 314320 — Configuring ESXi coredump to file instead of partition](https://knowledge.broadcom.com/external/article/314320/configuring-esxi-coredump-to-file-instea.html) —
+  Broadcom KB (§6.2)
+- [KB 313264 — Additional Kernel boot options available in ESXi 7.0 and later versions](https://knowledge.broadcom.com/external/article/313264/additional-kernel-boot-options-available.html) —
+  Broadcom KB (§6.2)
+- [Set Up a File as Core Dump Location (vSphere 8.0)](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/8-0/vsphere-storage-8-0/working-with-datastores-in-vsphere-storage-environment/managing-vsphere-vmfs-datastores/setting-up-esxi-core-dump-on-a-vmfs-datastore/set-up-a-file-as-core-dump-location.html) —
+  Broadcom TechDocs (§6.2)
+- [KB 310769 — Extracting the log file after an ESXi host fails with a purple screen error](https://knowledge.broadcom.com/external/article/310769/extracting-the-log-file-after-an-esx-or.html) —
+  Broadcom KB (§6.3)
+- [KB 374266 — How to decrypt a core dump following an ESXi host PSOD](https://knowledge.broadcom.com/external/article/374266/psod-core-dump-is-encrypted.html) —
+  Broadcom KB (§6.3)
+- [KB 437765 — "No coredump target has been configured" alert following upgrade](https://knowledge.broadcom.com/external/article/437765/no-coredump-target-has-been-configured-a.html) —
+  Broadcom KB (§6.4)
