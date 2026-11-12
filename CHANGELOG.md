@@ -1,5 +1,18 @@
 # Changelog
 
+## v6.9.1 — 2026-11-12
+- `docs/11` new §6 *The local default: PSOD behaviour and finding the dump*
+  (#459): `Misc.BlueScreenTimeout` default 0, so the host stays on the
+  purple screen (KB 345100), and how to set an automatic reboot; the default
+  dump file on ESX-OSData, `autoCreateDumpFile` and its placement order
+  (KB 313264, lists ESX 9.0), check/add/activate commands and the software
+  iSCSI/FCoE limit (KB 314320); `vmkernel-zdump` in `/var/core` or `/root`
+  after the reboot, log extraction (KB 310769), encrypted dumps (KB 374266);
+  when there is no dump, incl. the lost active target after an upgrade
+  (KB 437765). Intro and the local-partition field note corrected (a file
+  since 7.0). Automatic copy to `/var/core` at boot on ESX 9 marked as not
+  verified. KBs read 2026-11-12. Dutch translation updated.
+
 ## v6.9.0 — 2026-11-11
 - `docs/32` §3.3 (#457): vGPU branch table now has the branch type, latest
   release and EOL per branch: 19.7 (LTS, EOL Jul 2028), 20.3 (Production,

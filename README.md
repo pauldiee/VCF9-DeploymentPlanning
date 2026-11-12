@@ -45,7 +45,7 @@ sidebar mirrors these bands.
 | ----------------------------------- | ------------------------------------------------------ |
 | `docs/08-backup-target.md`          | Build guide for the SFTP backup target (building, verifying, field-notes gotchas) |
 | `docs/09-binary-depot.md`           | Build guide for the offline depot / VCF Download Tool (feed the depot, connect VCF, the fleet proxy) |
-| `docs/11-esx-coredump.md`           | Build guide for the ESXi network Dump Collector (enable on vCenter, point every host at it, verify) |
+| `docs/11-esx-coredump.md`           | Build guide for the ESXi network Dump Collector (enable on vCenter, point every host at it, verify), plus the local default: PSOD behaviour and finding the dump after a reboot |
 | `docs/12-sso-configuration.md`      | Build guide for configuring fleet SSO via the VCF Identity Broker (identity provider, per-product federation, role mapping, verification) |
 
 **Build & expand** — adding domains, clusters, hosts and a second AZ:
