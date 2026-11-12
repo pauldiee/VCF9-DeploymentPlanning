@@ -22,7 +22,7 @@ Supervisor ([`32-gpu-hosts.md`](32-gpu-hosts.md)).
 
 ## The flow
 
-[![Connected build flow: eight steps across four roles and consoles, left to right: tokens and keys, licence service, VM classes in the vSphere Client, region and quota in Provider Management, library, namespace class, project and namespace and the Quickstart in the organization, install Private AI Services in the vSphere Client, activate it in a namespace](../web/public/diagrams/paif-connected-flow.svg)](../web/public/diagrams/paif-connected-flow.svg)
+[![Connected build flow: eight steps across four roles and consoles, left to right: tokens and keys, licence service, VM classes in the vSphere Client, region and quota in Provider Management, library, namespace class, project and namespace and the Quickstart in the organization, install Private AI Services in the vSphere Client, activate it in a namespace](../web/public/diagrams/paif-connected-flow.png)](../web/public/diagrams/paif-connected-flow.svg)
 
 *Click the picture to open it full size.*
 

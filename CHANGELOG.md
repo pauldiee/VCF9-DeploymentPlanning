@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.9.3 — 2026-11-12
+- Diagrams (#462): every SVG in `web/public/diagrams` now has a 2x PNG next to
+  it, and the docs show the PNG with a link to the SVG (docs/36 twice,
+  docs/37, docs/39). An SVG copied from the page did not paste into
+  PowerPoint; the PNG does. New `web/scripts/render-diagram-pngs.mjs`
+  (`npm run render:diagram-pngs`, headless Edge or Chrome) renders them and
+  records each SVG's hash in `web/scripts/diagram-pngs.json`; the new prebuild
+  check `check-diagram-pngs.mjs` fails the build when a PNG is missing or older
+  than its SVG.
+
 ## v6.9.2 — 2026-11-12
 - `docs/39` §4.4 *Firewall flows* (#461): new diagram
   (`web/public/diagrams/protection-recovery-firewall-flows.svg`) with the

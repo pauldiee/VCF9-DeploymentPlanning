@@ -152,6 +152,13 @@ Before committing any doc change:
    without bringing the translation in line. `npm run build` reports stale
    files as a warning (`--strict` fails instead).
 
+7. **Diagrams (#462)** — after adding or editing an SVG in
+   `web/public/diagrams`, run `npm run render:diagram-pngs` in `web/` (needs
+   Edge or Chrome) and commit the PNG plus `web/scripts/diagram-pngs.json`.
+   Docs embed the PNG and link to the SVG:
+   `[![alt](../web/public/diagrams/x.png)](../web/public/diagrams/x.svg)`.
+   `npm run build` fails on a missing or stale PNG (`check-diagram-pngs.mjs`).
+
 If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 values on every version component).
 
 ---

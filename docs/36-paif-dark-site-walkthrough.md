@@ -20,7 +20,7 @@ the GPU workload domain and Supervisor exist
 
 ## The flow
 
-[![Dark-site build flow: six lanes (phases 1, 3 to 7), each pulled on the bastion host, carried across the air gap in Carry 1, 2 or 3, and pushed or installed by the admin host](../web/public/diagrams/paif-dark-site-flow.svg)](../web/public/diagrams/paif-dark-site-flow.svg)
+[![Dark-site build flow: six lanes (phases 1, 3 to 7), each pulled on the bastion host, carried across the air gap in Carry 1, 2 or 3, and pushed or installed by the admin host](../web/public/diagrams/paif-dark-site-flow.png)](../web/public/diagrams/paif-dark-site-flow.svg)
 
 *Click the picture to open it full size.*
 
@@ -32,7 +32,7 @@ repeats on each refresh. The numbers are the phases below.
 
 ## The order, and who does what
 
-[![Dark-site build order: ten columns left to right across five roles and consoles: prepare, hosts with Carry 1 and Harbor on the inside, then pull on the bastion and push on the admin host in parallel with the VKr library, then the steps shared with the connected build: VM classes, region and quota, organization content, Quickstart, install and activate Private AI Services](../web/public/diagrams/paif-dark-site-order.svg)](../web/public/diagrams/paif-dark-site-order.svg)
+[![Dark-site build order: ten columns left to right across five roles and consoles: prepare, hosts with Carry 1 and Harbor on the inside, then pull on the bastion and push on the admin host in parallel with the VKr library, then the steps shared with the connected build: VM classes, region and quota, organization content, Quickstart, install and activate Private AI Services](../web/public/diagrams/paif-dark-site-order.png)](../web/public/diagrams/paif-dark-site-order.svg)
 
 *Click the picture to open it full size.*
 
