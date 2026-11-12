@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.9.2 — 2026-11-12
+- `docs/39` §4.4 *Firewall flows* (#461): new diagram
+  (`web/public/diagrams/protection-recovery-firewall-flows.svg`) with the
+  protected and recovery site side by side: the cross-site flows (appliance
+  to appliance 443/5480, appliance to remote vCenter 443, ESX to ESX 32032
+  enhanced replication highlighted, ESX to the recovery vSphere Replication
+  server 31031/32032 legacy) and the intra-site flows per site. Drawn from the
+  same Ports and Protocols listing as the table (read 2026-11-04); the table
+  stays the reference. Notes that the sites swap roles after a reprotect.
+
 ## v6.9.1 — 2026-11-12
 - `docs/11` new §6 *The local default: PSOD behaviour and finding the dump*
   (#459): `Misc.BlueScreenTimeout` default 0, so the host stays on the

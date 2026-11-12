@@ -210,7 +210,10 @@ Decide how recovered VMs get their network, before you set up mappings:
 
 From the [Ports and Protocols][ports] tool (products *Protection and Recovery*
 and *vSphere Replication*; the 9.1.0 and 9.1.1 listings are identical, read
-2026-11-04):
+2026-11-04). The picture shows the same flows per site; the table below is the
+reference.
+
+[![Firewall flows between the protected site and the recovery site: appliance to appliance on 443 and 5480, each appliance to the remote vCenter on 443, protected ESX to recovery ESX on 32032 for enhanced replication data, protected ESX to the recovery vSphere Replication server on 31031 and 32032 for legacy replication, and the intra-site flows per site](../web/public/diagrams/protection-recovery-firewall-flows.svg)](../web/public/diagrams/protection-recovery-firewall-flows.svg)
 
 | Source | Destination | Port(s) | Proto | Purpose |
 | --- | --- | --- | --- | --- |

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 790" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="t">Protection and Recovery 9.1 firewall flows between the two sites</title>
+<desc id="d">Protected site on the left, recovery site on the right. Across the sites: appliance to appliance on 443 and 5480, each appliance to the remote vCenter on 443, protected ESX hosts to recovery ESX hosts on 32032 for enhanced replication data, and protected ESX hosts to the recovery vSphere Replication server on 31031 and 32032 for legacy replication. Within a site: appliance to local vCenter on 443 and 9084, and at the recovery site appliance to vSphere Replication server on 8123, vSphere Replication server to ESX on 902 TCP and UDP, appliance to ESX on 902 and 443. Admin workstation to each appliance on 5480 and 443, each appliance optionally to vcsa.vmware.com on 443.</desc>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c2410c"/></marker>
+<style>
+.lbl{font-size:13px;fill:#0f172a;paint-order:stroke;stroke:#ffffff;stroke-width:5px;stroke-linejoin:round}
+.box{fill:#ffffff;stroke-width:1.8}
+.bt{font-size:14px;fill:#0f172a;text-anchor:middle}
+.bs{font-size:12px;fill:#475569;text-anchor:middle}
+.mg{fill:none;stroke:#475569;stroke-width:2}
+.dash{stroke-dasharray:7 5}
+</style>
+</defs>
+<rect width="1260" height="790" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="630" y="36" font-size="20" font-weight="700" fill="#0f172a" text-anchor="middle">Protection and Recovery 9.1: firewall flows between the two sites</text>
+<text x="630" y="60" font-size="13" fill="#475569" text-anchor="middle">Arrows point from source to destination. Port numbers are TCP unless stated otherwise.</text>
+
+<g transform="translate(0,-50)">
+<!-- site panels -->
+<rect x="15" y="140" width="485" height="545" rx="8" fill="#dbeafe" fill-opacity="0.35" stroke="#3b82f6" stroke-opacity="0.5"/>
+<text x="32" y="168" font-size="16" font-weight="700" fill="#0f172a">Protected site</text>
+<rect x="760" y="140" width="485" height="545" rx="8" fill="#dcfce7" fill-opacity="0.35" stroke="#22c55e" stroke-opacity="0.5"/>
+<text x="1228" y="168" font-size="16" font-weight="700" fill="#0f172a" text-anchor="end">Recovery site</text>
+<text x="630" y="168" font-size="13" font-weight="700" fill="#475569" text-anchor="middle">between the sites</text>
+
+<!-- ===== lines (drawn first, boxes on top) ===== -->
+<!-- cross-site: appliance to appliance -->
+<path class="mg" d="M470 352 H788" marker-end="url(#a)"/>
+<text class="lbl" x="630" y="344" text-anchor="middle">443 site-to-site, 5480 replication mgmt</text>
+<!-- cross-site: appliance to remote vCenter (both ways) -->
+<path class="mg" d="M470 330 L788 234" marker-end="url(#a)"/>
+<path class="mg" d="M790 330 L472 234" marker-end="url(#a)"/>
+<text class="lbl" x="630" y="252" text-anchor="middle">443 appliance to remote vCenter</text>
+<!-- cross-site: legacy replication -->
+<path class="mg dash" d="M450 580 V485 H788" marker-end="url(#a)"/>
+<text class="lbl" x="630" y="477" text-anchor="middle">31031, 32032 legacy replication</text>
+<!-- cross-site: enhanced replication data -->
+<path d="M470 615 H784" fill="none" stroke="#c2410c" stroke-width="5" marker-end="url(#o)"/>
+<text class="lbl" x="630" y="600" text-anchor="middle" font-weight="700" style="fill:#c2410c">32032 enhanced replication data</text>
+
+<!-- protected site, intra -->
+<path class="mg" d="M390 320 V242" marker-end="url(#a)"/>
+<text class="lbl" x="398" y="286">443, 9084</text>
+<path class="mg" d="M190 355 H268" marker-end="url(#a)"/>
+<text class="lbl" x="229" y="346" text-anchor="middle">5480, 443</text>
+<path class="mg dash" d="M285 320 V215 H192" marker-end="url(#a)"/>
+<text class="lbl" x="238" y="207" text-anchor="middle">443</text>
+
+<!-- recovery site, intra -->
+<path class="mg" d="M870 320 V242" marker-end="url(#a)"/>
+<text class="lbl" x="878" y="286">443, 9084</text>
+<path class="mg" d="M860 390 V448" marker-end="url(#a)"/>
+<text class="lbl" x="868" y="424">8123</text>
+<path class="mg" d="M860 520 V578" marker-end="url(#a)"/>
+<text class="lbl" x="868" y="554">902 TCP + UDP</text>
+<path class="mg" d="M970 390 V578" marker-end="url(#a)"/>
+<text class="lbl" x="978" y="470">902, 443</text>
+<path class="mg" d="M1070 355 H992" marker-end="url(#a)"/>
+<text class="lbl" x="1031" y="346" text-anchor="middle">5480, 443</text>
+<path class="mg dash" d="M975 320 V215 H1068" marker-end="url(#a)"/>
+<text class="lbl" x="1022" y="207" text-anchor="middle">443</text>
+
+<!-- ===== boxes ===== -->
+<!-- protected -->
+<rect class="box" x="310" y="182" width="160" height="58" rx="7" stroke="#3b82f6"/>
+<text class="bt" x="390" y="216" font-weight="700">vCenter</text>
+<rect class="box" x="270" y="320" width="200" height="70" rx="7" stroke="#3b82f6"/>
+<text class="bt" x="370" y="349" font-weight="700">Protection and Recovery</text>
+<text class="bt" x="370" y="368" font-weight="700">appliance</text>
+<rect class="box" x="270" y="580" width="200" height="70" rx="7" stroke="#3b82f6"/>
+<text class="bt" x="370" y="609" font-weight="700">ESX hosts</text>
+<text class="bs" x="370" y="628">replication source</text>
+<rect class="box" x="30" y="320" width="160" height="70" rx="7" stroke="#94a3b8"/>
+<text class="bt" x="110" y="350">Admin workstation</text>
+<text class="bs" x="110" y="369">browser</text>
+<rect class="box dash" x="30" y="192" width="160" height="46" rx="7" stroke="#94a3b8"/>
+<text class="bt" x="110" y="212">vcsa.vmware.com</text>
+<text class="bs" x="110" y="229">optional, diagnostics</text>
+
+<!-- recovery -->
+<rect class="box" x="790" y="182" width="160" height="58" rx="7" stroke="#22c55e"/>
+<text class="bt" x="870" y="216" font-weight="700">vCenter</text>
+<rect class="box" x="790" y="320" width="200" height="70" rx="7" stroke="#22c55e"/>
+<text class="bt" x="890" y="349" font-weight="700">Protection and Recovery</text>
+<text class="bt" x="890" y="368" font-weight="700">appliance</text>
+<rect class="box" x="790" y="450" width="140" height="70" rx="7" stroke="#22c55e"/>
+<text class="bt" x="860" y="478">vSphere Replication</text>
+<text class="bt" x="860" y="496">server</text>
+<text class="bs" x="860" y="512">legacy replication</text>
+<rect class="box" x="790" y="580" width="200" height="70" rx="7" stroke="#22c55e"/>
+<text class="bt" x="890" y="609" font-weight="700">ESX hosts</text>
+<text class="bs" x="890" y="628">replication target</text>
+<rect class="box" x="1070" y="320" width="160" height="70" rx="7" stroke="#94a3b8"/>
+<text class="bt" x="1150" y="350">Admin workstation</text>
+<text class="bs" x="1150" y="369">browser</text>
+<rect class="box dash" x="1070" y="192" width="160" height="46" rx="7" stroke="#94a3b8"/>
+<text class="bt" x="1150" y="212">vcsa.vmware.com</text>
+<text class="bs" x="1150" y="229">optional, diagnostics</text>
+
+<!-- ===== legend ===== -->
+<path d="M30 720 H90" fill="none" stroke="#c2410c" stroke-width="5"/>
+<text x="102" y="725" font-size="13" fill="#0f172a">Replication data (enhanced): the rule you most often need to request, between the two sites' ESX networks</text>
+<path class="mg" d="M30 748 H90"/>
+<text x="102" y="753" font-size="13" fill="#0f172a">Management</text>
+<path class="mg dash" d="M250 748 H310"/>
+<text x="322" y="753" font-size="13" fill="#0f172a">Legacy replication or optional</text>
+<text x="30" y="786" font-size="13" fill="#0f172a">Flows are drawn per role. After a reprotect the sites swap roles, so plan the cross-site rules in both directions if you will fail back.</text>
+<text x="30" y="812" font-size="12" fill="#475569">Source: Ports and Protocols tool, products Protection and Recovery and vSphere Replication (9.1.0 and 9.1.1 identical), read 2026-11-04.</text>
+</g>
+</svg>
