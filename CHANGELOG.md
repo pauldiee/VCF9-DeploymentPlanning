@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.9.4 — 2026-11-13
+- `docs/38` §3.4 *Firewall flows* (#465): new diagram
+  (`web/public/diagrams/hcx-firewall-flows.svg` + 2x PNG) with the legacy
+  (source) and VCF 9.1 (destination) side next to each other: the cross-site
+  flows (Manager to Manager 443 for the site pair, IX/NE uplink tunnels on
+  UDP 4500 highlighted, optional Application Path Resiliency range) and the
+  intra-site flows per site (HCX Manager to vCenter/NSX/ESX, IX to ESX
+  vMotion 8000, ESX to IX 902/31031/32032, admin workstation, and on the
+  9.1 side the VCF Identity Broker and License Server). Drawn from the same
+  table; the table stays the reference.
+
 ## v6.9.3 — 2026-11-12
 - Diagrams (#462): every SVG in `web/public/diagrams` now has a 2x PNG next to
   it, and the docs show the PNG with a link to the SVG (docs/36 twice,

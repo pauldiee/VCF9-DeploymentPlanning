@@ -205,7 +205,12 @@ Count the appliances on **both** sides:
 
 The authoritative list is the [Ports and Protocols portal][ports] (product
 **VCF Operations HCX**; 9.1.0 has 71 rows and 9.1.1 has 50, so pick your
-version). The flows that most often need a change request:
+version). The picture shows the flows below per site; the table is the
+reference.
+
+[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, IX to ESX vMotion on 8000, ESX to IX on 902, 31031 and 32032, and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
+
+The flows that most often need a change request:
 
 | Source | Destination | Port(s) | Proto | Purpose |
 | --- | --- | --- | --- | --- |
