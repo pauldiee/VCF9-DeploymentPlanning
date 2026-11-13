@@ -253,7 +253,10 @@ below come from field experience and inference, and each row says which.
 > ([`38-hcx-migration.md`](38-hcx-migration.md)). The legacy side always starts
 > the tunnels, so the inbound rules sit on the VCF 9.1 side. Full list:
 > [Ports and Protocols](https://ports.broadcom.com/), product *VCF Operations HCX*
-> (9.1.0 and 9.1.1 listings differ).
+> (9.1.0 and 9.1.1 listings differ). On hosts with a VMkernel tagged for
+> vSphere Replication or vSphere Replication NFC, the replication rows use that
+> VMkernel's IPs, not vmk0's: see
+> [`38-hcx-migration.md`](38-hcx-migration.md#replication-and-nfc-vmkernels-the-flow-goes-there-not-to-vmk0) §3.4.
 
 | Source | Destination | Port(s) | Proto | Purpose |
 | ------ | ----------- | ------- | ----- | ------- |
@@ -262,8 +265,11 @@ below come from field experience and inference, and each row says which.
 | Legacy IX / NE | VCF 9.1 IX / NE | 4500-4628 → 4500 | UDP | Application Path Resiliency (optional) |
 | HCX Manager (each side) | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
 | HCX Manager (each side) | ESX | 80, 902 | TCP | Service mesh deployment |
-| HCX-IX | ESX vMotion IPs | 8000 | TCP | vMotion |
-| ESX | HCX-IX | 902, 31031, 32032 | TCP | Migration and replication |
+| HCX-IX | ESX vMotion IPs, both ways | 8000 | TCP | vMotion |
+| HCX-IX (management IP) | ESX (management IPs, and the NFC VMkernel IPs where they exist) | 80, 443 | TCP | ESX authentication |
+| HCX-IX (management IP) | ESX (the NFC VMkernel IPs where they exist, else management) | 902 | TCP | Bulk migration data path |
+| ESX (the vSphere Replication VMkernel where it exists, else management) | HCX-IX | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
+| ESX management | HCX-IX | 902 | TCP | Cold migration |
 | VCF 9.1 HCX Manager | VCF Identity Broker, License Server | 443 | TCP | VCF SSO, licensing |
 | Management workstations | HCX Manager (each side) | 443, 9443, 22 | TCP | UI, appliance management, SSH |
 

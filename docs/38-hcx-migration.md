@@ -208,7 +208,7 @@ The authoritative list is the [Ports and Protocols portal][ports] (product
 version). The picture shows the flows below per site; the table is the
 reference.
 
-[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, IX to ESX vMotion on 8000, ESX to IX on 902, 31031 and 32032, and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
+[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, IX and ESX vMotion on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, with the replication flows on the VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists, and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
 
 The flows that most often need a change request:
 
@@ -219,14 +219,63 @@ The flows that most often need a change request:
 | Source IX / NE | Destination IX / NE | 4500–4628 → 4500 | UDP | Application Path Resiliency (optional) |
 | HCX Manager | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
 | HCX Manager | ESX | 80, 902 | TCP | Service mesh deployment |
-| HCX-IX | ESX vMotion IPs | 8000 | TCP | vMotion |
-| ESX | HCX-IX | 902, 31031, 32032 | TCP | Migration and replication |
+| HCX-IX | ESX vMotion IPs, both ways | 8000 | TCP | vMotion |
+| HCX-IX | ESX (management IPs, and the NFC VMkernel IPs where they exist) | 80, 443 | TCP | ESX authentication |
+| HCX-IX | ESX (the NFC VMkernel IPs where they exist, else management) | 902 | TCP | Bulk migration data path |
+| ESX (the vSphere Replication VMkernel where it exists, else management) | HCX-IX | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
+| ESX management | HCX-IX | 902 | TCP | Cold migration |
 | HCX Manager (VCF 9.1 side) | VCF Identity Broker, License Server | 443 | TCP | VCF SSO, licensing |
 | Management workstations | HCX Manager | 443, 9443, 22 | TCP | UI, appliance management, SSH |
+
+The IX-to-ESX rows are the ones that show up later as migration errors rather
+than at deployment: with 443 from the IX to the target ESX hosts closed, a Bulk
+or RAV migration stalls with *"Storage not accessible error observed"*
+([KB 447075](https://knowledge.broadcom.com/external/article/447075)); with 902
+closed, a reverse migration fails with the same message
+([KB 393791](https://knowledge.broadcom.com/external/article/393791)); with
+31031 (*"or 44046 for RAV"*) closed from the ESX hosts to the IX, the base sync
+stays at 0% ([KB 319757](https://knowledge.broadcom.com/external/article/319757)).
+The IX-to-ESX 902 row is in the portal's 9.1.0 listing, not in its 9.1.1
+listing (captured 2026-09-23); KB 393791 needs it either way.
 
 Because the source starts the tunnels, the inbound rule sits on the **VCF 9.1
 side's** perimeter. Add these flows to your copy of
 [`07-firewall-ports.md`](07-firewall-ports.md) §G.
+
+#### Replication and NFC VMkernels: the flow goes there, not to vmk0
+
+The portal names *"ESX Management IP addresses"* for the replication flows.
+That is only right when the hosts carry replication on vmk0. Bulk migration and
+RAV use vSphere Replication, with the HCX-IX as the replication server, and
+ESX sends and receives replication traffic on the VMkernel that is tagged for
+it:
+
+- **Source hosts, outgoing:** *"vSphere Replication traffic: Handles the
+  outgoing replication data that the source ESX host transfers to the vSphere
+  Replication server"*. On a host with a VMkernel tagged **vSphere
+  Replication**, the 31031 / 32032 flow to the source IX leaves from that
+  VMkernel's IP, not from vmk0.
+- **Target hosts, incoming:** *"vSphere Replication NFC traffic: Handles the
+  incoming replication data on the target replication site"*
+  ([vSphere 9.1, The VMkernel Networking Layer](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-1/vsphere-networking/setting-up-vmkernel-networking/the-vmkernel-networking-layer.html)).
+  On a host with a VMkernel tagged **vSphere Replication NFC**, *"The vSphere
+  Replication hbrsrv service routes the replication data to the adapter"*
+  ([Set Up a VMkernel Adapter for vSphere Replication Traffic on a Target Host](https://techdocs.broadcom.com/us/en/vmware-cis/live-recovery/vsphere-replication/9-0-4/using-vsphere-replication/isolating-the-vr-traffic-from-the-data-center-network/set-up-a-vmkernel-adapter-for-vr-traffic-on-target.html)).
+  So the target IX's flows to the host (902, and 443 per KB 447075) go to that
+  VMkernel's IP, not to vmk0. KB 447075 describes exactly this case: the test
+  *"might fail on a specific VMkernel interface with the replication service
+  enabled (e.g., vmk1), while succeeding on others (e.g., vmk0)"*.
+- **The IX side** is different: *"The HCX appliance always uses its Management
+  interface for vSphere Replication NFC traffic"*, also when the IX has a
+  dedicated Replication network profile, which *"cannot be used for vSphere
+  Replication NFC VMkernel traffic"*
+  ([Network Profile Considerations and Concepts](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/getting-started-with-vmware-hcx-vcf-9-0/hcx-deployment-considerations/network-profile-considerations-and-concepts.html)).
+  The source of the IX-to-ESX rule is the IX's **management** IP.
+
+In practice: per host, list which VMkernel carries *vSphere Replication* and
+which carries *vSphere Replication NFC*, and write those IPs (not vmk0's) into
+the rules above. Keep the management IPs for 80 and 443 as well. Only one
+VMkernel per host should be tagged for vSphere Replication (KB 319757).
 
 ---
 

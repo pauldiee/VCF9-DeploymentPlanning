@@ -1,5 +1,20 @@
 # Changelog
 
+## v6.9.5 – 2026-11-13
+- `docs/38` §3.4 and `docs/07` §G *HCX firewall flows* (#466): added the
+  HCX-IX-to-ESX flows the Ports and Protocols portal lists (80/443 ESX
+  authentication, 902 Bulk data path; 8000 now both ways; ESX-to-IX 902
+  for Cold), with the migration error each one causes when closed (KB
+  447075: 443 closed gives *Storage not accessible error observed*, seen in
+  the field on 2026-11-13; KB 393791: 902 on a reverse migration; KB 319757:
+  31031/44046 and 0% base sync). New subsection *Replication and NFC
+  VMkernels*: on hosts with a VMkernel tagged for vSphere Replication
+  (source) or vSphere Replication NFC (target), the replication flows use
+  that VMkernel's IPs, not vmk0's (vSphere 9.1 VMkernel networking layer,
+  vSphere Replication target-host page, KB 447075), while the IX always uses
+  its management interface for NFC (HCX 9.1 Network Profile
+  Considerations). Diagram updated and re-rendered.
+
 ## v6.9.4 — 2026-11-13
 - `docs/38` §3.4 *Firewall flows* (#465): new diagram
   (`web/public/diagrams/hcx-firewall-flows.svg` + 2x PNG) with the legacy
