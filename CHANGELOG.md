@@ -7,6 +7,12 @@
   row in both pages, one arrow per site in `hcx-firewall-flows.svg` (+ PNG).
   §3.4 now says that 44046 for RAV comes from KB 319757 only: the 9.1
   listings give 31031 and 32032 for ESX → IX (#473).
+- **`docs/38` §3.4, §5, §12:** IX → ESX 902 is also needed on the target
+  side for a forward Bulk or RAV migration: closed, it hangs in initial sync
+  with *"Storage not accessible error observed"* while the service mesh
+  diagnostics stay clean (KB 432334). A proxy on the HCX Manager needs local
+  exclusions, or the thumbprint exchange with the HBR server fails and
+  migrations with it (KB 402723). Both also in the known-issues table (#473).
 
 ## v6.9.9 – 2026-11-16
 - **`tools/Set-ESXCoredump.ps1` v1.4.1:** works with only VCF.PowerCLI

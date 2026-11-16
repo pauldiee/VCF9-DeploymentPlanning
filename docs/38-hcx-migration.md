@@ -241,7 +241,15 @@ don't name it and give 31031 and 32032 for the ESX-to-IX replication flow
 (read 2026-11-16), so open those for 9.1. The HCX Manager-to-IX 8123 row
 (*"HCX Bulk Migration Control"*) is in both listings.
 The IX-to-ESX 902 row is in the portal's 9.1.0 listing, not in its 9.1.1
-listing (captured 2026-09-23); KB 393791 needs it either way.
+listing (captured 2026-09-23); KB 393791 needs it either way. So does the
+forward direction: a Bulk or RAV migration that hangs in *"Initial Sync in
+Progress"* with *"Storage not accessible error observed"* *"is typically
+caused when port 902 is not open on the target side"* (IX to ESX), while
+*"Running the HCX Diagnostics from the Service Mesh reveals no port
+blocks/errors"*
+([KB 432334](https://knowledge.broadcom.com/external/article/432334), HCX
+9.0). Open 902 from the IX to the hosts on **both** sides, and don't take a
+clean diagnostics run as proof that it's open.
 
 Because the source starts the tunnels, the inbound rule sits on the **VCF 9.1
 side's** perimeter. Add these flows to your copy of
@@ -344,6 +352,14 @@ OVA deploy ([blog part 1][blog1], [installs][installs]):
    from the legacy side.
 5. Check the version matches the destination before going on (see
    [§1.1](#11-both-sides-run-hcx-9x)).
+
+**Proxy, on either side:** if the HCX Manager reaches the internet through a
+proxy (appliance management interface → **Administration** → **Proxy**), fill
+in **Proxy Exclusions** with the local networks, hosts and domains. Without
+them, *"Thumbprint exchange with HBR server on appliance … failed"* shows up,
+and a proxy *"without these local exclusions generally leads to migration
+failures"*. After changing it, restart the HCX Manager services
+([KB 402723](https://knowledge.broadcom.com/external/article/402723)).
 
 ---
 
@@ -499,6 +515,8 @@ When everything has moved:
 | *Migrate Service Mesh* fails from 9.0.x to 9.1.0; re-sync the mesh | [KB 449280](https://knowledge.broadcom.com/external/article/449280/hcx-migrate-service-mesh-fails-when-sour.html) |
 | Import into VCF Operations fails on a certificate without a SAN | [KB 445282](https://knowledge.broadcom.com/external/article/445282/vcf-operations-hcx-9100-import-fails-wit.html) |
 | Tier-1s in user-created NSX projects aren't selectable for NE | [KB 378638](https://knowledge.broadcom.com/external/article/378638/hcx-unable-to-select-the-destination-fi.html) |
+| *"Storage not accessible error observed"* during initial sync, diagnostics clean: 902 closed from the IX to the target hosts | [KB 432334](https://knowledge.broadcom.com/external/article/432334), [§3.4](#34-firewall-flows) |
+| *"Thumbprint exchange with HBR server … failed"*: proxy without local exclusions | [KB 402723](https://knowledge.broadcom.com/external/article/402723), [§5](#5-deploy-hcx-on-the-legacy-side) |
 | Licensing symptoms on 9.x | [§6](#6-licensing-the-legacy-side-inherits) |
 
 HCX is FIPS 140-3 certified as of 9.1 ([What's new: VCF Operations 9.1][whatsnew]).
