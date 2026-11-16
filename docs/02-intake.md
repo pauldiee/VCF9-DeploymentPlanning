@@ -104,7 +104,7 @@ Legend:
 
 | # | Question                                                       | Sheet     |
 |---|----------------------------------------------------------------|-----------|
-|D1 | Internal CA type — **Microsoft CA** or **OpenSSL** (fleet cert management); external CA is CSR-based only (VCF won't import an externally-created cert+key) | `[CFG-M]` |
+|D1 | Fleet CA type — **VMCA** (default), **Microsoft CA** or **OpenSSL** (test/dev per Broadcom); any other CA is CSR-based only (VCF won't import an externally-created cert+key, no auto-renewal) → [`41-certificates.md`](41-certificates.md) | `[CFG-M]` |
 |D2 | CA root + intermediate certificate (PEM)                       | `[CFG-M]` |
 |D3 | CSR submission method (Web Enrollment / other)                 | `[CFG-M]` |
 |D4 | Template name to issue VMware certs                            | `[CFG-M]` |

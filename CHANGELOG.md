@@ -1,5 +1,32 @@
 # Changelog
 
+## v6.9.7 – 2026-11-16
+- **New `docs/41`: Certificates in VCF 9.1** (#463), one page for what was
+  spread over `prerequisites.md`, `01`, `02`, `06` and several build guides.
+  What VCF Operations manages (user-managed / externally managed /
+  system-managed, components incl. the 9.1.1 additions and the HCX / Avi
+  management packs, non-disruptive updates and their limits, what it can't
+  do), choosing the CA (VMCA, Microsoft CA, OpenSSL for test/dev per
+  Broadcom, external CA; operations per CA type; Broadcom's design defaults:
+  VMCA for ESX, enterprise CA for vCenter and the management components;
+  auto-renewal vs API vs manual), preparing a Microsoft CA (roles with the
+  dated TechDocs conflict on same server, 9.1 vs 9.1.1; basic auth;
+  template settings; service account permissions), Configure CA for Fleet
+  (UPN user name), the certificate pass (SAN rules incl. no short names,
+  key sizes, placeholders, configured-CA and external-CA paths, import
+  rules, one batch at a time, n/total, checklist), renewal and expiry
+  (auto-renewal 60 days before expiry and opt-in, manual renewal, expiry
+  alerts, `vcf-cert-tool` from KB 445742 for expired certificates), and
+  trust elsewhere (License Server, LDAPS, Avi / License Hub, ESX syslog,
+  SDDC Manager log agent, new hosts, jump host; VVF). Flow diagram
+  `certificate-pass`. Corrections carried into the existing pages:
+  VMCA is a fleet CA type too, bring-up uses VMCA-signed (not self-signed)
+  certificates, the Microsoft CA user name must be UPN, and the CA and Web
+  Enrollment roles may be on separate servers from 9.1.1.
+  `prerequisites.md` *Certificate Authority* is now the short gate with
+  links; `01` §F, `02` D1, `06` story 1.4 / 8.5 and the deployment plan's
+  E1 / E6 / E8 certificate stories link the new page.
+
 ## v6.9.5 – 2026-11-13
 - `docs/38` §3.4 and `docs/07` §G *HCX firewall flows* (#466): added the
   HCX-IX-to-ESX flows the Ports and Protocols portal lists (80/443 ESX
