@@ -360,10 +360,14 @@ What to do:
    $env:PSModulePath = "$Env:ProgramFiles\PowerShell\Modules;$PSHOME\Modules"
    ```
 
-Scripts can guard against this themselves: from v1.2.1,
+Scripts shouldn't work around a mixed host: a script that picks its own
+PowerCLI set still leaves every other tool, and plain PowerCLI, failing.
+The better guard is to detect it and point here. From v1.3.0,
 [VDSPortGroupManager](https://github.com/pauldiee/VDSPortGroupManager)
-loads one complete PowerCLI build from the module manifests and skips an
-incomplete set. That helps the script; it doesn't fix the jump host.
+imports `VMware.VimAutomation.Vds` normally, stops when PowerCLI modules of
+different versions are already loaded, and on a load failure lists what is
+loaded with a link to this page. (v1.2.1 loaded a build from the module
+manifests itself; that was dropped because it hid the problem.)
 
 ### 6.2 pwsh also reads the Windows PowerShell paths
 
