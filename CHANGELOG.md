@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.9.8 – 2026-11-16
+- **`docs/42` §6.1:** the closing paragraph no longer describes the
+  VDSPortGroupManager v1.2.1 loader. v1.3.0 imports PowerCLI normally, stops
+  on mixed versions already loaded and links this page; scripts should
+  detect a mixed host and point here, not work around it (#470).
+
 ## v6.9.7 – 2026-11-16
 - **New `docs/41`: Certificates in VCF 9.1** (#463), one page for what was
   spread over `prerequisites.md`, `01`, `02`, `06` and several build guides.
