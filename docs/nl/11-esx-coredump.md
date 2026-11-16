@@ -1,8 +1,8 @@
 ---
 lang: nl
 source: ../11-esx-coredump.md
-source_hash: "3c28c5c36d9ba3ea"
-synced: "2026-11-12"
+source_hash: "8955340adcce697a"
+synced: "2026-11-16"
 reviewed: "no"
 ---
 
@@ -97,7 +97,9 @@ waar de hosts naartoe gaan sturen.
 ## 2. Elke ESX-host naar de collector laten wijzen
 
 Voer dit per host uit, rechtstreeks op de host of via `Get-EsxCli` in
-PowerCLI voor de hele fleet in één keer.
+PowerCLI voor de hele fleet in één keer. Voor een vCenter 9 betekent dat VCF
+PowerCLI op PowerShell 7; hoe je die twee op de jump host zet, met of zonder
+internettoegang, staat in [`42-jump-host-powershell.md`](../42-jump-host-powershell.md).
 
 **Per host, rechtstreeks (SSH of DCUI-shell):**
 

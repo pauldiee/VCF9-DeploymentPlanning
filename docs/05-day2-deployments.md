@@ -701,7 +701,8 @@ can see it:
 
 #### Step 1 — get the `networkMoId`
 
-A PowerCLI one-liner is enough:
+A PowerCLI one-liner is enough (PowerShell 7 and VCF PowerCLI on the jump
+host: [`42-jump-host-powershell.md`](42-jump-host-powershell.md)):
 
 ```powershell
 Get-VDPortgroup -Name "vm-default-<hash>" |

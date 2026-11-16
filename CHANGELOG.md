@@ -1,5 +1,28 @@
 # Changelog
 
+## v6.9.6 – 2026-11-16
+- **New `docs/42`: Jump host, PowerShell 7 and VCF PowerCLI** (#464). What
+  to install (PowerShell 7.6 LTS: Microsoft ended 7.4 and 7.5 support on
+  10-Nov-2026, Broadcom's minimum is 7.4; `VCF.PowerCLI` 9.1.1, not
+  `VMware.PowerCLI`, KB 428547; KB 409981 for 5.1), the install with
+  internet access (MSI vs WinGet vs MSIX, `Install-Module` scope, proxy,
+  `-AllowClobber` / `-SkipPublisherCheck` from VMware.PowerCLI, CEIP and
+  `InvalidCertificateAction`), without internet access (MSI, the offline
+  zip with its MD5 or `Save-Module`, unblock the zip before extracting,
+  the PowerShell 7 module path, offline updates), checks (exact-version
+  completeness of the 36 required modules, blocked files, import, connect),
+  Linux, and the pitfalls seen on an air-gapped jump host on 2026-11-13
+  (mixed PowerCLI versions, pwsh reading the Windows PowerShell paths,
+  blocked files, SsoAdmin on PowerShell 7). `prerequisites.md` *Jump host*
+  and `33` §4.1 link it; the deployment plan's E4 *Access & final* story
+  links it too. Every page that has you run PowerCLI now links it as well:
+  `04` (core/TiB tool), `05` (`networkMoId`), `11` (fleet sweep; Dutch
+  `nl/11` updated and re-stamped), `26` (role blocks, plus a lab note that
+  `Connect-SsoAdminServer` failed on PowerShell 7.6 with VCF.PowerCLI 9.1.1,
+  so create the service account in the vSphere Client), `31` (many hosts),
+  `35` (VCF.JSONGenerator should install VCF.PowerCLI, not a second
+  PowerCLI), `39` (static routes) and `prerequisites.md` (host check).
+
 ## v6.9.5 – 2026-11-13
 - `docs/38` §3.4 and `docs/07` §G *HCX firewall flows* (#466): added the
   HCX-IX-to-ESX flows the Ports and Protocols portal lists (80/443 ESX
