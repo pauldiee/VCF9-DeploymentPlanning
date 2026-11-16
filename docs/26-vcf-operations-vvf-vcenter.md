@@ -78,6 +78,9 @@ action privileges into two roles for two accounts — see
 
 ### PowerCLI — create the role
 
+PowerCLI blocks on this page need PowerShell 7 and VCF PowerCLI on the jump
+host: [`42-jump-host-powershell.md`](42-jump-host-powershell.md).
+
 `New-VIRole` does this in one shot instead of the wizard. **Field-verified**
 against both a vCenter 8 and a vCenter 9 instance:
 
@@ -298,7 +301,11 @@ either way. Name it so its purpose is obvious in an audit (e.g.
 
 PowerCLI's `VMware.vSphere.SsoAdmin` module creates it in one line (install
 with `Install-Module VMware.vSphere.SsoAdmin -Scope CurrentUser` if it's not
-already present):
+already present). **Lab-verified:** `Connect-SsoAdminServer` failed on
+PowerShell 7.6 with VCF PowerCLI 9.1.1 (a missing `System.ServiceModel`
+type; [`42` §6.4](42-jump-host-powershell.md#64-ssoadmin-on-powershell-7)).
+If it fails for you too, create the account in the vSphere Client instead
+(Administration → Single Sign On → Users and Groups):
 
 ```powershell
 # UNTESTED against a live VCF 9 vCenter - verify before relying on it.

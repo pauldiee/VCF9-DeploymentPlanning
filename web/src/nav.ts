@@ -100,6 +100,14 @@ export const NAV: NavItem[] = [
     blurb: 'The offline depot and VCF Download Tool — build, feed, and connect the depot the platform installs and patches from.',
   },
   {
+    slug: '42-jump-host-powershell',
+    step: 'Foundation services',
+    band: 'Foundation services',
+    label: 'Jump Host PowerShell',
+    icon: 'terminal',
+    blurb: 'PowerShell 7 and VCF PowerCLI on the jump host, with and without internet access: what to install, the offline zip, checking the result, and why mixed PowerCLI versions break the import.',
+  },
+  {
     slug: '35-bringup-json',
     step: 'Foundation services',
     band: 'Foundation services',

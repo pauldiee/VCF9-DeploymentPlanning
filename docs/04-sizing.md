@@ -410,7 +410,8 @@ are entered in **decimal GB**, as drives are sold, and converted to TiB
 (1 TiB = 1,099.5 GB), so a 3.84 TB NVMe device counts as 3.49 TiB. Per the KB,
 the vSAN Capacity view in the vSphere Client shows usable datastore capacity, not
 raw. For counts from an existing environment, use the KB's PowerCLI tool
-(`Get-FoundationCoreAndTiBUsage -DeploymentType VVF`). The KB's *Environment*
+(`Get-FoundationCoreAndTiBUsage -DeploymentType VVF`; PowerShell 7 and VCF
+PowerCLI on the machine you run it from: [`42-jump-host-powershell.md`](42-jump-host-powershell.md)). The KB's *Environment*
 list still names VCF 4.5 / 5.1 and vSphere 8. It is Broadcom's current
 core-counting article, and nothing in the 9.1 TechDocs contradicts it.
 

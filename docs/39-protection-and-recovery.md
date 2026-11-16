@@ -266,7 +266,8 @@ default gateway, so the traffic leaves via management
 
 **ESX hosts.** The vSphere Client has no screen for host static routes (only
 the stack's default gateway, which would move management too). Use `esxcli`
-or PowerCLI:
+or PowerCLI (PowerShell 7 and VCF PowerCLI on the jump host:
+[`42-jump-host-powershell.md`](42-jump-host-powershell.md)):
 
 ```bash
 # per host

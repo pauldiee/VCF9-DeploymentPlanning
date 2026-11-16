@@ -150,6 +150,11 @@ appliance: on a dark site every vGPU workload depends on it. NVIDIA's
 | **Admin** | **Inside** the air gap, *"connected to all the hosts in the environment"* — vCenter for the workload domain, the Supervisor, the local registry | Docker, VCF Consumption CLI, kubectl (and `oras` for the Ubuntu index file) |
 | **Jump host** | End-user access to the UIs | — |
 
+The bastion and admin hosts are Linux and need no PowerCLI. If the Windows
+jump host inside the air gap needs PowerShell 7 and VCF PowerCLI (custom ESX
+images, day-2 scripts), the offline install is in
+[`42-jump-host-powershell.md` §3](42-jump-host-powershell.md#3-without-internet-access).
+
 *"The admin host and the bastion host run the same Linux OS image, usually
 Ubuntu."* One machine can do both jobs, *"for example, if the machine is a
 server in a DMZ with access to the Internet and temporary access to the
