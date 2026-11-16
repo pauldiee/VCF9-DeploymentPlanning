@@ -265,6 +265,7 @@ below come from field experience and inference, and each row says which.
 | Legacy IX / NE | VCF 9.1 IX / NE | 4500-4628 → 4500 | UDP | Application Path Resiliency (optional) |
 | HCX Manager (each side) | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
 | HCX Manager (each side) | ESX | 80, 902 | TCP | Service mesh deployment |
+| HCX Manager (each side) | HCX-IX (same side) | 8123 | TCP | Bulk migration control |
 | HCX-IX | ESX vMotion IPs, both ways | 8000 | TCP | vMotion |
 | HCX-IX (management IP) | ESX (management IPs, and the NFC VMkernel IPs where they exist) | 80, 443 | TCP | ESX authentication |
 | HCX-IX (management IP) | ESX (the NFC VMkernel IPs where they exist, else management) | 902 | TCP | Bulk migration data path |

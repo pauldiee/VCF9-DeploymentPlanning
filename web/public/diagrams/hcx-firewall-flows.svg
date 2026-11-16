@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 860" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
 <title id="t">VCF Operations HCX firewall flows between the legacy side and the VCF 9.1 side</title>
-<desc id="d">Legacy (source) side on the left, VCF 9.1 (destination) side on the right. Across the sites: source HCX Manager to destination HCX Manager on 443 for the site pair, source IX and NE uplinks to destination IX and NE uplinks on UDP 4500 for the tunnels, and optionally UDP 4500 to 4628 to 4500 for Application Path Resiliency. Within each site: HCX Manager to vCenter and NSX Manager on 443, HCX Manager to ESX on 443, 80 and 902, IX and ESX vMotion IPs on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, and admin workstation to HCX Manager on 443, 9443 and 22. On the VCF 9.1 side the HCX Manager also reaches the VCF Identity Broker and License Server on 443. Where ESX hosts have a VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target), the replication flows use that VMkernel, not vmk0; the IX uses its management interface.</desc>
+<desc id="d">Legacy (source) side on the left, VCF 9.1 (destination) side on the right. Across the sites: source HCX Manager to destination HCX Manager on 443 for the site pair, source IX and NE uplinks to destination IX and NE uplinks on UDP 4500 for the tunnels, and optionally UDP 4500 to 4628 to 4500 for Application Path Resiliency. Within each site: HCX Manager to vCenter and NSX Manager on 443, HCX Manager to ESX on 443, 80 and 902, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion IPs on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, and admin workstation to HCX Manager on 443, 9443 and 22. On the VCF 9.1 side the HCX Manager also reaches the VCF Identity Broker and License Server on 443. Where ESX hosts have a VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target), the replication flows use that VMkernel, not vmk0; the IX uses its management interface.</desc>
 <defs>
 <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
 <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
@@ -50,6 +50,8 @@
 <text class="lbl" x="387" y="560" text-anchor="end">80, 443, 902</text>
 <path class="mg" d="M455 620 V482" marker-end="url(#a)"/>
 <text class="lbl" x="463" y="600">31031, 32032, 902</text>
+<path class="mg" d="M430 340 V408" marker-end="url(#a)"/>
+<text class="lbl" x="422" y="380" text-anchor="end">8123</text>
 
 <!-- VCF 9.1 side, intra -->
 <path class="mg" d="M880 270 V192" marker-end="url(#a)"/>
@@ -64,6 +66,8 @@
 <text class="lbl" x="873" y="560">80, 443, 902</text>
 <path class="mg" d="M805 620 V482" marker-end="url(#a)"/>
 <text class="lbl" x="797" y="600" text-anchor="end">31031, 32032, 902</text>
+<path class="mg" d="M830 340 V408" marker-end="url(#a)"/>
+<text class="lbl" x="838" y="380">8123</text>
 <path class="mg" d="M975 270 V160 H1068" marker-end="url(#a)"/>
 <text class="lbl" x="1022" y="152" text-anchor="middle">443</text>
 

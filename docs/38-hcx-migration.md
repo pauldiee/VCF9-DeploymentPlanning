@@ -208,7 +208,7 @@ The authoritative list is the [Ports and Protocols portal][ports] (product
 version). The picture shows the flows below per site; the table is the
 reference.
 
-[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, IX and ESX vMotion on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, with the replication flows on the VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists, and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
+[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, with the replication flows on the VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists, and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
 
 The flows that most often need a change request:
 
@@ -219,6 +219,7 @@ The flows that most often need a change request:
 | Source IX / NE | Destination IX / NE | 4500–4628 → 4500 | UDP | Application Path Resiliency (optional) |
 | HCX Manager | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
 | HCX Manager | ESX | 80, 902 | TCP | Service mesh deployment |
+| HCX Manager | HCX-IX | 8123 | TCP | Bulk migration control |
 | HCX-IX | ESX vMotion IPs, both ways | 8000 | TCP | vMotion |
 | HCX-IX | ESX (management IPs, and the NFC VMkernel IPs where they exist) | 80, 443 | TCP | ESX authentication |
 | HCX-IX | ESX (the NFC VMkernel IPs where they exist, else management) | 902 | TCP | Bulk migration data path |
@@ -235,6 +236,10 @@ closed, a reverse migration fails with the same message
 ([KB 393791](https://knowledge.broadcom.com/external/article/393791)); with
 31031 (*"or 44046 for RAV"*) closed from the ESX hosts to the IX, the base sync
 stays at 0% ([KB 319757](https://knowledge.broadcom.com/external/article/319757)).
+That 44046 comes from the KB only: the portal's 9.1.0 and 9.1.1 listings
+don't name it and give 31031 and 32032 for the ESX-to-IX replication flow
+(read 2026-11-16), so open those for 9.1. The HCX Manager-to-IX 8123 row
+(*"HCX Bulk Migration Control"*) is in both listings.
 The IX-to-ESX 902 row is in the portal's 9.1.0 listing, not in its 9.1.1
 listing (captured 2026-09-23); KB 393791 needs it either way.
 
