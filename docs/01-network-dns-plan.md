@@ -498,14 +498,17 @@ same shape.
 
 | Item                       | Value                                            |
 | -------------------------- | ------------------------------------------------ |
-| Internal CA type           | **Microsoft CA** or **OpenSSL** (fleet cert management). External CA is **CSR-based only** — VCF won't import an externally-created cert+key |
+| Internal CA type           | Fleet CA in VCF Operations: **VMCA** (default), **Microsoft CA** or **OpenSSL** (test/dev per Broadcom). Any other CA is **CSR-based only** — VCF won't import an externally-created cert+key, and those certificates don't auto-renew |
 | CA root + intermediate CRT | Path / how delivered                             |
 | CSR submission method      | Web Enrollment (basic auth) / DCE-RPC / Other    |
 | Template name              | e.g. `VMware`                                    |
 | Wildcard allowed?          | Y/N (workbook expects per-host SAN certs)        |
+| Microsoft CA service account | UPN format (`svc-vcf-ca@…`); CA + Web Enrollment on one server on 9.1.0.x |
+| Renewal owner              | Auto-renewal on/off; who renews external-CA certificates |
 
 > TechDocs: [Configure a Certificate Authority for VMware Cloud Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
-> — CA prerequisites (Microsoft CA Web Enrollment / OpenSSL) in `prerequisites.md`.
+> — CA prerequisites in `prerequisites.md`; the whole certificate pass in
+> [`41-certificates.md`](41-certificates.md).
 
 ---
 

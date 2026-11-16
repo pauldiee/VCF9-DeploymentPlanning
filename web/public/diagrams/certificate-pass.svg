@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1344 900" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="t">The certificate pass in VCF 9.1</title>
+<desc id="d">Prepare the CA, configure it for the fleet in VCF Operations, generate CSRs in batches. Then either replace with a configured-CA certificate (VMCA, Microsoft CA, OpenSSL), or download the CSRs, have an external CA sign them, import them and replace with the imported certificate. Verify each batch by its n/total counter and the task list, one batch at a time. Afterwards configured-CA certificates renew automatically 60 days before expiry (opt in) or by hand; external-CA certificates need the three manual steps again; expired certificates need vcf-cert-tool (KB 445742) with Broadcom Support.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker><marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker></defs>
+<rect width="1344" height="900" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="672.0" y="38" font-size="21" font-weight="700" fill="#0f172a" text-anchor="middle">The certificate pass in VCF 9.1: from CA to renewal</text>
+<text x="672.0" y="62" font-size="13.5" fill="#475569" text-anchor="middle">VCF Operations → Manage → Fleet Management → Certificates. Every step works on several components at once.</text>
+<rect x="30" y="84" width="400" height="150" rx="9" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+<circle cx="52" cy="108" r="13" fill="#64748b"/><text x="52" y="113" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+<text x="74" y="113" font-size="15" font-weight="700" fill="#0f172a">Prepare the CA (PKI team)</text>
+<text x="44" y="140" font-size="13" fill="#1e293b">Microsoft CA: CA + Web Enrollment roles,</text>
+<text x="44" y="159" font-size="13" fill="#1e293b">basic auth on CertSrv, template from</text>
+<text x="44" y="178" font-size="13" fill="#1e293b">"Web Server" with no manual approval,</text>
+<text x="44" y="197" font-size="13" fill="#1e293b">service account: Request + Issue/Manage</text>
+<rect x="472" y="84" width="400" height="150" rx="9" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+<circle cx="494" cy="108" r="13" fill="#64748b"/><text x="494" y="113" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+<text x="516" y="113" font-size="15" font-weight="700" fill="#0f172a">Configure CA for Fleet</text>
+<text x="486" y="140" font-size="13" fill="#1e293b">Microsoft CA: https://&lt;ca&gt;/certsrv,</text>
+<text x="486" y="159" font-size="13" fill="#1e293b">user name in UPN format, template name.</text>
+<text x="486" y="178" font-size="13" fill="#1e293b">OpenSSL: built in, own self-signed root</text>
+<text x="486" y="197" font-size="13" fill="#1e293b">(Broadcom: testing / development)</text>
+<rect x="914" y="84" width="400" height="150" rx="9" fill="#f8fafc" stroke="#64748b" stroke-width="1.8"/>
+<circle cx="936" cy="108" r="13" fill="#64748b"/><text x="936" y="113" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">3</text>
+<text x="958" y="113" font-size="15" font-weight="700" fill="#0f172a">Generate CSRs</text>
+<text x="928" y="140" font-size="13" fill="#1e293b">FQDN in the SAN (no IP-only, no short</text>
+<text x="928" y="159" font-size="13" fill="#1e293b">names), IP Name filled in, key 2048/3072/</text>
+<text x="928" y="178" font-size="13" fill="#1e293b">4096. Replace the Broadcom placeholders.</text>
+<text x="928" y="197" font-size="13" fill="#1e293b">Private key stays in VCF Operations.</text>
+<path d="M430 159 H468" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M872 159 H910" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="14" y="256" width="1316" height="150" rx="8" fill="#dbeafe" fill-opacity="0.35" stroke="#2563eb" stroke-opacity="0.5"/>
+<text x="28" y="278" font-size="13" font-weight="700" fill="#2563eb">Configured CA: VMCA, Microsoft CA, OpenSSL</text>
+<rect x="14" y="414" width="1316" height="150" rx="8" fill="#ede9fe" fill-opacity="0.35" stroke="#7c3aed" stroke-opacity="0.5"/>
+<text x="28" y="436" font-size="13" font-weight="700" fill="#7c3aed">External CA (any CA, by hand)</text>
+<rect x="914" y="284" width="400" height="112" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.8"/>
+<circle cx="936" cy="308" r="13" fill="#2563eb"/><text x="936" y="313" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">4a</text>
+<text x="958" y="313" font-size="15" font-weight="700" fill="#0f172a">Replace with configured CA certificate</text>
+<text x="928" y="340" font-size="13" fill="#1e293b">Uses the last generated CSRs:</text>
+<text x="928" y="359" font-size="13" fill="#1e293b">generate again if SANs changed.</text>
+<rect x="30" y="442" width="400" height="112" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8"/>
+<circle cx="52" cy="466" r="13" fill="#7c3aed"/><text x="52" y="471" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">4b</text>
+<text x="74" y="471" font-size="15" font-weight="700" fill="#0f172a">Download CSRs, CA signs</text>
+<text x="44" y="498" font-size="13" fill="#1e293b">Your CA, your approval process.</text>
+<text x="44" y="517" font-size="13" fill="#1e293b">Base64 PEM back.</text>
+<rect x="472" y="442" width="400" height="112" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="486" y="471" font-size="15" font-weight="700" fill="#0f172a">Import Certificates</text>
+<text x="486" y="498" font-size="13" fill="#1e293b">Up to 20 files: .crt .cer .pem .p7b .p7c.</text>
+<text x="486" y="517" font-size="13" fill="#1e293b">Order: leaf, intermediates, root.</text>
+<rect x="914" y="442" width="400" height="112" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="928" y="471" font-size="15" font-weight="700" fill="#0f172a">Replace with imported certificate</text>
+<text x="928" y="498" font-size="13" fill="#1e293b">Select the components, pick the</text>
+<text x="928" y="517" font-size="13" fill="#1e293b">imported certificates, Confirm.</text>
+<path d="M1114 234 V280" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M1000 234 V250 H400 V438" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<text x="440" y="300" font-size="13.5" fill="#1e293b">VCF Operations sends the CSRs to the CA and</text>
+<text x="440" y="320" font-size="13.5" fill="#1e293b">installs the result itself: no files to carry.</text>
+<text x="440" y="340" font-size="13.5" fill="#1e293b">Microsoft CA via Web Enrollment over 443;</text>
+<text x="440" y="360" font-size="13.5" fill="#1e293b">OpenSSL and VMCA are built in. Only these</text>
+<text x="440" y="380" font-size="13.5" fill="#1e293b">certificates renew from VCF Operations later.</text>
+<path d="M430 498 H468" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M872 498 H910" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<rect x="30" y="586" width="1284" height="92" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8"/>
+<circle cx="52" cy="610" r="13" fill="#16a34a"/><text x="52" y="615" font-size="13.5" font-weight="700" fill="#ffffff" text-anchor="middle">5</text>
+<text x="74" y="615" font-size="15" font-weight="700" fill="#0f172a">Verify each batch, then start the next</text>
+<text x="44" y="642" font-size="13" fill="#1e293b">Read the n/total counter (5/6 = one failed) and the task list; a failure does not stop the batch. Re-run failures as their own batch.</text>
+<text x="44" y="661" font-size="13" fill="#1e293b">Never two batches at once: each rotation triggers retrust. NSX Manager alone, with no NSX backup running.</text>
+<path d="M1314 340 H1332 V632 H1318" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M1114 554 V582" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<text x="30" y="702" font-size="13" font-weight="700" fill="#334155">Afterwards</text>
+<rect x="30" y="708" width="400" height="120" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.8"/>
+<text x="44" y="737" font-size="15" font-weight="700" fill="#0f172a">Configured CA: renew</text>
+<text x="44" y="764" font-size="13" fill="#1e293b">Auto-renewal is opt in (seen Deactivated),</text>
+<text x="44" y="783" font-size="13" fill="#1e293b">runs 60 days before expiry. Or renew</text>
+<text x="44" y="802" font-size="13" fill="#1e293b">by hand. Expiry alerts need a notification.</text>
+<rect x="472" y="708" width="400" height="120" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="486" y="737" font-size="15" font-weight="700" fill="#0f172a">External CA: no renewal</text>
+<text x="486" y="764" font-size="13" fill="#1e293b">Before expiry: CSR, import, replace again.</text>
+<text x="486" y="783" font-size="13" fill="#1e293b">Name an owner and a reminder.</text>
+<rect x="914" y="708" width="400" height="120" rx="9" fill="#fee2e2" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4"/>
+<text x="928" y="737" font-size="15" font-weight="700" fill="#0f172a">Expired: outside VCF Operations</text>
+<text x="928" y="764" font-size="13" fill="#1e293b">vcf-cert-tool (KB 445742), at the direction</text>
+<text x="928" y="783" font-size="13" fill="#1e293b">of Broadcom Support. Backups first; it does</text>
+<text x="928" y="802" font-size="13" fill="#1e293b">not update trust relationships for you.</text>
+<path d="M230 678 V704" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M672 678 V704" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a)"/>
+<path d="M1114 678 V704" fill="none" stroke="#b91c1c" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#r)"/>
+<text x="30" y="866" font-size="12.5" fill="#475569">Leaf certificates update their dependants automatically (non-disruptive updates); root or intermediate CA changes do not, and need manual remediation.</text>
+<text x="30" y="886" font-size="12" fill="#64748b">Sources: TechDocs VCF 9.1 Managing Certificates and design blueprint (updated 2026-11-12, read 2026-11-16); KB 445742; field notes 2026-07-22.</text>
+</svg>

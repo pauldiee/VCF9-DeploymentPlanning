@@ -1256,95 +1256,37 @@ bring-up.
 
 ## Certificate Authority
 
-*When needed: **Day-N.*** Bring-up runs on self-signed certificates; the
+*When needed: **Day-N.*** Bring-up runs on VMCA-signed certificates; the
 CA-signed replacement is done once the fleet exists (deployment plan **E6** 6.2
 partial / **E8** 8.5 full). Have the CA **reachable and its template validated
 before bring-up** anyway — the environment gate (E4 story 4.3) checks it, and a
 missing template blocks the entire Day-2 certificate pass.
 
-- VCF 9.1 fleet certificate management (**VCF Operations → Fleet Management →
-  Certificates → Configure CA for Fleet**) offers two CA types: **Microsoft CA**
-  or **OpenSSL**. It's a single fleet-level setting — there is **no separate
-  Microsoft-only restriction for "management" vs "instance"** components.
-- **External / third-party CA is CSR-based only:** VCF generates the **CSR**, you
-  sign it on your CA, and import the **signed certificate**. The **private key
-  never leaves VCF** — you **cannot import a certificate that was created entirely
-  outside VCF** (VCF does not accept an externally-generated private key).
-- **Microsoft CA:** must support **Basic authentication**; recommended Windows
-  Server 2019/2022 with the `Certificate Authority` + `Certificate Authority Web
-  Enrollment` roles (Web Enrollment on the same host as the CA role). The full
-  four-step prep (roles, basic auth, certificate template, least-privilege
-  service account) is TechDocs [Prepare Your Microsoft Certificate Authority to
-  Allow VMware Cloud Foundation to Manage Certificates](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0/prepare-your-certificate-authority-to-enable-sddc-manger-to-manage-certificates-9-0.html).
-- **Have ready for the Configure-CA wizard** (Microsoft CA): the CA server URL
-  (`https://<ca-fqdn>/certsrv`), the **least-privileged service account** +
-  password, and the **issuing certificate template** name.
-- **OpenSSL:** configured on the appliance with the org details (Common Name,
-  Country, Locality, Organization, OU, State) — no external prerequisites.
-- **The certificate pass is a bulk operation — but it must be staggered.**
-  Field-verified 2026-07-22 on a real deployment. In **VCF Operations → Fleet Management →
-  Certificates** you tick multiple components in the list and act on them
-  together: `Generate CSRs`, `Download CSRs`, `Replace With Configured CA
-  Certificate`, `Import Certificates` (plus *Renew Certificates* and *Replace
-  With Imported Certificates*). Progress is reported per batch as an *n/total*
-  counter, and the UI notes changes may take some time to appear after the task
-  reports success. Three planning consequences:
-  - **Generate before replace.** The *Replace With Configured CA Certificate*
-    dialog states *"Last generated Certificate Signing Requests (CSRs) will be
-    used for generating certificate(s)"* — the replace consumes the **most
-    recently generated** CSRs rather than issuing fresh ones. Regenerate if the
-    component's SANs/FQDN changed since the last generate, or you will sign a
-    stale request.
-  - **Do not fire batches in parallel.** The dialog carries a mandatory
-    acknowledgement behind this caution: *"Each certificate rotation can trigger
-    automated retrust operations across dependent components. To avoid system
-    instability, wait for any current or ongoing batch operations to be
-    completed before starting the next."* So the change window budgets **fewer,
-    larger batches with a settling wait between them** — not one sweeping
-    fleet-wide action, and not many small ones fired concurrently.
-  - **The CA burst is real.** A batch submits every selected CSR at once. On a
-    Microsoft CA, confirm the issuing template does **not** require manual
-    approval — an approval-gated template turns a bulk generate into a stalled
-    queue rather than an error.
-  - **A failure does not stop the batch.** Field-verified 2026-07-22: when one
-    component's replacement failed, the remaining ones **kept progressing**. A
-    batch is therefore **partial-success by design** — it will not halt and wait
-    for you. The *n/total* counter is the only signal that something did not
-    land (`5/6` means one failed), so **read the final count and open the task
-    list**, rather than treating "the batch finished" as "the fleet is
-    certified". Re-run the failed components as their own small batch once the
-    current one has settled, and verify per component at the end of the pass.
-  - **The CSR dialog ships with Broadcom's placeholders — replace them.**
-    Field-observed 2026-07-22: *Generate CSR* pre-fills Organization
-    **`Broadcom`**, Organizational Unit **`vcfms`**, Country **United States of
-    America**, State **`CA`**, Locality **`Palo Alto`**, and defaults **Key Size
-    to 2048**. Easy to click straight past — and then wrong in every certificate
-    you issue. Agree the subject fields with whoever owns the CA (they may be
-    enforced by the template anyway) and confirm **2048** meets the site's crypto
-    policy before generating in bulk.
-  - **`DNS/FQDN SAN` is a required field.** Even for components deployed
-    IP-only — VCF Operations for Networks is the example (see
-    [`05-day2-deployments.md` §B.2](05-day2-deployments.md)) — so every component
-    you intend to certify needs a resolvable name planned in Step 1. For a
-    multi-node/clustered appliance the dialog requires *"FQDNs and IPs of **all**
-    nodes"*.
-  - **NSX Manager: watch for a backup running concurrently.** Field-observed
-    2026-07-22 — the one failure in a batch was an **NSX Manager**, with an NSX
-    **backup in progress** at the time. The working theory (**not confirmed**) is
-    that the rotation *triggers* a backup itself and does not wait long enough
-    for it to finish before proceeding. Either way the mitigation is the same:
-    **check that no NSX backup is running or scheduled** in the window, and give
-    NSX Manager its own batch rather than bundling it with a long run of ESX
-    hosts. If it fails, re-run it alone once the backup has completed.
-- The certificate list also carries an **Auto-renewal Status** column. In a
-  freshly deployed 9.1 fleet the entries observed were **Deactivated** — treat
-  auto-renewal as something you opt into, and check expiry ownership rather than
-  assuming the fleet renews itself.
-- TechDocs walk-throughs: [Configure a Certificate Authority for VMware Cloud
-  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0/configure-a-certificate-authority_9-0.html)
-  and the umbrella [Managing Certificates in VMware Cloud
-  Foundation](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/fleet-management/certificate-management-9-0.html)
-  section.
+What has to be ready before the pass (the full guide, including the field
+notes from real certificate passes, is
+[`41-certificates.md`](41-certificates.md)):
+
+- **CA decided per component group.** VCF Operations configures one fleet CA:
+  **VMCA** (the default every component starts with), **Microsoft CA** or
+  **OpenSSL** (built into VCF Operations, its own self-signed root; Broadcom
+  positions it for testing and development). Any other CA works by hand:
+  VCF generates the CSR and keeps the private key, you import the signed
+  certificate. Only configured-CA certificates renew from VCF Operations
+  ([`41` §2](41-certificates.md#2-choose-the-ca)).
+- **Microsoft CA prepared** by the PKI team: Certification Authority + Web
+  Enrollment roles (same server on 9.1.0.x; separate servers allowed from
+  9.1.1), basic authentication on CertSrv, a template duplicated from *Web
+  Server* **without manual approval**, and a least-privilege service account
+  ([`41` §3](41-certificates.md#3-prepare-a-microsoft-ca)).
+- **Inputs for Configure CA for Fleet:** `https://<ca-fqdn>/certsrv`, the
+  service account **in UPN format**, its password, the template name.
+- **443** from VCF Operations to the CA.
+- **An FQDN with A + PTR for every component** you will certify, IP-only
+  components included: VCF 9.1 requires the FQDN in the SAN, and short names
+  make CSR generation fail ([`41` §5.1](41-certificates.md#51-before-you-start)).
+- **An owner for expiry:** auto-renewal is opt-in, and external-CA
+  certificates never renew themselves
+  ([`41` §6](41-certificates.md#6-renewal-and-expiry)).
 
 ## SFTP backup target
 

@@ -132,6 +132,15 @@ export const NAV: NavItem[] = [
     blurb: 'Configure fleet SSO via the VCF Identity Broker: the identity provider, per-product federation, role mapping, and verification.',
   },
 
+  {
+    slug: '41-certificates',
+    step: 'Foundation services',
+    band: 'Foundation services',
+    label: 'Certificates',
+    icon: 'certificate',
+    blurb: 'Certificates in VCF 9.1: what VCF Operations manages, choosing the CA, preparing a Microsoft CA, Configure CA for Fleet, the batched certificate pass, renewal and expiry, and trust elsewhere.',
+  },
+
   // --- Reference: Build & expand ----------------------------------------------
   {
     slug: '40-host-commissioning',
