@@ -74,7 +74,9 @@ What its README says **[documented]**:
 - Run it from the folder that holds the workbook: `Start-VCFJsonGeneration`, then
   choose the option that discovers and loads a workbook. `Set-VCFJsonGenerationPrequisites`
   detects and installs the dependencies (ImportExcel and VMware.PowerCLI or
-  VCF.PowerCLI).
+  VCF.PowerCLI). Let it install **VCF.PowerCLI**, not VMware.PowerCLI next to
+  an existing VCF.PowerCLI: two PowerCLI versions on one host break the import
+  ([`42` §6.1](42-jump-host-powershell.md#61-several-powercli-versions-on-one-host)).
 - *"very tight coupling between the version of the Planning & Preparation file"*
   and the module version. Use the module release that matches the workbook
   revision you filled in; the README names VCF 9.0, so confirm in the module's

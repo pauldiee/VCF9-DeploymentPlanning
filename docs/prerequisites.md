@@ -437,7 +437,8 @@ So this is the checklist, from the 9.1
 **Check all hosts in one go** before starting the Installer. The hosts are
 still standalone at this point, so this PowerCLI snippet connects to each one
 directly and prints one row per host. You compare the rows, not each host's
-output separately:
+output separately (PowerShell 7 and VCF PowerCLI on the jump host:
+[`42-jump-host-powershell.md`](42-jump-host-powershell.md)):
 
 > **Warning: not tested yet.** This snippet has not been run against real hosts.
 > It is read-only (it changes nothing on the hosts), but check the output
@@ -1400,6 +1401,10 @@ the cluster being built (or on storage that depends on it).
 - **PowerShell 7 + VCF PowerCLI** — needed if you build a
   [custom ESX ISO](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/deploying-a-new-vmware-cloud-foundation-or-vmware-vsphere-foundation-private-cloud-/preparing-your-environment/preparing-esx-hosts-for-vmware-cloud-foundation-or-vmware-vsphere-foundation/create-a-custom-esx-iso-image-using-vmware-powercli.html)
   (vendor add-ons / async drivers), and generally useful for day-2 automation.
+  PowerShell **7.6 LTS** (7.4 and 7.5 left Microsoft support on 10-Nov-2026),
+  `VCF.PowerCLI` rather than `VMware.PowerCLI`, one PowerCLI version per host.
+  Install steps with and without internet access:
+  [`42-jump-host-powershell.md`](42-jump-host-powershell.md).
 - **Excel** — for the P&P workbook itself.
 - **Verification tools** — `nslookup` / `Resolve-DnsName` for the DNS gate and
   `w32tm` (Windows) / `ntpdate -q` (Linux) for the NTP gate, run from the same

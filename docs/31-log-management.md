@@ -278,7 +278,8 @@ single host in the field so far; check the result per host.
    The message shows up in the log stream as a `mark:` entry from `Hostd`.
    If it doesn't, check `/var/log/vmsyslogd.log` on the host for SSL errors.
 
-**Many hosts:** steps 2 and 3 can be scripted with PowerCLI and the
+**Many hosts:** steps 2 and 3 can be scripted with PowerCLI (set up on the
+jump host per [`42-jump-host-powershell.md`](42-jump-host-powershell.md)) and the
 [CertificateManager API](https://developer.broadcom.com/xapis/vsphere-web-services-api/9.0/vim.CertificateManager.html).
 **Not tested**; try it on one host first:
 

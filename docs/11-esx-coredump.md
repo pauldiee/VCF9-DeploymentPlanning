@@ -82,7 +82,9 @@ will be told to send to.
 ## 2. Point every ESX host at the collector
 
 Run per host, either directly against the host or via `Get-EsxCli` in
-PowerCLI for a fleet sweep.
+PowerCLI for a fleet sweep. For a vCenter 9 that means VCF PowerCLI on
+PowerShell 7; installing both on the jump host, with or without internet
+access, is in [`42-jump-host-powershell.md`](42-jump-host-powershell.md).
 
 **Per host, directly (SSH or DCUI shell):**
 
