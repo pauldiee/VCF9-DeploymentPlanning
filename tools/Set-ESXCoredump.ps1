@@ -20,7 +20,9 @@
     This script assumes it is already running and listening on the target
     you pass in -CollectorAddress.
 
-    Requires the VMware.PowerCLI module (Get-EsxCli -V2). The connection
+    Requires PowerCLI (VMware.VimAutomation.Core, for Get-EsxCli -V2): VCF
+    PowerCLI on PowerShell 7 for vCenter 9, or VMware.PowerCLI for vCenter
+    7/8. Setting up the jump host: docs/42-jump-host-powershell.md. The connection
     itself is left to the caller -- run Connect-VIServer first, or pass
     -VCenter/-Credential and this script connects for you and disconnects
     when it finishes.
@@ -30,13 +32,24 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.4.0
+    Version : 1.4.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
-    Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+, VMware.PowerCLI
+    Requires: VCF.PowerCLI on PowerShell 7 for vCenter 9 (KB 409981, KB 428547);
+              VMware.PowerCLI on PowerShell 5.1+ or 7 for vCenter 7/8
     Tested  : VCF 9.1
 
 .CHANGELOG
+    v1.4.1  2026-11-16  PD  Fixed: with only VCF.PowerCLI installed (what
+                            vCenter 9 needs) the script stopped with "VMware.
+                            PowerCLI is not available" and told you to install
+                            a second PowerCLI. It now checks for and imports
+                            VMware.VimAutomation.Core (in both bundles), stops
+                            up front when PowerCLI modules of different
+                            versions are already loaded, and on a load failure
+                            shows the short error, the loaded VMware.* modules
+                            and a link to docs/42. Install hint per vCenter
+                            version (#469)
     v1.4.0  2026-07-28  PD  Reworked every prompt: one shared question/hint/
                             default layout, input validated and re-asked on bad
                             answers (port range, vmk name, y/n) instead of
@@ -162,7 +175,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.4.0'
+    $scriptVersion = '1.4.1'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
@@ -179,12 +192,63 @@ begin {
     Write-Host "'service-control --start vmware-netdumper' over SSH). This script only" -ForegroundColor Yellow
     Write-Host "configures the per-host client side. See docs/11-esx-coredump.md." -ForegroundColor Yellow
 
-    if (-not (Get-Module -ListAvailable -Name VMware.PowerCLI -ErrorAction SilentlyContinue) -and
-        -not (Get-Module -Name VMware.VimAutomation.Core -ErrorAction SilentlyContinue)) {
-        Write-Host "`nVMware.PowerCLI is not available. Install it first:" -ForegroundColor Red
-        Write-Host "  Install-Module VMware.PowerCLI -Scope CurrentUser" -ForegroundColor White
+    # --- PowerCLI module check ----------------------------------------------
+    # The script needs only VMware.VimAutomation.Core (Connect-VIServer,
+    # Get-VMHost, Get-EsxCli), which both VCF.PowerCLI and VMware.PowerCLI
+    # provide. Loading problems almost always come from the jump host (several
+    # PowerCLI versions side by side, an old one already loaded, an incomplete
+    # or blocked offline install); the script explains what it found and
+    # points to docs/42 instead of working around it (#469).
+    $jumpHostGuide = 'https://vcf-planning.hollebollevsan.nl/docs/42-jump-host-powershell/'
+
+    function Stop-ModuleLoadFailure {
+        param([string]$Reason)
+        Write-Host "`n  [ERROR] Could not load PowerCLI (VMware.VimAutomation.Core)." -ForegroundColor Red
+        if ($Reason) { Write-Host "          $Reason" -ForegroundColor Red }
+        Write-Host '          Start a clean session with "pwsh -NoProfile" and run the script first.' -ForegroundColor Yellow
+        Write-Host '          Keep one complete, unblocked PowerCLI version on this host; see the jump-host' -ForegroundColor Yellow
+        Write-Host "          guide, section 4 (completeness check) and 6 (pitfalls): $jumpHostGuide" -ForegroundColor Yellow
+        $loaded = @(Get-Module -Name VMware.*, VCF.PowerCLI)
+        if ($loaded.Count -gt 0) {
+            Write-Host '          Loaded now:' -ForegroundColor Yellow
+            $loaded | Sort-Object Name | ForEach-Object {
+                Write-Host "            $($_.Name) $($_.Version)  ($($_.ModuleBase))" -ForegroundColor Yellow
+            }
+        }
         exit 1
     }
+    function Get-ShortError {
+        param($ErrorRecord)
+        $m = "$($ErrorRecord.Exception.Message)"
+        if ($m -match "`t") { $m = @($m -split "`t" | Where-Object { $_.Trim() })[-1].Trim() }
+        return $m
+    }
+
+    if (-not (Get-Module -ListAvailable -Name VMware.VimAutomation.Core)) {
+        Write-Host "`n  [ERROR] No PowerCLI found (VMware.VimAutomation.Core is not installed)." -ForegroundColor Red
+        Write-Host '          vCenter 9:     Install-Module -Name VCF.PowerCLI -Scope CurrentUser   (needs PowerShell 7, KB 409981)' -ForegroundColor Yellow
+        Write-Host '          vCenter 7 / 8: Install-Module -Name VMware.PowerCLI -Scope CurrentUser  (KB 428547)' -ForegroundColor Yellow
+        Write-Host "          Without internet access: $jumpHostGuide (section 3)" -ForegroundColor Yellow
+        exit 1
+    }
+
+    # All VMware.VimAutomation.* modules of one PowerCLI release share one
+    # version (13.5.1.x for VCF.PowerCLI 9.1.1); StorageUtility is versioned
+    # on its own.
+    $loadedVersions = @(Get-Module -Name VMware.VimAutomation.* |
+        Where-Object { $_.Name -ne 'VMware.VimAutomation.StorageUtility' } |
+        ForEach-Object { "$($_.Version)" } | Select-Object -Unique)
+    if ($loadedVersions.Count -gt 1) {
+        Stop-ModuleLoadFailure -Reason "PowerCLI modules of different versions are already loaded in this session ($($loadedVersions -join ', '))."
+    }
+
+    try {
+        Import-Module -Name VMware.VimAutomation.Core -ErrorAction Stop -WarningAction SilentlyContinue 6>$null
+    }
+    catch {
+        Stop-ModuleLoadFailure -Reason (Get-ShortError $_)
+    }
+    Write-Host "`n  [INFO] PowerCLI $(@(Get-Module -Name VMware.VimAutomation.Core)[0].Version) loaded." -ForegroundColor Cyan
 
     Write-Host "`n--- Inputs ---" -ForegroundColor White
 
