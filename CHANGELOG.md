@@ -1,5 +1,16 @@
 # Changelog
 
+## v6.9.9 – 2026-11-16
+- **`tools/Set-ESXCoredump.ps1` v1.4.1:** works with only VCF.PowerCLI
+  installed (what vCenter 9 needs). The check looked for the VMware.PowerCLI
+  bundle and told you to install it, putting a second PowerCLI on the host.
+  It now imports `VMware.VimAutomation.Core` (in both bundles), stops up front
+  when PowerCLI modules of different versions are already loaded, and on a
+  load failure shows the short error, the loaded `VMware.*` modules and a link
+  to `docs/42`; the install hint names VCF.PowerCLI for vCenter 9 (PowerShell
+  7, KB 409981) and VMware.PowerCLI for vCenter 7/8 (KB 428547). Same loader
+  and messages as VDSPortGroupManager v1.3.0 (#469).
+
 ## v6.9.8 – 2026-11-16
 - **`docs/42` §6.1:** the closing paragraph no longer describes the
   VDSPortGroupManager v1.2.1 loader. v1.3.0 imports PowerCLI normally, stops
