@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 860" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 880" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
 <title id="t">VCF Operations HCX firewall flows between the legacy side and the VCF 9.1 side</title>
-<desc id="d">Legacy (source) side on the left, VCF 9.1 (destination) side on the right. Across the sites: source HCX Manager to destination HCX Manager on 443 for the site pair, source IX and NE uplinks to destination IX and NE uplinks on UDP 4500 for the tunnels, and optionally UDP 4500 to 4628 to 4500 for Application Path Resiliency. Within each site: HCX Manager to vCenter and NSX Manager on 443, HCX Manager to ESX on 443, 80 and 902, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion IPs on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, and admin workstation to HCX Manager on 443, 9443 and 22. On the VCF 9.1 side the HCX Manager also reaches the VCF Identity Broker and License Server on 443. Where ESX hosts have a VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target), the replication flows use that VMkernel, not vmk0; the IX uses its management interface.</desc>
+<desc id="d">Legacy (source) side on the left, VCF 9.1 (destination) side on the right. Across the sites: source HCX Manager to destination HCX Manager on 443 for the site pair, source IX and NE uplinks to destination IX and NE uplinks on UDP 4500 for the tunnels, and optionally UDP 4500 to 4628 to 4500 for Application Path Resiliency. Within each site: HCX Manager to vCenter and NSX Manager on 443, HCX Manager to ESX on 443, 80 and 902, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion IPs on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, and admin workstation to HCX Manager on 443, 9443 and 22. On the VCF 9.1 side the HCX Manager also reaches the VCF Identity Broker and License Server on 443. Where ESX hosts have a VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target), the replication flows use that VMkernel, not vmk0: IX to ESX starts from the IX management interface, 902 goes to the vSphere Replication NFC VMkernel and 80 and 443 to that VMkernel and the management IP; on the source, 31031 and 32032 leave from the vSphere Replication VMkernel and 902 from management.</desc>
 <defs>
 <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
 <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
@@ -14,7 +14,7 @@
 .dash{stroke-dasharray:7 5}
 </style>
 </defs>
-<rect width="1260" height="860" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<rect width="1260" height="880" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
 <text x="630" y="36" font-size="20" font-weight="700" fill="#0f172a" text-anchor="middle">VCF Operations HCX: firewall flows between the two sites</text>
 <text x="630" y="60" font-size="13" fill="#475569" text-anchor="middle">Arrows point from source to destination. Port numbers are TCP unless stated otherwise.</text>
 
@@ -118,7 +118,8 @@
 <text x="102" y="768" font-size="13" fill="#0f172a">Management and migration</text>
 <path class="mg dash" d="M290 763 H350"/>
 <text x="362" y="768" font-size="13" fill="#0f172a">Optional</text>
-<text x="30" y="798" font-size="13" fill="#0f172a">Replication flows use the ESX VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists, not vmk0.</text>
-<text x="30" y="820" font-size="13" fill="#0f172a">The flows within a site are the same on both sides, except the VCF Identity Broker and License Server flows on the VCF 9.1 side.</text>
-<text x="30" y="846" font-size="12" fill="#475569">Source: Ports and Protocols portal, product VCF Operations HCX (curated subset, see the table in §3.4; pick the listing for your version).</text>
+<text x="30" y="798" font-size="13" fill="#0f172a">Replication flows: IX to ESX starts from the IX management interface. 902 goes to the ESX VMkernel tagged vSphere Replication NFC where one exists,</text>
+<text x="30" y="817" font-size="13" fill="#0f172a">80 and 443 to that VMkernel and the management IP. On the source, 31031 and 32032 leave from the VMkernel tagged vSphere Replication, 902 from management.</text>
+<text x="30" y="840" font-size="13" fill="#0f172a">The flows within a site are the same on both sides, except the VCF Identity Broker and License Server flows on the VCF 9.1 side.</text>
+<text x="30" y="866" font-size="12" fill="#475569">Source: Ports and Protocols portal, product VCF Operations HCX (curated subset, see the table in §3.4; pick the listing for your version).</text>
 </svg>

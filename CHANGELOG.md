@@ -1,5 +1,16 @@
 # Changelog
 
+## v7.0.2 – 2026-11-17
+- **HCX firewall diagram, footnote:** now says which ports go where on the
+  replication VMkernels. IX → ESX starts from the IX management interface:
+  902 goes to the VMkernel tagged vSphere Replication NFC where one exists,
+  80 and 443 to that VMkernel and the management IP. On the source, 31031 and
+  32032 leave from the VMkernel tagged vSphere Replication, 902 from
+  management. Matches the §3.4 table; `<desc>`, PNG and the `docs/38` alt
+  text follow. Field-verified 2026-11-17: a forward Bulk migration that hung
+  on *"Storage not accessible"* ran once 443 and 902 were open from the
+  target IX management IP to the target hosts' NFC VMkernel (#477).
+
 ## v7.0.1 – 2026-11-17
 - **`docs/42` §7, new: cleaning up old PowerCLI for a clean start.** The page
   said to uninstall or remove old PowerCLI in four places but never how.
