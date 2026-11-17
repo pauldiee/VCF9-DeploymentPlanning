@@ -638,6 +638,11 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
    column of sentences must wrap, or the table scrolls sideways. */
 .prose .table-scroll--keycol tbody td:first-child { white-space: nowrap; }
 .prose tbody tr:nth-child(even) { background: var(--surface-row-alt); }
+/* Firewall tables split like their diagram (#478): a band in the diagram's
+   line colour. Tunnels orange, flows within a site slate. */
+.table-scroll.flow-group { border-left: 6px solid var(--flow-group-color, var(--border-strong)); }
+.flow-group--tunnel { --flow-group-color: light-dark(#c2410c, #fb923c); }
+.flow-group--site { --flow-group-color: light-dark(#475569, #94a3b8); }
 .prose tbody tr:hover { background: var(--surface-hover); }
 
 /* GFM task lists (the checklists in prerequisites / multi-AZ prep) */

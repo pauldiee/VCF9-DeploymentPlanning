@@ -210,23 +210,43 @@ reference.
 
 [![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, with the replication flows on the VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists (IX to ESX from the IX management interface: 902 to the NFC VMkernel, 80 and 443 to that VMkernel and management), and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
 
-The flows that most often need a change request:
+The flows that most often need a change request, grouped like the diagram:
+
+**Between the sites** (orange in the diagram: the tunnels)
+
+<!-- flow-group: tunnel -->
 
 | Source | Destination | Port(s) | Proto | Purpose |
 | --- | --- | --- | --- | --- |
 | Source HCX Manager | Destination HCX Manager | 443 | TCP | Site pairing |
 | Source IX / NE (uplink) | Destination IX / NE (uplink) | 4500 | UDP | Tunnels (IKEv2) |
 | Source IX / NE | Destination IX / NE | 4500–4628 → 4500 | UDP | Application Path Resiliency (optional) |
+
+**Management, within each site**
+
+<!-- flow-group: site -->
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| --- | --- | --- | --- | --- |
 | HCX Manager | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
 | HCX Manager | ESX | 80, 902 | TCP | Service mesh deployment |
 | HCX Manager | HCX-IX | 8123 | TCP | Bulk migration control |
-| HCX-IX | ESX vMotion IPs, both ways | 8000 | TCP | vMotion |
-| HCX-IX | ESX (management IPs, and the NFC VMkernel IPs where they exist) | 80, 443 | TCP | ESX authentication |
-| HCX-IX | ESX (the NFC VMkernel IPs where they exist, else management) | 902 | TCP | Bulk migration data path |
-| ESX (the vSphere Replication VMkernel where it exists, else management) | HCX-IX | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
-| ESX management | HCX-IX | 902 | TCP | Cold migration |
 | HCX Manager (VCF 9.1 side) | VCF Identity Broker, License Server | 443 | TCP | VCF SSO, licensing |
 | Management workstations | HCX Manager | 443, 9443, 22 | TCP | UI, appliance management, SSH |
+
+**Migration data between the IX and the ESX hosts, within each site.** Which
+interface each end uses decides the IPs in the rule (see
+[below](#replication-and-nfc-vmkernels-the-flow-goes-there-not-to-vmk0)):
+
+<!-- flow-group: site -->
+
+| Source | Source interface | Destination | Destination interface | Port(s) | Proto | Purpose |
+| --- | --- | --- | --- | --- | --- | --- |
+| HCX-IX | per the compute profile | ESX | vMotion VMkernel | 8000 | TCP | vMotion, both ways |
+| HCX-IX | **management IP** | ESX | management IP, **and** the NFC VMkernel where one exists | 80, 443 | TCP | ESX authentication |
+| HCX-IX | **management IP** | ESX | **NFC VMkernel** where one exists, else management | 902 | TCP | Bulk migration data path |
+| ESX | **vSphere Replication VMkernel** where one exists, else management | HCX-IX | Replication network profile IP where one is set | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
+| ESX | management | HCX-IX | per the compute profile | 902 | TCP | Cold migration |
 
 The IX-to-ESX rows are the ones that show up later as migration errors rather
 than at deployment: with 443 from the IX to the target ESX hosts closed, a Bulk
@@ -284,6 +304,12 @@ it:
   Replication NFC VMkernel traffic"*
   ([Network Profile Considerations and Concepts](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/getting-started-with-vmware-hcx-vcf-9-0/hcx-deployment-considerations/network-profile-considerations-and-concepts.html)).
   The source of the IX-to-ESX rule is the IX's **management** IP.
+  The other direction, ESX to the IX on 31031 / 32032, lands on the IX's
+  Replication network profile IP when the compute profile has one: *"the HCX
+  Interconnect uses a Network Profile configuration dedicated to the vSphere
+  Replication traffic"* (same page, read 2026-11-17). The page doesn't say
+  which IX interface takes that traffic without a Replication profile, so read
+  the IX's IPs from the service mesh before you write that rule.
 
 In practice: per host, list which VMkernel carries *vSphere Replication* and
 which carries *vSphere Replication NFC*, and write those IPs (not vmk0's) into

@@ -258,21 +258,39 @@ below come from field experience and inference, and each row says which.
 > VMkernel's IPs, not vmk0's: see
 > [`38-hcx-migration.md`](38-hcx-migration.md#replication-and-nfc-vmkernels-the-flow-goes-there-not-to-vmk0) §3.4.
 
+**Between the sites** (orange in the HCX diagram: the tunnels)
+
+<!-- flow-group: tunnel -->
+
 | Source | Destination | Port(s) | Proto | Purpose |
 | ------ | ----------- | ------- | ----- | ------- |
 | Legacy HCX Manager | VCF 9.1 HCX Manager | 443 | TCP | Site pairing |
 | Legacy IX / NE (uplink) | VCF 9.1 IX / NE (uplink) | 4500 | UDP | Tunnels (IKEv2) |
 | Legacy IX / NE | VCF 9.1 IX / NE | 4500-4628 → 4500 | UDP | Application Path Resiliency (optional) |
+
+**Management, within each site**
+
+<!-- flow-group: site -->
+
+| Source | Destination | Port(s) | Proto | Purpose |
+| ------ | ----------- | ------- | ----- | ------- |
 | HCX Manager (each side) | vCenter, NSX Manager, ESX | 443 | TCP | Integration, service mesh deployment |
 | HCX Manager (each side) | ESX | 80, 902 | TCP | Service mesh deployment |
 | HCX Manager (each side) | HCX-IX (same side) | 8123 | TCP | Bulk migration control |
-| HCX-IX | ESX vMotion IPs, both ways | 8000 | TCP | vMotion |
-| HCX-IX (management IP) | ESX (management IPs, and the NFC VMkernel IPs where they exist) | 80, 443 | TCP | ESX authentication |
-| HCX-IX (management IP) | ESX (the NFC VMkernel IPs where they exist, else management) | 902 | TCP | Bulk migration data path |
-| ESX (the vSphere Replication VMkernel where it exists, else management) | HCX-IX | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
-| ESX management | HCX-IX | 902 | TCP | Cold migration |
 | VCF 9.1 HCX Manager | VCF Identity Broker, License Server | 443 | TCP | VCF SSO, licensing |
 | Management workstations | HCX Manager (each side) | 443, 9443, 22 | TCP | UI, appliance management, SSH |
+
+**Migration data between the IX and the ESX hosts, within each side**
+
+<!-- flow-group: site -->
+
+| Source | Source interface | Destination | Destination interface | Port(s) | Proto | Purpose |
+| ------ | ---------------- | ----------- | --------------------- | ------- | ----- | ------- |
+| HCX-IX | per the compute profile | ESX | vMotion VMkernel | 8000 | TCP | vMotion, both ways |
+| HCX-IX | **management IP** | ESX | management IP, **and** the NFC VMkernel where one exists | 80, 443 | TCP | ESX authentication |
+| HCX-IX | **management IP** | ESX | **NFC VMkernel** where one exists, else management | 902 | TCP | Bulk migration data path |
+| ESX | **vSphere Replication VMkernel** where one exists, else management | HCX-IX | Replication network profile IP where one is set | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
+| ESX | management | HCX-IX | per the compute profile | 902 | TCP | Cold migration |
 
 ---
 

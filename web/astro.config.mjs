@@ -161,6 +161,9 @@ const KEY_COL_MAX = 24;
  * Tables whose first column is short (IDs, numbers, short labels) also get
  * `table-scroll--keycol`, which keeps that column on one line; a first column
  * of sentences must wrap, or it pushes the table into a scrollbar (#433).
+ * A table right after an HTML comment `<!-- flow-group: <name> -->` also gets
+ * `flow-group flow-group--<name>`: a colour band that ties a firewall table to
+ * the line colours of its diagram (#478). GitHub and GitLab hide the comment.
  * @returns {(tree: any) => void}
  */
 function rehypeWrapTables() {
@@ -179,16 +182,23 @@ function rehypeWrapTables() {
   return (tree) => {
     const wrap = (node) => {
       if (!node.children) return;
-      node.children = node.children.map((child) => {
+      node.children = node.children.map((child, i, all) => {
         if (child.type === 'element' && child.tagName === 'table') {
+          const className = hasShortFirstColumn(child)
+            ? ['table-scroll', 'table-scroll--keycol']
+            : ['table-scroll'];
+          let j = i - 1;
+          while (j >= 0 && all[j].type === 'text' && !all[j].value.trim()) j--;
+          const prev = j >= 0 ? all[j] : null;
+          // Without rehype-raw the comment arrives as a `raw` node.
+          const m = prev && (prev.type === 'comment' || prev.type === 'raw')
+            ? /^\s*(?:<!--)?\s*flow-group:\s*([a-z][a-z-]*)\s*(?:-->)?\s*$/.exec(prev.value)
+            : null;
+          if (m) className.push('flow-group', `flow-group--${m[1]}`);
           return {
             type: 'element',
             tagName: 'figure',
-            properties: {
-              className: hasShortFirstColumn(child)
-                ? ['table-scroll', 'table-scroll--keycol']
-                : ['table-scroll'],
-            },
+            properties: { className },
             children: [child],
           };
         }

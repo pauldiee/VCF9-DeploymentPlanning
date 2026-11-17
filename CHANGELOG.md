@@ -1,5 +1,19 @@
 # Changelog
 
+## v7.0.3 – 2026-11-17
+- **`docs/38` §3.4 and `docs/07` §G: the HCX firewall table is split like the
+  diagram.** Three tables: *Between the sites* (site pairing, tunnels,
+  Application Path Resiliency), *Management, within each site*, and
+  *Migration data between the IX and the ESX hosts* with a source and a
+  destination interface column: IX management IP, ESX NFC VMkernel, vSphere
+  Replication VMkernel, or management. ESX → IX 31031 / 32032 lands on the
+  IX's Replication network profile IP where the compute profile has one
+  (HCX 9.1 *Network Profile Considerations and Concepts*, read 2026-11-17);
+  the page gives no fallback, so §3.4 says to read the IX's IPs from the
+  service mesh. On the site each table gets a band in the diagram's colour:
+  orange between the sites, slate within a site, set by an HTML comment
+  before the table that GitHub and GitLab hide (#478).
+
 ## v7.0.2 – 2026-11-17
 - **HCX firewall diagram, footnote:** now says which ports go where on the
   replication VMkernels. IX → ESX starts from the IX management interface:

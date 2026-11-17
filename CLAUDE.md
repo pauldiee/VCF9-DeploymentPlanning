@@ -160,6 +160,11 @@ Before committing any doc change:
    Docs embed the PNG and link to the SVG:
    `[![alt](../web/public/diagrams/x.png)](../web/public/diagrams/x.svg)`.
    `npm run build` fails on a missing or stale PNG (`check-diagram-pngs.mjs`).
+   A firewall table split into the groups of its diagram can carry
+   `<!-- flow-group: tunnel -->` or `<!-- flow-group: site -->` on the line
+   before it: on the site that gives the table a band in the diagram's line
+   colour (orange / slate, `rehypeWrapTables` + `site.css`); GitHub and GitLab
+   hide the comment (#478).
 
 If/when scripts get added under `tools/`, also follow the script-side pre-commit checklist from VCFHealthCheck (`.NOTES Version` + `$scriptVersion` + README table version bumped together; max 10 values on every version component).
 
