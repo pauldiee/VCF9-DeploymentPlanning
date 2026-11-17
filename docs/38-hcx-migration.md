@@ -208,7 +208,7 @@ The authoritative list is the [Ports and Protocols portal][ports] (product
 version). The picture shows the flows below per site; the table is the
 reference.
 
-[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, with the replication flows on the VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists (IX to ESX from the IX management interface: 902 to the NFC VMkernel, 80 and 443 to that VMkernel and management), and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
+[![HCX firewall flows between the legacy side and the VCF 9.1 side: source HCX Manager to destination HCX Manager on 443 for the site pair, optionally source HCX Manager to the destination vCenter on 443 as its Entitlement Server, IX and NE uplink tunnels on UDP 4500 started by the source, optional UDP 4500 to 4628 for Application Path Resiliency, and per site HCX Manager to vCenter, NSX and ESX, HCX Manager to IX on 8123 for bulk migration control, IX and ESX vMotion on 8000 both ways, IX to ESX on 80, 443 and 902, ESX to IX on 31031, 32032 and 902, with the replication flows on the VMkernel tagged for vSphere Replication (source) or vSphere Replication NFC (target) where one exists (IX to ESX from the IX management interface: 902 to the NFC VMkernel, 80 and 443 to that VMkernel and management), and on the VCF 9.1 side HCX Manager to the VCF Identity Broker and License Server](../web/public/diagrams/hcx-firewall-flows.png)](../web/public/diagrams/hcx-firewall-flows.svg)
 
 The flows that most often need a change request, grouped like the diagram:
 
@@ -221,6 +221,7 @@ The flows that most often need a change request, grouped like the diagram:
 | Source HCX Manager | Destination HCX Manager | 443 | TCP | Site pairing |
 | Source IX / NE (uplink) | Destination IX / NE (uplink) | 4500 | UDP | Tunnels (IKEv2) |
 | Source IX / NE | Destination IX / NE | 4500–4628 → 4500 | UDP | Application Path Resiliency (optional) |
+| Source HCX Manager | Destination vCenter | 443 | TCP | Entitlement Server for licensing (optional, see [§6](#6-licensing-the-legacy-side-inherits)) |
 
 **Management, within each site**
 
@@ -397,9 +398,27 @@ service mesh are up, the legacy manager shows **Evaluation Mode**, which is
 expected
 ([KB 440126](https://knowledge.broadcom.com/external/article/440126/hcx-licensing-requirements-for-migrating.html)).
 
-- Optionally register the legacy manager against the **destination vCenter as
-  its Entitlement Server**, so it picks up the VCF subscription directly and the
-  evaluation banner may clear.
+- The evaluation end date doesn't stop migrations: *"even after the evaluation
+  period ends, the site will remain operational as long as it is site-paired
+  with the VCF-enabled cloud infrastructure"*
+  ([KB 418818](https://knowledge.broadcom.com/external/article/418818)).
+  Field-seen 2026-11-17: a legacy HCX Manager on 9.1.1 stayed in Evaluation
+  Mode while Bulk migration ran.
+- **Optional:** register the legacy manager against the **destination vCenter
+  as its Entitlement Server** (appliance management on 9443 → Configuration →
+  Licensing → vCenter Entitlement Server), so it picks up the VCF subscription
+  directly and the evaluation banner may clear (KB 418818). It gives
+  *"license entitlement only"*: the destination vCenter's inventory doesn't
+  show in HCX
+  ([Add an Entitlement Server](https://techdocs.broadcom.com/us/en/vmware-cis/hcx/vmware-hcx/9-0/vmware-hcx-user-guide-vcf-9-0/preparing-for-hcx-installations/hcx-activation-and-licensing/add-an-entitlement-server.html),
+  HCX 9.0 page, last updated 2025-02-25; no 9.1 page). This needs a flow the
+  pairing alone doesn't: **legacy HCX Manager → destination vCenter, TCP 443,
+  across the sites** (the optional row in [§3.4](#34-firewall-flows)).
+  Neither the KB nor the page gives the URL format or the account; use the
+  vCenter's `https://<fqdn>` and an SSO account in the vCenter Administrators
+  group, which [KB 445017](https://knowledge.broadcom.com/external/article/445017/hcx-9x-fails-to-discover-vcf-licenses-wi.html)
+  requires for license discovery on the vCenter registration (not confirmed
+  for this option).
 - Keep outbound HTTPS open: if the legacy side loses the destination for more
   than 10 minutes, it can drop back to evaluation status until the next poll.
 

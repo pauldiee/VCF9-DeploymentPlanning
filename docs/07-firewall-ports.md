@@ -267,6 +267,7 @@ below come from field experience and inference, and each row says which.
 | Legacy HCX Manager | VCF 9.1 HCX Manager | 443 | TCP | Site pairing |
 | Legacy IX / NE (uplink) | VCF 9.1 IX / NE (uplink) | 4500 | UDP | Tunnels (IKEv2) |
 | Legacy IX / NE | VCF 9.1 IX / NE | 4500-4628 → 4500 | UDP | Application Path Resiliency (optional) |
+| Legacy HCX Manager | VCF 9.1 vCenter | 443 | TCP | Entitlement Server for licensing (optional, [`38`](38-hcx-migration.md#6-licensing-the-legacy-side-inherits) §6) |
 
 **Management, within each site**
 

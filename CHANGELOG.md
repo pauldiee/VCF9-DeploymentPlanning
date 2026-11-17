@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.0.4 – 2026-11-17
+- **`docs/38` §6, §3.4, `docs/07` §G, HCX diagram: the Entitlement Server
+  option, optional.** §6 now quotes KB 418818 that the legacy side
+  *"will remain operational"* after its evaluation period while it is
+  site-paired, and explains the optional Entitlement Server (destination
+  vCenter, *"license entitlement only"*), with what the sources don't say
+  (URL format, account). That option needs legacy HCX Manager → destination
+  vCenter on 443 across the sites: an optional row in both tables and a
+  dashed arrow in `hcx-firewall-flows.svg` (+ PNG, alt text). Field-seen
+  2026-11-17: a legacy HCX Manager on 9.1.1 stayed in Evaluation Mode while
+  Bulk migration ran (#479).
+
 ## v7.0.3 – 2026-11-17
 - **`docs/38` §3.4 and `docs/07` §G: the HCX firewall table is split like the
   diagram.** Three tables: *Between the sites* (site pairing, tunnels,
