@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.0.1 – 2026-11-17
+- **`docs/42` §7, new: cleaning up old PowerCLI for a clean start.** The page
+  said to uninstall or remove old PowerCLI in four places but never how.
+  Covers closing sessions and rights, an inventory in both editions (which
+  modules PowerShellGet installed, and the `-AllVersions` wildcard trap),
+  route A (remove everything per TechDocs *Uninstall VCF PowerCLI*, plus the
+  `VCF.PowerCLI` folder its `VMware*` filter misses, SsoAdmin left alone)
+  and route B (keep the newest VCF.PowerCLI and its dependencies, remove the
+  rest). Route B lab-verified 2026-11-17: 83 old VMware.PowerCLI 13.3.0
+  modules removed with `Uninstall-Module`, VCF.PowerCLI 9.1.1 loads clean.
+  §2.2, §3.4, §6.1 and §6.2 link to it (#475).
+
 ## v7.0.0 – 2026-11-16
 - **`docs/38` §3.4, `docs/07` §G, HCX firewall diagram:** new flow HCX
   Manager → HCX-IX on TCP 8123, *"HCX Bulk Migration Control"* in the Ports

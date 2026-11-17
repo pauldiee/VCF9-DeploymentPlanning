@@ -11,8 +11,9 @@ by hand.
 This page covers both cases: a jump host with internet access
 ([§2](#2-with-internet-access)) and one without
 ([§3](#3-without-internet-access)). It ends with how to check the result
-([§4](#4-check-the-result)) and the problems seen on real jump hosts
-([§6](#6-pitfalls)).
+([§4](#4-check-the-result)), the problems seen on real jump hosts
+([§6](#6-pitfalls)), and how to clean up old PowerCLI for a clean start
+([§7](#7-cleaning-up-old-powercli)).
 
 > **Evidence level:** Broadcom's *PowerCLI Installation Guide*, the VCF
 > PowerCLI download page, KB 409981 and KB 428547, the PowerShell Gallery
@@ -44,7 +45,7 @@ Two things to know before you start:
   an exact version, and a second PowerCLI anywhere in the module path breaks
   the import ([§6.1](#61-several-powercli-versions-on-one-host)). Remove old
   VMware.PowerCLI 11.x/12.x/13.x copies before you install, unless something
-  still needs them.
+  still needs them ([§7](#7-cleaning-up-old-powercli)).
 
 ---
 
@@ -108,7 +109,7 @@ Install-Module -Name VCF.PowerCLI -Scope CurrentUser
 - **Proxy.** If the jump host reaches the internet through a proxy, add
   `-Proxy http://proxy.rainpole.io:3128` (and `-ProxyCredential` if needed).
 - **Coming from VMware.PowerCLI 13.3 or earlier.** Broadcom recommends a clean
-  install: uninstall VMware.PowerCLI first. If you install over it anyway, you
+  install: uninstall VMware.PowerCLI first ([§7](#7-cleaning-up-old-powercli)). If you install over it anyway, you
   may hit *"The following commands are already available on this system"*
   (add `-AllowClobber`) and certificate errors because *"PowerCLI is now signed
   with a Broadcom certificate and not a VMware one"* (add
@@ -233,7 +234,8 @@ extra subfolder named after the zip. Move them up a level if they did.
 the offline method. In this case, perform an offline installation of the
 latest PowerCLI version."* Remove the old module folders first, so the new
 version doesn't end up next to the old one
-([§6.1](#61-several-powercli-versions-on-one-host)).
+([§6.1](#61-several-powercli-versions-on-one-host), how:
+[§7](#7-cleaning-up-old-powercli)).
 
 ---
 
@@ -345,8 +347,9 @@ behaviour from *about_PSModulePath*):
 
 What to do:
 
-1. **Keep one PowerCLI version on the jump host.** Check every module path, not
-   only the one you installed to:
+1. **Keep one PowerCLI version on the jump host** (how to remove the rest:
+   [§7](#7-cleaning-up-old-powercli)). Check every module path, not only the
+   one you installed to:
    ```powershell
    Get-Module -ListAvailable VMware.VimAutomation.Sdk, VMware.VimAutomation.Core -All |
      Select-Object Name, Version, ModuleBase
@@ -385,7 +388,8 @@ C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 ```
 
 So a PowerCLI installed for Windows PowerShell years ago is still in play
-under `pwsh`. Remove it, or it takes part in the version mix of
+under `pwsh`. Remove it ([§7](#7-cleaning-up-old-powercli)), or it takes
+part in the version mix of
 [§6.1](#61-several-powercli-versions-on-one-host).
 
 ### 6.3 Blocked files after an offline install
@@ -402,6 +406,157 @@ the `Zone.Identifier` count in [§4](#4-check-the-result).
 module fails on PowerShell 7.6 with VCF.PowerCLI 9.1.1 (a missing
 `System.ServiceModel` type). Create or change SSO users and groups in the
 vSphere Client instead.
+
+---
+
+## 7. Cleaning up old PowerCLI
+
+Use this before a fresh install on a jump host that has had PowerCLI before,
+when [§6.1](#61-several-powercli-versions-on-one-host) applies, before an
+offline update ([§3.4](#34-updating-later)), and when you come from
+VMware.PowerCLI 13.3 or earlier ([§2.2](#22-vcf-powercli)).
+
+Broadcom's procedure is short. The prerequisite: *"Close all PowerShell
+sessions that are running VCF PowerCLI."* Then: *"locate your VMware Cloud
+Foundation PowerCLI modules and delete them"*, using
+`Get-Module -ListAvailable VMware* | Select-Object -Property Name, Version, Path`,
+and *"delete all modules that start with VMware"* (TechDocs, *Uninstall VCF
+PowerCLI*). Two things to add to that:
+
+- That filter leaves out the `VCF.PowerCLI` module itself. Include it.
+- `VMware.vSphere.SsoAdmin` also starts with VMware but isn't part of
+  PowerCLI. Leave it if you use it.
+
+> **Evidence level:** the TechDocs procedure and Microsoft's `Uninstall-Module`
+> page, read verbatim on 2026-11-17. Route B with `Uninstall-Module`, and the
+> inventory and folder-list commands, are **lab-verified 2026-11-17**
+> (PowerShell 7.6.10, Windows 11): an old VMware.PowerCLI 13.3.0 set
+> (83 modules, including 49 `VMware.Sdk.vSphere.*` 8.0.2099) next to
+> VCF.PowerCLI 9.1.1, all from the PowerShell Gallery. Route A was not run
+> end to end, and the lab had no unversioned folders.
+
+### 7.1 Before you start
+
+- **Close every session that has PowerCLI loaded:** `pwsh` and `powershell`
+  windows, the ISE, VS Code terminals, and tools started from them. A loaded
+  module keeps its DLLs open. `Get-Process pwsh, powershell` shows what is
+  still running.
+- **Rights.** Your own folder (`Documents\PowerShell\Modules`) needs no admin
+  rights. `Program Files\PowerShell\Modules`,
+  `Program Files\WindowsPowerShell\Modules` and `$PSHOME\Modules` need an
+  elevated session.
+- **Delete PowerCLI only.** The Windows PowerShell 5.1 folder
+  `$PSHOME\Modules` holds modules that come with Windows. Remove the VMware
+  ones from it and nothing else.
+
+### 7.2 What is there, and how was it installed?
+
+Run this in `pwsh -NoProfile` **and** in `powershell -NoProfile`. pwsh also
+reads the Windows PowerShell paths
+([§6.2](#62-pwsh-also-reads-the-windows-powershell-paths)), but a copy in
+`Documents\WindowsPowerShell\Modules` only shows up in 5.1:
+
+```powershell
+Get-Module -ListAvailable VMware.*, VCF.PowerCLI |
+  Sort-Object Name, Version | Select-Object Name, Version, ModuleBase
+```
+
+Which of these did PowerShellGet install (`Install-Module`)? Only those can
+go with `Uninstall-Module`. Microsoft: *"You can't uninstall a module if
+other modules depend on it or the module wasn't installed with the
+`Install-Module` cmdlet."* Copies from the offline zip, or from a manual
+copy, aren't in this list:
+
+```powershell
+Get-InstalledModule | Where-Object { $_.Name -like 'VMware.*' -or $_.Name -eq 'VCF.PowerCLI' } |
+  ForEach-Object { Get-InstalledModule -Name $_.Name -AllVersions } |
+  Select-Object Name, Version, InstalledLocation
+```
+
+(`Get-InstalledModule -Name VMware.* -AllVersions` doesn't work: with
+`-AllVersions` it refuses a wildcard, *"allowed only when you specify a
+single name"*.)
+
+### 7.3 Route A: remove everything, then install once
+
+Broadcom's route. Use it when you don't trust what is there, for example a
+mix of installs from different years.
+
+1. **What PowerShellGet installed**, from `pwsh` (and again from
+   `powershell` for 5.1 installs):
+   ```powershell
+   Get-InstalledModule |
+     Where-Object { ($_.Name -like 'VMware.*' -or $_.Name -eq 'VCF.PowerCLI') -and $_.Name -ne 'VMware.vSphere.SsoAdmin' } |
+     ForEach-Object { Uninstall-Module -Name $_.Name -AllVersions -Force }
+   ```
+   If a module refuses because another one depends on it, run the line again.
+2. **What is left is a manual or offline copy:** delete the folders. This
+   lists the module folders (`<Modules>\VMware.Xxx`). Check the list before
+   you remove anything:
+   ```powershell
+   $dirs = Get-Module -ListAvailable VMware.*, VCF.PowerCLI |
+     Where-Object Name -ne 'VMware.vSphere.SsoAdmin' |
+     ForEach-Object { if ((Split-Path $_.ModuleBase -Leaf) -eq "$($_.Version)") { Split-Path $_.ModuleBase -Parent } else { $_.ModuleBase } } |
+     Sort-Object -Unique
+   $dirs                                   # check this list first
+   $dirs | Remove-Item -Recurse -Force
+   ```
+   The `if` handles versioned folders (`VMware.Vim\9.1.0.…\`) and unversioned
+   ones (the files directly in `VMware.Vim\`). In both cases the module
+   folder goes, never the `Modules` folder above it. Microsoft notes that
+   deleting by hand *"may break any modules that depend on the deleted
+   module"*. Here that is the intent, because the whole set goes.
+3. **Check** that `Get-Module -ListAvailable VMware.*, VCF.PowerCLI` shows
+   nothing (or only SsoAdmin), in both editions.
+4. **Install once**, online ([§2.2](#22-vcf-powercli)) or offline
+   ([§3](#3-without-internet-access)), then run [§4](#4-check-the-result).
+
+### 7.4 Route B: keep the current VCF.PowerCLI, remove the rest
+
+Use it when the newest VCF.PowerCLI is complete (check with
+[§4](#4-check-the-result)) and only older sets are in the way. This follows
+the dependencies of the newest VCF.PowerCLI and lists every PowerCLI module
+outside them:
+
+```powershell
+$vcf  = Get-Module -ListAvailable VCF.PowerCLI | Sort-Object Version -Descending | Select-Object -First 1
+$keep = @{}; $todo = [System.Collections.Generic.Queue[object]]::new(); $todo.Enqueue($vcf)
+while ($todo.Count) {
+  $m = $todo.Dequeue(); if ($keep["$($m.Name)|$($m.Version)"]) { continue }
+  $keep["$($m.Name)|$($m.Version)"] = $true
+  foreach ($r in $m.RequiredModules) {
+    $c = Get-Module -ListAvailable $r.Name | Sort-Object Version -Descending
+    $c = if ($r.RequiredVersion) { $c | Where-Object Version -eq $r.RequiredVersion } else { $c | Where-Object Version -ge $r.Version }
+    if ($c) { $todo.Enqueue(@($c)[0]) }
+  }
+}
+$old = Get-Module -ListAvailable VMware.*, VCF.PowerCLI |
+  Where-Object { $_.Name -ne 'VMware.vSphere.SsoAdmin' -and -not $keep["$($_.Name)|$($_.Version)"] }
+$old | Select-Object Name, Version, ModuleBase      # check this list first
+```
+
+VCF.PowerCLI 9.1.1 comes to 37 modules (itself plus 36). Then remove `$old`:
+
+```powershell
+# installed with Install-Module
+$old | ForEach-Object { Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force }
+# manual or offline copies in versioned folders: remove just that version folder
+# $old | ForEach-Object { Remove-Item $_.ModuleBase -Recurse -Force }
+```
+
+In the lab, all 83 old modules went in one run of the `Uninstall-Module` line
+and left no empty folders. Afterwards, `Import-Module VCF.PowerCLI` loaded
+with one VMware.VimAutomation version (13.5.1). An old set in an
+**unversioned** folder holds one version only and shares the folder name with
+the current one. Remove it by hand after checking that the current version
+lives elsewhere.
+
+### 7.5 Afterwards
+
+Run [§4](#4-check-the-result) in a clean `pwsh -NoProfile`. If a script
+still reports *"PowerCLI modules of different versions are already loaded"*,
+look for a profile or an open session that loads PowerCLI
+([§6.1](#61-several-powercli-versions-on-one-host)).
 
 ---
 
@@ -428,3 +583,12 @@ Read verbatim on 2026-11-16:
   [Install PowerShell on Linux](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell-on-linux)
 - Broadcom, [Set-PowerCLIConfiguration](https://developer.broadcom.com/powercli/latest/vmware.vimautomation.core/commands/set-powercliconfiguration):
   `InvalidCertificateAction` on PowerShell Core, `ParticipateInCeip`, scopes
+
+Read verbatim on 2026-11-17 (§7):
+
+- Broadcom TechDocs, [Uninstall VCF PowerCLI](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/administration-sdks-cli-and-tools/introduction-to-vmware-vsphere-powercli/installing-vmware-vsphere-powercli/uninstall-powercli.html)
+  (VCF 9.1, last updated 16 November 2026): close all sessions, locate the
+  modules with `Get-Module -ListAvailable VMware*`, delete the VMware folders
+- Microsoft Learn, [Uninstall-Module](https://learn.microsoft.com/en-us/powershell/module/powershellget/uninstall-module):
+  only modules installed with `Install-Module`, not while other modules
+  depend on them; deleting by hand can break dependent modules
