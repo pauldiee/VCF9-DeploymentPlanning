@@ -11,6 +11,8 @@
   dashed arrow in `hcx-firewall-flows.svg` (+ PNG, alt text). Field-seen
   2026-11-17: a legacy HCX Manager on 9.1.1 stayed in Evaluation Mode while
   Bulk migration ran (#479).
+  The arrow's label says *443 to vCenter only*, because the diagram draws
+  vCenter and NSX Manager as one box and NSX needs no such flow.
 
 ## v7.0.3 – 2026-11-17
 - **`docs/38` §3.4 and `docs/07` §G: the HCX firewall table is split like the

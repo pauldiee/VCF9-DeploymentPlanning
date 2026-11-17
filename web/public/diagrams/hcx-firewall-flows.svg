@@ -31,7 +31,8 @@
 <text class="lbl" x="630" y="297" text-anchor="middle">443 site pair</text>
 <!-- cross-site: optional Entitlement Server (KB 418818) -->
 <path class="mg dash" d="M470 285 H600 V161 H788" marker-end="url(#a)"/>
-<text class="lbl" x="680" y="151" text-anchor="middle">443 licensing, optional</text>
+<text class="lbl" x="680" y="134" text-anchor="middle">443 to vCenter only</text>
+<text class="lbl" x="680" y="151" text-anchor="middle">licensing, optional</text>
 <!-- cross-site: tunnels -->
 <path d="M470 432 H784" fill="none" stroke="#c2410c" stroke-width="5" marker-end="url(#o)"/>
 <text class="lbl" x="630" y="417" text-anchor="middle" font-weight="700" style="fill:#c2410c">UDP 4500 tunnels (IKEv2)</text>
