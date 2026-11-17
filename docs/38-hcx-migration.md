@@ -249,6 +249,12 @@ interface each end uses decides the IPs in the rule (see
 | ESX | **vSphere Replication VMkernel** where one exists, else management | HCX-IX | Replication network profile IP where one is set | 31031, 32032 | TCP | Bulk replication, unencrypted / encrypted |
 | ESX | management | HCX-IX | per the compute profile | 902 | TCP | Cold migration |
 
+These tables cover vSphere sources: Bulk, RAV, vMotion, cold migration and
+Network Extension. OS Assisted Migration (Hyper-V/KVM sources only) needs its
+own flows, starting with 443 from every guest to the HCX-SGW
+([KB 390273](https://knowledge.broadcom.com/external/article/390273/osam-guest-os-is-not-visible-in-the-hcx.html));
+filter the [Ports portal](https://ports.broadcom.com/) on Purpose *OSAM*.
+
 The IX-to-ESX rows are the ones that show up later as migration errors rather
 than at deployment: with 443 from the IX to the target ESX hosts closed, a Bulk
 or RAV migration stalls with *"Storage not accessible error observed"*

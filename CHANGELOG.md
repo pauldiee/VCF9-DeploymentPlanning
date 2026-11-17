@@ -1,5 +1,11 @@
 # Changelog
 
+## v7.0.5 – 2026-11-17
+- **`docs/38` §3.4:** one line under the firewall tables that they cover
+  vSphere sources, and that OS Assisted Migration (Hyper-V/KVM sources only)
+  needs its own flows: 443 from every guest to the HCX-SGW (KB 390273), the
+  rest from the Ports portal filtered on Purpose *OSAM* (#480).
+
 ## v7.0.4 – 2026-11-17
 - **`docs/38` §6, §3.4, `docs/07` §G, HCX diagram: the Entitlement Server
   option, optional.** §6 now quotes KB 418818 that the legacy side
