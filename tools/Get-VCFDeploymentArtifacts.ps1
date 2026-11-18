@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Read-only capture of re-submittable configuration spec JSON from a built
@@ -65,15 +66,11 @@
 
 .NOTES
     Script  : Get-VCFDeploymentArtifacts.ps1
-    Version : 1.1.0
+    Version : 1.1.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
-
-.CHANGELOG
-    v1.1.0  2026-09-10  PD  Add Supervisor + vCenterProfiles capture and -Tokenize (#295)
-    v1.0.0  2026-09-10  PD  Initial release -- capture BringUp / Domains / Clusters / Fleet / NSX (#295)
 
 .PARAMETER SDDCManager
     FQDN of SDDC Manager. Required for BringUp / Domains / Clusters.
@@ -141,6 +138,16 @@
     Lists the endpoints it would call for the domain and cluster specs; fetches
     and writes nothing.
 #>
+
+<# CHANGELOG
+    v1.1.1  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.1.0  2026-09-10  PD  Add Supervisor + vCenterProfiles capture and -Tokenize (#295)
+    v1.0.0  2026-09-10  PD  Initial release -- capture BringUp / Domains / Clusters / Fleet / NSX (#295)
+#>
+
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$SDDCManager,
@@ -161,7 +168,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.1.0'
+$scriptVersion = '1.1.1'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

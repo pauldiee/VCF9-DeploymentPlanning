@@ -1,5 +1,13 @@
 # Changelog
 
+## v7.0.6 – 2026-11-18
+- **`tools/`: `Get-Help` works again for all seven scripts.** PowerShell
+  ignored the whole help block: it held a `.CHANGELOG` section (not a help
+  keyword) and `<#` sat directly under `#Requires`. The changelog is now its
+  own comment block after the help, with a blank line under `#Requires`;
+  patch bump per script. The downloadable copies change with the next site
+  build (#481).
+
 ## v7.0.5 – 2026-11-17
 - **`docs/38` §3.4:** one line under the firewall tables that they cover
   vSphere sources, and that OS Assisted Migration (Hyper-V/KVM sources only)
