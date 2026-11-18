@@ -681,25 +681,85 @@ network extension failure at either the source or remote site"*
 
 ### 8.6 Unextend at the cutover
 
-When every VM on a network has moved, **unextend** it
-([Removing a Network Extension][neremove]): **Network Extension**, select the
-network, **Actions**, **Unextend Networks** (**Force Unextend** when the source
-side is gone).
+Unextending is the network cutover: the moment the gateway of a network moves
+from the legacy router to NSX. Quotes are from
+[Removing a Network Extension][neremove] (last updated 16 November 2026).
 
-- *"By default, the cloud segment/VPC subnet is left disconnected from the
-  edge gateway/VPC respectively after removing the network extension"*, so the
-  target doesn't advertise the subnet while the source still does.
-- The option **Connect cloud network to cloud edge gateway after unextending**
-  *"connects the segment to the Tier 1 gateway after removing the network
-  extension"*; *"If dynamic routing is activated, the network is advertised
-  from the Tier 1 gateway."* Use it in the cutover window, once the source
-  gateway is shut.
-- Check DHCP, DNS and NTP: migrated VMs that use services at the source *"can
-  lose those services after unextending a network"*.
+**What it removes, and what it leaves.** Removing an extension *"prevents
+further cross-site communications between virtual machines residing on that
+network"*, which is *"typical when the source side network is vacated"*. It
+takes away the bridge and nothing else: *"Unextending a network removes the L2
+bridged path without removing the NSX segment or Port group, or NSX
+interface."* The migrated VMs stay on the NSX segment with their IP addresses.
+The question is who serves their gateway afterwards, and that depends on one
+option.
 
-Agree this window with the network team: it's the moment the routing changes,
-and with MON off it's also the first moment the target routes this subnet at
-all.
+[![Unextending an HCX network, three states for example network 10.10.20.0/24. 1, extended: the source gateway holds 10.10.20.1 and advertises the subnet, the NE appliances bridge the network, and the Tier-1 interface of the NSX segment is disconnected (with MON only a /32 and per-VM routes). 2, unextend with the default setting: the L2 path is gone, the Tier-1 interface stays disconnected, so the migrated VMs have no gateway until someone connects it in NSX; the source still advertises the subnet. 3, unextend with Connect cloud network to cloud edge gateway: the source gateway was shut first, the segment is connected to the Tier-1, which holds 10.10.20.1/24 and, with dynamic routing, advertises the subnet.](../web/public/diagrams/hcx-unextend.png)](../web/public/diagrams/hcx-unextend.svg)
+
+**The three states**, as in the diagram:
+
+| State | Gateway 10.10.20.1 | Subnet advertised by | Migrated VMs |
+| --- | --- | --- | --- |
+| 1. Extended | Source router only (with MON also a /32 on the Tier-1, [§8.4](#84-mobility-optimized-networking-mon)) | Source | Reach the gateway over the extension |
+| 2. Unextended, default | Source router; the Tier-1 interface stays disconnected | Source | **No gateway**: cut off from other subnets until the interface is connected in NSX |
+| 3. Unextended with **Connect cloud network to cloud edge gateway after unextending** | Tier-1 | Tier-1, through the Tier-0 when dynamic routing is on | Routed by NSX |
+
+Why the default is state 2: *"By default, the cloud segment/VPC subnet is left
+disconnected from the edge gateway/VPC respectively after removing the network
+extension"*, to avoid a routing conflict with the on-premises network. With
+the option set, HCX *"connects the segment to the Tier 1 gateway"*, and *"If
+dynamic routing is activated, the network is advertised from the Tier 1
+gateway."* Without it, the NSX router interface stays disconnected.
+
+State 2 has a use: a network whose source side must keep its gateway (VMs that
+stay behind, routing not ready). Then you connect the Tier-1 interface later in
+NSX, in its own window. For a normal cutover, aim for state 3 and never let
+both routers hold and advertise the same gateway.
+
+**The options on the unextend dialog** (expand the network entry before you
+click **Unextend**):
+
+| Option | What it does | When |
+| --- | --- | --- |
+| **Connect cloud network to cloud edge gateway after unextending** | Connects the segment (or VPC subnet) to its Tier-1 (or VPC) after the L2 path is removed | The cutover, once the source gateway is shut |
+| **Block reuse of subnet CIDR after subnet** (VPC) | Blocks reuse of the subnet CIDR, to avoid inconsistent routing from the destination to the source while the source VPC subnet is still in use | Source is an NSX VPC subnet that stays in use |
+
+**Unextend or Force Unextend.** **Actions**, **Unextend Networks** is the
+normal path. **Force Unextend** is for when that fails: the NE appliance is in
+a bad state, the source components no longer exist, or the source site is
+powered off. In the last case unextend from the target side, so the
+destination router stays connected to the segments that hold migrated VMs.
+
+**The cutover, in order.** TechDocs gives the dialog, not the sequence; this is
+the order that keeps one gateway at a time:
+
+1. **The network is empty at the source.** No VM, appliance or physical host
+   uses the source port group any more; a device left behind loses its route
+   to everything on the target.
+2. **Services checked.** Migrated VMs that use a DHCP server at the source, or
+   static DNS or NTP there, *"can lose those services after unextending a
+   network"*. Move them or give them a route first.
+3. **Firewall ready.** From now on NSX routes this subnet, so the gateway
+   firewall and DFW on the target must hold the rules the source router or
+   firewall enforced (VCFUpgradeGuide docs/31).
+4. **Window agreed** with the network team. Shut the source gateway interface
+   (or remove the subnet from the source routing) and wait until the route is
+   gone upstream.
+5. **Unextend** with **Connect cloud network to cloud edge gateway after
+   unextending** set.
+6. **Check:** the route to the subnet points at the VCF side upstream, a
+   migrated VM pings its gateway and a host on another network, the
+   application test passes.
+
+**Rollback** before step 5 is turning the source gateway back on. After step 5
+the L2 path is gone, so the source gateway no longer reaches the migrated VMs:
+rolling back means disconnecting the Tier-1 interface and extending the network
+again. Agree beforehand whether that is the plan or whether you fix forward.
+
+**With MON.** The Tier-1 already holds the gateway as a /32 plus a route per
+VM. TechDocs doesn't describe what HCX does with those at unextend; check in
+the proof of concept that the Tier-1 shows the full prefix (`/24` in the
+example) afterwards and that the per-VM routes are gone.
 
 ---
 
@@ -749,7 +809,7 @@ Check every VM against the destination hosts before it's in a wave
 
 When everything has moved:
 
-1. **Unextend** every extended network (the cutover in [§8](#8-extend-networks)).
+1. **Unextend** every extended network (the cutover in [§8.6](#86-unextend-at-the-cutover)).
 2. **Delete the service mesh**, which removes the IX, NE and WAN-OPT appliances
    on both sides.
 3. **Remove the site pair.**

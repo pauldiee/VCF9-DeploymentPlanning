@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.0.9 – 2026-11-18
+- **`docs/38` §8.6: unextend explained as the network cutover, with a
+  diagram (#485).** What unextend removes (the L2 path only; segment, port
+  group and NSX interface stay), the three states (extended, unextended by
+  default with the Tier-1 interface disconnected, unextended with "Connect
+  cloud network to cloud edge gateway after unextending") and who holds and
+  advertises the gateway in each, the dialog options including "Block reuse of
+  subnet CIDR" for VPC, when to use Force Unextend, the cutover in order,
+  rollback, and an open MON point to check in the proof of concept. Verbatim
+  from *Removing a Network Extension* (updated 16 November 2026). New diagram
+  `hcx-unextend`. §11 links to §8.6.
+
 ## v7.0.8 – 2026-11-18
 - **`docs/38` §8: network extension in depth, with Mobility Optimized
   Networking explained (#484).** New subsections: how an extension works

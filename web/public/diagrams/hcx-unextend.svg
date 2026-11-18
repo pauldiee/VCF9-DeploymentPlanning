@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 720" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="t">Unextending an HCX network: the three states</title>
+<desc id="d">Unextending an HCX network extension, three states side by side, for example network 10.10.20.0/24 with gateway 10.10.20.1. 1, extended: the source gateway holds 10.10.20.1 and advertises the subnet; the NE appliances bridge the network at layer 2; on the VCF 9.1 side the NSX segment exists but its Tier-1 router interface is disconnected (with MON only a /32), so the migrated VMs reach their gateway through the extension. 2, unextend with the default setting: the L2 path is removed; the segment and its Tier-1 interface stay but the interface stays disconnected, so the VMs on the target have no gateway until someone connects it in NSX; the source gateway still advertises the subnet, so there is no routing conflict. 3, unextend with Connect cloud network to cloud edge gateway after unextending: the source gateway was shut first; HCX connects the segment to the Tier-1, which now holds 10.10.20.1/24, and with dynamic routing the subnet is advertised from the Tier-1 through the Tier-0. Unextending removes the L2 bridged path, never the NSX segment, port group or NSX interface.</desc>
+<defs>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
+<marker id="n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc2626"/></marker>
+<style>.bt{font-size:13.5px;font-weight:600;fill:#0f172a;text-anchor:middle}.bs{font-size:11.5px;fill:#475569;text-anchor:middle}.cap{font-size:12.5px;fill:#334155}</style>
+</defs>
+<rect width="1260" height="720" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="630.0" y="38" font-size="20" font-weight="700" fill="#0f172a" text-anchor="middle">Unextending an HCX network: who holds the gateway, who advertises the subnet</text>
+<text x="630.0" y="62" font-size="13" fill="#475569" text-anchor="middle">Example network 10.10.20.0/24, gateway 10.10.20.1. Unextending removes the L2 path only: the NSX segment and its Tier-1 interface stay.</text>
+<rect x="40" y="82" width="384" height="526" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<circle cx="64" cy="106" r="12" fill="#0f172a"/>
+<text x="64" y="111" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+<text x="84" y="111" font-size="15.5" font-weight="700" fill="#0f172a">Extended</text>
+<text x="84" y="130" font-size="12" fill="#475569">During the waves</text>
+<rect x="52" y="146" width="150" height="340" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="127.0" y="165" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">Legacy site</text>
+<rect x="216" y="146" width="196" height="340" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+<text x="314.0" y="165" font-size="12" font-weight="700" fill="#15803d" text-anchor="middle">VCF 9.1 site</text>
+<rect x="62" y="180" width="130" height="56" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+<text x="127.0" y="205.0" class="bt" style="fill:#0f172a">Source gateway</text>
+<text x="127.0" y="221.0" class="bs">10.10.20.1, advertised</text>
+<rect x="62" y="334" width="130" height="46" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="127.0" y="362.0" class="bt" style="fill:#0f172a">NE appliance</text>
+<rect x="62" y="410" width="130" height="50" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="127.0" y="432.0" class="bt" style="fill:#0f172a">Port group</text>
+<text x="127.0" y="448.0" class="bs">VMs not yet moved</text>
+<path d="M127.0 236 L127.0 334" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<path d="M127.0 380 L127.0 410" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<rect x="228" y="180" width="172" height="40" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="314.0" y="205.0" class="bt" style="fill:#0f172a">Tier-0</text>
+<path d="M314.0 220 L314.0 246" fill="none" stroke="#22c55e" stroke-width="2"/>
+<rect x="228" y="246" width="172" height="56" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="314.0" y="271.0" class="bt" style="fill:#0f172a">Tier-1</text>
+<text x="314.0" y="287.0" class="bs">no gateway for this subnet</text>
+<rect x="228" y="334" width="122" height="46" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="289.0" y="362.0" class="bt" style="fill:#0f172a">NE appliance</text>
+<rect x="228" y="410" width="172" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="314.0" y="432.0" class="bt" style="fill:#0f172a">NSX segment</text>
+<text x="314.0" y="448.0" class="bs">VM 1, VM 2 (migrated)</text>
+<path d="M372 302 L372 410" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="4 4"/>
+<text transform="translate(388 356) rotate(-90)" font-size="11" fill="#dc2626" text-anchor="middle">disconnected</text>
+<line x1="256" y1="380" x2="256" y2="410" stroke="#94a3b8" stroke-width="2"/>
+<path d="M192 357 L228 357" fill="none" stroke="#475569" stroke-width="2.6" stroke-dasharray="8 5"/>
+<text x="209.0" y="347" font-size="11.5" fill="#334155" text-anchor="middle">L2</text>
+<text x="54" y="510" class="cap" style="fill:#334155">The gateway exists only at the source.</text>
+<text x="54" y="528" class="cap" style="fill:#334155">Migrated VMs reach it over the L2</text>
+<text x="54" y="546" class="cap" style="fill:#334155">extension. The Tier-1 interface of the</text>
+<text x="54" y="564" class="cap" style="fill:#334155">segment is disconnected (with MON:</text>
+<text x="54" y="582" class="cap" style="fill:#334155">a /32 and per-VM routes only).</text>
+<text x="54" y="600" class="cap" style="fill:#2563eb">Subnet advertised by: the source.</text>
+<rect x="438" y="82" width="384" height="526" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<circle cx="462" cy="106" r="12" fill="#0f172a"/>
+<text x="462" y="111" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+<text x="482" y="111" font-size="15.5" font-weight="700" fill="#0f172a">Unextend, default</text>
+<text x="482" y="130" font-size="12" fill="#475569">Option not selected</text>
+<rect x="450" y="146" width="150" height="340" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="525.0" y="165" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">Legacy site</text>
+<rect x="614" y="146" width="196" height="340" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+<text x="712.0" y="165" font-size="12" font-weight="700" fill="#15803d" text-anchor="middle">VCF 9.1 site</text>
+<rect x="460" y="180" width="130" height="56" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+<text x="525.0" y="205.0" class="bt" style="fill:#0f172a">Source gateway</text>
+<text x="525.0" y="221.0" class="bs">10.10.20.1, advertised</text>
+<rect x="460" y="334" width="130" height="46" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="525.0" y="362.0" class="bt" style="fill:#0f172a">NE appliance</text>
+<rect x="460" y="410" width="130" height="50" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="525.0" y="432.0" class="bt" style="fill:#0f172a">Port group</text>
+<text x="525.0" y="448.0" class="bs">no VMs left</text>
+<path d="M525.0 236 L525.0 334" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<path d="M525.0 380 L525.0 410" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<rect x="626" y="180" width="172" height="40" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="712.0" y="205.0" class="bt" style="fill:#0f172a">Tier-0</text>
+<path d="M712.0 220 L712.0 246" fill="none" stroke="#22c55e" stroke-width="2"/>
+<rect x="626" y="246" width="172" height="56" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="712.0" y="271.0" class="bt" style="fill:#0f172a">Tier-1</text>
+<text x="712.0" y="287.0" class="bs">no gateway for this subnet</text>
+<rect x="626" y="334" width="122" height="46" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="687.0" y="362.0" class="bt" style="fill:#0f172a">NE appliance</text>
+<rect x="626" y="410" width="172" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="712.0" y="432.0" class="bt" style="fill:#0f172a">NSX segment</text>
+<text x="712.0" y="448.0" class="bs">VM 1, VM 2 (migrated)</text>
+<path d="M770 302 L770 410" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-dasharray="4 4"/>
+<text transform="translate(786 356) rotate(-90)" font-size="11" fill="#dc2626" text-anchor="middle">disconnected</text>
+<line x1="654" y1="380" x2="654" y2="410" stroke="#94a3b8" stroke-width="2"/>
+<path d="M600.0 349 L616.0 365 M616.0 349 L600.0 365" stroke="#dc2626" stroke-width="3"/>
+<text x="608.0" y="343" font-size="11.5" fill="#dc2626" text-anchor="middle">L2</text>
+<text x="452" y="510" class="cap" style="fill:#334155">HCX removes the L2 path only. The</text>
+<text x="452" y="528" class="cap" style="fill:#334155">segment stays, its Tier-1 interface</text>
+<text x="452" y="546" class="cap" style="fill:#334155">stays disconnected: VMs on the target</text>
+<text x="452" y="564" class="cap" style="fill:#dc2626">have no gateway until you connect it.</text>
+<text x="452" y="582" class="cap" style="fill:#334155">No routing conflict with the source.</text>
+<text x="452" y="600" class="cap" style="fill:#2563eb">Subnet advertised by: the source.</text>
+<rect x="836" y="82" width="384" height="526" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<circle cx="860" cy="106" r="12" fill="#0f172a"/>
+<text x="860" y="111" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle">3</text>
+<text x="880" y="111" font-size="15.5" font-weight="700" fill="#0f172a">Unextend + Connect</text>
+<text x="880" y="130" font-size="12" fill="#475569">Connect cloud network to cloud edge gateway</text>
+<rect x="848" y="146" width="150" height="340" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="923.0" y="165" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">Legacy site</text>
+<rect x="1012" y="146" width="196" height="340" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+<text x="1110.0" y="165" font-size="12" font-weight="700" fill="#15803d" text-anchor="middle">VCF 9.1 site</text>
+<rect x="858" y="180" width="130" height="56" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="5 4"/>
+<text x="923.0" y="205.0" class="bt" style="fill:#64748b">Source gateway</text>
+<text x="923.0" y="221.0" class="bs">interface shut first</text>
+<rect x="858" y="334" width="130" height="46" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="923.0" y="362.0" class="bt" style="fill:#0f172a">NE appliance</text>
+<rect x="858" y="410" width="130" height="50" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="923.0" y="432.0" class="bt" style="fill:#0f172a">Port group</text>
+<text x="923.0" y="448.0" class="bs">no VMs left</text>
+<path d="M923.0 236 L923.0 334" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<path d="M923.0 380 L923.0 410" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<rect x="1024" y="180" width="172" height="40" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="1110.0" y="205.0" class="bt" style="fill:#0f172a">Tier-0</text>
+<path d="M1110.0 220 L1110.0 246" fill="none" stroke="#22c55e" stroke-width="2"/>
+<rect x="1024" y="246" width="172" height="56" rx="8" fill="#dcfce7" stroke="#15803d" stroke-width="1.8"/>
+<text x="1110.0" y="271.0" class="bt" style="fill:#0f172a">Tier-1</text>
+<text x="1110.0" y="287.0" class="bs">holds 10.10.20.1/24</text>
+<rect x="1024" y="334" width="122" height="46" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="1085.0" y="362.0" class="bt" style="fill:#0f172a">NE appliance</text>
+<rect x="1024" y="410" width="172" height="50" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="1110.0" y="432.0" class="bt" style="fill:#0f172a">NSX segment</text>
+<text x="1110.0" y="448.0" class="bs">VM 1, VM 2 (migrated)</text>
+<path d="M1168 302 L1168 410" fill="none" stroke="#15803d" stroke-width="3"/>
+<text transform="translate(1184 356) rotate(-90)" font-size="11" fill="#15803d" text-anchor="middle">connected</text>
+<line x1="1052" y1="380" x2="1052" y2="410" stroke="#94a3b8" stroke-width="2"/>
+<path d="M998.0 349 L1014.0 365 M1014.0 349 L998.0 365" stroke="#dc2626" stroke-width="3"/>
+<text x="1006.0" y="343" font-size="11.5" fill="#dc2626" text-anchor="middle">L2</text>
+<text x="850" y="510" class="cap" style="fill:#334155">Shut the source gateway first. HCX</text>
+<text x="850" y="528" class="cap" style="fill:#334155">removes the L2 path and connects the</text>
+<text x="850" y="546" class="cap" style="fill:#334155">segment to the Tier-1, which now holds</text>
+<text x="850" y="564" class="cap" style="fill:#334155">10.10.20.1/24 for the migrated VMs.</text>
+<text x="850" y="582" class="cap" style="fill:#334155">With dynamic routing (BGP or OSPF):</text>
+<text x="850" y="600" class="cap" style="fill:#15803d">Subnet advertised by: the Tier-1.</text>
+<text x="40" y="654" font-size="12.5" fill="#334155">Pick state 3 in the cutover window. State 2 is for when the source gateway must keep the subnet (VMs still there, routing not ready):</text>
+<text x="40" y="673" font-size="12.5" fill="#334155">the migrated VMs are then isolated until the interface is connected in NSX. Never let both sides hold and advertise 10.10.20.1 at the same time.</text>
+<text x="40" y="692" font-size="12.5" fill="#334155">The L2 path cannot be restored by turning the source gateway back on: rolling back after the unextend means a new extension.</text>
+</svg>

@@ -5,5 +5,6 @@
   "protection-recovery-firewall-flows.svg": "7a0e58deaa47489927dc1eaeb6f29977ce73d381f9efcf2d1ffbc38b02fd90ba",
   "hcx-firewall-flows.svg": "82c7cf8ef37bc5dced30c6b39352ce854813867bb7ea65dc09291ba0e720d9e7",
   "certificate-pass.svg": "f88a426c6a8336036a32c4315052586e5b7b761cc22760396e87cd4efa5c1c6b",
-  "hcx-mon-routing.svg": "d5c776aced3eae03cbaa2879c34b0956f0388b856f972880387949ef5ed42eb4"
+  "hcx-mon-routing.svg": "d5c776aced3eae03cbaa2879c34b0956f0388b856f972880387949ef5ed42eb4",
+  "hcx-unextend.svg": "5c030d55783961017a21679e7c3d0d4d508d96d810c9abe5bcc4d4fbe42c1ed1"
 }
