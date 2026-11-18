@@ -459,5 +459,134 @@ const sampleHref = withBase('samples/01-network-dns-plan-rainpole/');
         });
       })();
     </script>
+
+    {/* Lightbox: an image in rendered doc content (.prose img) opens large in
+        an overlay, like the WordPress lightbox. An image already wrapped in a
+        link to an image file (PNG shown, SVG linked) opens the link target;
+        a link to anything else is left alone. Ctrl/Cmd/Shift/middle click
+        still follow the link. Esc, the close button or a click next to the
+        image closes it; arrow keys step through the page's images; a click
+        on the image toggles a 2x zoom with scrolling. (#483) */}
+    <script is:inline>
+      (function () {
+        var IMG_EXT = /\.(svg|png|jpe?g|gif|webp|avif)(?:[?#].*)?$/i;
+        var items = [];
+        document.querySelectorAll('.prose img').forEach(function (img) {
+          var a = img.closest('a');
+          if (a) {
+            if (!IMG_EXT.test(a.getAttribute('href') || '')) return;
+            items.push({ img: img, src: a.href, trigger: a });
+          } else {
+            img.tabIndex = 0;
+            img.setAttribute('role', 'button');
+            items.push({ img: img, src: img.currentSrc || img.src, trigger: img });
+          }
+        });
+        if (!items.length) return;
+
+        var box = document.createElement('div');
+        box.className = 'lightbox';
+        box.hidden = true;
+        box.setAttribute('role', 'dialog');
+        box.setAttribute('aria-modal', 'true');
+        box.setAttribute('aria-label', 'Image viewer');
+        box.setAttribute('data-pagefind-ignore', '');
+        box.innerHTML =
+          '<div class="lightbox__bar">' +
+          '<span class="lightbox__count" aria-live="polite"></span>' +
+          '<a class="lightbox__btn lightbox__open" target="_blank" rel="noopener" aria-label="Open the image in a new tab" title="Open in a new tab"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' +
+          '<button type="button" class="lightbox__btn lightbox__close" aria-label="Close (Esc)" title="Close (Esc)"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>' +
+          '</div>' +
+          '<button type="button" class="lightbox__nav lightbox__prev" aria-label="Previous image"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>' +
+          '<div class="lightbox__stage"><img class="lightbox__img" alt="" /></div>' +
+          '<button type="button" class="lightbox__nav lightbox__next" aria-label="Next image"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>';
+        document.body.appendChild(box);
+
+        var stage = box.querySelector('.lightbox__stage');
+        var big = box.querySelector('.lightbox__img');
+        var count = box.querySelector('.lightbox__count');
+        var openLink = box.querySelector('.lightbox__open');
+        var closeBtn = box.querySelector('.lightbox__close');
+        var prevBtn = box.querySelector('.lightbox__prev');
+        var nextBtn = box.querySelector('.lightbox__next');
+        var current = -1;
+        var lastFocus = null;
+
+        function show(i) {
+          current = (i + items.length) % items.length;
+          var it = items[current];
+          stage.classList.remove('is-zoomed');
+          big.style.width = '';
+          stage.scrollTop = 0;
+          stage.scrollLeft = 0;
+          big.src = it.src;
+          big.alt = it.img.alt || '';
+          openLink.href = it.src;
+          count.textContent = items.length > 1 ? current + 1 + ' / ' + items.length : '';
+        }
+        function open(i) {
+          lastFocus = document.activeElement;
+          prevBtn.hidden = nextBtn.hidden = items.length < 2;
+          show(i);
+          box.hidden = false;
+          document.documentElement.classList.add('lightbox-open');
+          closeBtn.focus();
+        }
+        function close() {
+          box.hidden = true;
+          big.removeAttribute('src');
+          document.documentElement.classList.remove('lightbox-open');
+          if (lastFocus && lastFocus.focus) lastFocus.focus();
+        }
+
+        items.forEach(function (it, i) {
+          it.trigger.addEventListener('click', function (e) {
+            if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            open(i);
+          });
+          if (it.trigger === it.img) {
+            it.img.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open(i);
+              }
+            });
+          }
+        });
+
+        closeBtn.addEventListener('click', close);
+        prevBtn.addEventListener('click', function () { show(current - 1); });
+        nextBtn.addEventListener('click', function () { show(current + 1); });
+        big.addEventListener('click', function () {
+          // Zoom to twice the fitted width, in pixels: a percentage width
+          // makes the grid track grow with the image instead of scrolling.
+          if (stage.classList.contains('is-zoomed')) {
+            stage.classList.remove('is-zoomed');
+            big.style.width = '';
+          } else {
+            var w = big.getBoundingClientRect().width;
+            stage.classList.add('is-zoomed');
+            big.style.width = Math.round(w * 2) + 'px';
+          }
+        });
+        box.addEventListener('click', function (e) {
+          if (e.target === box || e.target === stage || e.target.classList.contains('lightbox__bar')) close();
+        });
+        document.addEventListener('keydown', function (e) {
+          if (box.hidden) return;
+          if (e.key === 'Escape') { e.preventDefault(); close(); }
+          else if (e.key === 'ArrowLeft' && items.length > 1) { e.preventDefault(); show(current - 1); }
+          else if (e.key === 'ArrowRight' && items.length > 1) { e.preventDefault(); show(current + 1); }
+          else if (e.key === 'Tab') {
+            var f = Array.prototype.filter.call(box.querySelectorAll('a[href], button'), function (el) { return !el.hidden; });
+            var first = f[0], last = f[f.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            else if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

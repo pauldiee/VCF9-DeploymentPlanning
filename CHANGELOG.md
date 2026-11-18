@@ -1,5 +1,15 @@
 # Changelog
 
+## v7.0.7 – 2026-11-18
+- **Site: images in the docs are clickable, like the WordPress lightbox
+  (#483).** Click (or Enter) opens the image large in an overlay; a
+  diagram whose PNG links to its SVG opens the SVG, and Ctrl/Cmd/middle
+  click still opens the link in a new tab. Esc, the close button or a
+  click beside it closes it; arrow keys and buttons step through the
+  page's images; a click on the image zooms to twice the size with
+  scrolling. Plain script in `BaseLayout.astro` and CSS in `site.css`,
+  no library; hidden in print. Tested in a local preview.
+
 ## v7.0.6 – 2026-11-18
 - **`tools/`: `Get-Help` works again for all seven scripts.** PowerShell
   ignored the whole help block: it held a `.CHANGELOG` section (not a help

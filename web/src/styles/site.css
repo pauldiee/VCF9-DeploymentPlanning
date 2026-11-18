@@ -856,3 +856,100 @@ details[open] > .sidebar__reference-summary::before { transform: rotate(90deg); 
   .hero__title { font-size: var(--fs-h1); }
   .doc-pager__link { max-width: none; flex: 1; }
 }
+
+/* ---------- Lightbox (images in rendered docs, #483) ----------
+   The overlay is always dark, in both schemes, like a photo viewer; the image
+   sits on white because the diagrams are drawn for a white background. */
+.prose a:has(> img),
+.prose img[role='button'] { cursor: zoom-in; }
+.prose img[role='button']:focus-visible,
+.prose a:has(> img):focus-visible {
+  outline: 3px solid var(--itq-orange);
+  outline-offset: 3px;
+}
+html.lightbox-open { overflow: hidden; }
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: rgba(8, 10, 28, 0.92);
+}
+.lightbox[hidden] { display: none; }
+.lightbox__bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  color: #ffffff;
+}
+.lightbox__count { margin-right: auto; font-size: 0.9rem; opacity: 0.85; }
+.lightbox__stage {
+  grid-row: 2;
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 8px 16px;
+}
+.lightbox__img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  cursor: zoom-in;
+}
+.lightbox__stage.is-zoomed {
+  overflow: auto;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.lightbox__stage.is-zoomed .lightbox__img {
+  max-width: none;
+  max-height: none;
+  flex: none;
+  cursor: zoom-out;
+}
+.lightbox__btn,
+.lightbox__nav {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.lightbox__btn:hover,
+.lightbox__nav:hover { background: var(--itq-orange); border-color: var(--itq-orange); color: #ffffff; }
+.lightbox__btn:focus-visible,
+.lightbox__nav:focus-visible { outline: 2px solid var(--itq-orange); outline-offset: 2px; }
+.lightbox__nav { grid-row: 2; align-self: center; margin: 0 10px 16px; }
+.lightbox__prev { grid-column: 1; }
+.lightbox__next { grid-column: 3; }
+.lightbox__nav[hidden] { display: none; }
+@media (max-width: 640px) {
+  .lightbox__nav { position: absolute; bottom: 12px; margin: 0; }
+  .lightbox__prev { left: 16px; }
+  .lightbox__next { right: 16px; }
+  .lightbox__stage { padding-bottom: 64px; }
+}
+@media print {
+  .lightbox { display: none !important; }
+}
