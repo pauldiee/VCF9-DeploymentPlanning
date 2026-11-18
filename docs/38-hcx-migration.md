@@ -466,9 +466,27 @@ Broadcom's [blog part 2][blog2] walks through the screens.
 ## 8. Extend networks
 
 Network Extension stretches a legacy layer 2 network into NSX on the VCF 9.1
-side, so a VM keeps its IP and gateway when it moves.
+side, so a VM keeps its IP and gateway when it moves. Everything below is from
+the VCF 9.1 HCX user guide, section *Extending Networks with VMware HCX*
+(pages last updated 16 November 2026), unless a KB or blog is named.
 
-**What can be extended**, verbatim from
+### 8.1 How an extension works
+
+*"Network extension is a layer-two bridging function that is initiated at the
+source site"* ([Extending Networks][neext]). A Network Extension (NE)
+appliance on each side bridges the network over the service mesh tunnel; a VM
+that moves keeps its addresses: *"Retain the IP and the MAC addresses of the
+VM, and honor existing network policies"* ([About Network Extension][neabout]).
+
+The gateway does not move with the network: *"With network extension, the
+default gateway for the extended network is only connected at the source
+site"* (same page). Routed traffic of a migrated VM therefore goes back
+through the extension to the legacy gateway, unless you turn on MON
+([§8.4](#84-mobility-optimized-networking-mon)).
+
+### 8.2 What can be extended, and what to keep out
+
+**Source and target types**, verbatim from
 [Requirements for Network Extension][nereq]: *"VCF Operations HCX supports
 extending networks from VMware vSphere Distributed Switches, NSX segments under
 default project, and NSX Virtual Private Cloud (VPC) subnets. HCX also supports
@@ -477,7 +495,7 @@ extending networks to vSphere DVPG as the destination."*
 | | Supported | Not supported |
 | --- | --- | --- |
 | Legacy-side source | vDS port groups; NSX overlay or VLAN segments (NSX 3.2.3+, registered with the same vCenter as HCX, hosts are transport nodes); VPC subnets (HCX and NSX 9.0+ on the source) | vSphere Standard Switch port groups; segments in a **user-created NSX project** |
-| VCF 9.1-side target | NSX segment on a Tier-1, **NSX VPC subnet**, or a vDS port group | NSX projects other than the default |
+| VCF 9.1-side target | NSX segment on a Tier-1, **NSX VPC subnet**, NSX VLAN segment, or a vDS port group (DVPG to DVPG: HCX and NSX 9.1 on both sites) | NSX projects other than the default |
 
 The **default project only** limit is easy to miss on a VCF 9 destination
 designed around NSX projects. It was reported on 4.x and 9.0.x
@@ -485,18 +503,203 @@ designed around NSX projects. It was reported on 4.x and 9.0.x
 and the 9.1 requirements page still says *"default project"*. Plan the target
 VPC or Tier-1 in the default project, or plan a re-IP instead.
 
-**Per extension** you pick the destination first-hop router (a Tier-1 or a VPC)
-and enter the gateway IP and prefix length
-([blog part 3][blog3]). Up-to-date appliances can carry up to 128 extensions on
-a single vNIC.
+**Never extend infrastructure networks:** *"Never use VCF Operations HCX to
+extend the vSphere Management network or other VMkernel networks (for example:
+vMotion, vSAN, replication) to the remote site"* ([requirements][nereq]).
 
-**Mobility Optimized Networking (MON):** without it, traffic from migrated VMs
-goes back through the extension to the legacy gateway. MON routes it locally on
-the VCF 9.1 side. Turn it on per extension once the gateway design allows it.
+**Rules that prevent an outage**
+([Restrictions and Limitations for Network Extension][nerestr]):
 
-**Cutover:** when every VM on a network has moved, **unextend** it, which moves
-the gateway to NSX on the VCF 9.1 side, and remove the legacy gateway. Agree
-this window with the network team: it's the moment the routing changes.
+- *"Virtual machine networks must only be extended with a single solution."*
+  Not HCX next to another L2 stretch for the same network.
+- *"Virtual machine networks with shared or overlapping VLAN configurations
+  must not be extended to the same destination router."*
+- A network that spans more than one vCenter *"must not be extended from more
+  than one vCenter Server to the same destination router"*.
+- *"Network extension does not detect or mitigate loops"*, nor IP or MAC
+  conflicts. Check these yourself.
+- *"Secondary subnets in a single layer-2 network"* are not supported.
+- The upstream switch *"must be configured to accept (not filter out) RARP
+  (reverse ARP) packets"* ([requirements][nereq]).
+
+**Capacity:** one network goes through one appliance pair; *"multiple network
+appliances cannot be used to increase throughput"* ([restrictions][nerestr]). With NSX at the
+destination, *"Additional network extension appliances are required when
+extending more than 8 networks"*, or more than 7 with enhanced service mesh
+appliances, where *"a single vNIC of the appliance gets used for as many as
+128 extensions"* ([requirements][nereq]). One appliance *"can only connect to one vSphere
+Distributed Virtual Switch or NSX Transport Zone"* ([restrictions][nerestr]). Plan the NE
+appliance count per switch in the service mesh ([§7](#7-site-pair-profiles-and-service-mesh)).
+
+**Other limits worth knowing** ([restrictions][nerestr]): *"VMware NSX Traceflow does not
+work with extended networks"*; an existing target segment with the same gateway
+IP and prefix is reused, and HCX *"disconnects the NSX router interface from
+the network"*, so anything that already used that gateway on the target loses
+it; and with NSX Federation *"you cannot extend a new network or
+enable/disable Mobility Optimized Networking (MON) for an already extended
+network"*.
+
+### 8.3 Extend a network, step by step
+
+From [Extending Networks][neext], in the source HCX Manager:
+
+1. **Network Extension**, then **Extend Networks**, and select the service
+   mesh.
+2. Filter on the network type and select one or more source networks; **Next**.
+3. Per network, depending on the target:
+
+   | Target | You enter |
+   | --- | --- |
+   | NSX overlay segment | **Destination First Hop Router** (the NSX Tier-1), the gateway IP and prefix (`192.168.10.1/24`), the NE appliance, and optionally **Mobility Optimized Networking** |
+   | NSX VPC subnet | The VPC as first hop, gateway IP and prefix, and the access mode: **Public**, **Private** or **Private_TGW** |
+   | NSX VLAN segment | The destination VLAN ID and the NE appliance that supports VLAN |
+   | vSphere DVPG | The destination VLAN ID and the NE appliance that supports VLAN on DVPG |
+
+4. Under **Settings - optional**, four checks that HCX applies by default and
+   that you can lift per extension: **Allow Overlapping Source VLAN**,
+   **Allow Overlapping IP Subnet** (by default HCX *"blocks attempts to extend
+   the same subnet to the same Tier 1 gateway or the same VPC"*), **Allow
+   Overlap with Network Profiles** (a gateway IP inside an HCX network profile
+   range) and, for VLAN only, **Allow Overlapping Destination VLAN**. Leave
+   them on unless you know why the overlap is safe.
+5. **Validate** to check the input without extending, then **Submit**.
+   Requests on the same appliance queue behind each other.
+
+**Check.** The extension shows as extended, a test VM on the target side of the
+network pings its gateway (at the source) and a VM that is still at the source.
+
+### 8.4 Mobility Optimized Networking (MON)
+
+[![HCX network extension without and with MON. Without MON, VM 1 on extended network A reaches VM 2 on extended network B through the extension to the source gateway and back, and Internet traffic also leaves at the source. With MON, HCX enables the gateway IP on the destination Tier-1 with a /32 mask and a static route per migrated VM, so VM 1 reaches VM 2 on the Tier-1; destinations that match an Allow policy route (by default the RFC 1918 ranges, when not in the SDDC) go through the extension to the source gateway; everything else, such as Internet egress, leaves through the Tier-0. Bulk-migrated VMs get MON automatically; vMotion and RAV-migrated VMs keep the source gateway until their Router Location is set to the cloud Tier-1. No MON to an NSX VLAN segment, a VPC subnet or a vSphere DVPG.](../web/public/diagrams/hcx-mon-routing.png)](../web/public/diagrams/hcx-mon-routing.svg)
+
+**The problem it solves.** Without MON *"all routed traffic for migrated
+workloads is directed back to the source-site gateway"*
+([Understanding MON][monund]). Two migrated VMs on different extended networks
+talk via the legacy router and back again: *"The network tromboning effect is
+observed when virtual machines in the destination connected to different
+extended segments communicate"* ([About MON][monabout]). Internet traffic also
+leaves at the source, and the extension carries all of it.
+
+**What MON changes** ([About MON][monabout]), per extension:
+
+1. HCX activates the gateway IP on the destination Tier-1: *"It is enabled
+   with a limited /32 network mask."*
+2. Per migrated VM it adds *"a virtual machine specific static route"* on that
+   Tier-1, so the VM is reachable locally. *"This VM static route is not
+   advertised to the on-premises environment."*
+3. Traffic to a network on the same Tier-1 is routed there, without the trip to
+   the source.
+4. For everything else the **MON policy routes** decide
+   ([Policy Routes][monpol]): *"If the destination IP is matched and configured
+   as allow in the MON policy configuration, the packet is forwarded to the
+   premises gateway using the HCX network extension appliance."* and *"If the
+   destination IP is not matched, or configured to deny in the MON policy, the
+   packet is forwarded to the SDDC Tier-0 to be routed."*
+
+**Default policy routes.** *"The default MON policy includes all RFC-1918
+networks"*: private destinations that are not on the target go to the source
+router, and the policy *"sends internet egress traffic to the SDDC tier-0
+router"* ([Example Policy Route Configurations][monex]). Two variants on that
+page:
+
+- **Internet egress stays at the source** (for example because the source
+  firewall must see it): remove the RFC 1918 entries and *"Add a single Allow
+  entry for network 0.0.0.0/0"*.
+- **Cloud services reached locally:** add their ranges as **Deny** entries.
+  Note that this page says *"Deny entries are sent to the Tier-1 router"*,
+  while the Policy Routes page sends deny traffic to the Tier-0. Test the path
+  in the proof of concept before you rely on either.
+
+Policy routes are set per site pair: **Network Extension**, **Advanced** tab,
+**Policy Routes**, **Add**, network and prefix, **Redirect to Peer** Allow or
+Deny, **Submit** ([Configure Policy Routes][monpolconf]).
+
+**Which VMs use it.** This is the part that surprises people
+([About MON][monabout], [Configuring MON][monconf]):
+
+| VM | Gateway after migration |
+| --- | --- |
+| Bulk-migrated | *"automatically MON-enabled"*: Router Location is the cloud Tier-1 |
+| HCX vMotion or RAV-migrated | *"use the on-premises gateway until they are specifically configured to use the cloud gateway"* |
+| On the network before MON was turned on | Same: the source gateway until you set it |
+
+So after a vMotion or RAV wave, set the **Target Router Location** per VM:
+**Network Extension**, expand the extension, select the VMs, pick the
+destination router, **Submit**. To take a VM off MON, set it back to the
+on-premises router. [KB 321599](https://knowledge.broadcom.com/external/article/321599)
+describes the same split for a MON-enabled network.
+
+**Requirements** ([Requirements and Limitations for MON][monlim]):
+
+- *"VMware Tools must be installed"* in the VM.
+- *"An NSX Tier-1 router connected to a Tier-0 router must exist in the
+  destination site prior to enabling this feature."*
+- *"The default gateway IP and the DHCP Server IP cannot be the same."*
+- **Not** for an extension to an NSX VPC subnet, an NSX VLAN segment or a
+  vSphere DVPG ([restrictions][nerestr]).
+
+**Limitations** ([MON requirements][monlim]):
+
+- *"MON does not provide traffic optimization from MON-enabled virtual
+  machines to virtual machines on other extended networks without MON."* Turn
+  it on for all extensions of an application, or for none.
+- *"MON provides optimization in the Cloud."* *"MON does not provide
+  optimization in the source."* VMs that are still at the source keep using
+  the source gateway.
+- A VM with several NICs on MON networks: a Router Location change *"applies
+  to all the interfaces"*.
+- After a Network Extension HA failover, *"policy-routed Mobility Optimized
+  Networking (MON) traffic takes longer to recover than non-policy routed
+  traffic"* ([HA][neha]).
+
+**When to turn it on.** MON makes the target route traffic that the source
+used to route, so a source-side firewall or router no longer sees the
+traffic between migrated VMs, and Internet egress moves to the Tier-0 unless
+you change the policy. Agree with the network and security team before you
+enable it: which flows may leave locally (policy routes), and which rules must
+exist on the target's gateway firewall or DFW first. Without that agreement,
+leave MON off: the extension then works as plain L2, slower but with one
+routing point.
+
+### 8.5 High availability for the NE appliances
+
+*"Network extension High Availability protects extended networks from a
+network extension failure at either the source or remote site"*
+([Understanding Network Extension High Availability][neha]):
+
+- It *"requires four network extension appliances, with two appliances at the
+  source site and two at the remote site"*, forming an HA group. Standby
+  appliances take IP addresses from the network profile pool, so size the pool
+  for them ([§3.2](#32-network-profiles)).
+- Active/Standby, a heartbeat between the pairs, and *"without pre-emption,
+  with no automatic failback"*. HCX places Active and Standby on separate
+  hosts with DRS anti-affinity.
+- It *"provides only appliance level resilience"*: uplink resilience comes
+  from Application Path Resiliency or several uplinks. *"More than one
+  appliance failure in the same HA setup at the same time disrupts the network
+  extension service."*
+
+### 8.6 Unextend at the cutover
+
+When every VM on a network has moved, **unextend** it
+([Removing a Network Extension][neremove]): **Network Extension**, select the
+network, **Actions**, **Unextend Networks** (**Force Unextend** when the source
+side is gone).
+
+- *"By default, the cloud segment/VPC subnet is left disconnected from the
+  edge gateway/VPC respectively after removing the network extension"*, so the
+  target doesn't advertise the subnet while the source still does.
+- The option **Connect cloud network to cloud edge gateway after unextending**
+  *"connects the segment to the Tier 1 gateway after removing the network
+  extension"*; *"If dynamic routing is activated, the network is advertised
+  from the Tier 1 gateway."* Use it in the cutover window, once the source
+  gateway is shut.
+- Check DHCP, DNS and NTP: migrated VMs that use services at the source *"can
+  lose those services after unextending a network"*.
+
+Agree this window with the network team: it's the moment the routing changes,
+and with MON off it's also the first moment the target routes this subnet at
+all.
 
 ---
 
@@ -604,6 +807,18 @@ The 9.1.1 workbook no longer has the sheet.
 [swreq]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/preparing-for-hcx-installations/software-version-requirements.html
 [sysreq]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/preparing-for-hcx-installations/system-requirements-for-hcx.html
 [nereq]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/about-vmware-hcx-network-extension/requirements-for-network-extension.html
+[neabout]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/about-vmware-hcx-network-extension.html
+[nerestr]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/about-vmware-hcx-network-extension/restrictions-and-limitations-for-network-extension.html
+[neext]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/extending-networks-using-vmware-hcx.html
+[neha]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/understand-network-extension-high-availability.html
+[neremove]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/removing-a-network-extension.html
+[monund]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking.html
+[monabout]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking/about-hcx-mobility-optimized-networking.html
+[monpol]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking/mobility-optimized-networking-policy-routes.html
+[monex]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking/mobility-optimized-networking-policy-routes/example-policy-route-configurations.html
+[monlim]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking/limitations-for-mobility-optimized-networking.html
+[monconf]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking/configuring-hcx-mobility-optimized-networking.html
+[monpolconf]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/workload-mobility/vmware-hcx-user-guide-vcf-9-0/extending-networks-with-vmware-hcx/hcx-network-extension-with-mobility-optimized-networking/configuring-policy-routes-for-mobility-optimized-networking.html
 [whatsnew]: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/what-s-new/whats-new-vcf-ops.html
 [blog1]: https://blogs.vmware.com/cloud-foundation/2026/06/26/vcf-9-operations-hcx-deployment-part-1/
 [blog2]: https://blogs.vmware.com/cloud-foundation/2026/07/13/vcf-9-operations-hcx-service-mesh-part-2/

@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 800" role="img" aria-labelledby="t d" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<title id="t">HCX network extension without and with Mobility Optimized Networking</title>
+<desc id="d">HCX network extension without and with Mobility Optimized Networking (MON), side by side. In both panels the legacy (source) site is on the left with the source gateway and its HCX Network Extension appliance, and the VCF 9.1 (destination) site on the right with Tier-0, Tier-1, its Network Extension appliance and two migrated VMs, VM 1 on extended network A and VM 2 on extended network B. The two NE appliances are joined by the L2 extension. Without MON every routed flow of a migrated VM goes back through the extension to the source gateway: VM 1 to VM 2 on another extended network goes to the source gateway and back (tromboning), and Internet traffic leaves at the source. With MON, HCX enables the gateway IP on the Tier-1 with a /32 mask and adds a static route per migrated VM: VM 1 to VM 2 is routed locally on the Tier-1; traffic to networks that match an Allow policy route (by default the RFC 1918 ranges, when the destination is not in the SDDC) goes through the extension to the source gateway; everything else, such as Internet egress, goes out through the Tier-0. Bulk-migrated VMs get MON automatically; HCX vMotion and RAV-migrated VMs keep the source gateway until their Router Location is set to the cloud.</desc>
+<defs>
+<marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
+<marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c2410c"/></marker>
+<marker id="n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#15803d"/></marker>
+<marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7c3aed"/></marker>
+<marker id="u" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2563eb"/></marker>
+<style>.bt{font-size:14px;font-weight:600;fill:#0f172a;text-anchor:middle}.bs{font-size:12px;fill:#475569;text-anchor:middle}.lbl{font-size:12.5px;fill:#0f172a}.cap{font-size:12.5px;fill:#334155}</style>
+</defs>
+<rect width="1260" height="800" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+<text x="630.0" y="38" font-size="20" font-weight="700" fill="#0f172a" text-anchor="middle">HCX network extension: without and with Mobility Optimized Networking (MON)</text>
+<text x="630.0" y="62" font-size="13" fill="#475569" text-anchor="middle">The same two migrated VMs on two extended networks. The arrows are the routed flows of VM 1.</text>
+<rect x="40" y="84" width="580" height="520" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="330.0" y="110" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">Without MON</text>
+<text x="330.0" y="129" font-size="12.5" fill="#475569" text-anchor="middle">The default: one gateway, at the source</text>
+<rect x="56" y="142" width="250" height="448" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="181" y="162" font-size="12.5" font-weight="700" fill="#1d4ed8" text-anchor="middle">Legacy site (source)</text>
+<rect x="340" y="142" width="264" height="448" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+<text x="472" y="162" font-size="12.5" font-weight="700" fill="#15803d" text-anchor="middle">VCF 9.1 site (destination)</text>
+<rect x="96" y="180" width="170" height="54" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="181.0" y="204.0" class="bt">Source gateway</text>
+<text x="181.0" y="221.0" class="bs">networks A and B</text>
+<rect x="196" y="262" width="106" height="54" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="249.0" y="286.0" class="bt">On-prem</text>
+<text x="249.0" y="303.0" class="bs">subnets</text>
+<rect x="96" y="420" width="170" height="54" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="181.0" y="444.0" class="bt">NE appliance</text>
+<text x="181.0" y="461.0" class="bs">source side</text>
+<rect x="380" y="180" width="184" height="44" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="472.0" y="207.0" class="bt">Tier-0  /  Internet</text>
+<rect x="380" y="252" width="184" height="54" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="472.0" y="276.0" class="bt">Tier-1</text>
+<text x="472.0" y="293.0" class="bs">gateway not active here</text>
+<rect x="380" y="420" width="184" height="54" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="472.0" y="444.0" class="bt">NE appliance</text>
+<text x="472.0" y="461.0" class="bs">destination side</text>
+<rect x="354" y="510" width="112" height="54" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="410.0" y="534.0" class="bt">VM 1</text>
+<text x="410.0" y="551.0" class="bs">network A</text>
+<rect x="478" y="510" width="112" height="54" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="534.0" y="534.0" class="bt">VM 2</text>
+<text x="534.0" y="551.0" class="bs">network B</text>
+<path d="M266 447 L380 447" stroke="#475569" stroke-width="2.2" stroke-dasharray="8 5" fill="none"/>
+<text x="323.0" y="494" font-size="12" fill="#334155" text-anchor="middle">L2 extension</text>
+<path d="M249 234 L249 262" stroke="#94a3b8" stroke-width="2" fill="none"/>
+<path d="M390 510 L390 474" fill="none" stroke="#c2410c" stroke-width="3" stroke-linejoin="round" marker-end="url(#o)"/>
+<path d="M380 462 L266 462" fill="none" stroke="#c2410c" stroke-width="3" stroke-linejoin="round" marker-end="url(#o)"/>
+<path d="M126 420 L126 234" fill="none" stroke="#c2410c" stroke-width="3" stroke-linejoin="round" marker-end="url(#o)"/>
+<path d="M164 234 L164 420" fill="none" stroke="#c2410c" stroke-width="3" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#o)"/>
+<path d="M266 432 L380 432" fill="none" stroke="#c2410c" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#o)"/>
+<path d="M554 474 L554 510" fill="none" stroke="#c2410c" stroke-width="3" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#o)"/>
+<circle cx="126" cy="340" r="10" fill="#c2410c"/>
+<text x="126" y="344.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+<path d="M266 197 L300 197" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#g)"/>
+<text x="296" y="184" font-size="11.5" fill="#334155" text-anchor="middle">Internet</text>
+<circle cx="283" cy="216" r="10" fill="#475569"/>
+<text x="283" y="220.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+<circle cx="62" cy="624" r="10" fill="#c2410c"/>
+<text x="62" y="628.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+<text x="80" y="628" class="cap">VM 1 to VM 2 on another extended network: through the extension to the</text>
+<text x="80" y="647" class="cap">source gateway and back again (tromboning).</text>
+<circle cx="62" cy="662" r="10" fill="#475569"/>
+<text x="62" y="666.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+<text x="80" y="666" class="cap">Internet and everything else: also out through the source gateway.</text>
+<text x="80" y="685" class="cap">The gateway exists only at the source until the cutover.</text>
+<rect x="640" y="84" width="580" height="520" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="930.0" y="110" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">With MON</text>
+<text x="930.0" y="129" font-size="12.5" fill="#475569" text-anchor="middle">Per extension, on an NSX Tier-1 only</text>
+<rect x="656" y="142" width="250" height="448" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+<text x="781" y="162" font-size="12.5" font-weight="700" fill="#1d4ed8" text-anchor="middle">Legacy site (source)</text>
+<rect x="940" y="142" width="264" height="448" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+<text x="1072" y="162" font-size="12.5" font-weight="700" fill="#15803d" text-anchor="middle">VCF 9.1 site (destination)</text>
+<rect x="696" y="180" width="170" height="54" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="781.0" y="204.0" class="bt">Source gateway</text>
+<text x="781.0" y="221.0" class="bs">networks A and B</text>
+<rect x="796" y="262" width="106" height="54" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="849.0" y="286.0" class="bt">On-prem</text>
+<text x="849.0" y="303.0" class="bs">subnets</text>
+<rect x="696" y="420" width="170" height="54" rx="8" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+<text x="781.0" y="444.0" class="bt">NE appliance</text>
+<text x="781.0" y="461.0" class="bs">source side</text>
+<rect x="980" y="180" width="184" height="44" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="1072.0" y="207.0" class="bt">Tier-0  /  Internet</text>
+<rect x="980" y="252" width="184" height="54" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="1072.0" y="276.0" class="bt">Tier-1</text>
+<text x="1072.0" y="293.0" class="bs">gateway /32 + VM routes</text>
+<rect x="980" y="420" width="184" height="54" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.8"/>
+<text x="1072.0" y="444.0" class="bt">NE appliance</text>
+<text x="1072.0" y="461.0" class="bs">destination side</text>
+<rect x="954" y="510" width="112" height="54" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="1010.0" y="534.0" class="bt">VM 1</text>
+<text x="1010.0" y="551.0" class="bs">network A</text>
+<rect x="1078" y="510" width="112" height="54" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>
+<text x="1134.0" y="534.0" class="bt">VM 2</text>
+<text x="1134.0" y="551.0" class="bs">network B</text>
+<path d="M866 447 L980 447" stroke="#475569" stroke-width="2.2" stroke-dasharray="8 5" fill="none"/>
+<text x="923.0" y="494" font-size="12" fill="#334155" text-anchor="middle">L2 extension</text>
+<path d="M849 234 L849 262" stroke="#94a3b8" stroke-width="2" fill="none"/>
+<path d="M1010 510 L1010 306" fill="none" stroke="#15803d" stroke-width="3" stroke-linejoin="round" marker-end="url(#n)"/>
+<path d="M1134 306 L1134 510" fill="none" stroke="#15803d" stroke-width="3" stroke-linejoin="round" marker-end="url(#n)"/>
+<circle cx="1024" cy="390" r="10" fill="#15803d"/>
+<text x="1024" y="394.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+<path d="M980 510 L980 474" fill="none" stroke="#7c3aed" stroke-width="3" stroke-linejoin="round" marker-end="url(#p)"/>
+<path d="M980 462 L866 462" fill="none" stroke="#7c3aed" stroke-width="3" stroke-linejoin="round" marker-end="url(#p)"/>
+<path d="M726 420 L726 234" fill="none" stroke="#7c3aed" stroke-width="3" stroke-linejoin="round" marker-end="url(#p)"/>
+<circle cx="726" cy="350" r="10" fill="#7c3aed"/>
+<text x="726" y="354.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+<path d="M1102 252 L1102 224" fill="none" stroke="#2563eb" stroke-width="3" stroke-linejoin="round" marker-end="url(#u)"/>
+<circle cx="1122" cy="238" r="10" fill="#2563eb"/>
+<text x="1122" y="242.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">3</text>
+<circle cx="662" cy="624" r="10" fill="#15803d"/>
+<text x="662" y="628.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+<text x="680" y="628" class="cap">VM 1 to VM 2: routed on the Tier-1, which holds the gateway IP (/32)</text>
+<text x="680" y="647" class="cap">and a static route per migrated VM. Not advertised to the source.</text>
+<circle cx="662" cy="662" r="10" fill="#7c3aed"/>
+<text x="662" y="666.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+<text x="680" y="666" class="cap">Destinations that match an Allow policy route (default: RFC 1918, not</text>
+<text x="680" y="685" class="cap">in the SDDC): through the extension to the source gateway.</text>
+<circle cx="662" cy="700" r="10" fill="#2563eb"/>
+<text x="662" y="704.5" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">3</text>
+<text x="680" y="704" class="cap">Everything else, such as Internet egress: out through the Tier-0.</text>
+<text x="40" y="748" font-size="12.5" fill="#334155">Bulk-migrated VMs get MON automatically. HCX vMotion and RAV-migrated VMs, and VMs that were on the network before MON was turned on,</text>
+<text x="40" y="767" font-size="12.5" fill="#334155">keep the source gateway until their Router Location is set to the cloud Tier-1. No MON to an NSX VLAN segment, a VPC subnet or a vSphere DVPG.</text>
+</svg>

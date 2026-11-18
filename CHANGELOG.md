@@ -1,5 +1,20 @@
 # Changelog
 
+## v7.0.8 – 2026-11-18
+- **`docs/38` §8: network extension in depth, with Mobility Optimized
+  Networking explained (#484).** New subsections: how an extension works
+  (the gateway stays at the source), what can be extended and the rules that
+  prevent an outage (one solution per network, no overlapping VLANs to one
+  router, loops and IP/MAC conflicts not detected, RARP, appliance capacity),
+  the extend wizard per target type and its four overlap settings, MON (gateway
+  /32 and VM routes on the Tier-1, policy routes with the RFC 1918 default and
+  the Internet-at-the-source variant, Bulk vs vMotion/RAV and the Router
+  Location, requirements, limitations, when to turn it on), NE high
+  availability, and unextend with "Connect cloud network to cloud edge
+  gateway". Verbatim from the VCF 9.1 HCX user guide (updated 16 November
+  2026); TechDocs' own conflict on where Deny policy routes go is noted. New
+  diagram `hcx-mon-routing` (without and with MON).
+
 ## v7.0.7 – 2026-11-18
 - **Site: images in the docs are clickable, like the WordPress lightbox
   (#483).** Click (or Enter) opens the image large in an overlay; a
