@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Read-only check of the VCF 9.1 "VCF Management" backup configuration via the
@@ -36,14 +37,11 @@
 
 .NOTES
     Script  : Get-VCFBackupConfig.ps1
-    Version : 1.0.0
+    Version : 1.0.1
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
-
-.CHANGELOG
-    v1.0.0  2026-07-13  PD  Initial release -- read-only Fleet LCM backup configuration check (#145)
 
 .PARAMETER VCFOps
     Fully qualified domain name of the VCF Operations appliance. This is where
@@ -69,6 +67,15 @@
     Prompts for the VCF Operations credentials, then prints the stored backup
     target, schedule, retention and history for every VCF instance.
 #>
+
+<# CHANGELOG
+    v1.0.1  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.0.0  2026-07-13  PD  Initial release -- read-only Fleet LCM backup configuration check (#145)
+#>
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$VCFOps,
@@ -78,7 +85,7 @@ param(
     [switch]$Raw
 )
 
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.0.1'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

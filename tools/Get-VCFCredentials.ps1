@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Read-only retrieval of VCF 9.1 credential information. Two modes:
@@ -61,22 +62,11 @@
 
 .NOTES
     Script  : Get-VCFCredentials.ps1
-    Version : 1.2.1
+    Version : 1.2.2
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1 (both modes verified against a live lab)
-
-.CHANGELOG
-    v1.2.1  2026-09-15  PD  Comment-based help / console wording: replace the specific
-                            OneDrive-path reference with generic "per-engagement
-                            storage" language
-    v1.2.0  2026-07-20  PD  VCF Management mode now takes a -Credential: mints an Ops
-                            token and calls /suite-api/internal with the
-                            X-Ops-API-use-unsupported flag, so no browser session or
-                            CSRF is needed. Verified live (#188)
-    v1.1.0  2026-07-20  PD  Add VCF Management account-inventory mode (-VCFOps), no secrets (#188)
-    v1.0.0  2026-07-20  PD  Initial release -- read-only SDDC Manager credentials retrieval (#188)
 
 .PARAMETER SDDCManager
     SDDC Manager mode. FQDN of the SDDC Manager appliance. Returns the plaintext
@@ -133,6 +123,23 @@
     accountType / expiry). No passwords are returned -- the platform does not
     expose them.
 #>
+
+<# CHANGELOG
+    v1.2.2  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.2.1  2026-09-15  PD  Comment-based help / console wording: replace the specific
+                            OneDrive-path reference with generic "per-engagement
+                            storage" language
+    v1.2.0  2026-07-20  PD  VCF Management mode now takes a -Credential: mints an Ops
+                            token and calls /suite-api/internal with the
+                            X-Ops-API-use-unsupported flag, so no browser session or
+                            CSRF is needed. Verified live (#188)
+    v1.1.0  2026-07-20  PD  Add VCF Management account-inventory mode (-VCFOps), no secrets (#188)
+    v1.0.0  2026-07-20  PD  Initial release -- read-only SDDC Manager credentials retrieval (#188)
+#>
+
 [CmdletBinding(DefaultParameterSetName = 'SDDCManager')]
 param(
     [Parameter(ParameterSetName = 'SDDCManager', Mandatory)] [string]$SDDCManager,
@@ -151,7 +158,7 @@ param(
     [switch]$Raw
 )
 
-$scriptVersion = '1.2.1'
+$scriptVersion = '1.2.2'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

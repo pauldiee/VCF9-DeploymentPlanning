@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Sets the proxy (peerProxy) on the VCF 9.1 VCF services runtime through the
@@ -44,17 +45,11 @@
 
 .NOTES
     Script  : Set-VCFProxyConfig.ps1
-    Version : 1.0.3
+    Version : 1.0.4
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
-
-.CHANGELOG
-    v1.0.3  2026-07-15  PD  -Remove now sends explicit empty values (blank host, port 0); peerProxy: null was a silent no-op -- verified live (#164)
-    v1.0.2  2026-07-15  PD  Auth failure now hints -SkipCertificateValidation on a TLS trust error (#166)
-    v1.0.1  2026-07-15  PD  -Remove clears the proxy (PATCH peerProxy: null) (#164)
-    v1.0.0  2026-07-15  PD  Initial release -- PATCH peerProxy on the VCF services runtime via Fleet LCM (#154)
 
 .PARAMETER VCFOps
     Fully qualified domain name of the VCF Operations appliance. The token is
@@ -134,6 +129,18 @@
     Prints the clear payload (blank host, port 0) that would remove the proxy, and
     sends nothing. Drop -WhatIf to apply, then confirm with Get-VCFProxyConfig.ps1.
 #>
+
+<# CHANGELOG
+    v1.0.4  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.0.3  2026-07-15  PD  -Remove now sends explicit empty values (blank host, port 0); peerProxy: null was a silent no-op -- verified live (#164)
+    v1.0.2  2026-07-15  PD  Auth failure now hints -SkipCertificateValidation on a TLS trust error (#166)
+    v1.0.1  2026-07-15  PD  -Remove clears the proxy (PATCH peerProxy: null) (#164)
+    v1.0.0  2026-07-15  PD  Initial release -- PATCH peerProxy on the VCF services runtime via Fleet LCM (#154)
+#>
+
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter(Mandatory)] [string]$VCFOps,
@@ -152,7 +159,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.3'
+$scriptVersion = '1.0.4'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

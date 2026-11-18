@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Read-only check of the proxy (peerProxy) configured on the VCF 9.1 VCF
@@ -41,15 +42,11 @@
 
 .NOTES
     Script  : Get-VCFProxyConfig.ps1
-    Version : 1.0.1
+    Version : 1.0.2
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
-
-.CHANGELOG
-    v1.0.1  2026-07-15  PD  Auth failure now hints -SkipCertificateValidation on a TLS trust error (#166)
-    v1.0.0  2026-07-15  PD  Initial release -- read-only Fleet LCM proxy (peerProxy) check (#154)
 
 .PARAMETER VCFOps
     Fully qualified domain name of the VCF Operations appliance. This is where
@@ -84,6 +81,16 @@
     Prompts for the VCF Operations credentials, then prints the proxy stored on
     every VCF services runtime component.
 #>
+
+<# CHANGELOG
+    v1.0.2  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.0.1  2026-07-15  PD  Auth failure now hints -SkipCertificateValidation on a TLS trust error (#166)
+    v1.0.0  2026-07-15  PD  Initial release -- read-only Fleet LCM proxy (peerProxy) check (#154)
+#>
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$VCFOps,
@@ -94,7 +101,7 @@ param(
     [switch]$Raw
 )
 
-$scriptVersion = '1.0.1'
+$scriptVersion = '1.0.2'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

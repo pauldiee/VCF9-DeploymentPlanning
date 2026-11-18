@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Sets the VCF 9.1 "VCF Management" backup location through the Fleet LCM API,
@@ -58,47 +59,11 @@
 
 .NOTES
     Script  : Set-VCFBackupConfig.ps1
-    Version : 1.0.3
+    Version : 1.0.4
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: PowerShell 5.1+ (Windows PowerShell) or PowerShell 7+
     Tested  : VCF 9.1
-
-.CHANGELOG
-    v1.0.3  2026-07-13  PD  The write now goes to the fleet appliance, not the VCF Operations proxy
-                            (#150). PATCH on /vcf-operations/plug/fleet-lcm/... returned 405: that path
-                            is the UI's session-authenticated route and only works with the JSESSIONID
-                            cookie of a logged-in Ops session -- the same reason a GET there returns the
-                            Ops web application's HTML (#148). Copying the browser's request wholesale
-                            was the error; only the PAYLOAD was portable, not the URL. The Bearer token
-                            already works against https://<FleetLCM>/fleet-lcm/v1/, so both the lookup
-                            and the write go there. Verified live: 202 Accepted, and the platform starts
-                            a ConfigureBackupLocation workflow.
-                            -FleetLCM is therefore needed for the write itself, so it is prompted for
-                            when missing (#149), with where to find it: VCF Operations > Build >
-                            Lifecycle > VCF Management > Components, the "Fleet lifecycle" row. The
-                            script already prompted for everything else it needs, so failing here was
-                            the odd one out. -SddcLcmId is deliberately not prompted for -- looking up a
-                            GUID by hand is a chore; it stays the bypass for anyone who already has it.
-    v1.0.2  2026-07-13  PD  Instance discovery threw "The property 'id' cannot be found on this
-                            object" (#148). Root cause: the VCF Operations proxy does NOT serve the
-                            instance list -- a GET on /vcf-operations/plug/fleet-lcm/v1/sddc-lcms falls
-                            through to the VCF Operations web application and returns its HTML, which
-                            the script then treated as an instance object. Discovery now runs against
-                            the fleet appliance (new -FleetLCM parameter), which is where the list
-                            actually lives, while the write still goes through the proxy -- each
-                            endpoint used only where it is known to work. Also uses StrictMode-safe
-                            property reads and, when no instance is found, says what came back instead
-                            of throwing.
-    v1.0.1  2026-07-13  PD  -ShowThumbprint: stop swallowing the real error and stop blaming
-                            reachability (#147). The in-box Windows OpenSSH client advertises the
-                            sntrup761x25519-sha512 key exchange and then cannot perform it, so
-                            ssh-keyscan dies during key exchange against a modern server and prints
-                            nothing -- a client bug that says nothing about the target. The helper now
-                            checks the PATH explicitly, prints what ssh-keyscan actually said, names
-                            the Windows bug when it sees it, and always offers the server-side read
-                            (ssh-keygen -lf /etc/ssh/ssh_host_*.pub), which needs no SSH client.
-    v1.0.0  2026-07-13  PD  Initial release -- PATCH backup location via Fleet LCM (#145)
 
 .PARAMETER VCFOps
     Fully qualified domain name of the VCF Operations appliance. Both the token
@@ -187,6 +152,48 @@
     Prints the exact payload that would be sent, with the secrets masked, and
     sends nothing.
 #>
+
+<# CHANGELOG
+    v1.0.4  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.0.3  2026-07-13  PD  The write now goes to the fleet appliance, not the VCF Operations proxy
+                            (#150). PATCH on /vcf-operations/plug/fleet-lcm/... returned 405: that path
+                            is the UI's session-authenticated route and only works with the JSESSIONID
+                            cookie of a logged-in Ops session -- the same reason a GET there returns the
+                            Ops web application's HTML (#148). Copying the browser's request wholesale
+                            was the error; only the PAYLOAD was portable, not the URL. The Bearer token
+                            already works against https://<FleetLCM>/fleet-lcm/v1/, so both the lookup
+                            and the write go there. Verified live: 202 Accepted, and the platform starts
+                            a ConfigureBackupLocation workflow.
+                            -FleetLCM is therefore needed for the write itself, so it is prompted for
+                            when missing (#149), with where to find it: VCF Operations > Build >
+                            Lifecycle > VCF Management > Components, the "Fleet lifecycle" row. The
+                            script already prompted for everything else it needs, so failing here was
+                            the odd one out. -SddcLcmId is deliberately not prompted for -- looking up a
+                            GUID by hand is a chore; it stays the bypass for anyone who already has it.
+    v1.0.2  2026-07-13  PD  Instance discovery threw "The property 'id' cannot be found on this
+                            object" (#148). Root cause: the VCF Operations proxy does NOT serve the
+                            instance list -- a GET on /vcf-operations/plug/fleet-lcm/v1/sddc-lcms falls
+                            through to the VCF Operations web application and returns its HTML, which
+                            the script then treated as an instance object. Discovery now runs against
+                            the fleet appliance (new -FleetLCM parameter), which is where the list
+                            actually lives, while the write still goes through the proxy -- each
+                            endpoint used only where it is known to work. Also uses StrictMode-safe
+                            property reads and, when no instance is found, says what came back instead
+                            of throwing.
+    v1.0.1  2026-07-13  PD  -ShowThumbprint: stop swallowing the real error and stop blaming
+                            reachability (#147). The in-box Windows OpenSSH client advertises the
+                            sntrup761x25519-sha512 key exchange and then cannot perform it, so
+                            ssh-keyscan dies during key exchange against a modern server and prints
+                            nothing -- a client bug that says nothing about the target. The helper now
+                            checks the PATH explicitly, prints what ssh-keyscan actually said, names
+                            the Windows bug when it sees it, and always offers the server-side read
+                            (ssh-keygen -lf /etc/ssh/ssh_host_*.pub), which needs no SSH client.
+    v1.0.0  2026-07-13  PD  Initial release -- PATCH backup location via Fleet LCM (#145)
+#>
+
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter(Mandatory)] [string]$VCFOps,
@@ -204,7 +211,7 @@ param(
     [switch]$SkipCertificateValidation
 )
 
-$scriptVersion = '1.0.3'
+$scriptVersion = '1.0.4'
 $scriptAuthor  = 'Paul van Dieen'
 $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 

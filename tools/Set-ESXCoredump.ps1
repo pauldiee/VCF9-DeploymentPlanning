@@ -1,4 +1,5 @@
 #Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Configures network coredump (ESXi Dump Collector) on every host in a
@@ -32,68 +33,12 @@
 
 .NOTES
     Script  : Set-ESXCoredump.ps1
-    Version : 1.4.1
+    Version : 1.4.2
     Author  : Paul van Dieen
     Blog    : https://www.hollebollevsan.nl
     Requires: VCF.PowerCLI on PowerShell 7 for vCenter 9 (KB 409981, KB 428547);
               VMware.PowerCLI on PowerShell 5.1+ or 7 for vCenter 7/8
     Tested  : VCF 9.1
-
-.CHANGELOG
-    v1.4.1  2026-11-16  PD  Fixed: with only VCF.PowerCLI installed (what
-                            vCenter 9 needs) the script stopped with "VMware.
-                            PowerCLI is not available" and told you to install
-                            a second PowerCLI. It now checks for and imports
-                            VMware.VimAutomation.Core (in both bundles), stops
-                            up front when PowerCLI modules of different
-                            versions are already loaded, and on a load failure
-                            shows the short error, the loaded VMware.* modules
-                            and a link to docs/42. Install hint per vCenter
-                            version (#469)
-    v1.4.0  2026-07-28  PD  Reworked every prompt: one shared question/hint/
-                            default layout, input validated and re-asked on bad
-                            answers (port range, vmk name, y/n) instead of
-                            throwing or silently accepting, -CollectorAddress
-                            now defaults to the vCenter, firewall question moved
-                            up with the other inputs so the settings summary
-                            covers it. Fixed: clusters and hosts shared one
-                            number range in the picker, so host numbers at or
-                            below the cluster count could never be selected --
-                            they are now C1..Cn and H1..Hn, unresolved entries
-                            are reported rather than passed through as a host
-                            name, duplicate picks are collapsed, and the
-                            selection is echoed back before anything is
-                            written (#221)
-    v1.3.1  2026-07-28  PD  Dropped ConfirmImpact from High to Medium -- the
-                            per-host "Are you sure?" prompt was redundant on
-                            top of the interactive cluster/host picker.
-                            -WhatIf and an explicit -Confirm still work (#221)
-    v1.3.0  2026-07-28  PD  Interactive host/cluster picker: when no -VMHost is
-                            given, lists every cluster (with host counts) and
-                            host (with its cluster) it found, and prompts for
-                            'A' or a comma-separated list of numbers/names
-                            instead of a blind free-text host list (#221)
-    v1.2.0  2026-07-28  PD  Added -SkipInvalidCertificateCheck (prompted for
-                            if not passed) -- sets Set-PowerCLIConfiguration
-                            -InvalidCertificateAction Ignore -Scope Session
-                            before connecting, for lab/PoC vCenters with a
-                            self-signed cert (#221)
-    v1.1.3  2026-07-28  PD  Connect-VIServer SSL failures now suggest
-                            Set-PowerCLIConfiguration -InvalidCertificateAction
-                            Ignore instead of just printing the raw exception
-                            (self-signed/untrusted vCenter certs) (#221)
-    v1.1.2  2026-07-28  PD  Fixed: under Set-StrictMode, referencing
-                            $global:DefaultVIServers before PowerCLI has ever
-                            connected in the session threw "variable cannot be
-                            retrieved"; now read via a safe Get-Variable helper
-                            that tolerates it not existing yet (#221)
-    v1.1.1  2026-07-28  PD  -VCenter now always prompts when not passed on the
-                            command line, even with an existing PowerCLI
-                            connection, instead of silently reusing it (#221)
-    v1.1.0  2026-07-28  PD  Prompt clearly for every input not supplied on the
-                            command line, instead of relying on PowerShell's
-                            unlabeled default mandatory-parameter prompt (#221)
-    v1.0.0  2026-07-27  PD  Initial release -- per-host esxcli coredump network sweep (#221)
 
 .PARAMETER VCenter
     FQDN or IP of the vCenter to connect to. If omitted, the script always
@@ -162,6 +107,68 @@
     Connects to a lab/PoC vCenter with a self-signed certificate, ignoring
     the invalid-certificate error for this session.
 #>
+
+<# CHANGELOG
+    v1.4.2  2026-11-18  PD  Get-Help shows the full help again: the changelog moved out of
+                            the help block into its own comment block, and a blank line
+                            between #Requires and the help block; either made Get-Help
+                            ignore the whole help block (#481)
+    v1.4.1  2026-11-16  PD  Fixed: with only VCF.PowerCLI installed (what
+                            vCenter 9 needs) the script stopped with "VMware.
+                            PowerCLI is not available" and told you to install
+                            a second PowerCLI. It now checks for and imports
+                            VMware.VimAutomation.Core (in both bundles), stops
+                            up front when PowerCLI modules of different
+                            versions are already loaded, and on a load failure
+                            shows the short error, the loaded VMware.* modules
+                            and a link to docs/42. Install hint per vCenter
+                            version (#469)
+    v1.4.0  2026-07-28  PD  Reworked every prompt: one shared question/hint/
+                            default layout, input validated and re-asked on bad
+                            answers (port range, vmk name, y/n) instead of
+                            throwing or silently accepting, -CollectorAddress
+                            now defaults to the vCenter, firewall question moved
+                            up with the other inputs so the settings summary
+                            covers it. Fixed: clusters and hosts shared one
+                            number range in the picker, so host numbers at or
+                            below the cluster count could never be selected --
+                            they are now C1..Cn and H1..Hn, unresolved entries
+                            are reported rather than passed through as a host
+                            name, duplicate picks are collapsed, and the
+                            selection is echoed back before anything is
+                            written (#221)
+    v1.3.1  2026-07-28  PD  Dropped ConfirmImpact from High to Medium -- the
+                            per-host "Are you sure?" prompt was redundant on
+                            top of the interactive cluster/host picker.
+                            -WhatIf and an explicit -Confirm still work (#221)
+    v1.3.0  2026-07-28  PD  Interactive host/cluster picker: when no -VMHost is
+                            given, lists every cluster (with host counts) and
+                            host (with its cluster) it found, and prompts for
+                            'A' or a comma-separated list of numbers/names
+                            instead of a blind free-text host list (#221)
+    v1.2.0  2026-07-28  PD  Added -SkipInvalidCertificateCheck (prompted for
+                            if not passed) -- sets Set-PowerCLIConfiguration
+                            -InvalidCertificateAction Ignore -Scope Session
+                            before connecting, for lab/PoC vCenters with a
+                            self-signed cert (#221)
+    v1.1.3  2026-07-28  PD  Connect-VIServer SSL failures now suggest
+                            Set-PowerCLIConfiguration -InvalidCertificateAction
+                            Ignore instead of just printing the raw exception
+                            (self-signed/untrusted vCenter certs) (#221)
+    v1.1.2  2026-07-28  PD  Fixed: under Set-StrictMode, referencing
+                            $global:DefaultVIServers before PowerCLI has ever
+                            connected in the session threw "variable cannot be
+                            retrieved"; now read via a safe Get-Variable helper
+                            that tolerates it not existing yet (#221)
+    v1.1.1  2026-07-28  PD  -VCenter now always prompts when not passed on the
+                            command line, even with an existing PowerCLI
+                            connection, instead of silently reusing it (#221)
+    v1.1.0  2026-07-28  PD  Prompt clearly for every input not supplied on the
+                            command line, instead of relying on PowerShell's
+                            unlabeled default mandatory-parameter prompt (#221)
+    v1.0.0  2026-07-27  PD  Initial release -- per-host esxcli coredump network sweep (#221)
+#>
+
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [string]$VCenter,
@@ -175,7 +182,7 @@ param(
 )
 
 begin {
-    $scriptVersion = '1.4.1'
+    $scriptVersion = '1.4.2'
     $scriptAuthor  = 'Paul van Dieen'
     $scriptBlogUrl = 'https://www.hollebollevsan.nl'
 
