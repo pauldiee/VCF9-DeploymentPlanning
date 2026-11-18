@@ -606,9 +606,18 @@ page:
   firewall must see it): remove the RFC 1918 entries and *"Add a single Allow
   entry for network 0.0.0.0/0"*.
 - **Cloud services reached locally:** add their ranges as **Deny** entries.
-  Note that this page says *"Deny entries are sent to the Tier-1 router"*,
-  while the Policy Routes page sends deny traffic to the Tier-0. Test the path
-  in the proof of concept before you rely on either.
+  This page says *"Deny entries are sent to the Tier-1 router"*, the Policy
+  Routes page says the Tier-0. They describe the same path:
+  [KB 395509](https://knowledge.broadcom.com/external/article/395509/traffic-not-following-hcx-mobility-optim.html)
+  puts it as *"Traffic stays in the cloud and uses the Tier-1/Tier-0
+  gateway"*, for a Deny match and for no match alike. The VM's Tier-1 routes
+  it, and anything not on that Tier-1 goes on to the Tier-0.
+
+Read Allow and Deny the way KB 395509 warns: they *"have counterintuitive
+meanings"*. Allow sends the traffic back to the source, Deny keeps it at the
+target. The KB adds that the most specific prefix wins, not the order of the
+list, and that policy routes *"only affect traffic when the VM gateway is
+migrated to the cloud"*.
 
 Policy routes are set per site pair: **Network Extension**, **Advanced** tab,
 **Policy Routes**, **Add**, network and prefix, **Redirect to Peer** Allow or
@@ -722,7 +731,7 @@ click **Unextend**):
 | Option | What it does | When |
 | --- | --- | --- |
 | **Connect cloud network to cloud edge gateway after unextending** | Connects the segment (or VPC subnet) to its Tier-1 (or VPC) after the L2 path is removed | The cutover, once the source gateway is shut |
-| **Block reuse of subnet CIDR after subnet** (VPC) | Blocks reuse of the subnet CIDR, to avoid inconsistent routing from the destination to the source while the source VPC subnet is still in use | Source is an NSX VPC subnet that stays in use |
+| **Block reuse of subnet CIDR after subnet** (VPC; the label as TechDocs writes it) | Blocks reuse of the subnet CIDR, to avoid inconsistent routing from the destination to the source while the source VPC subnet is still in use | Source is an NSX VPC subnet that stays in use |
 
 **Unextend or Force Unextend.** **Actions**, **Unextend Networks** is the
 normal path. **Force Unextend** is for when that fails: the NE appliance is in
@@ -757,9 +766,27 @@ rolling back means disconnecting the Tier-1 interface and extending the network
 again. Agree beforehand whether that is the plan or whether you fix forward.
 
 **With MON.** The Tier-1 already holds the gateway as a /32 plus a route per
-VM. TechDocs doesn't describe what HCX does with those at unextend; check in
-the proof of concept that the Tier-1 shows the full prefix (`/24` in the
-example) afterwards and that the per-VM routes are gone.
+VM. The 9.1 TechDocs don't say what unextend does with those.
+[KB 321599](https://knowledge.broadcom.com/external/article/321599/mobility-optimized-networking-mon-troubl.html)
+only says to tick the option for a MON network: *"Make sure to check "Connect
+Cloud Network" option, if the interface on the cloud T1 gateway must be
+connected upon removal to allow for L3 connectivity."* The older VMware HCX
+technical paper
+[*Mobility Optimized Networking with HCX and VMC*](https://hybridityguru.files.wordpress.com/2021/03/mon-vmc_v1.1-rough-cut.pdf)
+(26 March 2021, written for VMware Cloud on AWS, where the option was called
+**Enable Cloud Gateway**) describes it:
+
+| Unextend of a MON network | Per-VM static routes | Gateway on the Tier-1 |
+| --- | --- | --- |
+| Option checked | *"The virtual machine static routes are removed."* | Enabled: *"The segment behaves like an SDDC native routed network."* |
+| Option unchecked | Removed | *"The Compute Gateway assignments remain, in a disabled state."* The segment is disconnected |
+
+The same paper on **turning MON off** on an extension that stays: the Tier-1
+interface *"is set to disconnected, and it is changed from the /32 assignment
+to the original subnet"*, the VM routes are removed, and routed traffic goes
+back to the source gateway. That's the 2021 VMC behaviour; it fits the 9.1
+text, but check once in the proof of concept that the Tier-1 shows the full
+prefix (`/24` in the example) after the unextend.
 
 ---
 

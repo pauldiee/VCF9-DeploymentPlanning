@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.1.0 – 2026-11-18
+- **`docs/38` §8.4 and §8.6: the open HCX points settled from public
+  sources.** The Deny policy-route conflict in TechDocs is resolved by
+  KB 395509: a Deny match and no match both *"stay in the cloud and use the
+  Tier-1/Tier-0 gateway"*; also its warning that Allow/Deny are
+  counterintuitive and that the most specific prefix wins. Unextend of a MON
+  network: KB 321599 (tick "Connect Cloud Network") and the VMware HCX
+  technical paper *Mobility Optimized Networking with HCX and VMC*
+  (March 2021): VM static routes removed, gateway enabled as a normal routed
+  segment or left disabled; turning MON off returns the interface from /32 to
+  the original subnet. The VPC option label is marked as TechDocs wording.
+
 ## v7.0.9 – 2026-11-18
 - **`docs/38` §8.6: unextend explained as the network cutover, with a
   diagram (#485).** What unextend removes (the L2 path only; segment, port
