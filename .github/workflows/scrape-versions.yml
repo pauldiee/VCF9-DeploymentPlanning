@@ -48,7 +48,7 @@ jobs:
           git config user.name  "vcf9-version-bot"
           git config user.email "actions@github.com"
           git add web/src/data/vcf-versions.json
-          git commit -m "chore: refresh VCF 9.1 version overview data (#179)"
+          git commit -m "chore: refresh VCF 9 version overview data (#179)"
           echo "committed=true" >> "$GITHUB_OUTPUT"
 
           # main can move between this job's checkout and this push (#347) --

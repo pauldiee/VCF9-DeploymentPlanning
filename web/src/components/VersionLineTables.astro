@@ -1,0 +1,76 @@
+---
+// The per-category component tables of one VCF release line on the Version Overview
+// (version-overview.astro). A separate component since #486 so the same tables render both for
+// an active line and inside the collapsed block of a line that no longer receives patches.
+// Styles live in version-overview.astro (is:global there for these classes).
+interface Props {
+  groups: { cat: string; rows: any[] }[];
+}
+const { groups } = Astro.props;
+
+const fmtDate = (iso: string | null) =>
+  iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
+---
+
+{groups.map((g) => (
+  <>
+    <h3 class="vo-cat">{g.cat}</h3>
+    <figure class="table-scroll vo-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Latest version</th>
+            <th>Build</th>
+            <th>Released</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {g.rows.map((c) => (
+            <tr class={c.child ? 'vo-child' : undefined}>
+              <td class="vo-name">{c.name}</td>
+              <td class="vo-ver">
+                {c.version ?? ''}
+                {c.patched === false && <span class="vo-pill">GA</span>}
+                {c.livePatchable === true && (
+                  <span class="vo-pill vo-pill--live" title="The release notes mark this patch Live Patchable: hosts can take it without a reboot, if the cluster meets the live-patch prerequisites (vLCM image, DRS on, sequential remediation; no DPU hosts or blocking driver modules).">Live patch</span>
+                )}
+                {c.livePatchable === false && (
+                  <span class="vo-pill" title="The release notes mark this patch not live-patchable: hosts need a maintenance-mode reboot.">Reboot</span>
+                )}
+              </td>
+              <td class="vo-build">
+                {c.build ?? 'N/A'}
+                {c.pinned && (
+                  <sup
+                    class="vo-pin"
+                    title={`Broadcom's release notes render this build as "${c.pinned.raw}", which is malformed. Showing the verified build ${c.pinned.build} (checked ${c.pinned.verified}). ${c.pinned.note}`}
+                  >
+                    &dagger;
+                  </sup>
+                )}
+                {c.reconciled && (
+                  <sup
+                    class="vo-pin"
+                    title={`TechDocs shows ${c.reconciled.scraped}. ${c.reconciled.note}. Build verified against the ${c.reconciled.source} (${c.reconciled.verified}).`}
+                  >
+                    &Dagger;
+                  </sup>
+                )}
+              </td>
+              <td>{fmtDate(c.releaseDate)}</td>
+              <td>
+                {c.sourceUrl && (
+                  <a href={c.sourceUrl} target="_blank" rel="noopener">
+                    Release notes <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />
+                  </a>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+  </>
+))}

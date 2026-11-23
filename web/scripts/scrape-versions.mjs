@@ -35,7 +35,8 @@
 //         #370 (VCF Download Tool), #389 (leaf header without the "Build" word),
 //         #390 (per-line index renames; vSAN Witness; PowerCLI / VCF SDK from package feeds),
 //         #391 (depotVerified: builds reconciled against the VCF Download Tool depot listing),
-//         #393 (ESX "Live Patchable" flag from the patch leaf)
+//         #393 (ESX "Live Patchable" flag from the patch leaf),
+//         #486 (9.0.2 line with its own manifest; 9.1.0 frozen: no patches since 9.1.1 GA)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -45,29 +46,55 @@ import { dirname, resolve } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, '../src/data/vcf-versions.json');
 
-const TD = 'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes';
+const TD_ROOT = 'https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later';
+const TD = `${TD_ROOT}/9-1/release-notes`;
+const TD90 = `${TD_ROOT}/9-0/release-notes`;
 
-// The Major.Minor family this page covers. Shown in the page title/intro; per-line sections
-// carry their own full maintenance version (`9.1.0`, `9.1.1`).
-const FAMILY = '9.1';
+// The major version this page covers. Shown in the page title/intro; per-line sections carry
+// their own full maintenance version (`9.1.1`, `9.0.2`, ...). Since #486 the page spans two
+// minors (9.1 and 9.0), so this is the major only.
+const FAMILY = '9';
 
 // Supported VCF release lines (one per maintenance version), newest first. Each has its own
 // patch tree, BOM and GA date.
-//   z:      the maintenance-version digit (0 for 9.1.0.x, 1 for 9.1.1.x) -- substituted into
-//           every component leaf regex, so one manifest covers all lines.
+//   y:      the minor-version digit (1 for 9.1, 0 for 9.0) and
+//   z:      the maintenance-version digit (0 for 9.1.0.x, 1 for 9.1.1.x) -- both substituted
+//           into every component leaf regex, so one manifest covers all lines of a minor.
+//   components: the manifest for this line's minor (COMPONENTS for 9.1, COMPONENTS_90 for 9.0:
+//           9.0 has other products (Operations for logs, Fleet Management) and other leaf names).
+//   frozen: the line no longer receives patches (#486). It is not scraped any more; the
+//           last-known rows are carried over as they are and the page shows the note. Patches go
+//           to the newest maintenance version of each minor: VMSA-2026-0009 (19 NOV 2026, vCenter
+//           CVE-2026-123890, Critical) lists 9.1.1.0200 for 9.1.x.x and 9.0.2.0200 for 9.0.x.x,
+//           with no 9.1.0.x fix, and the 9.1.0.x tree stopped at 29 JUL 2026. Broadcom publishes
+//           no written policy for this (KB 410435 only gives the cadence), so the note states
+//           what was observed, with its source.
 //   patch:  the patch-releases-9-1-Z-x tree root, or null until Broadcom opens one. While it
 //           is null the whole line runs at its BOM (GA) builds, rendered with the "GA" pill.
 //   bom:    the line's Bill of Materials page. The slug is version-scoped and NOT consistent
 //           between lines: 9.1.0.0 is ".../vmware-cloud-foundation-bill-of-materials.html",
 //           9.1.1.0 is ".../vmware-cloud-foundation-9-1-1-0-bill-of-material.html" (singular).
+//   The 9.0 patch tree is one "patch-releases-9-0-0-x" for every 9.0.x maintenance version (no
+//   per-maintenance tree and no date table), so the 9.0.2 line points at it and the leaf regex
+//   (which carries y and z) keeps 9.0.0 / 9.0.1 leaves out.
 const LINES = [
   {
-    v: '9.1.1', z: 1, ga: '2026-09-03', patch: `${TD}/patch-releases-9-1-1-x`,
+    v: '9.1.1', y: 1, z: 1, ga: '2026-09-03', patch: `${TD}/patch-releases-9-1-1-x`,
     bom: `${TD}/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html`,
   },
   {
-    v: '9.1.0', z: 0, ga: '2026-05-12', patch: `${TD}/patch-releases-9-1-0-x`,
+    v: '9.1.0', y: 1, z: 0, ga: '2026-05-12', patch: `${TD}/patch-releases-9-1-0-x`,
     bom: `${TD}/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html`,
+    frozen: {
+      lastPatch: '2026-07-29', upgradeTo: '9.1.1', checked: '2026-11-23',
+      reason: 'VMSA-2026-0009 (19 Nov 2026, vCenter CVE-2026-123890, Critical) was fixed in 9.1.1.0200 and 9.0.2.0200 only; the 9.1.0.x patch tree has had no release since 29 Jul 2026',
+      sourceUrl: 'https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495',
+      sourceLabel: 'VMSA-2026-0009',
+    },
+  },
+  {
+    v: '9.0.2', y: 0, z: 2, ga: '2026-01-20', patch: `${TD90}/patch-releases-9-0-0-x`,
+    bom: `${TD90}/vmware-cloud-foundation-9-0-2-release-notes/vmware-cloud-foundation-902-bill-of-materials.html`,
   },
 ];
 
@@ -75,6 +102,7 @@ const LINES = [
 // (each with its Bill of Materials) and every patch-release tree. Linked from the page footer
 // as the single "start here" source; every table row also links its own exact source.
 const RELEASE_NOTES = `${TD}.html`;
+const RELEASE_NOTES_90 = `${TD90}.html`;
 
 // --- Per-minor component manifest -------------------------------------------------------------
 //
@@ -206,6 +234,50 @@ const COMPONENTS = [
     indexPath: 'vcf-operations.html', nested: true, leafSlug: 'identity-broker', bomName: 'Identity broker' },
 ];
 
+// --- 9.0 manifest (#486) -------------------------------------------------------------------
+// The 9.0 tree (patch-releases-9-0-0-x, read 2026-11-23) differs from 9.1's: vCenter and ESX sit
+// under vsphere/, the VCF Operations index links every product's leaves directly (no version
+// sub-indexes, so not `nested`), VCF Automation leaves are "vcfa-...", and there are no NSX or
+// vSAN indexes (those rows run at the 9.0.2 BOM build). The products are 9.0's own: VCF
+// Operations for logs and Fleet Management instead of 9.1's Log Management and Fleet / SDDC
+// lifecycle; no services runtime, Real-Time Metrics, Salt or software depot. bomName is matched
+// against the 9.0.2 BOM after normBom() turns "VMware Cloud Foundation ..." into "vcf ...".
+const COMPONENTS_90 = [
+  { key: 'vcenter', name: 'vCenter Server', category: 'Core',
+    indexPath: 'vsphere/vcenter.html', leafSlug: 'vcenter', bomName: 'vCenter' },
+  { key: 'esxi', name: 'ESXi', category: 'Core',
+    indexPath: ['vsphere/esx.html', 'esx.html'], leafSlug: 'esx', bomName: 'ESX', livePatch: true },
+  { key: 'nsx', name: 'NSX', category: 'Core',
+    indexPath: 'nsx.html', leafSlug: 'nsx', bomName: 'NSX' },
+  { key: 'sddc-manager', name: 'SDDC Manager', category: 'Core',
+    indexPath: 'sddc-manager.html', leafSlug: 'sddc-manager', bomName: 'SDDC Manager' },
+  { key: 'vsan-esa-witness', name: 'vSAN ESA Witness', category: 'Core',
+    indexPath: 'vsan.html', leafSlug: 'vsan', leafLabel: 'vSAN ESA Witness', bomName: 'vSAN ESA Witness' },
+  { key: 'vsan-osa-witness', name: 'vSAN OSA Witness', category: 'Core',
+    indexPath: 'vsan.html', leafSlug: 'vsan', leafLabel: 'vSAN OSA Witness', bomName: 'vSAN OSA Witness' },
+  { key: 'vcf-operations', name: 'VCF Operations', category: 'Operations',
+    indexPath: 'vcf-operations.html', leafSlug: 'vcf-operations', bomName: 'VCF Operations' },
+  { key: 'vcf-ops-for-networks', name: 'VCF Operations for Networks', category: 'Operations',
+    indexPath: 'vcf-operations.html', leafSlug: 'vcf-operations-for-networks', bomName: 'VCF Operations for networks' },
+  { key: 'vcf-ops-hcx', name: 'VCF Operations HCX', category: 'Operations',
+    indexPath: 'vcf-operations.html', leafSlug: 'vcf-operations-hcx', bomName: 'VCF Operations HCX' },
+  { key: 'vcf-ops-orchestrator', name: 'Orchestrator', category: 'Management',
+    indexPath: 'vcf-operations.html', leafSlug: 'vcf-operations-orchestrator', bomName: 'VCF Operations orchestrator' },
+  { key: 'vcf-ops-for-logs', name: 'VCF Operations for logs', category: 'Management',
+    indexPath: 'vcf-operations.html', leafSlug: 'vcf-operations-for-logs', bomName: 'VCF Operations for logs' },
+  { key: 'fleet-management', name: 'Fleet Management', category: 'Management',
+    indexPath: 'vcf-operations.html', leafSlug: 'fleet-management', bomName: 'VCF Operations fleet management' },
+  // Leaves are "vidb-9-0-2-0100.html" (no "-release-notes") then "vcf-identity-broker-9-0-2-0200-
+  // release-notes.html"; the newer spelling is the one the regex reads.
+  { key: 'identity-broker', name: 'Identity Broker', category: 'Management',
+    indexPath: 'vcf-operations.html', leafSlug: 'vcf-identity-broker', bomName: 'VCF Identity broker' },
+  // Only a 9.0.0.0100 leaf exists ("vcf-dt-9-0-0-0100.html"), so 9.0.2 runs at its BOM build.
+  { key: 'vcf-download-tool', name: 'VCF Download Tool', category: 'Management',
+    indexPath: 'vmware-download-tool.html', leafSlug: 'vcf-download-tool', bomName: 'VCF download tool' },
+  { key: 'vcf-automation', name: 'VCF Automation', category: 'Automation',
+    indexPath: 'vcf-automation.html', leafSlug: 'vcfa', bomName: 'VCF Automation' },
+];
+
 // --- Shared add-ons (not part of the base VCF BOM; scraped once, not per minor) ---------------
 const ADDONS = [
   { key: 'vdefend', name: 'vDefend (Firewall / IDS-IPS / ATP)', category: 'Add-ons', strategy: 'page',
@@ -286,7 +358,7 @@ const eehh = (s) => parseInt(String(s).slice(-4), 10); // "9-1-0-0400" or "0400"
 // Dashes between the version digits are optional (#353): Broadcom is inconsistent even within
 // the same patch release -- e.g. 9.1.1.0100 shipped "fleet-lifecycle-9-1-1-0100-..." dashed but
 // "sddc-lifecycle-9110100-..." with the dashes dropped, both in the same sub-index.
-const leafRe = (slug, z) => new RegExp(`/${slug}-9-?1-?${z}-?(\\d{4})-release-notes\\.html$`, 'i');
+const leafRe = (slug, y, z) => new RegExp(`/${slug}-9-?${y}-?${z}-?(\\d{4})-release-notes\\.html$`, 'i');
 
 const MONTHS = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06', JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
 // Normalize "13 JUL 2026", "August 5, 2026" or "2026-07-13" to ISO "2026-07-13"; null if unrecognized.
@@ -313,7 +385,8 @@ function extractLeafBuild(html, c) {
   // Header row is "<version> | <date> | Build <n>", but some leaves drop the "Build" word
   // (NSX 9.1.1.0100: "NSX 9.1.1.0100 | 12 OCT 2026 | 25762940", #389). Without the word,
   // accept only a bare 8-digit number so an unrelated "x.y.z.wwww | ... | n" can't match.
-  const header = /(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*(?:Build\s*(\d+)|(\d{8})(?!\d))/.source;
+  // The ESX 9.0.2.0100 leaf writes "| 29 JUL 2026 | ISO Build 25595025" (#486).
+  const header = /(9\.\d+\.\d+\.\d{4})\s*\|\s*([^|]+?)\s*\|\s*(?:(?:ISO\s+)?Build\s*(\d+)|(\d{8})(?!\d))/.source;
   const label = c?.leafLabel ? `${c.leafLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+` : '';
   const m = text.match(new RegExp(label + header, 'i'));
   if (!m) return null;
@@ -352,7 +425,10 @@ function extractLivePatchable(html) {
 // Some rows also gained a trailing "(VCF service)" tag between lines (#353: Migration Service
 // Engine is "Migration service engine" at 9.1.0 GA but "Migration service engine (VCF service)"
 // at 9.1.1 GA) -- strip it so bomName only needs the one, tag-free spelling.
+// The 9.0.2 BOM (#486) prefixes "VMware " and spells out "VMware Cloud Foundation ..." ("VMware
+// Cloud Foundation Operations fleet management"), so both are folded to 9.1's "vcf ..." form.
 const normBom = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+  .replace(/\*+$/, '').replace(/^vmware /, '').replace(/^cloud foundation /, 'vcf ')
   .replace(/^vcf installer\/\s*/, '').replace(/\s*\(vcf service\)$/, '');
 function extractBomBuild(html, c, line) {
   if (!c.bomName) return null;
@@ -391,7 +467,7 @@ function applyDepotVerified(r, c, line) {
 // Walk a line's patch tree for one component. Returns null (not throw) when the tree is
 // reachable but carries no leaf for this component yet -- the caller then falls back to the BOM.
 async function scrapeTechdocs(c, line) {
-  const re = leafRe(c.leafSlug, line.z);
+  const re = leafRe(c.leafSlug, line.y, line.z);
   let index, indexHtml = null;
   for (const p of [].concat(c.indexPath)) {
     index = `${line.patch}/${p}`;
@@ -513,12 +589,20 @@ async function main() {
   const lines = [];
 
   for (const line of LINES) {
+    // A frozen line (#486) is not scraped: carry the last-known rows over unchanged.
+    const prevLine = (prev.lines || []).find((l) => l.v === line.v);
+    if (line.frozen && prevLine?.components?.length) {
+      lines.push({ v: line.v, minor: `9.${line.y}`, ga: line.ga, hasPatchTree: !!line.patch,
+        frozen: line.frozen, components: prevLine.components.map((c) => ({ ...c })) });
+      console.log(`FRZN ${line.v}  ${prevLine.components.length} rows carried over (no patches since ${line.frozen.lastPatch})`);
+      continue;
+    }
     const bomHtml = await fetchText(line.bom).catch((err) => {
       errors.push({ key: `bom:${line.v}`, source: line.bom, error: String(err.message || err) });
       return null;
     });
     const comps = [];
-    for (const c of COMPONENTS) {
+    for (const c of line.y === 0 ? COMPONENTS_90 : COMPONENTS) {
       const base = { key: c.key, name: c.name, category: c.category };
       try {
         let r = line.patch ? await scrapeTechdocs(c, line) : null;
@@ -546,7 +630,8 @@ async function main() {
         }
       }
     }
-    lines.push({ v: line.v, ga: line.ga, hasPatchTree: !!line.patch, components: comps });
+    lines.push({ v: line.v, minor: `9.${line.y}`, ga: line.ga, hasPatchTree: !!line.patch,
+      ...(line.frozen ? { frozen: line.frozen } : {}), components: comps });
   }
 
   const addons = [];
@@ -573,7 +658,7 @@ async function main() {
     _updated: new Date().toISOString().slice(0, 10),
     _family: FAMILY,
     _sourceErrors: errors,
-    _sources: { releaseNotes: RELEASE_NOTES },
+    _sources: { releaseNotes: RELEASE_NOTES, releaseNotes90: RELEASE_NOTES_90 },
     lines,
     addons,
   };

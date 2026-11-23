@@ -1,13 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import VersionLineTables from '../components/VersionLineTables.astro';
 import data from '../data/vcf-versions.json';
 
 // Data is refreshed daily by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
 // commits it back to main, which rebuilds Pages). See issues #179, #265.
-// `lines` carries one component set per supported release line (9.1.1.x, 9.1.0.x); `addons`
+// `lines` carries one component set per release line (9.1.1.x, 9.1.0.x, 9.0.2.x); `addons`
 // is the shared optional set (versions on its own schemes, not tied to the VCF maintenance
-// version). See the script header for the X.Y.Z.EEHH version scheme.
-const { _updated, _family, _sourceErrors, lines, addons } = data;
+// version). A line with `frozen` no longer receives patches (#486): it is shown collapsed at
+// the end, with the reason and its source. See the script header for the X.Y.Z.EEHH scheme.
+const { _updated, _sourceErrors, lines, addons } = data;
 
 // Rows whose build came from a recorded human-verified reconciliation because the upstream
 // release notes render a malformed build string (#214). Current, not stale - so these are
@@ -36,8 +38,12 @@ function groupByCat(components) {
     .filter((g) => g.rows.length);
 }
 
-// One section per release line (newest maintenance version first), plus the shared add-ons.
+// One section per patched release line (newest first: 9.1.1, 9.0.2), then the lines that no
+// longer receive patches (collapsed), then the shared add-ons.
 const lineSections = lines.map((ln) => ({ ...ln, groups: groupByCat(ln.components) }));
+const activeLines = lineSections.filter((ln) => !ln.frozen);
+const frozenLines = lineSections.filter((ln) => ln.frozen);
+const activeNames = activeLines.map((ln) => ln.v).join(' and ');
 // Tools (#390: PowerCLI, VCF SDK) come from package feeds, not release notes - own section.
 const addonRows = addons.filter((c) => c.category !== 'Tools');
 const toolRows = addons.filter((c) => c.category === 'Tools');
@@ -47,30 +53,35 @@ const fmtDate = (iso) =>
 ---
 
 <BaseLayout
-  title="VCF 9.1 Version Overview"
+  title="VCF 9 Version Overview"
   active="version-overview"
-  description="Current version and build for every VMware Cloud Foundation 9.1 component, per supported maintenance version (9.1.1, 9.1.0), refreshed daily from Broadcom."
+  description="Current version and build for every VMware Cloud Foundation 9.1.1 and 9.0.2 component, refreshed daily from Broadcom; 9.1.0 is shown as no longer patched."
 >
   <article class="prose">
     <p class="doc-eyebrow itq-eyebrow">Reference</p>
-    <h1>VCF {_family} Version Overview</h1>
+    <h1>VCF 9 Version Overview</h1>
 
     <p>
-      The current latest version and build for each VMware Cloud Foundation {_family} component. In
-      {' '}{_family}, components patch <strong>per component and asynchronously</strong> (Express
-      Patches), so a single point-in-time table drifts within weeks. This one is refreshed
-      automatically from Broadcom, so it stays honest as a one-glance &ldquo;what&rsquo;s
-      current&rdquo; reference during planning.
+      The current latest version and build for each VMware Cloud Foundation 9 component, for the
+      release lines that still receive patches ({activeNames}). In VCF 9, components patch
+      {' '}<strong>per component and asynchronously</strong> (Express Patches), so a single
+      point-in-time table drifts within weeks. This one is refreshed automatically from Broadcom,
+      so it stays honest as a one-glance &ldquo;what&rsquo;s current&rdquo; reference during
+      planning.
     </p>
 
     <p class="vo-note">
-      <strong>Reading a {_family.split('.')[0]}.x version.</strong> Broadcom numbers releases
+      <strong>Reading a 9.x version.</strong> Broadcom numbers releases
       {' '}<code>X.Y.Z.EEHH.build</code> &mdash; major <code>.</code> minor <code>.</code>
       {' '}maintenance <code>.</code> (Express&nbsp;Patch + Hot&nbsp;Patch) <code>.</code> build.
       Moving <code>X.Y.Z</code> (e.g. 9.1.0 &rarr; 9.1.1) is an <strong>upgrade</strong> and follows
       a required update sequence; moving only <code>EEHH</code> (e.g. 9.1.0.0300 &rarr; 9.1.0.0400)
-      is a <strong>patch</strong> with no sequence. Each maintenance version keeps receiving patches
-      on its own line, so every currently-supported one is listed below.
+      is a <strong>patch</strong> with no sequence. Patches go to the <strong>newest maintenance
+      version of each minor</strong>: today {activeNames}. An older maintenance version stops
+      receiving them once its successor ships, so a fleet on it has to upgrade to get a fix
+      {frozenLines.length > 0 && <> (see {frozenLines.map((ln) => ln.v).join(', ')} at the end)</>}.
+      Broadcom states no written policy for this; it is what the security advisories and patch
+      trees show.
     </p>
 
     <p class="vo-updated">
@@ -117,9 +128,9 @@ const fmtDate = (iso) =>
     }
 
     {
-      lineSections.map((ln) => (
+      activeLines.map((ln) => (
         <>
-          <h2 class="vo-line">VCF {ln.v}<span class="vo-line__meta">GA {fmtDate(ln.ga)}</span></h2>
+          <h2 class="vo-line">VCF {ln.v}<span class="vo-line__meta">GA {fmtDate(ln.ga)}{ln.minor === '9.0' && ' · previous minor'}</span></h2>
           {!ln.hasPatchTree && (
             <p class="vo-note">
               Newly released &mdash; Broadcom has not opened a patch tree for {ln.v} yet, so every
@@ -127,75 +138,42 @@ const fmtDate = (iso) =>
               Materials). Express Patches will land here as they ship.
             </p>
           )}
-          {ln.groups.map((g) => (
-            <>
-              <h3 class="vo-cat">{g.cat}</h3>
-              <figure class="table-scroll vo-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Component</th>
-                      <th>Latest version</th>
-                      <th>Build</th>
-                      <th>Released</th>
-                      <th>Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {g.rows.map((c) => (
-                      <tr class={c.child ? 'vo-child' : undefined}>
-                        <td class="vo-name">{c.name}</td>
-                        <td class="vo-ver">
-                          {c.version ?? ''}
-                          {c.patched === false && <span class="vo-pill">GA</span>}
-                          {c.livePatchable === true && (
-                            <span class="vo-pill vo-pill--live" title="The release notes mark this patch Live Patchable: hosts can take it without a reboot, if the cluster meets the live-patch prerequisites (vLCM image, DRS on, sequential remediation; no DPU hosts or blocking driver modules).">Live patch</span>
-                          )}
-                          {c.livePatchable === false && (
-                            <span class="vo-pill" title="The release notes mark this patch not live-patchable: hosts need a maintenance-mode reboot.">Reboot</span>
-                          )}
-                        </td>
-                        <td class="vo-build">
-                          {c.build ?? 'N/A'}
-                          {c.pinned && (
-                            <sup
-                              class="vo-pin"
-                              title={`Broadcom's release notes render this build as "${c.pinned.raw}", which is malformed. Showing the verified build ${c.pinned.build} (checked ${c.pinned.verified}). ${c.pinned.note}`}
-                            >
-                              &dagger;
-                            </sup>
-                          )}
-                          {c.reconciled && (
-                            <sup
-                              class="vo-pin"
-                              title={`TechDocs shows ${c.reconciled.scraped}. ${c.reconciled.note}. Build verified against the ${c.reconciled.source} (${c.reconciled.verified}).`}
-                            >
-                              &Dagger;
-                            </sup>
-                          )}
-                        </td>
-                        <td>{fmtDate(c.releaseDate)}</td>
-                        <td>
-                          {c.sourceUrl && (
-                            <a href={c.sourceUrl} target="_blank" rel="noopener">
-                              Release notes <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" />
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </figure>
-            </>
-          ))}
+          {ln.minor === '9.0' && (
+            <p class="vo-note">
+              VCF 9.0 is the previous minor. Its last maintenance version, 9.0.2, still receives
+              patches (for example vCenter 9.0.2.0200 on 19 Nov 2026). 9.0 has its own products in
+              places: VCF Operations for logs and Fleet Management instead of 9.1&rsquo;s Log
+              Management and Fleet / SDDC lifecycle. Rows marked <span class="vo-pill">GA</span>
+              {' '}have had no 9.0.2 patch and run at the 9.0.2 Bill of Materials build.
+            </p>
+          )}
+          <VersionLineTables groups={ln.groups} />
         </>
+      ))
+    }
+
+    {
+      frozenLines.map((ln) => (
+        <details class="vo-frozen">
+          <summary>
+            <span class="vo-frozen__title">VCF {ln.v}</span>
+            <span class="vo-line__meta">no longer patched &middot; last patch {fmtDate(ln.frozen.lastPatch)} &middot; GA {fmtDate(ln.ga)}</span>
+          </summary>
+          <p class="vo-warn">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true" />
+            <strong>{ln.v} no longer receives patches.</strong> {ln.frozen.reason} (<a href={ln.frozen.sourceUrl} target="_blank" rel="noopener">{ln.frozen.sourceLabel}</a>,
+            checked {fmtDate(ln.frozen.checked)}). A fleet on {ln.v} gets fixes by upgrading to
+            {' '}<strong>{ln.frozen.upgradeTo}</strong>. The rows below are the last {ln.v} builds and are
+            no longer refreshed.
+          </p>
+          <VersionLineTables groups={ln.groups} />
+        </details>
       ))
     }
 
     <h2 class="vo-line">Add-ons</h2>
     <p class="vo-note">
-      Optional components, <strong>not part of the base VCF {_family} BOM</strong> and not tied to a
+      Optional components for VCF 9.1, <strong>not part of the base VCF BOM</strong> and not tied to a
       maintenance version. Each patches on its own cadence and versioning scheme in its own
       release-notes tree. Avi Load Balancer publishes no build number, so its Build column shows
       &ldquo;N/A&rdquo;.
@@ -233,7 +211,7 @@ const fmtDate = (iso) =>
 
     <h2 class="vo-line">Tools</h2>
     <p class="vo-note">
-      Client-side tooling for scripting against VCF {_family}. Not in the BOM; versions are read from
+      Client-side tooling for scripting against VCF 9. Not in the BOM; versions are read from
       the package feeds you install from (PowerShell Gallery, PyPI). PowerCLI&rsquo;s build is the
       last field of its gallery version; the Python SDK publishes no build number.
     </p>
@@ -277,24 +255,28 @@ const fmtDate = (iso) =>
         {' '}is the release notes&rsquo; own &ldquo;Live Patchable&rdquo; flag for that patch; a host
         can still be blocked from live patching (DPU hosts, some driver modules; KB 419942 / KB 428958). The VCF Operations
         services listed under Management &mdash; Orchestrator, Log Management, Real-Time Metrics and
-        its Store &mdash; are independently-versioned components of that product family, each with
-        its own build.
+        its Store (9.1), and VCF Operations for logs and Fleet Management (9.0) &mdash; are
+        independently-versioned components of that product family, each with its own build.
       </p>
     </blockquote>
 
     <p class="vo-src">
       Sources: the Broadcom
-      <a href={data._sources.releaseNotes} target="_blank" rel="noopener">VCF {_family} release notes</a>
+      <a href={data._sources.releaseNotes} target="_blank" rel="noopener">VCF 9.1</a> and
+      {' '}<a href={data._sources.releaseNotes90} target="_blank" rel="noopener">VCF 9.0 release notes</a>
       &mdash; for each maintenance version, its patch-release tree (or, where no Express Patch has
       shipped, that version's Bill of Materials), plus each add-on's own release notes and, for the
-      tools, the PowerShell Gallery and PyPI package feeds. Every row
+      tools, the PowerShell Gallery and PyPI package feeds; for a line that is no longer patched,
+      the security advisory named in its note. Every row
       links its exact source. Generated by <code>web/scripts/scrape-versions.mjs</code>, refreshed
       daily.
     </p>
   </article>
 </BaseLayout>
 
-<style>
+<style is:global>
+  /* is:global since #486: the tables render in components/VersionLineTables.astro. Every class
+     is vo-prefixed, so nothing leaks into other pages. */
   .vo-updated {
     display: flex;
     align-items: center;
@@ -402,4 +384,22 @@ const fmtDate = (iso) =>
   .vo-pill--live { background: var(--surface-chip-brand); color: #fff; }
   .vo-pill[title] { cursor: help; }
   .vo-src { font-size: var(--fs-small); color: var(--text-muted); }
+
+  /* A release line that no longer receives patches (#486): collapsed, after the active lines. */
+  .vo-frozen {
+    margin-top: var(--space-8);
+    border: 1px solid var(--surface-tag);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+  }
+  .vo-frozen > summary {
+    cursor: pointer;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    padding: var(--space-2) 0;
+  }
+  .vo-frozen__title { font-size: 1.3rem; font-weight: var(--fw-semibold); color: var(--text-muted); }
+  .vo-frozen[open] > summary { border-bottom: 2px solid var(--text-muted); margin-bottom: var(--space-3); }
 </style>

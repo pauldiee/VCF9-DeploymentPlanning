@@ -1,5 +1,24 @@
 # Changelog
 
+## v7.1.1 – 2026-11-23
+- **Version Overview: VCF 9.0.2 added, 9.1.0 shown as no longer patched
+  (#486).** The page is now "VCF 9 Version Overview" and lists the lines that
+  still receive patches: 9.1.1 and, new, 9.0.2. 9.1.0 moves to a collapsed
+  block at the end with its last builds and the reason:
+  [VMSA-2026-0009](https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495)
+  (19 November 2026, vCenter CVE-2026-123890, Critical) was fixed in
+  9.1.1.0200 and 9.0.2.0200 only, and the 9.1.0.x patch tree has had no
+  release since 29 July 2026. Broadcom publishes no written policy for this
+  (KB 410435 only gives the cadence), so the page states what the advisory and
+  patch trees show. The scraper gets a 9.0 manifest (9.0's own products:
+  VCF Operations for logs and Fleet Management; vCenter and ESX under
+  `vsphere/`, VCF Automation leaves `vcfa-...`, NSX and vSAN witness at the
+  9.0.2 BOM build), reads the ESX 9.0.2 leaf header `ISO Build`, folds the
+  9.0.2 BOM's "VMware Cloud Foundation ..." names, and carries a `frozen`
+  line over without scraping it. The tables moved to
+  `web/src/components/VersionLineTables.astro`. Home page tile and sidebar
+  renamed; the tile said "refreshed weekly", it is daily.
+
 ## v7.1.0 – 2026-11-18
 - **`docs/38` §8.4 and §8.6: the open HCX points settled from public
   sources.** The Deny policy-route conflict in TechDocs is resolved by
