@@ -1,5 +1,15 @@
 # Changelog
 
+## v7.2.2 – 2026-11-24
+- **`docs/42`: update to PowerCLI 9.1.2 lab-verified (#490).**
+  `Update-Module VCF.PowerCLI` from 9.1.1 to 9.1.2 (PowerShell 7.6.10,
+  CurrentUser install) left the whole 9.1.1 set in place: 38 PowerCLI modules
+  before, 74 after. A clean `Import-Module VCF.PowerCLI` still loaded only
+  9.1.2. §7.4 Route B then listed exactly the 9.1.1 set (36 modules;
+  StorageUtility 1.6.1 is shared and stays, SsoAdmin is left alone), removed
+  it in one run without empty folders, and the §4 check came back complete.
+  §2.2 and §7.4 now say this as a lab result instead of an expectation.
+
 ## v7.2.1 – 2026-11-24
 - **`docs/42`: VCF PowerCLI 9.1.2 (#490).** PowerCLI 9.1.2 (build
   25952617) came out with VCF 9.1.2 and is in the PowerShell Gallery. The

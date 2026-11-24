@@ -25,8 +25,10 @@ This page covers both cases: a jump host with internet access
 > checks are **lab-verified 2026-11-16** (PowerShell 7.6.10, VCF.PowerCLI
 > 9.1.1.25718932, Windows 11). Updated for **VCF.PowerCLI 9.1.2** on
 > 2026-11-24 from its release notes, the PowerShell Gallery (manifest
-> dependencies) and the download page, all read verbatim; 9.1.2 itself has not
-> been installed in the lab yet.
+> dependencies) and the download page, all read verbatim. The update from
+> 9.1.1 to 9.1.2 with `Update-Module`, the §4 check and §7.4 Route B are
+> **lab-verified 2026-11-24** (PowerShell 7.6.10, Windows 11, CurrentUser
+> install from the PowerShell Gallery).
 
 ---
 
@@ -122,10 +124,17 @@ Install-Module -Name VCF.PowerCLI -Scope CurrentUser
 
 Update later with `Update-Module -Name VCF.PowerCLI`. Microsoft: it
 *"installs a module's newest version from an online gallery"*; the page says
-nothing about removing the version you had, and PowerShellGet keeps each
-version in its own folder. So after going from 9.1.1 to 9.1.2 both sets are
-on the host. Check with [§4](#4-check-the-result), then remove the old set with
-[§7.4](#74-route-b-keep-the-current-vcfpowercli-remove-the-rest).
+nothing about removing the version you had, and it doesn't. **Lab-verified
+2026-11-24:** `Update-Module` from 9.1.1 to 9.1.2 took about two minutes and
+left the whole 9.1.1 set in place, next to 9.1.2: 38 PowerCLI modules before,
+74 after (only `VMware.VimAutomation.StorageUtility` 1.6.1 is shared).
+`Import-Module VCF.PowerCLI` in a clean `pwsh -NoProfile` still loaded only
+9.1.2 (13.5.2), but the old set is exactly what a profile, a script that
+imports one submodule, or an open session can pick up
+([§6.1](#61-several-powercli-versions-on-one-host)). So after every update,
+remove the old set with
+[§7.4](#74-route-b-keep-the-current-vcfpowercli-remove-the-rest) and check
+with [§4](#4-check-the-result).
 
 ### 2.3 First run
 
@@ -555,9 +564,12 @@ $old = Get-Module -ListAvailable VMware.*, VCF.PowerCLI |
 $old | Select-Object Name, Version, ModuleBase      # check this list first
 ```
 
-VCF.PowerCLI 9.1.1 comes to 37 modules (itself plus 36), and so does 9.1.2
-by its manifest. After an `Update-Module` from 9.1.1 to 9.1.2, `$old` should
-be the 9.1.1 set. Then remove `$old`:
+VCF.PowerCLI 9.1.1 comes to 37 modules (itself plus 36), and so does 9.1.2.
+After an `Update-Module` from 9.1.1 to 9.1.2, `$old` is the 9.1.1 set:
+**lab-verified 2026-11-24**, 36 modules (VCF.PowerCLI 9.1.1, 34 at 13.5.1 and
+`VMware.Vim` 9.1.0.25718932); StorageUtility 1.6.1 stays because 9.1.2 needs
+the same version, and `VMware.vSphere.SsoAdmin` is left alone. Then remove
+`$old`:
 
 ```powershell
 # installed with Install-Module
@@ -567,7 +579,9 @@ $old | ForEach-Object { Uninstall-Module -Name $_.Name -RequiredVersion $_.Versi
 ```
 
 In the lab, all 83 old modules went in one run of the `Uninstall-Module` line
-and left no empty folders. Afterwards, `Import-Module VCF.PowerCLI` loaded
+and left no empty folders. The same held for the 36 modules of 9.1.1 after
+the update to 9.1.2 (2026-11-24): back to 38 modules, VCF.PowerCLI 9.1.2
+complete, and an import that loads 37 modules, all from the 9.1.2 set. Afterwards, `Import-Module VCF.PowerCLI` loaded
 with one VMware.VimAutomation version (13.5.1). An old set in an
 **unversioned** folder holds one version only and shares the folder name with
 the current one. Remove it by hand after checking that the current version
