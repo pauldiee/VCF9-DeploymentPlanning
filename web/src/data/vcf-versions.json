@@ -986,9 +986,9 @@
       "key": "powercli",
       "name": "VCF PowerCLI",
       "category": "Tools",
-      "version": "9.1.1",
-      "build": "25718932",
-      "releaseDate": "2026-09-10",
+      "version": "9.1.2",
+      "build": "25952617",
+      "releaseDate": "2026-11-24",
       "sourceUrl": "https://www.powershellgallery.com/packages/VCF.PowerCLI",
       "patched": true
     },
