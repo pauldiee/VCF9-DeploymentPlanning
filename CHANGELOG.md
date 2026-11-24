@@ -1,5 +1,20 @@
 # Changelog
 
+## v7.1.2 – 2026-11-24
+- **Version Overview: VCF 9.1.2 added, 9.1.1 shown as no longer patched
+  (#487).** VCF 9.1.2.0 went GA on 24 November 2026. The page now lists 9.1.2
+  and 9.0.2 as the lines that receive patches; 9.1.2 runs at its Bill of
+  Materials builds (GA pill) because Broadcom has not opened
+  `patch-releases-9-1-2-x` yet. The scraper already points at that tree and
+  sets `hasPatchTree` from whether any row came from a patch leaf, so the line
+  switches to patch builds by itself once the tree exists. 9.1.1 moves to the
+  collapsed block with its last builds (9.1.1.x patch tree, last release
+  19 November 2026). Unlike 9.1.0 there is no advisory that shows this yet:
+  VMSA-2026-0011, linked from the 9.1.2 release notes, was not online on
+  24 November. The note says so and is to be re-checked once it is published.
+  A fleet on 9.1.0 is now pointed at 9.1.2, which the 9.1.2 release notes
+  allow as a direct patch from 9.1.0.x.
+
 ## v7.1.1 – 2026-11-23
 - **Version Overview: VCF 9.0.2 added, 9.1.0 shown as no longer patched
   (#486).** The page is now "VCF 9 Version Overview" and lists the lines that

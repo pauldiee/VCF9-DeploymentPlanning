@@ -36,7 +36,8 @@
 //         #390 (per-line index renames; vSAN Witness; PowerCLI / VCF SDK from package feeds),
 //         #391 (depotVerified: builds reconciled against the VCF Download Tool depot listing),
 //         #393 (ESX "Live Patchable" flag from the patch leaf),
-//         #486 (9.0.2 line with its own manifest; 9.1.0 frozen: no patches since 9.1.1 GA)
+//         #486 (9.0.2 line with its own manifest; 9.1.0 frozen: no patches since 9.1.1 GA),
+//         #487 (9.1.2 line; 9.1.1 frozen; hasPatchTree from scraped rows)
 // Run:    node web/scripts/scrape-versions.mjs
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -77,16 +78,31 @@ const FAMILY = '9';
 //   The 9.0 patch tree is one "patch-releases-9-0-0-x" for every 9.0.x maintenance version (no
 //   per-maintenance tree and no date table), so the 9.0.2 line points at it and the leaf regex
 //   (which carries y and z) keeps 9.0.0 / 9.0.1 leaves out.
+//   9.1.2 (#487): `patch` points at the tree Broadcom will open as patch-releases-9-1-2-x. Until it
+//   exists every index 404s, scrapeTechdocs() returns null and the line runs at its BOM builds;
+//   `hasPatchTree` is set from whether any row came from a patch leaf, so the line switches over
+//   by itself. 9.1.1 is frozen from 9.1.2 GA on the pattern seen with 9.1.0 (#486), without an
+//   advisory to prove it yet (VMSA-2026-0011 was not online on 24 NOV 2026): re-check it.
 const LINES = [
+  {
+    v: '9.1.2', y: 1, z: 2, ga: '2026-11-24', patch: `${TD}/patch-releases-9-1-2-x`,
+    bom: `${TD}/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html`,
+  },
   {
     v: '9.1.1', y: 1, z: 1, ga: '2026-09-03', patch: `${TD}/patch-releases-9-1-1-x`,
     bom: `${TD}/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html`,
+    frozen: {
+      lastPatch: '2026-11-19', upgradeTo: '9.1.2', checked: '2026-11-24',
+      reason: 'VCF 9.1.2 went GA on 24 Nov 2026 and the 9.1.1.x patch tree has had no release since 19 Nov 2026. This follows the pattern seen with 9.1.0; Broadcom has not yet published an advisory that shows it for 9.1.1',
+      sourceUrl: `${TD}/patch-releases-9-1-1-x.html`,
+      sourceLabel: 'Patch Releases 9.1.1.x',
+    },
   },
   {
     v: '9.1.0', y: 1, z: 0, ga: '2026-05-12', patch: `${TD}/patch-releases-9-1-0-x`,
     bom: `${TD}/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html`,
     frozen: {
-      lastPatch: '2026-07-29', upgradeTo: '9.1.1', checked: '2026-11-23',
+      lastPatch: '2026-07-29', upgradeTo: '9.1.2', checked: '2026-11-24',
       reason: 'VMSA-2026-0009 (19 Nov 2026, vCenter CVE-2026-123890, Critical) was fixed in 9.1.1.0200 and 9.0.2.0200 only; the 9.1.0.x patch tree has had no release since 29 Jul 2026',
       sourceUrl: 'https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495',
       sourceLabel: 'VMSA-2026-0009',
@@ -630,7 +646,7 @@ async function main() {
         }
       }
     }
-    lines.push({ v: line.v, minor: `9.${line.y}`, ga: line.ga, hasPatchTree: !!line.patch,
+    lines.push({ v: line.v, minor: `9.${line.y}`, ga: line.ga, hasPatchTree: comps.some((c) => c.patched),
       ...(line.frozen ? { frozen: line.frozen } : {}), components: comps });
   }
 

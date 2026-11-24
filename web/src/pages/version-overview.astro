@@ -5,7 +5,7 @@ import data from '../data/vcf-versions.json';
 
 // Data is refreshed daily by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
 // commits it back to main, which rebuilds Pages). See issues #179, #265.
-// `lines` carries one component set per release line (9.1.1.x, 9.1.0.x, 9.0.2.x); `addons`
+// `lines` carries one component set per release line (9.1.2.x, 9.1.1.x, 9.1.0.x, 9.0.2.x); `addons`
 // is the shared optional set (versions on its own schemes, not tied to the VCF maintenance
 // version). A line with `frozen` no longer receives patches (#486): it is shown collapsed at
 // the end, with the reason and its source. See the script header for the X.Y.Z.EEHH scheme.
@@ -38,7 +38,7 @@ function groupByCat(components) {
     .filter((g) => g.rows.length);
 }
 
-// One section per patched release line (newest first: 9.1.1, 9.0.2), then the lines that no
+// One section per patched release line (newest first: 9.1.2, 9.0.2), then the lines that no
 // longer receive patches (collapsed), then the shared add-ons.
 const lineSections = lines.map((ln) => ({ ...ln, groups: groupByCat(ln.components) }));
 const activeLines = lineSections.filter((ln) => !ln.frozen);
@@ -55,7 +55,7 @@ const fmtDate = (iso) =>
 <BaseLayout
   title="VCF 9 Version Overview"
   active="version-overview"
-  description="Current version and build for every VMware Cloud Foundation 9.1.1 and 9.0.2 component, refreshed daily from Broadcom; 9.1.0 is shown as no longer patched."
+  description="Current version and build for every VMware Cloud Foundation 9.1.2 and 9.0.2 component, refreshed daily from Broadcom; 9.1.1 and 9.1.0 are shown as no longer patched."
 >
   <article class="prose">
     <p class="doc-eyebrow itq-eyebrow">Reference</p>

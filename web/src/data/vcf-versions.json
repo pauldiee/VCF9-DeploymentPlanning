@@ -8,10 +8,266 @@
   },
   "lines": [
     {
+      "v": "9.1.2",
+      "minor": "9.1",
+      "ga": "2026-11-24",
+      "hasPatchTree": false,
+      "components": [
+        {
+          "key": "vcenter",
+          "name": "vCenter Server",
+          "category": "Core",
+          "version": "9.1.2.0",
+          "build": "25946533",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "esxi",
+          "name": "ESXi",
+          "category": "Core",
+          "version": "9.1.2.0",
+          "build": "25946735",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "nsx",
+          "name": "NSX",
+          "category": "Core",
+          "version": "9.1.2.0",
+          "build": "25929667",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "sddc-manager",
+          "name": "SDDC Manager",
+          "category": "Core",
+          "version": "9.1.2.0",
+          "build": "25936686",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vsan-esa-witness",
+          "name": "vSAN ESA Witness",
+          "category": "Core",
+          "version": "9.1.2.0",
+          "build": "25946731",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vsan-osa-witness",
+          "name": "vSAN OSA Witness",
+          "category": "Core",
+          "version": "9.1.2.0",
+          "build": "25946720",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-operations",
+          "name": "VCF Operations",
+          "category": "Operations",
+          "version": "9.1.2.0",
+          "build": "25946717",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-for-networks",
+          "name": "VCF Operations for Networks",
+          "category": "Operations",
+          "version": "9.1.2.0",
+          "build": "25929615",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-hcx",
+          "name": "VCF Operations HCX",
+          "category": "Operations",
+          "version": "9.1.2.0",
+          "build": "25930811",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-orchestrator",
+          "name": "Orchestrator",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25946746",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-log-management",
+          "name": "Log Management",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25946738",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-real-time-metrics",
+          "name": "Real-Time Metrics",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25946711",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-ops-real-time-metrics-store",
+          "name": "Real-Time Metrics Store",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25927683",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-automation",
+          "name": "VCF Automation",
+          "category": "Automation",
+          "version": "9.1.2.0",
+          "build": "25941159",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "migration-service-engine",
+          "name": "Migration Service Engine",
+          "category": "Automation",
+          "version": "9.1.2.0",
+          "build": "25941159",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "fleet-lifecycle",
+          "name": "Fleet Lifecycle Management",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25936692",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "sddc-lifecycle",
+          "name": "SDDC Lifecycle Management",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25936689",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "salt-master",
+          "name": "Salt Master",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25946729",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "salt-raas",
+          "name": "Salt RaaS",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25946729",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "software-depot",
+          "name": "Software Depot",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25936687",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vcf-download-tool",
+          "name": "VCF Download Tool",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25936684",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "vsp",
+          "name": "VCF Services Runtime (VSP)",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25927683",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "telemetry",
+          "name": "Telemetry",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25885561",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        },
+        {
+          "key": "identity-broker",
+          "name": "Identity Broker",
+          "category": "Management",
+          "version": "9.1.2.0",
+          "build": "25924814",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vmware-cloud-foundation-9-1-2-0-bill-of-material.html",
+          "patched": false
+        }
+      ]
+    },
+    {
       "v": "9.1.1",
       "minor": "9.1",
       "ga": "2026-09-03",
       "hasPatchTree": true,
+      "frozen": {
+        "lastPatch": "2026-11-19",
+        "upgradeTo": "9.1.2",
+        "checked": "2026-11-24",
+        "reason": "VCF 9.1.2 went GA on 24 Nov 2026 and the 9.1.1.x patch tree has had no release since 19 Nov 2026. This follows the pattern seen with 9.1.0; Broadcom has not yet published an advisory that shows it for 9.1.1",
+        "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x.html",
+        "sourceLabel": "Patch Releases 9.1.1.x"
+      },
       "components": [
         {
           "key": "vcenter",
@@ -275,8 +531,8 @@
       "hasPatchTree": true,
       "frozen": {
         "lastPatch": "2026-07-29",
-        "upgradeTo": "9.1.1",
-        "checked": "2026-11-23",
+        "upgradeTo": "9.1.2",
+        "checked": "2026-11-24",
         "reason": "VMSA-2026-0009 (19 Nov 2026, vCenter CVE-2026-123890, Critical) was fixed in 9.1.1.0200 and 9.0.2.0200 only; the 9.1.0.x patch tree has had no release since 29 Jul 2026",
         "sourceUrl": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495",
         "sourceLabel": "VMSA-2026-0009"
@@ -720,10 +976,10 @@
       "key": "avi-lb",
       "name": "Avi Load Balancer (NSX ALB)",
       "category": "Add-ons",
-      "version": "32.1.4",
+      "version": "32.1.5",
       "build": null,
       "releaseDate": null,
-      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes/release-notes-for-avi-load-balancer-version-32-1-4.html",
+      "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-security-load-balancing/avi-load-balancer/avi-load-balancer/32-1/vmware-avi-load-balancer-release-notes/release-notes-for-avi-load-balancer-version-32-1-5.html",
       "patched": true
     },
     {
