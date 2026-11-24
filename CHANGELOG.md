@@ -1,5 +1,38 @@
 # Changelog
 
+## v7.2.1 – 2026-11-24
+- **`docs/42`: VCF PowerCLI 9.1.2 (#490).** PowerCLI 9.1.2 (build
+  25952617) came out with VCF 9.1.2 and is in the PowerShell Gallery. The
+  guide now picks it, and quotes its release notes: PowerShell 7.4.0 is the
+  minimum for the Core edition from this release. Its manifest still pins 36
+  submodules (13.5.2, with `VMware.Vim` 9.1.0 and StorageUtility 1.6.1), so
+  the §4 check and §7.4 Route B work unchanged; §2.2 and §7 now say that an
+  `Update-Module` from 9.1.1 leaves the 9.1.1 set on the host, to be removed
+  with Route B. Offline: the download page still has only the 9.1.1 zip, so
+  `Save-Module` is the way to 9.1.2 for now. PowerShell examples move to
+  7.6.10; 7.7.0 (10 November 2026) ships no MSI, which the guide already
+  warned about. The lab checks stay on 9.1.1; 9.1.2 is not lab-tested yet.
+
+## v7.2.0 – 2026-11-24
+- **New page: VCF 9 Security Advisories (#489).** One place for the Broadcom
+  security advisories (VMSA) that affect VCF or VVF 9.x, from 9.1 GA
+  (12 May 2026) on: VMSA-2026-0004, 0006, 0008, 0009, 0010 and 0011. An
+  overview table gives per advisory the fixed build for the 9.1 and 9.0
+  lines ("Patch pending" where Broadcom has no patch yet, as for 0008 and
+  0010, with the workaround KB), and a section per advisory carries the
+  VCF/VVF 9.x rows of its response matrix (vSphere 8, VCF 5.x and Telco rows
+  left out), with the revision, FAQ and read date. Left out on purpose:
+  0003 and 0007 (Workstation/Fusion only) and 0005 (not in Broadcom's public
+  list). Data lives in `web/src/data/vmsa.json`, maintained by hand: the
+  advisory portal is dynamic and release notes link an advisory before it is
+  online. Linked from the sidebar, the header ("Advisories"), the home page
+  and every "no longer patched" note on the Version Overview.
+- **Version Overview: 9.1.1 freeze now backed by VMSA-2026-0011 (#487).** The
+  advisory went online on 24 November 2026 and lists 9.1.2 as the vCenter
+  (CVE-2026-123903, Critical) and ESX (CVE-2026-123910, Critical) fix for
+  9.1.x.x, with no 9.1.1.x build. The 9.1.1 note now cites it instead of the
+  pattern seen with 9.1.0.
+
 ## v7.1.2 – 2026-11-24
 - **Version Overview: VCF 9.1.2 added, 9.1.1 shown as no longer patched
   (#487).** VCF 9.1.2.0 went GA on 24 November 2026. The page now lists 9.1.2

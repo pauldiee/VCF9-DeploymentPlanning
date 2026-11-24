@@ -13,6 +13,7 @@ const planExportHref = withBase('tools/deployment-plan/');
 const planTrackerHref = withBase('tools/plan-tracker/');
 const testPlanHref = withBase('tools/test-plan/');
 const versionOverviewHref = withBase('version-overview/');
+const securityAdvisoriesHref = withBase('security-advisories/');
 const flowItems = navFlowItems();
 const referenceBands = navReferenceBands();
 ---
@@ -109,6 +110,17 @@ const referenceBands = navReferenceBands();
       <span class="sidebar__text">
         <span class="sidebar__step">Live</span>
         <span class="sidebar__label">VCF 9 Version Overview</span>
+      </span>
+    </a>
+    <a
+      class:list={['sidebar__link', { 'is-active': active === 'security-advisories' }]}
+      href={securityAdvisoriesHref}
+      aria-current={active === 'security-advisories' ? 'page' : undefined}
+    >
+      <i class="fa-solid fa-shield-halved sidebar__icon" aria-hidden="true"></i>
+      <span class="sidebar__text">
+        <span class="sidebar__step">Reference</span>
+        <span class="sidebar__label">VCF 9 Security Advisories</span>
       </span>
     </a>
     {

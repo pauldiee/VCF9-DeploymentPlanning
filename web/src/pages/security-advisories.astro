@@ -1,0 +1,232 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/path';
+import data from '../data/vmsa.json';
+
+// Broadcom security advisories (VMSA) for VCF / VVF 9.x from 9.1 GA on (#489). Maintained by
+// hand in web/src/data/vmsa.json: the advisory portal is dynamic, and release notes link an
+// advisory before it is online. Each row is copied from the advisory's own Response Matrix.
+const { advisories, _checked, _listUrl, _excluded } = data;
+
+const fmtDate = (iso) =>
+  iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
+const kbUrl = (kb) => `https://knowledge.broadcom.com/external/article/${kb.replace(/^KB/i, '')}`;
+const sevClass = (s) => `va-sev va-sev--${s.toLowerCase()}`;
+const anchor = (id) => id.toLowerCase();
+
+// Summary per advisory and release line: which component is fixed in which build ('pending'
+// while Broadcom lists "Patch pending"). '9.x' rows count for both lines.
+function fixesFor(adv, line) {
+  const seen = new Set();
+  return adv.rows
+    .filter((r) => r.line === line || r.line === '9.x')
+    .filter((r) => {
+      const key = `${r.component}|${r.fixed}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((r) => ({ component: r.component, fixed: r.fixed }));
+}
+const otherFixes = (adv) => adv.rows.filter((r) => r.line === null);
+---
+
+<BaseLayout
+  title="VCF 9 Security Advisories"
+  active="security-advisories"
+  description="Broadcom security advisories (VMSA) that affect VMware Cloud Foundation and vSphere Foundation 9.x since 9.1 GA, with the fixed build per release line."
+>
+  <article class="prose">
+    <p class="doc-eyebrow itq-eyebrow">Reference</p>
+    <h1>VCF 9 Security Advisories</h1>
+
+    <p>
+      The Broadcom security advisories (VMSA) that affect VMware Cloud Foundation or vSphere
+      Foundation 9.x, from VCF 9.1 GA (12 May 2026) on, with the build that fixes each one per
+      release line. Only the VCF/VVF 9.x rows of each advisory&rsquo;s response matrix are shown;
+      vSphere 8, VCF 5.x and Telco Cloud rows are left out. For current builds per component, see
+      the <a href={withBase('version-overview/')}>VCF 9 Version Overview</a>.
+    </p>
+
+    <p class="vo-note">
+      <strong>Fixes go to the newest maintenance version.</strong> Since 9.1.1 the advisories list a
+      9.1.x fix for the newest maintenance version only: VMSA-2026-0009 fixed vCenter 9.1.x in
+      9.1.1.0200 with no 9.1.0.x build, and VMSA-2026-0011 fixes vCenter and ESX 9.1.x in 9.1.2 with
+      no 9.1.1.x build. A fleet on an older maintenance version gets these fixes by upgrading.
+      Broadcom states patches are cumulative (&ldquo;the current version includes all previously
+      released fixes&rdquo;, VMSA-2026-0009 note [1]).
+    </p>
+
+    <p class="vo-updated">
+      <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+      Checked against Broadcom <strong>{fmtDate(_checked)}</strong>
+      <span class="vo-updated__note">&middot; maintained by hand &middot;
+        <a href={_listUrl} target="_blank" rel="noopener">Broadcom advisory list</a></span>
+    </p>
+
+    <h2 class="vo-line">Overview</h2>
+    <figure class="table-scroll vo-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Advisory</th>
+            <th>Published</th>
+            <th>Severity</th>
+            <th>VCF 9.1</th>
+            <th>VCF 9.0</th>
+            <th>Own version scheme</th>
+          </tr>
+        </thead>
+        <tbody>
+          {advisories.map((a) => (
+            <tr>
+              <td class="vo-name"><a href={`#${anchor(a.id)}`}>{a.id}</a></td>
+              <td class="vo-ver">{fmtDate(a.published)}</td>
+              <td><span class={sevClass(a.severity)}>{a.severity}</span></td>
+              {['9.1', '9.0'].map((line) => (
+                <td class="va-fixlist">
+                  {fixesFor(a, line).map((f) => (
+                    <span class="va-fix">
+                      {f.component}:{' '}
+                      {f.fixed ? <code>{f.fixed}</code> : <span class="vo-pill va-pending">Patch pending</span>}
+                    </span>
+                  ))}
+                </td>
+              ))}
+              <td class="va-fixlist">
+                {[...new Set(otherFixes(a).map((r) => r.component))].map((c) => (
+                  <span class="va-fix">{c}: <a href={`#${anchor(a.id)}`}>see advisory</a></span>
+                ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+
+    {advisories.map((a) => (
+      <section class="va-adv">
+        <h2 class="vo-line" id={anchor(a.id)}>
+          {a.id}
+          <span class="vo-line__meta">
+            <span class={sevClass(a.severity)}>{a.severity}</span> &middot; CVSSv3 {a.cvss} &middot;
+            published {fmtDate(a.published)}{a.updated !== a.published && <> &middot; updated {fmtDate(a.updated)} ({a.revision})</>}
+          </span>
+        </h2>
+        <p>{a.title}.</p>
+        {a.note && <p class="vo-note">{a.note}</p>}
+        <figure class="table-scroll vo-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Version</th>
+                <th>CVE</th>
+                <th>CVSSv3</th>
+                <th>Fixed version</th>
+                <th>Workaround</th>
+              </tr>
+            </thead>
+            <tbody>
+              {a.rows.map((r) => (
+                <tr>
+                  <td class="vo-name">{r.component}</td>
+                  <td>{r.applies}</td>
+                  <td class="va-cves">{r.cves.join(', ')}</td>
+                  <td><span class={sevClass(r.severity)}>{r.cvss}</span></td>
+                  <td class="vo-build">{r.fixed ?? <span class="vo-pill va-pending">Patch pending</span>}</td>
+                  <td>
+                    {r.workaround
+                      ? <a href={kbUrl(r.workaround)} target="_blank" rel="noopener">{r.workaround}</a>
+                      : 'None'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </figure>
+        <p class="vo-src">
+          <a href={a.url} target="_blank" rel="noopener">{a.revision} <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></a>
+          {a.faq && <> &middot; <a href={a.faq} target="_blank" rel="noopener">FAQ</a></>}
+          {' '}&middot; read {fmtDate(a.checked)}
+        </p>
+      </section>
+    ))}
+
+    <blockquote>
+      <p>
+        <strong>The advisory is the authority.</strong> This page copies each advisory&rsquo;s
+        response matrix and is checked by hand, so it can lag behind a new advisory or a revision.
+        Read the advisory itself before planning a patch. Where a row combines several CVEs, the
+        CVSSv3 column shows the highest score. Left out on purpose:
+        {' '}{_excluded.map((e, i) => <>{i > 0 && ', '}{e.id} ({e.why})</>)}.
+      </p>
+    </blockquote>
+  </article>
+</BaseLayout>
+
+<style>
+  /* vo-* classes come from version-overview.astro, which declares them is:global. They are only
+     loaded on that page, so the ones this page needs are repeated here. */
+  .vo-updated {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-subtle);
+    border-left: 4px solid var(--itq-orange);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: var(--fs-small);
+  }
+  .vo-updated__note { color: var(--text-muted); }
+  .vo-line {
+    margin-top: var(--space-8);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--itq-orange);
+    display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap;
+  }
+  .vo-line__meta { font-size: var(--fs-small); font-weight: var(--fw-regular); color: var(--text-muted); }
+  .vo-note {
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-subtle);
+    border-left: 4px solid var(--text-muted);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: var(--fs-small);
+    margin-top: var(--space-2);
+  }
+  .vo-table { margin-top: var(--space-3); }
+  .vo-name { font-weight: var(--fw-semibold); white-space: nowrap; }
+  .vo-ver { white-space: nowrap; }
+  .vo-build { font-family: var(--font-mono); }
+  .vo-src { font-size: var(--fs-small); color: var(--text-muted); }
+  .vo-pill {
+    display: inline-block;
+    padding: 0.05rem 0.4rem;
+    font-size: 0.7rem;
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.03em;
+    color: var(--text-body);
+    background: var(--surface-tag);
+    border-radius: var(--radius-sm);
+    vertical-align: middle;
+  }
+
+  .va-cves { font-size: var(--fs-small); min-width: 12rem; }
+  .va-fixlist { font-size: var(--fs-small); }
+  .va-fix { display: block; white-space: nowrap; }
+  .va-pending { background: var(--status-note-bg); }
+
+  /* Severity as text plus a coloured edge, so it reads without colour too. */
+  .va-sev {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    font-size: 0.75rem;
+    font-weight: var(--fw-semibold);
+    border-left: 3px solid var(--text-muted);
+    background: var(--surface-subtle);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    white-space: nowrap;
+  }
+  .va-sev--critical { border-left-color: #c62828; }
+  .va-sev--important { border-left-color: var(--itq-orange); }
+  .va-sev--moderate { border-left-color: #b8a000; }
+  .va-sev--low { border-left-color: var(--text-muted); }
+</style>

@@ -23,7 +23,10 @@ This page covers both cases: a jump host with internet access
 > offline-zip problems in [§6](#6-pitfalls) are **field-verified
 > 2026-11-13** on an air-gapped jump host. The manifest and module-path
 > checks are **lab-verified 2026-11-16** (PowerShell 7.6.10, VCF.PowerCLI
-> 9.1.1.25718932, Windows 11).
+> 9.1.1.25718932, Windows 11). Updated for **VCF.PowerCLI 9.1.2** on
+> 2026-11-24 from its release notes, the PowerShell Gallery (manifest
+> dependencies) and the download page, all read verbatim; 9.1.2 itself has not
+> been installed in the lab yet.
 
 ---
 
@@ -31,8 +34,8 @@ This page covers both cases: a jump host with internet access
 
 | Component | Pick | Why |
 | --- | --- | --- |
-| PowerShell | **7.6 (LTS)**, latest patch | Broadcom: *"PowerShell 7.4 or later is officially supported and is our minimum recomended version for use"*. Microsoft ended support for **7.4 and 7.5 on 10-Nov-2026**; 7.6 LTS is supported until **14-Nov-2028** ([support lifecycle](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle)). |
-| PowerCLI | **VCF.PowerCLI** 9.1.1 (`9.1.1.25718932`) | *"Make sure that you are installing VCF.PowerCLI and not VMware.PowerCLI."* VMware.PowerCLI *"is compatible with vCenter Server 8.0 or earlier"*; for vCenter 9 check the VCF PowerCLI matrix ([KB 428547](https://knowledge.broadcom.com/external/article/428547)). |
+| PowerShell | **7.6 (LTS)**, latest patch (7.6.10 on 24-Nov-2026) | Broadcom: *"PowerShell 7.4 or later is officially supported and is our minimum recomended version for use"*. From VCF PowerCLI 9.1.2 that is a hard floor: *"The minimum supported version for the PowerShell Core edition is now PowerShell 7.4.0. If you run PowerCLI on an earlier version of PowerShell 7, upgrade your PowerShell runtime before installing this release."* ([release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-sdks-apis-and-clis-9-1-2/vcf-powercli-9-1-2-0-release-notes.html)). Microsoft ended support for **7.4 and 7.5 on 10-Nov-2026**; 7.6 LTS is supported until **14-Nov-2028** ([support lifecycle](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle)). 7.7.0 came out on 10-Nov-2026 without an MSI (see [§2.1](#21-powershell-7)); stay on 7.6 LTS on a jump host. |
+| PowerCLI | **VCF.PowerCLI** 9.1.2 (`9.1.2.25952617`, 24-Nov-2026) | *"Make sure that you are installing VCF.PowerCLI and not VMware.PowerCLI."* VMware.PowerCLI *"is compatible with vCenter Server 8.0 or earlier"*; for vCenter 9 check the VCF PowerCLI matrix ([KB 428547](https://knowledge.broadcom.com/external/article/428547)). |
 | Windows PowerShell 5.1 | Leave it installed, don't use it for PowerCLI | PowerShell 7 *"installs to a new directory and runs side-by-side with Windows PowerShell 5.1"*. VCF PowerCLI 9.x needs *"PowerShell 7.0.13 +"*; on 5.1 it fails at run time with *"Could not load file or assembly 'Newtonsoft.Json…'"* ([KB 409981](https://knowledge.broadcom.com/external/article/409981)). |
 
 Two things to know before you start:
@@ -75,7 +78,7 @@ and install it silently:
 
 ```powershell
 $msiParams = @(
-  '/package', 'PowerShell-7.6.6-win-x64.msi', '/quiet',
+  '/package', 'PowerShell-7.6.10-win-x64.msi', '/quiet',
   'ADD_PATH=1', 'USE_MU=1', 'ENABLE_MU=1'
 )
 msiexec.exe @msiParams
@@ -85,8 +88,10 @@ msiexec.exe @msiParams
 Configuration Manager patch PowerShell 7 later.
 
 > Plan ahead: *"Beginning with the PowerShell 7.7.0 release, there is no MSI
-> package available. WinGet only installs the MSIX package."* That affects the
-> next upgrade, not 7.6.
+> package available. WinGet only installs the MSIX package."* 7.7.0 was
+> released on 10-Nov-2026, and its Windows assets on GitHub are indeed only
+> ZIP packages and an `.msixbundle`. Microsoft's support lifecycle page didn't
+> list 7.7 yet on 24-Nov-2026. On a jump host, stay on the 7.6 LTS MSI.
 
 ### 2.2 VCF PowerCLI
 
@@ -115,7 +120,12 @@ Install-Module -Name VCF.PowerCLI -Scope CurrentUser
   with a Broadcom certificate and not a VMware one"* (add
   `-SkipPublisherCheck`).
 
-Update later with `Update-Module -Name VCF.PowerCLI`.
+Update later with `Update-Module -Name VCF.PowerCLI`. Microsoft: it
+*"installs a module's newest version from an online gallery"*; the page says
+nothing about removing the version you had, and PowerShellGet keeps each
+version in its own folder. So after going from 9.1.1 to 9.1.2 both sets are
+on the host. Check with [§4](#4-check-the-result), then remove the old set with
+[§7.4](#74-route-b-keep-the-current-vcfpowercli-remove-the-rest).
 
 ### 2.3 First run
 
@@ -152,6 +162,12 @@ installed on the jump host. Bring three things:
 | `VCF-PowerCLI-9.1.1-25718932.zip` (168.33 MB) | [developer.broadcom.com → VCF PowerCLI](https://developer.broadcom.com/tools/vcf-powercli/latest) | MD5 on the download page: `11f33c4065214aebfb91dbd80b540bab` |
 | The fleet CA certificate | Your PKI team | Thumbprint against the CA |
 
+**9.1.2 offline:** on 24-Nov-2026 the download page still offered only the
+9.1.1 zip, while the PowerShell Gallery already had 9.1.2. Until the 9.1.2
+zip appears, use `Save-Module` (below) for 9.1.2, or carry the 9.1.1 zip.
+Both work the same way; the file names in the commands below follow the zip
+you have.
+
 Check the zip before you carry it:
 
 ```powershell
@@ -166,7 +182,7 @@ computer but doesn't install the module"*, in versioned folders, ready to be
 machine"*:
 
 ```powershell
-Save-Module -Name VCF.PowerCLI -RequiredVersion 9.1.1.25718932 -Path C:\Transfer\Modules -Repository PSGallery
+Save-Module -Name VCF.PowerCLI -RequiredVersion 9.1.2.25952617 -Path C:\Transfer\Modules -Repository PSGallery
 ```
 
 Then carry `C:\Transfer\Modules\*` instead of the zip, and skip step 3.2.
@@ -176,7 +192,7 @@ Then carry `C:\Transfer\Modules\*` instead of the zip, and skip step 3.2.
 On the jump host, as administrator:
 
 ```powershell
-msiexec.exe /package PowerShell-7.6.6-win-x64.msi /quiet ADD_PATH=1 USE_MU=0 ENABLE_MU=0
+msiexec.exe /package PowerShell-7.6.10-win-x64.msi /quiet ADD_PATH=1 USE_MU=0 ENABLE_MU=0
 ```
 
 `USE_MU=0` / `ENABLE_MU=0` because the host can't reach Microsoft Update; if
@@ -250,7 +266,9 @@ Get-Module -Name VCF.PowerCLI -ListAvailable | Select-Object Version, ModuleBase
 ```
 
 **Is every required submodule present at the exact version?** VCF.PowerCLI
-9.1.1 lists 36 submodules in its manifest, each with a `RequiredVersion`. This
+9.1.1 and 9.1.2 each list 36 submodules in their manifest, each with a
+`RequiredVersion` (9.1.2: `13.5.2.25952617` for most, `VMware.Vim`
+`9.1.0.25952617`, `VMware.VimAutomation.StorageUtility` `1.6.1`). This
 shows only what's missing; no output means complete:
 
 ```powershell
@@ -279,8 +297,9 @@ Get-Module VCF.PowerCLI, VMware.VimAutomation.Sdk, VMware.VimAutomation.Core |
   Select-Object Name, Version, ModuleBase
 ```
 
-All versions should match the release (`9.1.1.…` for VCF.PowerCLI,
-`13.5.1.…` for the VMware.* submodules) and come from the path you chose.
+All versions should match the release (`9.1.2.…` for VCF.PowerCLI,
+`13.5.2.…` for these submodules; `9.1.1.…` and `13.5.1.…` on 9.1.1) and come
+from the path you chose.
 
 **Can it connect?**
 
@@ -413,7 +432,8 @@ vSphere Client instead.
 
 Use this before a fresh install on a jump host that has had PowerCLI before,
 when [§6.1](#61-several-powercli-versions-on-one-host) applies, before an
-offline update ([§3.4](#34-updating-later)), and when you come from
+offline update ([§3.4](#34-updating-later)), after an online update
+([§2.2](#22-vcf-powercli)), and when you come from
 VMware.PowerCLI 13.3 or earlier ([§2.2](#22-vcf-powercli)).
 
 Broadcom's procedure is short. The prerequisite: *"Close all PowerShell
@@ -535,7 +555,9 @@ $old = Get-Module -ListAvailable VMware.*, VCF.PowerCLI |
 $old | Select-Object Name, Version, ModuleBase      # check this list first
 ```
 
-VCF.PowerCLI 9.1.1 comes to 37 modules (itself plus 36). Then remove `$old`:
+VCF.PowerCLI 9.1.1 comes to 37 modules (itself plus 36), and so does 9.1.2
+by its manifest. After an `Update-Module` from 9.1.1 to 9.1.2, `$old` should
+be the 9.1.1 set. Then remove `$old`:
 
 ```powershell
 # installed with Install-Module
@@ -574,7 +596,20 @@ Read verbatim on 2026-11-16:
 - [KB 428547](https://knowledge.broadcom.com/external/article/428547):
   VCF PowerCLI, not VMware PowerCLI, for vCenter 9
 - PowerShell Gallery, [VCF.PowerCLI](https://www.powershellgallery.com/packages/VCF.PowerCLI/):
-  current version 9.1.1.25718932 (2026-09-10), minimum PowerShell 5.1 as listed
+  9.1.1.25718932 (2026-09-10), minimum PowerShell 5.1 as listed
+
+Read verbatim on 2026-11-24 (VCF PowerCLI 9.1.2):
+
+- Broadcom TechDocs, [VCF PowerCLI 9.1.2.0 Release Notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-sdks-apis-and-clis-9-1-2/vcf-powercli-9-1-2-0-release-notes.html):
+  build 25952617, PowerShell 7.4.0 minimum for the Core edition, Image Builder
+  needs Python 3.11+, Kerberos integrated authentication for `Connect-VIServer`
+- PowerShell Gallery: VCF.PowerCLI 9.1.2.25952617 (published 2026-11-24), 36
+  `RequiredModules`, minimum PowerShell still listed as 5.1
+- Broadcom, [VCF PowerCLI downloads](https://developer.broadcom.com/tools/vcf-powercli/latest):
+  still 9.1.1 only
+- GitHub, [PowerShell releases](https://github.com/PowerShell/PowerShell/releases):
+  7.6.10 and 7.7.0 (10-Nov-2026); 7.7.0 has no MSI
+- Microsoft Learn, [Update-Module](https://learn.microsoft.com/en-us/powershell/module/powershellget/update-module)
 - Microsoft Learn, [Install PowerShell 7 on Windows](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell-on-windows),
   [PowerShell Support Lifecycle](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle),
   [about_PSModulePath](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath),

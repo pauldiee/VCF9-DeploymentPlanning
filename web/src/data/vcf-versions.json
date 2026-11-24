@@ -264,9 +264,9 @@
         "lastPatch": "2026-11-19",
         "upgradeTo": "9.1.2",
         "checked": "2026-11-24",
-        "reason": "VCF 9.1.2 went GA on 24 Nov 2026 and the 9.1.1.x patch tree has had no release since 19 Nov 2026. This follows the pattern seen with 9.1.0; Broadcom has not yet published an advisory that shows it for 9.1.1",
-        "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/patch-releases-9-1-1-x.html",
-        "sourceLabel": "Patch Releases 9.1.1.x"
+        "reason": "VMSA-2026-0011 (24 Nov 2026, vCenter CVE-2026-123903 and ESX CVE-2026-123910, Critical) is fixed in 9.1.2 for 9.1.x.x, with no 9.1.1.x build; the 9.1.1.x patch tree has had no release since 19 Nov 2026",
+        "sourceUrl": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39626",
+        "sourceLabel": "VMSA-2026-0011"
       },
       "components": [
         {

@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import VersionLineTables from '../components/VersionLineTables.astro';
 import data from '../data/vcf-versions.json';
+import { withBase } from '../lib/path';
 
 // Data is refreshed daily by web/scripts/scrape-versions.mjs (a scheduled GitHub Action
 // commits it back to main, which rebuilds Pages). See issues #179, #265.
@@ -164,7 +165,8 @@ const fmtDate = (iso) =>
             <strong>{ln.v} no longer receives patches.</strong> {ln.frozen.reason} (<a href={ln.frozen.sourceUrl} target="_blank" rel="noopener">{ln.frozen.sourceLabel}</a>,
             checked {fmtDate(ln.frozen.checked)}). A fleet on {ln.v} gets fixes by upgrading to
             {' '}<strong>{ln.frozen.upgradeTo}</strong>. The rows below are the last {ln.v} builds and are
-            no longer refreshed.
+            no longer refreshed. All advisories per release line:
+            {' '}<a href={withBase('security-advisories/')}>VCF 9 Security Advisories</a>.
           </p>
           <VersionLineTables groups={ln.groups} />
         </details>

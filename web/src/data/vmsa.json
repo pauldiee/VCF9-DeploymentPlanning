@@ -1,0 +1,128 @@
+{
+  "_comment": "Broadcom security advisories (VMSA) that affect VCF / VVF 9.x, from VCF 9.1 GA (12 May 2026) on. Maintained by hand (#489): each row is copied from the advisory's own Response Matrix, VCF/VVF 9.x rows only (vSphere 8, VCF 5.x and Telco rows are left out). `line` is the release line the row applies to ('9.1', '9.0', '9.x' for both, null for a product on its own version scheme such as Avi or HCX). `fixed` is null while Broadcom lists 'Patch pending'. `checked` is the date the advisory text was last read.",
+  "_checked": "2026-11-24",
+  "_listUrl": "https://support.broadcom.com/web/ecx/security-advisory?segment=VC",
+  "_excluded": [
+    { "id": "VMSA-2026-0003", "why": "VMware Fusion only" },
+    { "id": "VMSA-2026-0005", "why": "not in Broadcom's public advisory list on 24 Nov 2026" },
+    { "id": "VMSA-2026-0007", "why": "VMware Workstation and Fusion only" }
+  ],
+  "advisories": [
+    {
+      "id": "VMSA-2026-0011",
+      "revision": "VMSA-2026-0011",
+      "title": "VMware ESX, vCenter, Workstation, Fusion, Tools, and Avi Load Balancer updates address multiple vulnerabilities",
+      "published": "2026-11-24",
+      "updated": "2026-11-24",
+      "severity": "Critical",
+      "cvss": "3.4-9.8",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39626",
+      "faq": "https://brcm.tech/vmsa-2026-0011-qna",
+      "checked": "2026-11-24",
+      "note": "No 9.1.1.x or 9.1.0.x fix: vCenter and ESX 9.1.x are fixed in 9.1.2 only. This is why 9.1.1 is shown as no longer patched on the Version Overview.",
+      "rows": [
+        { "component": "vCenter", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-123903", "CVE-2026-123904", "CVE-2026-123905", "CVE-2026-123906", "CVE-2026-123907", "CVE-2026-123908", "CVE-2026-123909"], "cvss": "9.8", "severity": "Critical", "fixed": "9.1.2", "workaround": null },
+        { "component": "vCenter", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-123903", "CVE-2026-123904", "CVE-2026-123905", "CVE-2026-123906", "CVE-2026-123907", "CVE-2026-123908", "CVE-2026-123909"], "cvss": "9.8", "severity": "Critical", "fixed": "9.0.2.0300", "workaround": null },
+        { "component": "ESX", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-123910", "CVE-2026-123911", "CVE-2026-123912", "CVE-2026-123913", "CVE-2026-123914", "CVE-2026-123915", "CVE-2026-123916"], "cvss": "9.8", "severity": "Critical", "fixed": "ESXi-9.1.2.0-25946735", "workaround": null },
+        { "component": "ESX", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-123910", "CVE-2026-123911", "CVE-2026-123912", "CVE-2026-123913", "CVE-2026-123916"], "cvss": "9.8", "severity": "Critical", "fixed": "ESXi-9.0.2.0200-25953133", "workaround": null },
+        { "component": "ESX", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-123914", "CVE-2026-123915"], "cvss": "6.7", "severity": "Moderate", "fixed": null, "workaround": null },
+        { "component": "VMware Tools", "line": "9.x", "applies": "13.x.x.x (Windows, Linux)", "cves": ["CVE-2026-123918"], "cvss": "5.5", "severity": "Moderate", "fixed": "13.1.10.0", "workaround": null },
+        { "component": "Avi Load Balancer", "line": null, "applies": "32.1.1-32.1.3", "cves": ["CVE-2026-123919", "CVE-2026-123920", "CVE-2026-123921", "CVE-2026-123922", "CVE-2026-123923", "CVE-2026-123924", "CVE-2026-123925"], "cvss": "6.7", "severity": "Moderate", "fixed": "32.1.4", "workaround": null },
+        { "component": "Avi Load Balancer", "line": null, "applies": "32.1.3 / 32.1.1-32.1.2", "cves": ["CVE-2026-123926"], "cvss": "6.5", "severity": "Moderate", "fixed": "32.1.3-2p1 / 32.1.2-2p3", "workaround": null },
+        { "component": "Avi Load Balancer", "line": null, "applies": "31.1.1-31.2.2 (CVE-2026-123919, -123921), 31.1.1-31.2.3 (the rest)", "cves": ["CVE-2026-123919", "CVE-2026-123920", "CVE-2026-123921", "CVE-2026-123922", "CVE-2026-123923", "CVE-2026-123924", "CVE-2026-123925"], "cvss": "6.7", "severity": "Moderate", "fixed": "31.2.3 (CVE-2026-123919, -123921), 32.1.4 (the rest)", "workaround": null }
+      ]
+    },
+    {
+      "id": "VMSA-2026-0010",
+      "revision": "VMSA-2026-0010",
+      "title": "Apache HTTP Server mod_http2 heap corruption remote code execution vulnerability",
+      "published": "2026-11-19",
+      "updated": "2026-11-19",
+      "severity": "Critical",
+      "cvss": "9.8",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39625",
+      "faq": null,
+      "checked": "2026-11-24",
+      "note": "No patch yet; Broadcom gives a workaround per product.",
+      "rows": [
+        { "component": "VCF Operations", "line": "9.x", "applies": "9.x.x.x", "cves": ["CVE-2026-119618"], "cvss": "9.8", "severity": "Critical", "fixed": null, "workaround": "KB463005" },
+        { "component": "VCF Operations HCX", "line": null, "applies": "9.1.x", "cves": ["CVE-2026-119618"], "cvss": "9.8", "severity": "Critical", "fixed": null, "workaround": "KB463022" }
+      ]
+    },
+    {
+      "id": "VMSA-2026-0009",
+      "revision": "VMSA-2026-0009.1",
+      "title": "VMware vCenter, Tools, and SDDC Manager updates address multiple vulnerabilities",
+      "published": "2026-11-19",
+      "updated": "2026-11-20",
+      "severity": "Critical",
+      "cvss": "6.7-9.8",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495",
+      "faq": "https://brcm.tech/vmsa-2026-0009-qna",
+      "checked": "2026-11-24",
+      "note": "No 9.1.0.x fix: vCenter 9.1.x is fixed in 9.1.1.0200 only. This is why 9.1.0 is shown as no longer patched on the Version Overview.",
+      "rows": [
+        { "component": "vCenter", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-123890"], "cvss": "9.8", "severity": "Critical", "fixed": "9.1.1.0200", "workaround": null },
+        { "component": "vCenter", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-123890"], "cvss": "9.8", "severity": "Critical", "fixed": "9.0.2.0200", "workaround": null },
+        { "component": "SDDC Manager / VCF Installer", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-123891", "CVE-2026-123892", "CVE-2026-123893"], "cvss": "8.1", "severity": "Important", "fixed": "9.1.1.0200", "workaround": null },
+        { "component": "SDDC Manager / VCF Installer", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-123891", "CVE-2026-123892", "CVE-2026-123893"], "cvss": "8.1", "severity": "Important", "fixed": "9.0.2.0100", "workaround": null },
+        { "component": "VMware Tools", "line": "9.x", "applies": "13.x.x.x (Windows)", "cves": ["CVE-2026-123894"], "cvss": "6.7", "severity": "Moderate", "fixed": "13.1.5.0", "workaround": null }
+      ]
+    },
+    {
+      "id": "VMSA-2026-0008",
+      "revision": "VMSA-2026-0008.2",
+      "title": "Node.js Brotli decoder out-of-bounds write remote code execution vulnerability",
+      "published": "2026-10-27",
+      "updated": "2026-11-19",
+      "severity": "Critical",
+      "cvss": "7.5-9.8",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39445",
+      "faq": null,
+      "checked": "2026-11-24",
+      "note": "Critical (9.8) on SDDC Manager 9.1.1 only; Important (7.5) on 9.1.0 and 9.0.x. No patch yet; each has a workaround KB. The advisory was last updated on 19 Nov 2026, before 9.1.2 GA, and does not say whether 9.1.2 carries the fix.",
+      "rows": [
+        { "component": "SDDC Manager", "line": "9.1", "applies": "9.1.1", "cves": ["CVE-2026-111497"], "cvss": "9.8", "severity": "Critical", "fixed": null, "workaround": "KB460732" },
+        { "component": "SDDC Manager", "line": "9.1", "applies": "9.1.0", "cves": ["CVE-2026-111497"], "cvss": "7.5", "severity": "Important", "fixed": null, "workaround": "KB460734" },
+        { "component": "SDDC Manager", "line": "9.0", "applies": "9.0.x", "cves": ["CVE-2026-111497"], "cvss": "7.5", "severity": "Important", "fixed": null, "workaround": "KB460734" }
+      ]
+    },
+    {
+      "id": "VMSA-2026-0006",
+      "revision": "VMSA-2026-0006.2",
+      "title": "VMware ESX, vCenter, Workstation, and Fusion updates address multiple vulnerabilities",
+      "published": "2026-07-29",
+      "updated": "2026-08-19",
+      "severity": "Critical",
+      "cvss": "2.7-9.8",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/38017",
+      "faq": "https://brcm.tech/vmsa-2026-0006",
+      "checked": "2026-11-24",
+      "note": "vCenter CVE-2026-59309 was first fixed in 9.1.0.0200; the advisory names 9.1.0.0300 as the newest build with the fix. Two ESX CVEs were already fixed in the 9.1.0 GA build.",
+      "rows": [
+        { "component": "vCenter", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-59309", "CVE-2026-59310"], "cvss": "9.8", "severity": "Critical", "fixed": "9.1.0.0300", "workaround": null },
+        { "component": "vCenter", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-59309", "CVE-2026-59310"], "cvss": "9.8", "severity": "Critical", "fixed": "9.0.2.0100", "workaround": null },
+        { "component": "ESX", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-47876"], "cvss": "9.3", "severity": "Critical", "fixed": "ESXi-9.1.0.0200-25557999", "workaround": null },
+        { "component": "ESX", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-41703", "CVE-2026-41709"], "cvss": "7.6", "severity": "Important", "fixed": "ESXi-9.1.0.0-25370933", "workaround": null },
+        { "component": "ESX", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-47876", "CVE-2026-41703", "CVE-2026-41709"], "cvss": "9.3", "severity": "Critical", "fixed": "ESXi-9.0.2.0100-25595025", "workaround": null }
+      ]
+    },
+    {
+      "id": "VMSA-2026-0004",
+      "revision": "VMSA-2026-0004",
+      "title": "VMware Cloud Foundation Operations updates address multiple vulnerabilities",
+      "published": "2026-06-08",
+      "updated": "2026-06-08",
+      "severity": "Important",
+      "cvss": "8.0",
+      "url": "https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/37513",
+      "faq": null,
+      "checked": "2026-11-24",
+      "note": "Already fixed in the 9.1.0 GA build of VCF Operations.",
+      "rows": [
+        { "component": "VCF Operations", "line": "9.1", "applies": "9.1.x.x", "cves": ["CVE-2026-41722", "CVE-2026-41723"], "cvss": "8.0", "severity": "Important", "fixed": "9.1.0.0", "workaround": null },
+        { "component": "VCF Operations", "line": "9.0", "applies": "9.0.x.x", "cves": ["CVE-2026-41722", "CVE-2026-41723"], "cvss": "8.0", "severity": "Important", "fixed": "9.0.2.0 EP2", "workaround": null }
+      ]
+    }
+  ]
+}

@@ -237,6 +237,12 @@ const sampleHref = withBase('samples/01-network-dns-plan-rainpole/');
           >
             Versions
           </a>
+          <a
+            class:list={['nav-plain', { 'is-active': active === 'security-advisories' }]}
+            href={withBase('security-advisories/')}
+          >
+            Advisories
+          </a>
         </nav>
 
         <button type="button" class="hamburger" id="mobileNavToggle" aria-label="Open menu" aria-expanded="false">

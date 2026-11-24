@@ -81,8 +81,9 @@ const FAMILY = '9';
 //   9.1.2 (#487): `patch` points at the tree Broadcom will open as patch-releases-9-1-2-x. Until it
 //   exists every index 404s, scrapeTechdocs() returns null and the line runs at its BOM builds;
 //   `hasPatchTree` is set from whether any row came from a patch leaf, so the line switches over
-//   by itself. 9.1.1 is frozen from 9.1.2 GA on the pattern seen with 9.1.0 (#486), without an
-//   advisory to prove it yet (VMSA-2026-0011 was not online on 24 NOV 2026): re-check it.
+//   by itself. 9.1.1 is frozen from 9.1.2 GA: VMSA-2026-0011 (24 NOV 2026, online later that day)
+//   lists 9.1.2 as the vCenter and ESX fix for 9.1.x.x, with no 9.1.1.x build. Every advisory
+//   is also in web/src/data/vmsa.json, shown on /security-advisories/ (#489).
 const LINES = [
   {
     v: '9.1.2', y: 1, z: 2, ga: '2026-11-24', patch: `${TD}/patch-releases-9-1-2-x`,
@@ -93,9 +94,9 @@ const LINES = [
     bom: `${TD}/vmware-cloud-foundation-9-1-1-0-release-notes/vmware-cloud-foundation-9-1-1-0-bill-of-material.html`,
     frozen: {
       lastPatch: '2026-11-19', upgradeTo: '9.1.2', checked: '2026-11-24',
-      reason: 'VCF 9.1.2 went GA on 24 Nov 2026 and the 9.1.1.x patch tree has had no release since 19 Nov 2026. This follows the pattern seen with 9.1.0; Broadcom has not yet published an advisory that shows it for 9.1.1',
-      sourceUrl: `${TD}/patch-releases-9-1-1-x.html`,
-      sourceLabel: 'Patch Releases 9.1.1.x',
+      reason: 'VMSA-2026-0011 (24 Nov 2026, vCenter CVE-2026-123903 and ESX CVE-2026-123910, Critical) is fixed in 9.1.2 for 9.1.x.x, with no 9.1.1.x build; the 9.1.1.x patch tree has had no release since 19 Nov 2026',
+      sourceUrl: 'https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39626',
+      sourceLabel: 'VMSA-2026-0011',
     },
   },
   {
