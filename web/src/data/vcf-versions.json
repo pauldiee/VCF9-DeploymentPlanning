@@ -996,9 +996,9 @@
       "key": "vcf-sdk-python",
       "name": "VCF SDK (Python)",
       "category": "Tools",
-      "version": "9.1.1.0",
+      "version": "9.1.2.0",
       "build": null,
-      "releaseDate": "2026-09-03",
+      "releaseDate": "2026-11-25",
       "sourceUrl": "https://pypi.org/project/vcf-sdk/",
       "patched": true
     }
