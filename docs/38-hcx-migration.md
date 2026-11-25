@@ -408,6 +408,16 @@ expected
   period ends, the site will remain operational as long as it is site-paired
   with the VCF-enabled cloud infrastructure"*
   ([KB 418818](https://knowledge.broadcom.com/external/article/418818)).
+- **HCX 9.1.2** ([VCF Operations 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-operations-9-1-2-0-release-notes.html),
+  read 2026-11-24): evaluation mode is no longer limited, *"HCX Manager is
+  fully operational during the 90-day evaluation mode"*. And a manager that
+  isn't registered with a VCF 9 vCenter can get its licence from VCF
+  Operations: *"users can connect HCX Manager with VCF Operations 9 to retrieve
+  a VCF license. Use cases include migrations to vCenter 8 or to VMware vSphere
+  Foundation. Note that HCX Manager and VCF Operations require a VCF
+  license."* Known issue after an upgrade from 4.11.6 with a backup
+  passphrase: delete and re-add the SFTP backup configuration, or a restore of
+  a 9.1.2 backup fails.
   Field-seen 2026-11-17: a legacy HCX Manager on 9.1.1 stayed in Evaluation
   Mode while Bulk migration ran.
 - **Optional:** register the legacy manager against the **destination vCenter
@@ -496,6 +506,19 @@ extending networks to vSphere DVPG as the destination."*
 | --- | --- | --- |
 | Legacy-side source | vDS port groups; NSX overlay or VLAN segments (NSX 3.2.3+, registered with the same vCenter as HCX, hosts are transport nodes); VPC subnets (HCX and NSX 9.0+ on the source) | vSphere Standard Switch port groups; segments in a **user-created NSX project** |
 | VCF 9.1-side target | NSX segment on a Tier-1, **NSX VPC subnet**, NSX VLAN segment, or a vDS port group (DVPG to DVPG: HCX and NSX 9.1 on both sites) | NSX projects other than the default |
+
+**HCX 9.1.2: DVPG to DVPG without NSX transport nodes on the destination.**
+[VCF Operations 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-operations-9-1-2-0-release-notes.html),
+VCF Operations HCX section (read 2026-11-24): *"For DVPG to DVPG network
+extensions, HCX does not require that hosts in the destination vSphere cluster
+are NSX Transport Nodes. However, in order to extend networks without Transport
+Nodes, you have to create a DVPG-backed Network Profile and assign it to the HCX
+Intrasite Control network during the compute profile creation on the destination
+site."* So on 9.1.2, plan that extra network profile in [§3.2](#32-network-profiles)
+and the compute profile in [§7](#7-site-pair-profiles-and-service-mesh). The
+release notes don't say whether the "NSX 9.1 on both sites" condition in the
+table above changes as well; check [Requirements for Network Extension][nereq]
+for your build. TechDocs only, not tested.
 
 The **default project only** limit is easy to miss on a VCF 9 destination
 designed around NSX projects. It was reported on 4.x and 9.0.x

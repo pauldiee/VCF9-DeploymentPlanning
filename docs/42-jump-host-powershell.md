@@ -46,6 +46,14 @@ Two things to know before you start:
   VCF.PowerCLI, so `Install-Module` happily installs it from Windows
   PowerShell 5.1. The install succeeds; the cmdlets fail later (KB 409981).
   Always install and run it from `pwsh`, not `powershell`.
+- **Two more 9.1.2 changes** ([VCF PowerCLI 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-sdks-apis-and-clis-9-1-2/vcf-powercli-9-1-2-0-release-notes.html),
+  read 2026-11-24). Image Builder: *"Support for Python 3.7, 3.8, 3.9, and
+  3.10 has been removed. Ensure that your environment uses a supported Python
+  version (Python 3.11 or later) if your workflows rely on Image Builder
+  cmdlets."* Check the Python on the jump host before you build custom ESX
+  images. And `Connect-VIServer` gains Kerberos, but only *"when your vCenter
+  instance is federated with a VMware Identity Broker (VIDB) instance
+  configured for integrated authentication"*.
 - **One PowerCLI version per jump host.** VCF.PowerCLI pins every submodule to
   an exact version, and a second PowerCLI anywhere in the module path breaks
   the import ([§6.1](#61-several-powercli-versions-on-one-host)). Remove old

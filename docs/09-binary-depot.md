@@ -406,6 +406,13 @@ accept-certificate prompt; the cert had to be imported over SSH — see the vTam
 walkthrough below). Day-N, the fleet connects under **VCF Operations → Depot
 Configuration** (fleet-level *and* per-instance).
 
+**From 9.1.2, a depot certificate that chains to an eMudhra root or to Sectigo
+"AAA Certificate Services" stops working**: SDDC Manager removes those roots
+from its trust stores, and the release notes name the depot explicitly. Import
+only the issuing CA, never the removed root, and plan to replace the
+certificate. Details and sources in
+[`41` §7.2](41-certificates.md#72-vcf-912-removed-roots-and-two-known-issues).
+
 ## 3. Manual transfer — feeding the VCF Installer without a depot server
 
 For a one-off installation (lab, PoC, or a small air-gapped site) you can skip

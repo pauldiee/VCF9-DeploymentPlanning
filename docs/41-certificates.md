@@ -426,6 +426,63 @@ certificate is managed *"by using VCF Operations API"*. VCF Operations'
 own trusted certificates and exceptions are under *Operate → Administration →
 Control Panel → **Trusted Certificates***.
 
+### 7.2 VCF 9.1.2: removed roots and two known issues
+
+From the 9.1.2.0 release notes, read 2026-11-24. TechDocs only, not tested
+here.
+
+**SDDC Manager drops the eMudhra roots and Sectigo "AAA Certificate
+Services".** [VCF Installer / SDDC Manager 9.1.2.0 release
+notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/sddc-manager-9-1-2-0-release-notes.html):
+*"VCF 9.1.2 removes the eMudhra root CAs and the Sectigo AAA Certificate
+Services root CA from the trust stores of SDDC Manager."* That covers the
+Java trust store and the Photon OS trust list. What keeps working and what
+breaks:
+
+- *"A certificate installed on vCenter, NSX, or ESX through SDDC Manager (VCF
+  Operations) continues to work because its chain is already in the SDDC
+  Manager trust store."*
+- *"A certificate installed directly on a component outside SDDC Manager, or
+  a customer-configured endpoint such as a proxy, depot, backup target,
+  directory service, or mail server, fails if it chains to one of the removed
+  roots."*
+- *"Do not add the eMudhra or "AAA Certificate Services" root certificates
+  back to the trust store. [...] Add only the specific issuing CA, and plan to
+  replace the certificate."*
+
+Before upgrading to 9.1.2, check the chain of the proxy, the [offline
+depot](09-binary-depot.md), the [SFTP backup target](08-backup-target.md), the
+LDAPS directory and the mail server. A certificate from your own internal CA
+doesn't chain to these public roots; a publicly issued one might. The VCF
+Services Runtime trust bundle drops the eMudhra roots as well ([VCF Operations
+9.1.2.0 release
+notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-operations-9-1-2-0-release-notes.html)).
+
+**Known issue: an ESX certificate from a multi-level CA loses intermediates.**
+[VCF Operations 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-operations-9-1-2-0-release-notes.html):
+after replacing an ESX certificate signed by *"a multi-level external CA
+hierarchy"* through VCF Operations, the task reports success, but *"the host's
+CA store keeps only the first intermediate certificate in the bundle. The
+remaining intermediates and the root certificate are silently dropped."* A
+client that trusts only the root then fails with *"Unable to get local issuer
+certificate"*; the host stays connected to vCenter. Workaround: *"manually add
+the missing root and intermediate certificates to /etc/vmware/ssl/castore.pem
+on the affected host"*, or replace the certificate again through vCenter. After
+an ESX pass with a root plus intermediates ([§5](#5-the-certificate-pass)),
+test the chain from a client per host, for example with
+`openssl s_client -connect <esx-fqdn>:443 -showcerts`.
+
+**Known issue at bring-up: a custom ESX certificate of an unlucky length.**
+[VCF Installer / SDDC Manager 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/sddc-manager-9-1-2-0-release-notes.html):
+with `esxiCertsMode` set to `Custom` in the JSON spec, and *"one or more ESX
+host certificates have a Base64-encoded body length that is a multiple of 253
+characters"*, the *Deploy vCenter Appliance* task fails, and the rollback
+leaves *"residual vSAN configuration"* on the hosts. Workaround: *"Reissue every
+custom ESX host certificate so its Base64-encoded body length is not a multiple
+of 253 characters"* and update the `sslThumbprint` values in the spec. Check
+the length before bring-up (the Base64 body without the BEGIN/END lines and
+line breaks).
+
 ---
 
 ## Sources

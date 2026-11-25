@@ -119,6 +119,13 @@ component lands on it.
 > Both are under VCF Operations but on separate screens, and each **vCenter** is
 > separate again (VAMI, below).
 
+**Known issue in 9.1.2: listing component backups is slow.** [VCF Operations
+9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-operations-9-1-2-0-release-notes.html),
+VCF Services Runtime (read 2026-11-24): *"If your SFTP backup server responds
+slowly or if there are many backups, listing the available backups can take a
+long time and delay restore operations."* Workaround: *"None"*. One more reason
+to keep the target fast and pruned.
+
 ### Retention: the SDDC Manager schedule fields
 
 The *Backup Schedule* dialog for SDDC Manager has three retention fields. The
@@ -161,6 +168,15 @@ that SDDC Manager can interface with"*. Backups keep being created on schedule
   (e.g. a cron job on the SFTP server for the NSX directory), and watch free
   space. The KB mentions a Fleet LCM-driven retention policy as planned for a
   future release.
+- **Why it matters at upgrade time (fixed in NSX 9.1.2):** the VCF upgrade
+  pre-check asks NSX for its backup overview, and with a full directory that
+  call timed out. [NSX 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/nsx-9-1-2-0-release-notes.html),
+  resolved issues (read 2026-11-24): *"VCF upgrade workflow fails during the
+  NSX pre-check or upgrade validation phase with the error "Failed to execute
+  Backup Operation Check""*, error 29450, and *"Failure is triggered by the
+  total volume of files on the SFTP target rather than the absence of a
+  recent backup."* Until a fleet runs NSX 9.1.2, pruning is also what keeps
+  upgrades going.
 
 > **vCenter backup is NOT configured by VCF.** Setting the fleet SFTP target
 > covers SDDC Manager, NSX and the fleet components — but each vCenter's
@@ -169,6 +185,30 @@ that SDDC Manager can interface with"*. Backups keep being created on schedule
 > schedule, target, retention, per instance. Easy to miss because everything
 > else is handled centrally — make it an explicit task per vCenter (it's in
 > the deployment plan, story 6.4).
+
+**vCenter 9.1.2 changes its file-based backup.** From the [vCenter 9.1.2.0
+release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcenter-9-1-2-0-release-notes.html)
+(read 2026-11-24; TechDocs only, not tested yet):
+
+- **New file names.** Backups are compressed with Zstandard instead of gzip:
+  *"In the names of backup files on the backup server, the .gz extension is
+  replaced with .zst.bin. If you use scripts or tools that process backup
+  files by name, you must update such scripts."* Check cleanup jobs,
+  monitoring and copy scripts on the SFTP server.
+- **New encryption.** *"file-based backup encrypts new backups with
+  AES-256-GCM"*, with the key *"derived from the backup password with
+  PBKDF2-HMAC-SHA256"*, plus an HMAC over the metadata: *"If an encrypted
+  backup file was modified or truncated, the restore fails."* The manual
+  `openssl` decrypt in [§8](#8-manually-decrypting-a-backed-up-file-for-inspection)
+  was worked out on the older format and won't apply as-is to 9.1.2 backups.
+- **Verify server identity.** For SFTP the identity is *"the server SSH host
+  key"*. The option *"is selected by default for new backups, new backup
+  schedules, and restores. Existing backup schedules keep their current
+  behavior after an upgrade."* A host key *"must be accepted once"*, and if
+  the server later presents a different one, *"the backup or restore fails
+  until you accept the new identity."* So after regenerating the SFTP
+  server's host keys, accept the new key in each vCenter's VAMI too, and
+  compare it with the key on the server before you accept it.
 
 > **The passphrase is a restore-blocker.** Backups are encrypted with the
 > passphrase you set here; restore is impossible without it. Store it in a
@@ -846,6 +886,11 @@ component the proxy scripts read); override with `export GOVC_URL=https://<vcent
   recovery **in-product** rather than assuming an order.
 
 ## 8. Manually decrypting a backed-up file (for inspection)
+
+> **Not for vCenter 9.1.2 backups.** From vCenter 9.1.2, new backups use
+> AES-256-GCM with a PBKDF2-HMAC-SHA256 key and `.zst.bin` file names (see
+> [§1](#1-what-backs-up-to-it-and-how-often)). The recipe below is for the
+> format before that; a working recipe for 9.1.2 hasn't been tested here.
 
 **Field-verified 2026-07-28.** Every documented recipe for decrypting a VCSA
 `.enc` backup file with plain `openssl enc` (Broadcom's own File-Based Backup

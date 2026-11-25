@@ -1,5 +1,25 @@
 # Changelog
 
+## v7.2.3 – 2026-11-24
+- **VCF 9.1.2 across the build guides (#488)**, quoted from the 9.1.2.0
+  release notes (read 2026-11-24; TechDocs only, not tested):
+  - `docs/08`: vCenter 9.1.2 file-based backup (`.zst.bin` names, AES-256-GCM
+    + HMAC, *Verify server identity* on by default for new schedules), the NSX
+    *Backup Operation Check* timeout fixed in 9.1.2, slow backup listing on
+    slow SFTP targets; §8's manual decrypt marked as pre-9.1.2 only.
+  - `docs/41` §7.2 (new): SDDC Manager drops the eMudhra and Sectigo "AAA
+    Certificate Services" roots (proxy, depot, backup target, directory, mail
+    server); ESX certificates from a multi-level CA keep one intermediate in
+    `castore.pem`; custom ESX certificates whose Base64 body is a multiple of
+    253 characters break bring-up. `docs/09` step 7 points there.
+  - `docs/38`: HCX 9.1.2 DVPG to DVPG extension without NSX transport nodes on
+    the destination, full evaluation mode, licence through VCF Operations,
+    4.11.6 backup passphrase issue.
+  - `docs/05`: additional VCF Operations for networks platforms outside fleet
+    lifecycle; built-in load balancing for a three-node orchestrator cluster.
+  - `docs/42`: Image Builder needs Python 3.11+, Kerberos for
+    `Connect-VIServer` only with a VIDB set up for integrated authentication.
+
 ## v7.2.2 – 2026-11-24
 - **`docs/42`: update to PowerCLI 9.1.2 lab-verified (#490).**
   `Update-Module VCF.PowerCLI` from 9.1.1 to 9.1.2 (PowerShell 7.6.10,

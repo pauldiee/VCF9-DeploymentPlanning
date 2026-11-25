@@ -228,6 +228,27 @@ for the certificate.
 > see section D); then **restart the browser / re-login**; only then is there a
 > real problem to investigate.
 
+**9.1.2: additional Operations for Networks platforms, outside fleet
+lifecycle.** [VCF Operations 9.1.2.0 release notes](https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-2-0-release-notes/vcf-operations-9-1-2-0-release-notes.html)
+(read 2026-11-24): *"You can deploy an additional VCF Operations for networks
+instances to meet your scale needs. The deployment and upgrade workflow for the
+additional platform runs independently of the VCF life cycle. You manage Day 0
+and Day 2 activities through the native VCF Operations for networks UI and
+API."* The fleet-managed instance above stays the first one; an extra one is
+patched by hand, like the components in B.3, so give it its own row in the
+upgrade plan.
+
+**9.1.2: VCF Operations orchestrator balances its own cluster.** Same release
+notes: *"An integrated load-balancing service is now built directly into the
+VCF Operations orchestrator appliance. With this capability, a three-node VCF
+Operations orchestrator cluster can distribute traffic using Kubernetes-native
+routing, removing the need to configure and maintain an external load
+balancer."* For a new three-node orchestrator cluster on 9.1.2, no external
+load balancer (or Avi virtual service) is needed for it; see Broadcom's
+*Configuring VCF Operations Orchestrator Load Balancing*. Unlike VCF Operations
+itself ([B.1](#b1--vcf-operations-load-balancer-is-external-never-served-by-vcf)),
+which still needs an external one. TechDocs only, not tested.
+
 ### B.3 — Deployed **outside** VCF fleet management (Avi, License Hub)
 
 Everything in section B comes from the *Deploy Fleet Management Day-N* sheet.
