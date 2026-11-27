@@ -791,10 +791,10 @@
           "key": "vcenter",
           "name": "vCenter Server",
           "category": "Core",
-          "version": "9.0.2.0200",
-          "build": "25901331",
-          "releaseDate": "2026-11-19",
-          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/patch-releases-9-0-0-x/vsphere/vcenter/vcenter-9-0-2-0200-release-notes.html",
+          "version": "9.0.2.0300",
+          "build": "25937208",
+          "releaseDate": "2026-11-24",
+          "sourceUrl": "https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/patch-releases-9-0-0-x/vsphere/vcenter/vcenter-9-0-2-0300-release-notes.html",
           "patched": true
         },
         {
